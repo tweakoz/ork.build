@@ -1,3 +1,11 @@
+###############################################################################
+# Orkid Build System
+# Copyright 2010-2018, Michael T. Mayers
+# email: michael@tweakoz.com
+# The Orkid Build System is published under the GPL 2.0 license
+# see http://www.gnu.org/licenses/gpl-2.0.html
+###############################################################################
+
 import os, sys
 
 ###############################################################################
@@ -11,6 +19,8 @@ class Manifest:
 
 	def add_dep(self,depname):
 		self.depends.append(depname)
+
+###############################################################################
 
 class ManifestsContainer:
 	def __init__(self):
@@ -30,5 +40,7 @@ class ManifestsContainer:
 			prj.add_dep(dep)
 		else:
 			print("ERROR: prj<%s> or dep<%s> not found" % (name,depname))
+
+###############################################################################
 
 manifests = ManifestsContainer()

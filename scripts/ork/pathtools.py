@@ -1,3 +1,11 @@
+###############################################################################
+# Orkid Build System
+# Copyright 2010-2018, Michael T. Mayers
+# email: michael@tweakoz.com
+# The Orkid Build System is published under the GPL 2.0 license
+# see http://www.gnu.org/licenses/gpl-2.0.html
+###############################################################################
+
 import os, sys, pathlib
 import fnmatch
 
@@ -5,17 +13,6 @@ import fnmatch
 
 def posixpath(path):
 	return '/'.join(os.path.normpath(path).split(os.sep))
-
-###############################################################################
-
-def recursive_glob_get_dirs(path):
-	d=[]
-	try:
-		for i in os.listdir(path):
-			if os.path.isdir(path+i):
-				d.append(os.path.basename(i))
-	except:pass
-	return d
 
 ###############################################################################
 
@@ -63,3 +60,40 @@ def recursive_glob(path):
 		pass
 	
 	return l
+
+###############################################################################
+
+def recursive_glob_get_dirs(path):
+	d=[]
+	try:
+		for i in os.listdir(path):
+			if os.path.isdir(path+i):
+				d.append(os.path.basename(i))
+	except:pass
+	return d
+
+###############################################################################
+
+def globber( folderbase, wildcard, subdirlist, excludelist=[] ):
+	globs = []
+	filtered_globs = []
+	for s in subdirlist:
+		str_glob = folderbase
+		if s!=".":
+			 str_glob += s + '/'
+		str_glob += wildcard
+		these_globs = glob.glob( str_glob )
+		globs += these_globs
+		#print "globbing %s" % ( str_glob )
+	for s in globs:
+		incfil = int(1)
+		for t in excludelist:
+			regex = re.compile( t )
+			matchobj = re.search( t, s )
+			if( matchobj ):
+				#print "excluding " + s + " : (matches " + t + " )"
+				incfil = int(0)
+		if incfil == 1:
+			filtered_globs += [ posixpath(s) ]
+	#print filtered_globs
+	return filtered_globs

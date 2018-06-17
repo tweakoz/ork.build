@@ -1,7 +1,16 @@
-#!/usr/bin/python
-import os
-import sys
-import string
+#!/usr/bin/env python3
+###############################################################################
+# Orkid Build System
+# Copyright 2010-2018, Michael T. Mayers
+# email: michael@tweakoz.com
+# The Orkid Build System is published under the GPL 2.0 license
+# see http://www.gnu.org/licenses/gpl-2.0.html
+###############################################################################
+
+import os, sys, string
+from pathlib import Path
+import ork.deco
+deco = ork.deco.Deco()
 
 #################################################################################
 
@@ -9,8 +18,11 @@ def find(word):
  def _find(path):
   with open(path, "rb") as fp:
    for n, line in enumerate(fp):
-    if word in line:
-     yield n+1, line
+    #print(word)
+    #print(line)
+    line_as_str = line.decode("utf-8") 
+    if word in line_as_str:
+     yield n+1, line_as_str
  return _find
 
 #################################################################################
@@ -43,29 +55,33 @@ def search_at_root(word, root):
 
 #################################################################################
 
-pathset =  "ork.build ork.core ork.swrast"
-pathspl = string.split(pathset)
+pathspl = [Path(os.environ["ORKDOTBUILD_ROOT"])]
 
 #################################################################################
 
+print(pathspl)
 pathlist = ""
 for p in pathspl:
   pathlist += "%s " % (p)
 
-pathlist = string.split(pathlist)
+pathlist = pathlist.split()
 
 #################################################################################
 
 def search(word):
   for path in pathlist:
-   results = search_at_root(word,path)
+   results = search_at_root(word,str(path))
    have_results = len(results)!=0
    if have_results:
     print("/////////////////////////////////////////////////////////////")
     print("// path : %s" % path)
     print("/////////")
     for item in results:
-     print("%s : line %d : '%s'" % (item.path, item.lineno, item.text))
+      deco_path = "%-*s"%(60,deco.path(item.path))
+      deco_lino = "%s %s"%(deco.magenta("Line"),deco.yellow(item.lineno))
+      deco_lino = "%-*s"%(32,deco_lino)
+      deco_text = deco.val(item.text)
+      print("%s%s %s" % (deco_path, deco_lino, deco_text))
 
 #################################################################################
 

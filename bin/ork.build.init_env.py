@@ -1,4 +1,12 @@
 #!/usr/bin/env python3
+###############################################################################
+# Orkid Build System
+# Copyright 2010-2018, Michael T. Mayers
+# email: michael@tweakoz.com
+# The Orkid Build System is published under the GPL 2.0 license
+# see http://www.gnu.org/licenses/gpl-2.0.html
+###############################################################################
+
 
 import os, sys, pathlib
 
@@ -36,7 +44,7 @@ import ork.deco
 import ork.env
 from ork.command import Command
 
-deco = ork.deco.deco()
+deco = ork.deco.Deco()
 bin_dir = root_dir/"bin"
 
 os.system( "mkdir -p %s" % ORK_STAGING_FOLDER)
@@ -69,7 +77,7 @@ print()
 
 if as_main:
     shell = os.environ["SHELL"] # get previous shell
-    bdeco = ork.common.deco(bash=True)
+    bdeco = ork.deco.Deco(bash=True)
     BASHRC = 'parse_git_branch() { git branch 2> /dev/null | grep "*" | sed -e "s/*//";}; '
     PROMPT = bdeco.red('[ %s ]'%ORK_PROJECT_NAME)
     PROMPT += bdeco.yellow("\w")

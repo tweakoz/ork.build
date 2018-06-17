@@ -1,10 +1,11 @@
 ###############################################################################
-# Orkid SCONS Build System
-# Copyright 2010, Michael T. Mayers
+# Orkid Build System
+# Copyright 2010-2018, Michael T. Mayers
 # email: michael@tweakoz.com
 # The Orkid Build System is published under the GPL 2.0 license
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
+
 
 import os, sys, string
 import shutil, glob
@@ -20,7 +21,7 @@ import hashlib
 import ork.common
 from ork.command import Command
 
-deco = ork.common.deco()
+deco = ork.deco.Deco()
 
 def is_irix():
 	return sys.platform.find("irix")!=-1
