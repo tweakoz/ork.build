@@ -55,7 +55,10 @@ def search_at_root(word, root):
 
 #################################################################################
 
-pathspl = [Path(os.environ["ORKDOTBUILD_ROOT"])]
+if "ORK_FIND_PATH" in os.environ:
+  pathspl = [Path(os.environ["ORK_FIND_PATH"])]
+else:
+  pathspl = [Path(os.environ["ORKDOTBUILD_ROOT"])]
 
 #################################################################################
 
