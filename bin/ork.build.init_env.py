@@ -25,7 +25,7 @@ if "ORK_PROJECT_NAME" in os.environ:
   ORK_PROJECT_NAME = os.environ["ORK_PROJECT_NAME"]
 ORK_STAGING_FOLDER = curwd/".staging"
 if "ORK_STAGING_FOLDER" in os.environ:
-  ORK_STAGING_FOLDER = os.environ["ORK_STAGING_FOLDER"]
+  ORK_STAGING_FOLDER = Path(os.environ["ORK_STAGING_FOLDER"])
 
 ###########################################
 
