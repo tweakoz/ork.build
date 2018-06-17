@@ -17,8 +17,10 @@ import sys
 import xml.etree.ElementTree as xml
 import hashlib
 
-import ork.build.common
-deco = ork.build.common.deco()
+import ork.common
+from ork.command import Command
+
+deco = ork.common.deco()
 
 def is_irix():
 	return sys.platform.find("irix")!=-1
@@ -28,7 +30,6 @@ def pexec(args):
 
 num_cores = 1
 
-print("is_irix<%s>" % deco.val(is_irix()))
 if is_irix():
 	num_cores_str = pexec( 'hinv -c processor' )
 	f = string.split(num_cores_str)[0]
@@ -44,13 +45,12 @@ else:
 
 
 from ork.build.manifest import *
-from ork.build.pathtools import *
+from ork.pathtools import *
 
 import select
 import fcntl
 
-
-stage_dir = os.environ["ORKDOTBUILD_STAGE_DIR"]
+stage_dir = os.environ["ORK_STAGING_FOLDER"]
 
 ###############################################################################
 
@@ -68,41 +68,6 @@ def IsWindows():
 
 ###########################################
 
-def set_env(key,val):
-	#print "Setting var<%s> to<%s>" % (key,val)
-	os.environ[key]	= val
-
-###########################################
-
-def prepend_env(key,val):
-	if False==(key in os.environ):
-		set_env(key,val)
-	else:
-		os.environ[key]	= val + ":" + os.environ[key]
-		#print "Setting var<%s> to<%s>" % (key,os.environ[key])
-
-###########################################
-
-def append_env(key,val):
-	if False==(key in os.environ):
-		set_env(key,val)
-	else:
-		os.environ[key]	= os.environ[key]+":"+val 
-		#print "Setting var<%s> to<%s>" % (key,os.environ[key])
-
- #########################
-
-def install_headers(dir):
-	#print "%s from <%s> to <%s>" % (deco.magenta("Installing headers"),deco.path(dir),deco.path(stage_dir+"/include"))
-	os.system( "cp -rf %s %s/include/" % (dir,stage_dir) )
-
-def install_files(pth,dst):
-	#print "Installing files from <%s> to <%s/%s/>" % (pth,stage_dir,dst)
-	os.system( "mkdir -p %s/%s" % (stage_dir,dst) )
-	os.system( "cp -rf %s %s/%s" % (pth,stage_dir,dst) )
-
-###########################################
-
 def folder_tree(rootpath):
 	ret = list()
 	ret.append(rootpath)
@@ -113,14 +78,6 @@ def folder_tree(rootpath):
 			ret.append(f)
 			#print(f)
 	return ret
-
-###########################################
-
-def install_tree(base,folders,pattern,dest_base):
-	for fol in folders:
-		spl = fol.split(base)
-		sub_dir = (spl[1])[1:]
-		install_files("%s/%s/%s"%(base,sub_dir,pattern),"%s/%s"%(dest_base,sub_dir))
 
 ###########################################
 # check for ork.build projects
@@ -187,22 +144,18 @@ def check_for_projects(base):
 		execfile(i)
 	#print "PRJ_LIBDIRS<%s>" % PRJ_LIBDIRS
 ############################
-def myexec(s):
-	#print "exec<%s>" % s
-	os.system(s)
-############################
 def untar(arc,strip=False):
 	is_gz = arc.find(".gz")>0
 	is_bz2 = arc.find(".bz2")>0
-	opts = "--extract --verbose "
+	cmd = ["tar","--extract","--verbose"]
 	if is_gz:
-		opts += "--ungzip "
+		cmd += ["--ungzip"]
 	elif is_bz2:
-		opts += "--bzip2 "
+		cmd += ["--bzip2"]
 	if strip:
-		opts += " --strip-components=1 "
-	opts += "-f %s" % arc
-	os.system("tar %s"%opts)
+		cmd += ["--strip-components=1"]
+	cmd += ["-f",arc]
+	Command(cmd).exec()
 #############################################
 class context:
 	############################
