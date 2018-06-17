@@ -9,14 +9,14 @@
 import glob
 import re
 import string
-import commands
+#import commands
 import sys
 import os
 import shutil
 import fnmatch
 import platform
 SYSTEM = platform.system()
-print "SYSTEM<%s>" % SYSTEM
+print("SYSTEM<%s>" % SYSTEM)
 ###############################################################################
 IsOsx = (SYSTEM=="Darwin")
 IsIrix = (SYSTEM=="IRIX64") 
@@ -165,13 +165,13 @@ def rmtree( pathglob ):
 		if os.path.isdir(npath):
 			try:
 				rmdirforce(npath)
-			except OSError, x:
-				print "cannot remove dir<%s>" % path
+			except OSError as x:
+				print("cannot remove dir<%s>" % path)
 		elif os.path.isfile(npath):
 			try:
 				os.remove(npath)
-			except OSError, x:
-				print "cannot remove file<%s>" % path
+			except OSError as x:
+				print("cannot remove file<%s>" % path)
 
 ###############################################################################
 
@@ -269,7 +269,7 @@ class deco:
 
 adeco = deco()
 
-print "IsLinux<%s>" % adeco.val(IsLinux)
-print "IsIrix<%s>" % adeco.val(IsIrix)
-print "IsOsx<%s>" % adeco.val(IsOsx)
-print "IsIx<%s>" % adeco.val(IsIx)
+print("IsLinux<%s>" % adeco.val(IsLinux))
+print("IsIrix<%s>" % adeco.val(IsIrix))
+print("IsOsx<%s>" % adeco.val(IsOsx))
+print("IsIx<%s>" % adeco.val(IsIx))

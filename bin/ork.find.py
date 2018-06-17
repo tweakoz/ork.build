@@ -61,11 +61,11 @@ def search(word):
    results = search_at_root(word,path)
    have_results = len(results)!=0
    if have_results:
-    print "/////////////////////////////////////////////////////////////"
-    print "// path : %s" % path
-    print "/////////"
+    print("/////////////////////////////////////////////////////////////")
+    print("// path : %s" % path)
+    print("/////////")
     for item in results:
-     print "%s : line %d : '%s'" % (item.path, item.lineno, item.text) 
+     print("%s : line %d : '%s'" % (item.path, item.lineno, item.text))
 
 #################################################################################
 

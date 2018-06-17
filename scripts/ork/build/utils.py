@@ -28,31 +28,26 @@ def pexec(args):
 
 num_cores = 1
 
-print "is_irix<%s>" % deco.val(is_irix())
+print("is_irix<%s>" % deco.val(is_irix()))
 if is_irix():
 	num_cores_str = pexec( 'hinv -c processor' )
 	f = string.split(num_cores_str)[0]
 	num_cores = int(float(f))
-	print "IRIX num_cores<%d>" % num_cores
+	print("IRIX num_cores<%d>" % num_cores)
 else:
    try:
      import multiprocessing
      num_cores = multiprocessing.cpu_count()
    except ImportError:
-     print "No MultiProcessing module - building with 1 core"
+     print("No MultiProcessing module - building with 1 core")
   
 
 
 from ork.build.manifest import *
 from ork.build.pathtools import *
 
-if subprocess.mswindows:
-    from win32file import ReadFile, WriteFile
-    from win32pipe import PeekNamedPipe
-    import msvcrt
-else:
-    import select
-    import fcntl
+import select
+import fcntl
 
 
 stage_dir = os.environ["ORKDOTBUILD_STAGE_DIR"]
@@ -74,7 +69,7 @@ def IsWindows():
 ###########################################
 
 def set_env(key,val):
-	print "Setting var<%s> to<%s>" % (key,val)
+	#print "Setting var<%s> to<%s>" % (key,val)
 	os.environ[key]	= val
 
 ###########################################
@@ -84,7 +79,7 @@ def prepend_env(key,val):
 		set_env(key,val)
 	else:
 		os.environ[key]	= val + ":" + os.environ[key]
-		print "Setting var<%s> to<%s>" % (key,os.environ[key])
+		#print "Setting var<%s> to<%s>" % (key,os.environ[key])
 
 ###########################################
 
@@ -93,16 +88,16 @@ def append_env(key,val):
 		set_env(key,val)
 	else:
 		os.environ[key]	= os.environ[key]+":"+val 
-		print "Setting var<%s> to<%s>" % (key,os.environ[key])
+		#print "Setting var<%s> to<%s>" % (key,os.environ[key])
 
  #########################
 
 def install_headers(dir):
-	print "%s from <%s> to <%s>" % (deco.magenta("Installing headers"),deco.path(dir),deco.path(stage_dir+"/include"))
+	#print "%s from <%s> to <%s>" % (deco.magenta("Installing headers"),deco.path(dir),deco.path(stage_dir+"/include"))
 	os.system( "cp -rf %s %s/include/" % (dir,stage_dir) )
 
 def install_files(pth,dst):
-	print "Installing files from <%s> to <%s/%s/>" % (pth,stage_dir,dst)
+	#print "Installing files from <%s> to <%s/%s/>" % (pth,stage_dir,dst)
 	os.system( "mkdir -p %s/%s" % (stage_dir,dst) )
 	os.system( "cp -rf %s %s/%s" % (pth,stage_dir,dst) )
 
@@ -135,11 +130,11 @@ def check_for_project(path):
 	rval = None
 	prj_manifest = "%s/ork.build.manifest"%path
 	prj_scripts = os.path.abspath("%s/scripts"%path)
-	print "checking for project at<%s>" % deco.path(path)
+	#print "checking for project at<%s>" % deco.path(path)
 	if os.path.exists(prj_manifest):
-		print "/////////////////////////////////////////"
-		print "// Projects Found !! <%s>" % deco.path(path)
-		print "/////////////////////////////////////////"
+		#print "/////////////////////////////////////////"
+		#print "// Projects Found !! <%s>" % deco.path(path)
+		#print "/////////////////////////////////////////"
 		###############
 		prj = manifests.add_project(path)
 		manifest_tree = xml.parse(prj_manifest)
@@ -150,7 +145,7 @@ def check_for_project(path):
 		for a in rootElement.findall('depends_on'):
 			#print dir(a)
 			depends = a.attrib["project"]
-			print "project<%s> depends<%s>" % (path,depends)
+			#print "project<%s> depends<%s>" % (path,depends)
 
 			manifests.depends(path,depends)
 		###############
@@ -184,11 +179,11 @@ def check_for_projects(base):
 						PRJ_LIBDIRS += prj.libdir
 					if hasattr(prj,"autoexecs"):
 						for a in prj.autoexecs:
-							print "execute autoexec<%s>" % a
+							#print "execute autoexec<%s>" % a
 							setenv_scrs.append(a)
 	#append_env("PRJ_LIBDIRS",PRJ_LIBDIRS)
 	for i in setenv_scrs:
-		print "exec child setenv <%s>" % i
+		#print "exec child setenv <%s>" % i
 		execfile(i)
 	#print "PRJ_LIBDIRS<%s>" % PRJ_LIBDIRS
 ############################
@@ -219,7 +214,7 @@ class context:
 
 		self.nargs = len(sys.argv)
 		if 1 == self.nargs:
-			print "usage: (all | apts | exts | assets) [force]"
+			print("usage: (all | apts | exts | assets) [force]")
 		else:
 			for i in range(1,self.nargs,1):
 				arg = sys.argv[i]
@@ -232,7 +227,7 @@ class context:
 					self.opt_exts = True
 				elif arg=="force":
 					self.opt_force = True
-		print "opt_force<%s>" % self.opt_force
+		#print "opt_force<%s>" % self.opt_force
 	############################
 	def md5_of_file(self, fname):
 		fil = open(fname,"rb")
@@ -251,8 +246,8 @@ class context:
 			cmd = "wget %s -O %s" % (url,out_path)
 			os.system(cmd)
 			actmd5 = self.md5_of_file(out_path)
-		print "<%s> DesiredMD5<%s>" % (outputname,desmd5)
-		print "<%s> ActualMD5<%s>" % (outputname,actmd5)
+		print("<%s> DesiredMD5<%s>" % (outputname,desmd5))
+		print("<%s> ActualMD5<%s>" % (outputname,actmd5))
 	############################
 	def gitget( self, url, dir, rev=None ):
 		os.chdir(self.dl_dir)

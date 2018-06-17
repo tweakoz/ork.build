@@ -20,7 +20,7 @@ class ManifestsContainer:
 		if found==None:
 			found = self.manifests[name]=Manifest(name)
 		else:
-			print "ERROR: project<%s> already found" % name
+			print("ERROR: project<%s> already found" % name)
 		return found
 
 	def depends(self,name,depname):
@@ -29,6 +29,6 @@ class ManifestsContainer:
 		if (prj!=None) and (dep!=None):
 			prj.add_dep(dep)
 		else:
-			print "ERROR: prj<%s> or dep<%s> not found" % (name,depname)
+			print("ERROR: prj<%s> or dep<%s> not found" % (name,depname))
 
 manifests = ManifestsContainer()
