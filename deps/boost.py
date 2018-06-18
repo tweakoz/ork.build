@@ -68,37 +68,42 @@ class boost(ork.dep.Provider):
     os.chdir(str(self.build_dest/("boost_"+self.version)))
 
     a = Command(["./bootstrap.sh",
-                 "--without-icu",
-                 "--without-libraries=python",
+                 "link=shared",
+                 "runtime-link=shared",
+                 "--prefix=%s"%prefix,
                  "toolset=%s" % toolset ]).exec()
 
     self.OK = (a==0)
     assert(self.OK)
 
     b = Command(["./b2",
+                 "--prefix=%s"%prefix,
                  "toolset=%s" % toolset,
+                 "link=shared",
+                 "runtime-link=shared",
                  "headers"]).exec()
 
     self.OK = (b==0)
     assert(self.OK)
 
-    linkflags = "stdlib=libc++" if ork.host.IsOsx \
-           else "stdlib=libstdc++"
+    cxxflags = ["-std=c++11","-fPIC"]
+
+    linkflags = ["-stdlib=libc++"] if ork.host.IsOsx \
+           else ["-stdlib=libstdc++"]
 
     c = Command(["./b2",
-                 "toolset=%s" % toolset,
-                 "link=shared",
-                 "runtime-link=shared",
                  "--prefix=%s"%prefix,
-                 "--libdir=%s"%(prefix/"lib"),
                  "-d2",
                  "-j%d"%ork.host.NumCores,
                  "-sNO_LZMA=1",
+                 "--layout=tagged",
+                 "toolset=%s" % toolset,
                  "threading=multi",
                  "address-model=64",
-                 "--layout=tagged",
-                 "cxxflags='-std=c++11'",
-                 "linkflags='%s'" % linkflags,
+                 'cxxflags=%s' % " ".join(cxxflags),
+                 'linkflags=%s' % " ".join(linkflags),
+                 "link=shared",
+                 "runtime-link=shared",
                  "install"]).exec()
 
     #self.OK = (c==0)
