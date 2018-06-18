@@ -31,6 +31,8 @@ class Command:
                 newlist.append(str(item))
             self.command_list = newlist
 
+        print(command_list)
+
     ###########################################################################
 
     def exec(self):

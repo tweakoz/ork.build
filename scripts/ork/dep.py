@@ -9,13 +9,8 @@
 import os, inspect
 from pathlib import Path
 import importlib.util
+import ork.path
   
-###############################################################################
-
-def deps_path():
-  root = Path(os.environ["ORKDOTBUILD_ROOT"])
-  return root/"deps"
-
 ###############################################################################
 
 class Provider:
@@ -34,7 +29,7 @@ class DepNode:
 	  assert(isinstance(name,str))
 	  self.name = name
 	  self.scrname = ("%s.py"%name)
-	  self.module_path = deps_path()/self.scrname
+	  self.module_path = ork.path.deps()/self.scrname
 	  self.module_spec = importlib.util.spec_from_file_location(self.name, str(self.module_path))
 	  self.module = importlib.util.module_from_spec(self.module_spec)
 	  self.module_spec.loader.exec_module(self.module)

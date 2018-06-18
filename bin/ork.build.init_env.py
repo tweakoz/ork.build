@@ -42,6 +42,7 @@ sys.path.append(str(scripts_dir))
 
 import ork.deco
 import ork.env
+import ork.path 
 from ork.command import Command
 
 deco = ork.deco.Deco()
@@ -70,6 +71,14 @@ print()
 print(deco.inf("scanning for projects..."))
 import ork.utils as obt
 obt.check_for_projects(par3_dir)
+
+###########################################
+# create DL dir
+###########################################
+
+ork.path.downloads().mkdir(parents=True,exist_ok=True)
+ork.path.builds().mkdir(parents=True,exist_ok=True)
+ork.path.receipts().mkdir(parents=True,exist_ok=True)
 
 ###########################################
 
