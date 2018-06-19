@@ -17,9 +17,9 @@ def prefix():
   staging = Path(os.environ["ORK_STAGING_FOLDER"])
   return staging
 
-def receipts():
+def manifests():
   staging = Path(os.environ["ORK_STAGING_FOLDER"])
-  return staging/"receipts"
+  return staging/"manifests"
 
 def downloads():
   staging = Path(os.environ["ORK_STAGING_FOLDER"])

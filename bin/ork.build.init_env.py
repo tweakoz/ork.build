@@ -76,9 +76,10 @@ obt.check_for_projects(par3_dir)
 # create DL dir
 ###########################################
 
+ork.path.prefix().mkdir(parents=True,exist_ok=True)
 ork.path.downloads().mkdir(parents=True,exist_ok=True)
 ork.path.builds().mkdir(parents=True,exist_ok=True)
-ork.path.receipts().mkdir(parents=True,exist_ok=True)
+ork.path.manifests().mkdir(parents=True,exist_ok=True)
 
 ###########################################
 
