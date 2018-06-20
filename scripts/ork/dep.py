@@ -43,7 +43,7 @@ class DepNode:
 	  assert(inspect.isclass(self.module_class))
 	  assert(issubclass(self.module_class,Provider))
 	  self.instance = self.module_class(options=options)
-	  print(self.instance)
+	  #print(self.instance)
 	  if( False == self.instance.exists() ):
 	  	provide = self.instance.provide()
 	  	assert(provide==True)

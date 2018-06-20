@@ -28,7 +28,7 @@ class wt4(dep.Provider):
 
     parclass = super(wt4,self)
     parclass.__init__(options=options)
-    print(options)
+    #print(options)
     build_dest = path.builds()/"wt4"
     self.build_dest = build_dest
     self.manifest = path.manifests()/"wt4"
