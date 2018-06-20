@@ -77,6 +77,8 @@ obt.check_for_projects(par3_dir)
 ###########################################
 
 ork.path.prefix().mkdir(parents=True,exist_ok=True)
+(ork.path.prefix()/"lib").mkdir(parents=True,exist_ok=True)
+(ork.path.prefix()/"bin").mkdir(parents=True,exist_ok=True)
 ork.path.downloads().mkdir(parents=True,exist_ok=True)
 ork.path.builds().mkdir(parents=True,exist_ok=True)
 ork.path.manifests().mkdir(parents=True,exist_ok=True)

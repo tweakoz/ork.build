@@ -36,6 +36,7 @@ class boost(dep.Provider):
     self.build_dest = build_dest
     self.manifest = path.manifests()/"boost"
     self.OK = self.manifest.exists()
+    self.compiler = "clang++" if host.IsOsx else "g++"
     if False==self.OK:
       self.download_and_extract()
       self.build()

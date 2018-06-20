@@ -7,6 +7,8 @@
 ###############################################################################
 
 import os,sys, platform, subprocess
+from ork.deco import Deco
+deco = Deco()
 
 ###############################################################################
 
@@ -31,7 +33,7 @@ class Command:
                 newlist.append(str(item))
             self.command_list = newlist
 
-        print(command_list)
+        print(deco.white(self.command_list))
 
     ###########################################################################
 
