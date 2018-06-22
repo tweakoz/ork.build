@@ -57,7 +57,7 @@ class boost(dep.Provider):
 
     prefix = path.prefix()
     toolset = "darwin" if host.IsOsx \
-         else "g++"
+         else "gcc"
 
     os.chdir(str(self.build_dest/("boost_"+self.version)))
 
@@ -82,10 +82,11 @@ class boost(dep.Provider):
 
     cxxflags = ["-std=c++11","-fPIC"]
 
-    linkflags = ['-rpath',str(path.prefix()/"lib")]
+    linkflags = ['-rpath',str(path.prefix()/"lib")] if host.IsOsx \
+           else ['-Wl,-rpath',str(path.prefix()/"lib")]
 
-    linkflags += ["-stdlib=libc++"] if host.IsOsx \
-           else  ["-stdlib=libstdc++"]
+    if host.IsOsx:
+      linkflags += ["-stdlib=libc++"] 
 
 
     c = Command(["./b2",

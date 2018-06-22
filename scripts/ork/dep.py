@@ -66,13 +66,13 @@ def downloadAndExtract(urls,
                   md5val = md5val )
 
   if arcpath:
-    assert(tarfile.is_tarfile(arcpath))
-    tf = tarfile.open(arcpath,mode='r:%s'%archive_type)
+    assert(tarfile.is_tarfile(str(arcpath)))
+    tf = tarfile.open(str(arcpath),mode='r:%s'%archive_type)
     if build_dest.exists():
       Command(["rm","-rf",build_dest]).exec()
     build_dest.mkdir()
     print("extracting<%s> to build_dest<%s>"%(deco.path(arcpath),deco.path(build_dest)))
-    tf.extractall(path=build_dest)
+    tf.extractall(path=str(build_dest))
 
   return arcpath
 
