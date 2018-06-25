@@ -1,4 +1,3 @@
-
 ###############################################################################
 # Orkid Build System
 # Copyright 2010-2018, Michael T. Mayers
@@ -7,8 +6,8 @@
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
 
-VERSION = "10.4"
-HASH = "8e8770c289b3e0bdb779b5b171593479"
+VERSION = "0.4"
+HASH = "9fd9896fff97f5a8f6f60d004b3b1e5f"
 
 import os, tarfile
 from yarl import URL
@@ -19,21 +18,23 @@ from ork.command import Command
 from ork.cmake import CMakeContext
 
 deco = Deco()
+psql = dep.require("postgresql").instance
+irrl = dep.require("irrlicht").instance
     
 ###############################################################################
 
-class postgresql(dep.Provider):
+class minetest(dep.Provider):
 
   def __init__(self,options=None): ############################################
 
-    parclass = super(postgresql,self)
+    parclass = super(minetest,self)
     parclass.__init__(options=options)
     #print(options)
-    build_dest = path.builds()/"postgresql"
+    build_dest = path.builds()/"minetest"
     self.build_dest = build_dest
-    self.manifest = path.manifests()/"postgresql"
+    self.manifest = path.manifests()/"minetest"
     self.OK = self.manifest.exists()
-    self.fname = "postgresql-%s.tar.bz2"%VERSION
+    self.fname = "minetest-stable-%s.zip"%VERSION
     if False==self.OK:
       self.download_and_extract()
       self.OK = self.build()
@@ -42,18 +43,18 @@ class postgresql(dep.Provider):
 
   def download_and_extract(self): #############################################
 
-    url = URL("https://ftp.postgresql.org/pub/source/v%s/postgresql-%s.tar.bz2"%(VERSION,VERSION))
+    url = URL("https://github.com/minetest/minetest/archive/stable-%s.zip"%VERSION)
 
     self.arcpath = dep.downloadAndExtract([url],
                                           self.fname,
-                                          "bz2",
+                                          "zip",
                                           HASH,
                                           self.build_dest)
 
 
   def build(self): ############################################################
 
-    source_dir = self.build_dest/("postgresql-%s"%VERSION)
+    source_dir = self.build_dest/("minetest-stable-%s"%VERSION)
     build_temp = source_dir/".build"
     print(build_temp)
     if build_temp.exists():
@@ -61,7 +62,13 @@ class postgresql(dep.Provider):
 
     build_temp.mkdir(parents=True,exist_ok=True)
     os.chdir(str(build_temp))
-    Command(["../configure","--prefix",path.prefix()]).exec()
+    cmakeEnv = {
+    }
+    if host.IsOsx:
+      cmakeEnv["CMAKE_MACOSX_RPATH"]=1
+      cmakeEnv["CMAKE_INSTALL_RPATH"]=path.prefix()/"lib"
+
+    CMakeContext(root=source_dir,env=cmakeEnv).exec()
     return 0==Command(["make","-j",host.NumCores,"install"]).exec()
 
   def provide(self): ##########################################################

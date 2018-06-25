@@ -47,3 +47,10 @@ class Command:
 
         return child_process.returncode
 
+    ###########################################################################
+
+    def execr(self):
+
+        os.execve(self.command_list[0],self.command_list[1:],self.env)
+
+
