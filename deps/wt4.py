@@ -19,6 +19,7 @@ from ork.cmake import CMakeContext
 
 deco = Deco()
 boost = dep.require("boost").instance
+psql = dep.require("postgresql").instance
     
 ###############################################################################
 
@@ -67,7 +68,7 @@ class wt4(dep.Provider):
       "BOOST_PREFIX": path.prefix(),
       "BOOST_VERSION": boost.version,
       "ENABLE_MYSQL": False,
-      "ENABLE_POSTGRES": False,
+      "ENABLE_POSTGRES": True,
       "ENABLE_QT4": False,
       "ENABLE_SQLITE": False,
       "WT_CPP_11_MODE": "-std=c++11",
