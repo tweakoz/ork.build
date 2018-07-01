@@ -63,7 +63,8 @@ bin_dir = root_dir/"bin"
 
 ###########################################
 
-if args["novars"]==False:
+def setenv():
+  if args["novars"]==False:
     ork.env.set("color_prompt","yes")
     ork.env.set("ORK_STAGING_FOLDER",ORK_STAGING_FOLDER)
     ork.env.set("ORKDOTBUILD_ROOT",root_dir)
@@ -82,6 +83,7 @@ def lazyMakeDirs():
 ###########################################
 if args["create"]!=None:
 ###########################################
+    setenv()
     try_staging = Path(os.path.realpath(args["create"]))
     print(try_staging)
     ork.env.set("ORK_STAGING_FOLDER",try_staging)
@@ -97,11 +99,12 @@ if args["create"]!=None:
     PROMPT += bdeco.white("> ")
     BASHRC += "\nexport PS1='%s';\n" % PROMPT
     BASHRC += "alias ls='ls -G';\n"
+    BASHRC += "cd ${ORK_STAGING_FOLDER};\n"
     f = open('.bashrc', 'w')
     f.write(BASHRC)
     f.close()
 
-    LAUNCHER = "%s/bin/ork.build.init_env.py --init %s;\n" % (root_dir,try_staging)
+    LAUNCHER = "%s/bin/init_env.py --launch %s;\n" % (root_dir,try_staging)
     f = open('.launch_env', 'w')
     f.write(LAUNCHER)
     f.close()
@@ -118,13 +121,19 @@ elif args["launch"]!=None:
     try_staging_sh = try_staging/".launch_env"
     print(try_staging_sh)
     assert(try_staging_sh.exists())
+    setenv()
     Command([Path(file_dir),"--init",try_staging]).exec()
 ###########################################
 elif args["init"]!=None:
 ###########################################
+    try_staging = Path(args["init"])
+    print(try_staging)
+    assert(try_staging.exists())
+    ORK_STAGING_FOLDER = Path(os.path.realpath(try_staging))
+    setenv()
+
     lazyMakeDirs()
     shell = "bash"
-    try_staging = Path(args["init"])
     bashrc = try_staging/".bashrc"
     print(deco.inf("scanning for projects..."))
     import ork.utils as obt

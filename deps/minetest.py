@@ -7,7 +7,7 @@
 ###############################################################################
 
 VERSION = "0.4"
-HASH = "9fd9896fff97f5a8f6f60d004b3b1e5f"
+HASH = "e754d6ca543d943ab1364e55d48b2840"
 
 import os, tarfile
 from yarl import URL
