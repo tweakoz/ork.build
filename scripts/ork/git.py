@@ -23,7 +23,10 @@ class MyProgressPrinter(RemoteProgress):
          deco.inf(message or ""))
     print(a, end="")
 ###############################################################################
-def Clone(url,dest,rev="master"):
+def Clone(url,dest,rev="master",recursive=False):
+  #git clone --mirror
+  #git clone --reference
+
   if dest.exists():
     repo = git.Repo(str(dest))
     print("Updating URL<%s> to dest<%s>"%(deco.path(url),deco.path(dest)))

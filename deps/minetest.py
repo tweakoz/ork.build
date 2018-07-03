@@ -59,6 +59,9 @@ class minetest(dep.Provider):
     os.chdir(str(source_dir/"games"/"minetest_game"/"mods"))
 
     # install mods
+
+    Command(["git","clone","https://github.com/tweakoz/minetest_tozcmd","tozcmd"]).exec()
+
     for item in "technic mesecons pipeworks moreores digtron lightning".split():
       Command(["git","clone","https://github.com/minetest-mods/%s"%item]).exec()
 
