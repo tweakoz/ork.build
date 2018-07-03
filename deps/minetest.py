@@ -11,7 +11,7 @@ HASH = "1453e79e663ea3bd8b528ef20a17109b"
 
 import os, tarfile
 from yarl import URL
-from ork import dep, host, path
+from ork import dep, host, path, git
 from ork.deco import Deco
 from ork.wget import wget
 from ork.command import Command
@@ -54,16 +54,16 @@ class minetest(dep.Provider):
 
     source_dir = self.build_dest/("minetest-%s"%VERSION)
     os.chdir(str(source_dir/"games"))
-    Command(["git","clone","https://github.com/minetest/minetest_game"]).exec()
+    git.Clone("https://github.com/minetest/minetest_game","minetest_game")
 
     os.chdir(str(source_dir/"games"/"minetest_game"/"mods"))
 
     # install mods
 
-    Command(["git","clone","https://github.com/tweakoz/minetest_tozcmd","tozcmd"]).exec()
+    git.Clone("https://github.com/tweakoz/minetest_tozcmd","tozcmd")
 
     for item in "technic mesecons pipeworks moreores digtron lightning".split():
-      Command(["git","clone","https://github.com/minetest-mods/%s"%item]).exec()
+      git.Clone("https://github.com/minetest-mods/%s"%item,item)
 
   def build(self): ############################################################
 

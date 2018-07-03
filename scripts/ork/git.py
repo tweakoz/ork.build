@@ -6,38 +6,55 @@
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
 
-import git
-from git import RemoteProgress
+import os, shutil
+import ork.path
+from pathlib import Path
 from ork.deco import Deco
+from ork.command import Command
 
 deco = Deco()
 
 ###############################################################################
-class MyProgressPrinter(RemoteProgress):
-  def update(self, op_code, cur_count, max_count=None, message=''):
-    pct = 100*cur_count / (max_count or 100.0)
-    a = "GIT object<%s> of<%s> pct<%s> <%s>                                 \r" \
-      % (deco.inf("%s"%cur_count),
-         deco.inf("%s"%max_count),
-         deco.inf("%f"%pct),
-         deco.inf(message or ""))
-    print(a, end="")
-###############################################################################
-def Clone(url,dest,rev="master",recursive=False):
-  #git clone --mirror
-  #git clone --reference
 
-  if dest.exists():
-    repo = git.Repo(str(dest))
-    print("Updating URL<%s> to dest<%s>"%(deco.path(url),deco.path(dest)))
-    origin = git.remote.Remote(repo,'origin')
-    origin.fetch(progress=MyProgressPrinter())
+def Clone(url,
+          dest,
+          rev="master",
+          recursive=False):
+
+  dest_path = Path(dest)
+  dest_name = dest_path.name
+  cache_dest = ork.path.gitcache()/dest_name
+  
+  if recursive:
+
+   print("Cloning URL<%s> to dest<%s>"%(deco.path(url),deco.path(dest_path)))
+   Command(["git",
+             "clone",
+             str(url),
+             str(dest_path),
+             "--recursive"]).exec()
+
   else:
-    repo = git.Repo.init(str(dest))
-    print("Cloning URL<%s> to dest<%s>"%(deco.path(url),deco.path(dest)))
-    origin = repo.create_remote('origin',str(url))
-    origin.fetch(progress=MyProgressPrinter())
-    origin.pull(origin.refs[0].remote_head)
-    #repo.checkout(rev)
+    if False==cache_dest.exists():
+      print("Mirroring URL<%s> to dest<%s>"%(deco.path(url),deco.path(cache_dest)))
+
+      Command(["git",
+               "clone",
+               str(url),
+               str(cache_dest),
+               "--mirror"]).exec()
+
+    print("Cloning (from gitcache<%s>) to dest<%s>"%(deco.path(cache_dest),deco.path(dest)))
+
+    if dest_path.exists():
+      shutil.rmtree(str(dest_path))
+
+    Command(["git",
+             "clone",
+             "--reference",
+             str(cache_dest),
+             str(url),
+             str(dest_path)]).exec()
+
 ###############################################################################
 

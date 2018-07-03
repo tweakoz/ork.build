@@ -25,6 +25,10 @@ def downloads():
   staging = Path(os.environ["ORK_STAGING_FOLDER"])
   return staging/"downloads"
 
+def gitcache():
+  staging = Path(os.environ["ORK_STAGING_FOLDER"])
+  return staging/"gitcache"
+
 def builds():
   staging = Path(os.environ["ORK_STAGING_FOLDER"])
   return staging/"builds"

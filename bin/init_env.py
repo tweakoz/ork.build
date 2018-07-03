@@ -80,6 +80,7 @@ def lazyMakeDirs():
     ork.path.downloads().mkdir(parents=True,exist_ok=True)
     ork.path.builds().mkdir(parents=True,exist_ok=True)
     ork.path.manifests().mkdir(parents=True,exist_ok=True)
+    ork.path.gitcache().mkdir(parents=True,exist_ok=True)
 ###########################################
 if args["create"]!=None:
 ###########################################
@@ -114,7 +115,6 @@ if args["create"]!=None:
 ###########################################
 elif args["launch"]!=None:
 ###########################################
-    lazyMakeDirs()
     try_staging = Path(args["launch"])
     print(try_staging)
     assert(try_staging.exists())
@@ -122,6 +122,7 @@ elif args["launch"]!=None:
     print(try_staging_sh)
     assert(try_staging_sh.exists())
     setenv()
+    lazyMakeDirs()
     Command([Path(file_dir),"--init",try_staging]).exec()
 ###########################################
 elif args["init"]!=None:
