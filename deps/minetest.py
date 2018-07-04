@@ -60,6 +60,16 @@ class minetest(dep.Provider):
 
     # install mods
 
+    git.Clone("https://github.com/sofar/luscious","luscious")
+    git.Clone("https://notabug.org/TenPlus1/mobs_redo","mobs_redo")
+    git.Clone("https://notabug.org/TenPlus1/mobs_animal","mobs_animal")
+    git.Clone("https://notabug.org/TenPlus1/mobs_monster","mobs_monster")
+    git.Clone("https://notabug.org/TenPlus1/mobs_npc","mobs_npc")
+    git.Clone("https://notabug.org/TenPlus1/mobs_horse","mobs_horse")
+    git.Clone("https://github.com/blert2112/mobs_sky.git","mobs_sky")
+    git.Clone("https://github.com/FreeLikeGNU/goblins","goblins")
+    git.Clone("https://github.com/maikerumine/mobs_mc","mobs_mc")
+
     git.Clone("https://github.com/tweakoz/minetest_tozcmd","tozcmd")
 
     for item in "technic mesecons pipeworks moreores digtron lightning".split():
