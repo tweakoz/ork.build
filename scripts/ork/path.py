@@ -32,3 +32,7 @@ def gitcache():
 def builds():
   staging = Path(os.environ["ORK_STAGING_FOLDER"])
   return staging/"builds"
+
+def project_root():
+  root = Path(os.environ["ORK_PROJECT_ROOT"])
+  return root

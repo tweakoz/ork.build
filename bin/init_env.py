@@ -91,7 +91,6 @@ if args["create"]!=None:
     ork.path.prefix().mkdir(parents=True,exist_ok=False)
     lazyMakeDirs()
     #############
-    os.chdir(str(try_staging))
     bdeco = ork.deco.Deco(bash=True)
     BASHRC = 'parse_git_branch() { git branch 2> /dev/null | grep "*" | sed -e "s/*//";};\n'
     PROMPT = bdeco.red('[ %s ]'%ORK_PROJECT_NAME)
@@ -100,17 +99,16 @@ if args["create"]!=None:
     PROMPT += bdeco.white("> ")
     BASHRC += "\nexport PS1='%s';\n" % PROMPT
     BASHRC += "alias ls='ls -G';\n"
-    BASHRC += "cd ${ORK_STAGING_FOLDER};\n"
-    f = open('.bashrc', 'w')
+    f = open(str(try_staging/'.bashrc'), 'w')
     f.write(BASHRC)
     f.close()
 
     LAUNCHER = "%s/bin/init_env.py --launch %s;\n" % (root_dir,try_staging)
-    f = open('.launch_env', 'w')
+    f = open(str(try_staging/'.launch_env'), 'w')
     f.write(LAUNCHER)
     f.close()
     try_staging_sh = try_staging/".launch_env"
-    os.system("chmod ugo+x .launch_env")
+    os.system("chmod ugo+x %s"%str(try_staging/'.launch_env'))
     Command([Path(file_dir),"--novars", "--init",try_staging]).exec()
 ###########################################
 elif args["launch"]!=None:

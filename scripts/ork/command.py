@@ -54,3 +54,5 @@ class Command:
         os.execve(self.command_list[0],self.command_list[1:],self.env)
 
 
+__all__ =   [ "Command" ]
+
