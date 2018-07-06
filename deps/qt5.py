@@ -10,7 +10,6 @@ VERSION = "v5.11.1"
 HASH = "32eee8f17a24305ddf33e9ca5821f4cdaa1483cd"
 
 import os, tarfile
-from yarl import URL
 from ork import dep, host, path, git
 from ork.deco import Deco
 from ork.wget import wget

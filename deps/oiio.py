@@ -7,7 +7,6 @@
 ###############################################################################
 
 import os, tarfile
-from yarl import URL
 from ork import dep, host, path
 from ork.deco import Deco
 from ork.wget import wget
