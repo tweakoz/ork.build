@@ -21,6 +21,7 @@ print()
 parser = argparse.ArgumentParser(description='ork.build environment launcher')
 parser.add_argument('--create', metavar="stagedir", help='create staging folder' )
 parser.add_argument('--launch', metavar="stagedir", help='launch from pre-existing folder' )
+parser.add_argument("--command", metavar="command", help="execute in environ")
 parser.add_argument('--novars', action="store_true", help='do not set env vars' )
 parser.add_argument('--init' )
 
@@ -30,6 +31,10 @@ if len(sys.argv)==1:
     print(parser.format_usage())
     sys.exit(1)
 
+###########################################
+
+IsCommandSet = args["command"]!=None
+print("IsCommandSet<%s>"%IsCommandSet)
 ###########################################
 
 ORK_PROJECT_NAME = "ork.build"
@@ -109,7 +114,11 @@ if args["create"]!=None:
     f.close()
     try_staging_sh = try_staging/".launch_env"
     os.system("chmod ugo+x %s"%str(try_staging/'.launch_env'))
-    Command([Path(file_dir),"--novars", "--init",try_staging]).exec()
+    if args["command"]!=None:
+        rval = os.system(args["command"]) # call shell with new vars (just "exit" to exit)
+        sys.exit(rval>>8)
+    else:
+        Command([Path(file_dir),"--novars", "--init",try_staging]).exec()
 ###########################################
 elif args["launch"]!=None:
 ###########################################
@@ -121,7 +130,11 @@ elif args["launch"]!=None:
     assert(try_staging_sh.exists())
     setenv()
     lazyMakeDirs()
-    Command([Path(file_dir),"--init",try_staging]).exec()
+    if args["command"]!=None:
+        rval = os.system(args["command"]) # call shell with new vars (just "exit" to exit)
+        sys.exit(rval>>8)
+    else:
+        Command([Path(file_dir),"--init",try_staging]).exec()
 ###########################################
 elif args["init"]!=None:
 ###########################################
