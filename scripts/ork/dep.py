@@ -50,8 +50,11 @@ class DepNode:
 
 ###############################################################################
 
-def require(name,options={}):
-    return DepNode(name,options=options)
+def require(name_or_list,options={}):
+    if(isinstance(name_or_list,str)):
+      return DepNode(name_or_list,options=options)
+    elif (isinstance(name_or_list,list)):
+      return [DepNode(item,options=options) for item in name_or_list]
 
 ###############################################################################
 
