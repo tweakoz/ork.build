@@ -20,6 +20,7 @@ from ork.cmake import CMakeContext
 deco = Deco()
 psql = dep.require("postgresql").instance
 irrl = dep.require("irrlicht").instance
+luaj = dep.require("luajit").instance
     
 ###############################################################################
 
