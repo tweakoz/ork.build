@@ -2,7 +2,7 @@
 
 ### DESCRIPTION
 
-**ork.build** is a posix (Linux,OSX) *container based* build environment which provides shared functionality for common build automation tasks. **ork.build** also has a set of dependency providers for useful libraries, unlike homebrew or apt the dependency provider interface is consistent regardless if you are on OSX or Linux - in general the entire interface is consitenty on both OSX and Linux. ork.build is implemented primarily in python3. 
+**ork.build** is a posix (Linux,OSX) *container based* build environment which provides shared functionality for common build automation tasks. **ork.build** also has a set of dependency providers for useful libraries, unlike homebrew or apt the dependency provider interface is consistent regardless if you are on OSX or Linux - in general the entire interface is consitent on both OSX and Linux. ork.build is implemented primarily in python3. 
 
 
 ### USAGE
