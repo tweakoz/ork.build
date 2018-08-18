@@ -9,5 +9,10 @@
 from ork.command import Command
 import ork.host
 
-def exec(target="all"):
-	Command(["make","-j",ork.host.NumCores,target]).exec()
+def exec(target=None,parallel=True):
+	cmd = ["make"]
+	if parallel:
+		cmd += ["-j",ork.host.NumCores]
+	if target!=None:
+		cmd += [target]
+	Command(cmd).exec()

@@ -6,6 +6,6 @@ from ork import dep, host, path
 if len(sys.argv)==2:
 	dep.require(sys.argv[1])
 else:
-    print( "usage: dep_build.py <depname>")
+    print( "usage: obt_dep_build.py <depname>")
     sys.exit(1)
 

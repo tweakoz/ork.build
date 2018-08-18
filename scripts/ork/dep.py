@@ -69,9 +69,9 @@ def downloadAndExtract(urls,
                   md5val = md5val )
 
   if arcpath:
-    print("extracting<%s> to build_dest<%s>"%(deco.path(arcpath),deco.path(build_dest)))
     if build_dest.exists():
       Command(["rm","-rf",build_dest]).exec()
+    print("extracting<%s> to build_dest<%s>"%(deco.path(arcpath),deco.path(build_dest)))
     build_dest.mkdir()
     if( archive_type=="zip" ):
         os.chdir(str(build_dest))
