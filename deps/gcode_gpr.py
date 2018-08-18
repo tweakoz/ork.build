@@ -7,7 +7,7 @@
 ###############################################################################
 
 import os, tarfile
-from ork import dep, host, path
+from ork import dep, host, path, git, cmake, make
 from ork.deco import Deco
 from ork.wget import wget
 from ork.command import Command
@@ -16,19 +16,31 @@ deco = Deco()
     
 ###############################################################################
 
-class irrlicht(dep.Provider):
+class gcode_gpr(dep.Provider):
 
   def __init__(self,options=None): ############################################
 
-    parclass = super(irrlicht,self)
+
+    parclass = super(gcode_gpr,self)
     parclass.__init__(options=options)
-    self.manifest = path.manifests()/"irrlicht"
+    self.manifest = path.manifests()/"gcode_gpr"
+    self.source_dest = path.builds()/"gcode_gpr"
+    self.build_dest = self.source_dest/".build"
+
+    self.clone()
+    self.manifest.touch()
+
     self.OK = self.manifest.exists()
-    if False==self.OK:
-      if host.IsOsx:
-      	self.OK = 0==Command(["brew","install","irrlicht"]).exec()
-      if self.OK:
-        self.manifest.touch()
+
+  def clone(self): 
+    git.Clone("https://github.com/tweakoz/gpr",self.source_dest,"master")
+
+    os.system("rm -rf %s"%self.build_dest)
+    os.mkdir(self.build_dest)
+    os.chdir(self.build_dest)
+    cmake_ctx = cmake.context("..")
+    cmake_ctx.exec()
+    make.exec("install")
 
   def provide(self): ##########################################################
 
