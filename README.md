@@ -57,7 +57,9 @@ obt_dep_list.py
 ```
 ork.build dependency provider list:
 
-assimp binutils_avr binutils_lm32 boost gcc_avr gcc_lm32 gcode_gpr gitpython glfw irrlicht luajit minetest oiio postgresql qt5 simavr unittestpp wt4 yarl
+assimp binutils_avr binutils_lm32 boost gcc_avr gcc_lm32
+gcode_gpr gitpython glfw irrlicht luajit minetest oiio
+postgresql qt5 simavr unittestpp wt4 yarl
 ```
  
 
