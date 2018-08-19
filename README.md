@@ -31,7 +31,7 @@ obt_dep_require.py boost
 
 **to get list of obt commands:** (from bash shell)
 
-we use bash's command line completion and ork.build's convention of prefix all public commands with *obt*
+we use bash's command line completion and ork.build's convention of prefixing all public commands with *obt*
 
 ```
 obt<tab tab>
