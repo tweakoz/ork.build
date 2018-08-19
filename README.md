@@ -1,6 +1,6 @@
 # ORK.BUILD TOOLS (OBT)
 
-[TravisCI](https://travis-ci.org/tweakoz/vrx) ![Build Status](https://travis-ci.org/tweakoz/ork.build.svg?branch=master)
+[TravisCI](https://travis-ci.org/tweakoz/ork.build) ![Build Status](https://travis-ci.org/tweakoz/ork.build.svg?branch=master)
 
 ### DESCRIPTION
 
