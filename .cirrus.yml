@@ -1,9 +1,5 @@
 container:
-  image: node:latest
+  image: library/ubuntu:bionic
 check_task:
-  node_modules_cache:
-    folder: node_modules
-    fingerprint_script: cat yarn.lock
-    populate_script: yarn install
-  script: yarn test
+  script: ./bin/init_env.py --create ~/obt_staging --command obt_dep_build_all.py
 
