@@ -8,4 +8,7 @@ apt install libc++abi-dev libc++-dev libssl-dev g++
 apt install mesa-common-dev freeglut3-dev 
 apt install libxinerama-dev libxcursor-dev libxrandr-dev x11proto-randr-dev
 apt install gcc-multilib g++-multilib 
-apt install python3 git vim  wget scons  ninja-build 
+apt install python3 python3-pip git vim wget scons ninja-build 
+
+pip3 install virtualenv
+python3 -m pip install python-dateutil
