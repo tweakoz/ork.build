@@ -14,7 +14,7 @@ from ork.command import Command
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-import __gcc
+import _gcc
 
 deco = Deco()
 
@@ -24,7 +24,7 @@ class gcc_avr(dep.Provider):
 
   def __init__(self,options=None): ############################################
 
-    gcc = __gcc.context("gcc-avr")
+    gcc = _gcc.context("gcc-avr")
     bdest = gcc.build_dir/".build"
 
     os.mkdir(bdest)
