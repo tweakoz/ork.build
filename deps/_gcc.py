@@ -5,6 +5,7 @@ HASH = "65f7c65818dc540b3437605026d329fc"
 
 class context:
     def __init__(self,destid):
+        self.version = VER
         self.name = "gcc-%s" % VER
         self.xzname = "%s.tar.xz" % self.name
         self.archive_file = ork.path.downloads()/self.xzname

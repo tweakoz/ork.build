@@ -7,11 +7,10 @@
 ###############################################################################
 
 import os, tarfile
-from ork import dep, host, path
+from ork import dep, host, path, cmake
 from ork.deco import Deco
 from ork.wget import wget
 from ork.command import Command
-from ork.cmake import CMakeContext
 
 deco = Deco()
     
@@ -23,15 +22,10 @@ class yarl(dep.Provider):
 
     parclass = super(yarl,self)
     parclass.__init__(options=options)
+    Command(["pip3","install","yarl"]).exec()
     self.manifest = path.manifests()/"yarl"
-    self.OK = self.manifest.exists()
-    if False==self.OK:
-      if host.IsOsx:
-      	self.OK = 0==Command(["pip3","install","yarl"]).exec()
-      if self.OK:
-        self.manifest.touch()
+    self.manifest.touch()
 
   def provide(self): ##########################################################
-
-      return self.OK
+      return True
 

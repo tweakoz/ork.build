@@ -20,13 +20,13 @@ deco = Deco()
 
 ###############################################################################
 
-class gcc_avr(dep.Provider):
+class avr_gcc(dep.Provider):
 
   def __init__(self,options=None): ############################################
 
     gcc = _gcc.context("gcc-avr")
     bdest = gcc.build_dir/".build"
-
+    pfx = path.prefix()
     os.mkdir(bdest)
     os.chdir(bdest)
 
@@ -37,6 +37,12 @@ class gcc_avr(dep.Provider):
                    '--disable-nls',
                    '--disable-libssp',
                    '--with-dwarf2'
+                   '--with-ld=%s'%(pfx/"bin"/"avr-ld"),
+                   '--with-as=%s'%(pfx/"bin"/"avr-as"),
+                   '--disable-shared',
+                   '--disable-threads',
+                   '--disable-libgomp',
+                   '--libdir=%s'%(pfx/"lib"/"avr-gcc"/gcc.version),
                   ])
 
     cmd.exec()

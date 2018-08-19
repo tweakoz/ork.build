@@ -6,35 +6,40 @@
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
 
-import os, tarfile
+import os, tarfile, sys
 from ork import dep, host, path, git, cmake, make
 from ork.deco import Deco
 from ork.wget import wget
 from ork.command import Command
 
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
+import _binutils
+
 deco = Deco()
-    
+
 ###############################################################################
 
-class simavr(dep.Provider):
+class avr_binutils(dep.Provider):
 
   def __init__(self,options=None): ############################################
 
+    bu = _binutils.context("binutils-avr")
+    bdest = bu.build_dir/".build"
 
-    parclass = super(simavr,self)
-    parclass.__init__(options=options)
-    self.manifest = path.manifests()/"simavr"
-    self.source_dest = path.builds()/"simavr"
+    os.mkdir(bdest)
+    os.chdir(bdest)
 
-    git.Clone("https://github.com/tweakoz/simavr",self.source_dest,"master")
-    os.chdir(self.source_dest)
-    os.environ["INSTALL_PREFIX"] = str(path.prefix())
-    make.exec("install")
-    self.manifest.touch()
-    self.OK = self.manifest.exists()
+    Command(['../configure', 
+             '--prefix=%s'%path.prefix(),
+             '--target=avr',
+             '--disable-werror',
+             '--disable-nls']).exec()
 
+    make.exec("all")
+    make.exec("install",parallel=False)
+
+    self.OK = True
 
   def provide(self): ##########################################################
-
       return self.OK
-

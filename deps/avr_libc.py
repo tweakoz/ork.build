@@ -20,20 +20,36 @@ deco = Deco()
 
 ###############################################################################
 
-class binutils_avr(dep.Provider):
+VER = "2.0.0"
+HASH = "2360981cd5d94e1d7a70dfc6983bdf15"
+
+###############################################################################
+
+class avr_libc(dep.Provider):
 
   def __init__(self,options=None): ############################################
 
-    bu = _binutils.context("binutils-avr")
-    bdest = bu.build_dir/".build"
+    self.name = "avr-libc-%s" % VER
+    self.url = "http://download.savannah.gnu.org/releases/avr-libc/%s.tar.bz2"%self.name
+    self.extract_dir = path.builds()/"avr-libc"
 
-    os.mkdir(bdest)
-    os.chdir(bdest)
+    self.arcpath = dep.downloadAndExtract([self.url],
+                                           "%s.tar.bz2"%self.name,
+                                           "bz2",
+                                           HASH,
+                                           self.extract_dir)
+
+    self.source_dir = self.extract_dir/self.name
+    self.build_dir = self.source_dir/".build"
+
+    os.mkdir(self.build_dir)
+    os.chdir(self.build_dir)
 
     Command(['../configure', 
              '--prefix=%s'%path.prefix(),
-             '--target=avr',
-             '--disable-nls']).exec()
+             "--build=x86_64-unknown-linux-gnu",
+             "--host=avr",
+            ]).exec()
 
     make.exec("all")
     make.exec("install",parallel=False)
