@@ -20,7 +20,7 @@ deco = Deco()
 
 ###############################################################################
 
-class binutils_lm32(dep.Provider):
+class lm32_binutils(dep.Provider):
 
   def __init__(self,options=None): ############################################
 

@@ -20,7 +20,7 @@ deco = Deco()
 
 ###############################################################################
 
-class gcc_lm32(dep.Provider):
+class lm32_gcc(dep.Provider):
 
   def __init__(self,options=None): ############################################
 
