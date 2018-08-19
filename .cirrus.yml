@@ -1,5 +1,8 @@
 container:
   image: library/ubuntu:bionic
 check_task:
-  script: ./bin/init_env.py --create ~/obt_staging --command obt_dep_build_all.py
+  script: 
+    - wget https://www.python.org/ftp/python/3.6.5/Python-3.6.5.tgz
+    - tar xvf Python-3.6.5.tgz
+    - ./bin/init_env.py --create ~/obt_staging --command obt_dep_build_all.py
 
