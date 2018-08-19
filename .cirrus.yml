@@ -1,4 +1,3 @@
-
 container:
   image: tweakoz/ubuntu_builders:bionic_dev
 check_task:
