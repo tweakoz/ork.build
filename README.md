@@ -34,14 +34,34 @@ obt_dep_require.py boost
 we use bash's command line completion and ork.build's convention of prefixing all public commands with *obt*
 
 ```
-obt<tab tab>
+obt_<tab tab>
 ```
+
+**which returns:** (example)
+
+```
+obt_dep_list.py obt_dep_require.py obt_find.py
+```
+
+
 
 **to get list of obt dependency providers:**
 
 ```
 obt_dep_list.py
 ```
+
+**which returns:** (example)
+
+
+```
+ork.build dependency provider list:
+
+assimp binutils_avr binutils_lm32 boost gcc_avr gcc_lm32 gcode_gpr gitpython glfw irrlicht luajit minetest oiio postgresql qt5 simavr unittestpp wt4 yarl
+```
+ 
+
+
 
 ### HISTORY
 
