@@ -67,5 +67,5 @@ postgresql qt5 simavr unittestpp wt4 yarl
 
 ### HISTORY
 
-**ork.build** historically derives from [orkid's build system](https://github.com/tweakoz/orkid/tree/master/ork.build) build system in conjunction with concepts from orkid's ['tozkit'](https://github.com/tweakoz/orkid/tree/master/tozkit) dependency provider system, [homebrew](https://brew.sh/), [apt](https://wiki.debian.org/Apt), and other build systems and package managers I have worked with over the years.
+**ork.build** historically derives from [orkid's build system](https://github.com/tweakoz/orkid/tree/master/ork.build), [micro_ork's build system](https://github.com/tweakoz/micro_ork/tree/master/ork.build) in conjunction with concepts from orkid's ['tozkit'](https://github.com/tweakoz/orkid/tree/master/tozkit) dependency provider system, [homebrew](https://brew.sh/), [apt](https://wiki.debian.org/Apt), and other build systems and package managers I have worked with over the years.
 
