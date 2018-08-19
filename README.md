@@ -13,7 +13,7 @@
 
 ```
 git clone https://github.com/tweakoz/ork.build 
-ork.build/bin/init_env --create <staging_folder>
+ork.build/bin/init_env.py --create <staging_folder>
 ```
 
 
