@@ -1,8 +1,6 @@
 container:
-  image: library/ubuntu:bionic
+  image: tweakoz/ubuntu_builders:bionic_dev
 check_task:
   script: 
-    - curl https://www.python.org/ftp/python/3.6.5/Python-3.6.5.tgz > Python-3.6.5.tgz
-    - tar xvf Python-3.6.5.tgz
     - ./bin/init_env.py --create ~/obt_staging --command obt_dep_build_all.py
 
