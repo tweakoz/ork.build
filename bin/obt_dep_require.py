@@ -3,9 +3,18 @@
 import os, sys, pathlib, argparse
 from ork import dep, host, path
 
-if len(sys.argv)==2:
-	dep.require(sys.argv[1])
-else:
-    print( "usage: obt_dep_build.py <depname>")
+parser = argparse.ArgumentParser(description='ork.build dep build')
+parser.add_argument('--force', action="store_true", help='force build' )
+parser.add_argument('dep' )
+
+args = vars(parser.parse_args())
+
+if len(sys.argv)==1 or args["dep"]==None:
+    print(parser.format_usage())
     sys.exit(1)
+
+opts = {}
+if args["force"]:
+	opts["force"]=True
+dep.require(args["dep"],options=opts)
 

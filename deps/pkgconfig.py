@@ -12,9 +12,12 @@ class pkgconfig(dep.Provider):
   def __init__(self,options=None): ############################################
 
     self.manifest = path.manifests()/"yarl"
-    if self.manifest.exists():
+    if "force" in options and options["force"]==True:
+      pass
+    elif self.manifest.exists():
         self.OK = True
         return
+
 
     extract_dir = path.builds()/"pkgconfig"
     source_dir = extract_dir/("pkg-config-%s" % VER)
