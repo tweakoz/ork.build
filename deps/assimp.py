@@ -25,13 +25,21 @@ class assimp(dep.Provider):
     parclass.__init__(options=options)
     self.manifest = path.manifests()/"assimp"
     self.OK = self.manifest.exists()
-    if False==self.OK:
-      if host.IsOsx:
-      	self.OK = 0==Command(["brew","install","assimp"]).exec()
-      if self.OK:
-        self.manifest.touch()
+
+  ########
+
+  def __str__(self):
+    return "Assimp (homebrew)"
+
+  ########
 
   def provide(self): ##########################################################
 
-      return self.OK
+    if False==self.OK:
+      if host.IsOsx:
+        self.OK = 0==Command(["brew","install","assimp"]).exec()
+      if self.OK:
+        self.manifest.touch()
+
+    return self.OK
 

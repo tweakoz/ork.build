@@ -34,11 +34,13 @@ class postgresql(dep.Provider):
     self.manifest = path.manifests()/"postgresql"
     self.OK = self.manifest.exists()
     self.fname = "postgresql-%s.tar.bz2"%VERSION
-    if False==self.OK:
-      self.download_and_extract()
-      self.OK = self.build()
-      if self.OK:
-        self.manifest.touch()
+
+  ########
+
+  def __str__(self):
+    return "Postgresql (%s-source)" % VERSION
+
+  ########
 
   def download_and_extract(self): #############################################
 
@@ -65,6 +67,11 @@ class postgresql(dep.Provider):
     return 0==Command(["make","-j",host.NumCores,"install"]).exec()
 
   def provide(self): ##########################################################
+    if False==self.OK:
+      self.download_and_extract()
+      self.OK = self.build()
+      if self.OK:
+        self.manifest.touch()
 
-      return self.OK
+    return self.OK
 

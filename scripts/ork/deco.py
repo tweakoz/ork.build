@@ -28,6 +28,9 @@ class Deco:
       rval = "\["+rval+"\]"
     return rval
   ###############################
+  def rgbstr(self,r,g,b,string):
+    return self.rgb256(r,g,b)+str(string)+self.reset()
+  ###############################
   def magenta(self,string):
     return self.rgb256(255,0,255)+str(string)+self.reset()
   def cyan(self,string):

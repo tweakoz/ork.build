@@ -32,11 +32,13 @@ class qt5(dep.Provider):
     self.manifest = path.manifests()/"qt5"
     self.OK = self.manifest.exists()
     self.fname = "qt5-%s.zip"%VERSION
-    if False==self.OK:
-      self.download_and_extract()
-      self.OK = self.build()
-      if self.OK:
-        self.manifest.touch()
+
+  ########
+
+  def __str__(self):
+    return "QT5 (%s-source)" % VERSION
+
+  ########
 
   def download_and_extract(self): #############################################
     git.Clone("https://github.com/qt/qt5",self.build_dest,"v5.11")
@@ -65,6 +67,11 @@ class qt5(dep.Provider):
     return False
 
   def provide(self): ##########################################################
+    if False==self.OK:
+      self.download_and_extract()
+      self.OK = self.build()
+      if self.OK:
+        self.manifest.touch()
 
-      return self.OK
+    return self.OK
 

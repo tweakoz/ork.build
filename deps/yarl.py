@@ -25,13 +25,20 @@ class yarl(dep.Provider):
     parclass.__init__(options=options)
     self.manifest = path.manifests()/"yarl"
     self.OK = self.manifest.exists()
+
+  ########
+
+  def __str__(self):
+    return "YARL (pip3)"
+
+  ########
+
+  def provide(self): ##########################################################
     if False==self.OK:
       if host.IsOsx:
-      	self.OK = 0==Command(["pip3","install","yarl"]).exec()
+        self.OK = 0==Command(["pip3","install","yarl"]).exec()
       if self.OK:
         self.manifest.touch()
 
-  def provide(self): ##########################################################
-
-      return self.OK
+    return self.OK
 

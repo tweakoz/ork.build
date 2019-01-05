@@ -37,12 +37,12 @@ IsCommandSet = args["command"]!=None
 print("IsCommandSet<%s>"%IsCommandSet)
 ###########################################
 
-ORK_PROJECT_NAME = "ork.build"
+ORK_PROJECT_NAME = "obt"
 if "ORK_PROJECT_NAME" in os.environ:
   ORK_PROJECT_NAME = os.environ["ORK_PROJECT_NAME"]
-ORK_STAGING_FOLDER = curwd/".staging"
-if "ORK_STAGING_FOLDER" in os.environ:
-  ORK_STAGING_FOLDER = Path(os.environ["ORK_STAGING_FOLDER"])
+OBT_STAGE = curwd/".staging"
+if "OBT_STAGE" in os.environ:
+  OBT_STAGE = Path(os.environ["OBT_STAGE"])
 
 ###########################################
 
@@ -71,15 +71,16 @@ bin_dir = root_dir/"bin"
 def setenv():
   if args["novars"]==False:
     ork.env.set("color_prompt","yes")
-    ork.env.set("ORK_STAGING_FOLDER",ORK_STAGING_FOLDER)
-    ork.env.set("ORKDOTBUILD_ROOT",root_dir)
+    ork.env.set("OBT_STAGE",OBT_STAGE)
+    ork.env.set("OBT_ROOT",root_dir)
     ork.env.prepend("PYTHONPATH",scripts_dir)
     ork.env.prepend("PATH",bin_dir)
-    ork.env.prepend("PATH",ORK_STAGING_FOLDER/"bin")
-    ork.env.prepend("LD_LIBRARY_PATH",ORK_STAGING_FOLDER/"lib")
+    ork.env.prepend("PATH",OBT_STAGE/"bin")
+    ork.env.prepend("LD_LIBRARY_PATH",OBT_STAGE/"lib")
 
 ###########################################
 def lazyMakeDirs():
+    print(deco.white("Making required directories"))
     (ork.path.prefix()/"lib").mkdir(parents=True,exist_ok=True)
     (ork.path.prefix()/"bin").mkdir(parents=True,exist_ok=True)
     ork.path.downloads().mkdir(parents=True,exist_ok=True)
@@ -87,15 +88,8 @@ def lazyMakeDirs():
     ork.path.manifests().mkdir(parents=True,exist_ok=True)
     ork.path.gitcache().mkdir(parents=True,exist_ok=True)
 ###########################################
-if args["create"]!=None:
-###########################################
-    setenv()
-    try_staging = Path(os.path.realpath(args["create"]))
-    print(try_staging)
-    ork.env.set("ORK_STAGING_FOLDER",try_staging)
-    ork.path.prefix().mkdir(parents=True,exist_ok=False)
-    lazyMakeDirs()
-    #############
+def genBashRc(staging):
+    print(deco.white("Generating bashrc"))
     bdeco = ork.deco.Deco(bash=True)
     BASHRC = 'parse_git_branch() { git branch 2> /dev/null | grep "*" | sed -e "s/*//";};\n'
     PROMPT = bdeco.red('[ %s ]'%ORK_PROJECT_NAME)
@@ -104,10 +98,35 @@ if args["create"]!=None:
     PROMPT += bdeco.white("> ")
     BASHRC += "\nexport PS1='%s';\n" % PROMPT
     BASHRC += "alias ls='ls -G';\n"
+
+    dirs = {
+        "root": "${OBT_ROOT}",
+        "deps": "${OBT_ROOT}/deps",
+
+        "stage": "${OBT_STAGE}",
+        "builds": "${OBT_STAGE}/builds"
+    }
+
+    for k in dirs:
+        v = dirs[k]       
+        BASHRC += "obt_dir_goto_%s() { cd %s; };" % (k,v)
+        BASHRC += "obt_dir_push_%s() { pushd %s; };" % (k,v)
+
     f = open(str(try_staging/'.bashrc'), 'w')
     f.write(BASHRC)
     f.close()
-
+###########################################
+if args["create"]!=None:
+###########################################
+    setenv()
+    try_staging = Path(os.path.realpath(args["create"]))
+    print(try_staging)
+    ork.env.set("OBT_STAGE",try_staging)
+    ork.path.prefix().mkdir(parents=True,exist_ok=False)
+    #############
+    lazyMakeDirs()
+    genBashRc(try_staging)
+    #############
     LAUNCHER = "%s/bin/init_env.py --launch %s;\n" % (root_dir,try_staging)
     f = open(str(try_staging/'.launch_env'), 'w')
     f.write(LAUNCHER)
@@ -129,7 +148,10 @@ elif args["launch"]!=None:
     print(try_staging_sh)
     assert(try_staging_sh.exists())
     setenv()
+    #############
     lazyMakeDirs()
+    genBashRc(try_staging)
+    #############
     if args["command"]!=None:
         rval = os.system(args["command"]) # call shell with new vars (just "exit" to exit)
         sys.exit(rval>>8)
@@ -141,10 +163,12 @@ elif args["init"]!=None:
     try_staging = Path(args["init"])
     print(try_staging)
     assert(try_staging.exists())
-    ORK_STAGING_FOLDER = Path(os.path.realpath(try_staging))
+    OBT_STAGE = Path(os.path.realpath(try_staging))
     setenv()
-
+    #############
     lazyMakeDirs()
+    genBashRc(try_staging)
+    #############
     shell = "bash"
     bashrc = try_staging/".bashrc"
     print(deco.inf("scanning for projects..."))
@@ -152,7 +176,7 @@ elif args["init"]!=None:
     obt.check_for_projects(par3_dir)
     print(deco.inf("System is <"+os.name+">"))
     print("Launching env-shell<%s>" % deco.val(shell))
-    print("ork.build eviron initialized ORKDOTBUILD_ROOT<%s>"%deco.path(root_dir))
+    print("ork.build eviron initialized OBT_ROOT<%s>"%deco.path(root_dir))
     Command([shell,"--init-file",bashrc],environment={}).exec()
     pass
 ###########################################

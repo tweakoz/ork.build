@@ -10,27 +10,27 @@ import os, inspect
 from pathlib import Path
 
 def deps():
-  root = Path(os.environ["ORKDOTBUILD_ROOT"])
+  root = Path(os.environ["OBT_ROOT"])
   return root/"deps"
 
 def prefix():
-  staging = Path(os.environ["ORK_STAGING_FOLDER"])
+  staging = Path(os.environ["OBT_STAGE"])
   return staging
 
 def manifests():
-  staging = Path(os.environ["ORK_STAGING_FOLDER"])
+  staging = Path(os.environ["OBT_STAGE"])
   return staging/"manifests"
 
 def downloads():
-  staging = Path(os.environ["ORK_STAGING_FOLDER"])
+  staging = Path(os.environ["OBT_STAGE"])
   return staging/"downloads"
 
 def gitcache():
-  staging = Path(os.environ["ORK_STAGING_FOLDER"])
+  staging = Path(os.environ["OBT_STAGE"])
   return staging/"gitcache"
 
 def builds():
-  staging = Path(os.environ["ORK_STAGING_FOLDER"])
+  staging = Path(os.environ["OBT_STAGE"])
   return staging/"builds"
 
 def project_root():

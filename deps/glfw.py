@@ -25,13 +25,20 @@ class glfw(dep.Provider):
     parclass.__init__(options=options)
     self.manifest = path.manifests()/"glfw"
     self.OK = self.manifest.exists()
+
+  ########
+
+  def __str__(self):
+    return "GLFW (homebrew)"
+
+  ########
+
+  def provide(self): ##########################################################
     if False==self.OK:
       if host.IsOsx:
-      	self.OK = 0==Command(["brew","install","glfw"]).exec()
+        self.OK = 0==Command(["brew","install","glfw"]).exec()
       if self.OK:
         self.manifest.touch()
 
-  def provide(self): ##########################################################
-
-      return self.OK
+    return self.OK
 

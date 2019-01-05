@@ -17,25 +17,27 @@ def posixpath(path):
 ###############################################################################
 
 def recursive_patglob(path,pattern):
-	l=[]
-	if path[-1]!='/':
-		path=path+'/'
-	for i in recursive_glob_get_dirs(path):
-		#print path+i
-		l=l+recursive_patglob(path+i,pattern)
-	try:
-		dirlist = os.listdir(path)
-		for i in dirlist:
-			ii=i
-			i=path+i
-			#print i
-			if os.path.isfile(i):
-				if fnmatch.fnmatch(i,pattern):
-					l.append(i)
-	except:
-		pass
-	
-	return l
+    path = str(path)
+    l=[]
+    if path[-1]!='/':
+        path=path+'/'
+    for i in recursive_glob_get_dirs(path):
+        #print(path+i)
+        l=l+recursive_patglob(path+i,pattern)
+    try:
+        dirlist = os.listdir(path)
+        for i in dirlist:
+            ii=i
+            i=path+i
+            #print(i,os.path.isfile(i),pattern)
+            if os.path.isfile(i):
+                if fnmatch.fnmatch(os.path.basename(i),pattern):
+                    #print("match %s"%i)
+                    l.append(i)
+    except:
+        pass
+    
+    return l
 	
 ###############################################################################
 

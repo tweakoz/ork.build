@@ -26,12 +26,19 @@ class gitpython(dep.Provider):
     parclass.__init__(options=options)
     self.manifest = path.manifests()/"gitpython"
     self.OK = self.manifest.exists()
+
+  ########
+
+  def __str__(self):
+    return "gitpython (pip3)"
+
+  ########
+
+  def provide(self): ##########################################################
     if False==self.OK:
       self.OK = 0==Command(["pip3","install","gitpython"]).exec()
     if self.OK:
       self.manifest.touch()
 
-  def provide(self): ##########################################################
-
-      return self.OK
+    return self.OK
 

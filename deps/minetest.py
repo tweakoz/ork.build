@@ -18,9 +18,6 @@ from ork.command import Command
 from ork.cmake import CMakeContext
 
 deco = Deco()
-psql = dep.require("postgresql").instance
-irrl = dep.require("irrlicht").instance
-luaj = dep.require("luajit").instance
     
 ###############################################################################
 
@@ -36,11 +33,13 @@ class minetest(dep.Provider):
     self.manifest = path.manifests()/"minetest"
     self.OK = self.manifest.exists()
     self.fname = "minetest-%s.zip" % VERSION
-    if False==self.OK:
-      self.download_and_extract()
-      self.OK = self.build()
-      if self.OK:
-        self.manifest.touch()
+
+  ########
+
+  def __str__(self):
+    return "Minetest (commit-%s-source)" % VERSION
+
+  ########
 
   def download_and_extract(self): #############################################
 
@@ -78,6 +77,10 @@ class minetest(dep.Provider):
 
   def build(self): ############################################################
 
+    psql = dep.require("postgresql").instance
+    irrl = dep.require("irrlicht").instance
+    luaj = dep.require("luajit").instance
+
     source_dir = self.build_dest/("minetest-%s"%VERSION)
     build_temp = source_dir/".build"
     print(build_temp)
@@ -98,6 +101,11 @@ class minetest(dep.Provider):
     return 0==Command(["make","-j",host.NumCores,"install"]).exec()
 
   def provide(self): ##########################################################
+    if False==self.OK:
+      self.download_and_extract()
+      self.OK = self.build()
+      if self.OK:
+        self.manifest.touch()
 
-      return self.OK
+    return self.OK
 

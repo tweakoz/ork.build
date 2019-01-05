@@ -51,7 +51,7 @@ from ork.pathtools import *
 import select
 import fcntl
 
-stage_dir = os.environ["ORK_STAGING_FOLDER"]
+stage_dir = os.environ["OBT_STAGE"]
 
 ###############################################################################
 

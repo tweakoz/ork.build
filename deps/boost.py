@@ -37,9 +37,11 @@ class boost(dep.Provider):
     self.manifest = path.manifests()/"boost"
     self.OK = self.manifest.exists()
     self.compiler = "clang++" if host.IsOsx else "g++"
-    if False==self.OK:
-      self.download_and_extract()
-      self.build()
+
+  ########
+
+  def __str__(self):
+    return "Boost ver:%s" % VERSION
 
   ########
 
@@ -111,4 +113,8 @@ class boost(dep.Provider):
       self.manifest.touch()
 
   def provide(self):
+    assert(False)
+    if False==self.OK:
+      self.download_and_extract()
+      self.build()
     return self.OK

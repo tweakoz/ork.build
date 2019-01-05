@@ -18,8 +18,6 @@ from ork.command import Command
 from ork.cmake import CMakeContext
 
 deco = Deco()
-boost = dep.require("boost").instance
-psql = dep.require("postgresql").instance
     
 ###############################################################################
 
@@ -35,11 +33,13 @@ class wt4(dep.Provider):
     self.manifest = path.manifests()/"wt4"
     self.OK = self.manifest.exists()
     self.fname = "wt-%s.tar.gz"%VERSION
-    if False==self.OK:
-      self.download_and_extract()
-      self.OK = self.build()
-      if self.OK:
-        self.manifest.touch()
+
+  ########
+
+  def __str__(self):
+    return "WT4 (%s-source)" % VERSION
+
+  ########
 
   def download_and_extract(self): #############################################
 
@@ -53,6 +53,9 @@ class wt4(dep.Provider):
 
 
   def build(self): ############################################################
+
+    boost = dep.require("boost").instance
+    psql = dep.require("postgresql").instance
 
     source_dir = self.build_dest/("wt-%s"%VERSION)
     build_temp = source_dir/".build"
@@ -82,5 +85,10 @@ class wt4(dep.Provider):
 
   def provide(self): ##########################################################
 
-      return self.OK
+    if False==self.OK:
+      self.download_and_extract()
+      self.OK = self.build()
+      if self.OK:
+        self.manifest.touch()
+    return self.OK
 

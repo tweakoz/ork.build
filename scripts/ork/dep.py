@@ -43,18 +43,24 @@ class DepNode:
       assert(inspect.isclass(self.module_class))
       assert(issubclass(self.module_class,Provider))
       self.instance = self.module_class(options=options)
+
+    def __str__(self):
+      return str(self.instance)
+
+    def provide(self):
       #print(self.instance)
       if( False == self.instance.exists() ):
         provide = self.instance.provide()
         assert(provide==True)
+        return provide
 
 ###############################################################################
 
 def require(name_or_list,options={}):
     if(isinstance(name_or_list,str)):
-      return DepNode(name_or_list,options=options)
+      return DepNode(name_or_list,options=options).provide()
     elif (isinstance(name_or_list,list)):
-      return [DepNode(item,options=options) for item in name_or_list]
+      return [DepNode(item,options=options).provide() for item in name_or_list]
 
 ###############################################################################
 
