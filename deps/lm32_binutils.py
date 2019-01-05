@@ -6,39 +6,39 @@
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
 
-import os, tarfile
-from ork import dep, host, path
+import os, tarfile, sys
+from ork import dep, host, path, git, cmake, make
 from ork.deco import Deco
 from ork.wget import wget
 from ork.command import Command
-from ork.cmake import context
+
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
+import _binutils
 
 deco = Deco()
-    
+
 ###############################################################################
 
-class oiio(dep.Provider):
+class lm32_binutils(dep.Provider):
 
   def __init__(self,options=None): ############################################
+    pass
 
-    parclass = super(oiio,self)
-    parclass.__init__(options=options)
-    self.manifest = path.manifests()/"oiio"
-    self.OK = self.manifest.exists()
-
-  ########
-
-  def __str__(self):
-    return "OpenImageIO (homebrew)"
-
-  ########
 
   def provide(self): ##########################################################
-    if False==self.OK:
-      if host.IsOsx:
-        self.OK = 0==Command(["brew","install","openimageio"]).exec()
-      if self.OK:
-        self.manifest.touch()
+    bu = _binutils.context("binutils-lm32")
+    bdest = bu.build_dir/".build"
 
+    os.mkdir(bdest)
+    os.chdir(bdest)
+
+    Command(['../configure', 
+             '--prefix=%s'%path.prefix(),
+             '--target=lm32-elf']).exec()
+
+    make.exec("all")
+    make.exec("install",parallel=False)
+
+    self.OK = True
     return self.OK
-

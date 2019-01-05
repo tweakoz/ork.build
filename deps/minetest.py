@@ -11,11 +11,10 @@ HASH = "1453e79e663ea3bd8b528ef20a17109b"
 
 import os, tarfile
 from yarl import URL
-from ork import dep, host, path, git
+from ork import dep, host, path, git, cmake
 from ork.deco import Deco
 from ork.wget import wget
 from ork.command import Command
-from ork.cmake import CMakeContext
 
 deco = Deco()
     
@@ -97,7 +96,7 @@ class minetest(dep.Provider):
       cmakeEnv["GETTEXT_INCLUDE_DIR"]="/usr/local/opt/gettext/include"
       cmakeEnv["GETTEXT_LIBRARY"]="/usr/local/opt/gettext/lib"
 
-    CMakeContext(root=source_dir,env=cmakeEnv).exec()
+    cmake.context(root=source_dir,env=cmakeEnv).exec()
     return 0==Command(["make","-j",host.NumCores,"install"]).exec()
 
   def provide(self): ##########################################################

@@ -14,7 +14,7 @@ from ork import dep, host, path, git
 from ork.deco import Deco
 from ork.wget import wget
 from ork.command import Command
-from ork.cmake import CMakeContext
+from ork.cmake import context as cmake_context
 
 deco = Deco()
 
@@ -47,24 +47,22 @@ class qt5(dep.Provider):
 
   def build(self): ############################################################
 
+    source_dir = self.build_dest/("qt5-%s"%VERSION)
+    build_temp = source_dir/".build"
+    print(build_temp)
+    if build_temp.exists():
+      Command(["rm","-rf",build_temp]).exec()
 
-    #source_dir = self.build_dest/("qt5-%s"%VERSION)
-    #build_temp = source_dir/".build"
-    #print(build_temp)
-    #if build_temp.exists():
-    #  Command(["rm","-rf",build_temp]).exec()
-
-    #build_temp.mkdir(parents=True,exist_ok=True)
-    #os.chdir(str(build_temp))
-    #cmakeEnv = {
-    #}
-    #if host.IsOsx:
-    #  cmakeEnv["CMAKE_MACOSX_RPATH"]=1
-    #  cmakeEnv["CMAKE_INSTALL_RPATH"]=path.prefix()/"lib"
-    #
-    #CMakeContext(root=source_dir,env=cmakeEnv).exec()
-    #return 0==Command(["make","-j",host.NumCores,"install"]).exec()
-    return False
+    build_temp.mkdir(parents=True,exist_ok=True)
+    os.chdir(str(build_temp))
+    cmakeEnv = {
+    }
+    if host.IsOsx:
+      cmakeEnv["CMAKE_MACOSX_RPATH"]=1
+      cmakeEnv["CMAKE_INSTALL_RPATH"]=path.prefix()/"lib"
+    
+    cmake_context(root=source_dir,env=cmakeEnv).exec()
+    return 0==Command(["make","-j",host.NumCores,"install"]).exec()
 
   def provide(self): ##########################################################
     if False==self.OK:

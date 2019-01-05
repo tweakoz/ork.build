@@ -15,7 +15,6 @@ from ork import dep, host, path
 from ork.deco import Deco
 from ork.wget import wget
 from ork.command import Command
-from ork.cmake import CMakeContext
 import fileinput
 
 deco = Deco()

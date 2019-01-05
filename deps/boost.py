@@ -36,6 +36,8 @@ class boost(dep.Provider):
     self.build_dest = build_dest
     self.manifest = path.manifests()/"boost"
     self.OK = self.manifest.exists()
+    if "force" in options and options["force"]!=True:
+      self.OK = False 
     self.compiler = "clang++" if host.IsOsx else "g++"
 
   ########

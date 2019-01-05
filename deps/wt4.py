@@ -11,11 +11,10 @@ HASH = "961c30bca7bf24e7e82d0b2033b29073"
 
 import os, tarfile
 from yarl import URL
-from ork import dep, host, path
+from ork import dep, host, path, cmake
 from ork.deco import Deco
 from ork.wget import wget
 from ork.command import Command
-from ork.cmake import CMakeContext
 
 deco = Deco()
     
@@ -80,7 +79,7 @@ class wt4(dep.Provider):
       cmakeEnv["CMAKE_MACOSX_RPATH"]=1
       cmakeEnv["CMAKE_INSTALL_RPATH"]=path.prefix()/"lib"
 
-    CMakeContext(root=source_dir,env=cmakeEnv).exec()
+    cmake.context(root=source_dir,env=cmakeEnv).exec()
     return 0==Command(["make","-j",host.NumCores,"install"]).exec()
 
   def provide(self): ##########################################################

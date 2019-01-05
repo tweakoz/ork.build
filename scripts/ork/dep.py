@@ -37,15 +37,21 @@ class DepNode:
       self.module_path = ork.path.deps()/self.scrname
       self.module_spec = importlib.util.spec_from_file_location(self.name, str(self.module_path))
       self.module = importlib.util.module_from_spec(self.module_spec)
+      #print(dir(self.module))
       self.module_spec.loader.exec_module(self.module)
-      assert(hasattr(self.module,name))
-      self.module_class = getattr(self.module,name)
-      assert(inspect.isclass(self.module_class))
-      assert(issubclass(self.module_class,Provider))
-      self.instance = self.module_class(options=options)
+      if(hasattr(self.module,name)):
+        assert(hasattr(self.module,name))
+        self.module_class = getattr(self.module,name)
+        assert(inspect.isclass(self.module_class))
+        assert(issubclass(self.module_class,Provider))
+        self.instance = self.module_class(options=options)
+
+    ## string descriptor of dependency
 
     def __str__(self):
-      return str(self.instance)
+      return str(self.instance) if hasattr(self,"instance") else "???"
+
+    ## provider method
 
     def provide(self):
       #print(self.instance)
@@ -75,9 +81,9 @@ def downloadAndExtract(urls,
                   md5val = md5val )
 
   if arcpath:
-    print("extracting<%s> to build_dest<%s>"%(deco.path(arcpath),deco.path(build_dest)))
     if build_dest.exists():
       Command(["rm","-rf",build_dest]).exec()
+    print("extracting<%s> to build_dest<%s>"%(deco.path(arcpath),deco.path(build_dest)))
     build_dest.mkdir()
     if( archive_type=="zip" ):
         os.chdir(str(build_dest))

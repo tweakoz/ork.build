@@ -1,0 +1,21 @@
+language: python3
+
+matrix:
+  include:
+      os: linux
+      os: osx
+
+install:
+#  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then echo "install osx deps" ; fi
+
+script:
+  ./bin/init_env.py --create ~/obt_staging --command obt_dep_build_all.py
+
+branches:
+  only:
+    - master
+
+notifications:
+  email: false
+
+osx_image: xcode9.4

@@ -1,0 +1,6 @@
+container:
+  image: tweakoz/ubuntu_builders:bionic_dev
+check_task:
+  script: 
+    - ./bin/init_env.py --create ~/obt_staging --command obt_dep_build_all.py
+

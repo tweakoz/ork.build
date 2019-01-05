@@ -9,7 +9,7 @@
 from ork.command import Command
 from ork import path
 
-class CMakeContext:
+class context:
 
   def __init__(self,root="",env=dict()):
     self.root = root

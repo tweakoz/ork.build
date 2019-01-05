@@ -7,38 +7,31 @@
 ###############################################################################
 
 import os, tarfile
-from ork import dep, host, path
+from ork import dep, host, path, git, cmake, make
 from ork.deco import Deco
 from ork.wget import wget
 from ork.command import Command
-from ork.cmake import context
 
 deco = Deco()
     
 ###############################################################################
 
-class oiio(dep.Provider):
+class simavr(dep.Provider):
 
   def __init__(self,options=None): ############################################
 
-    parclass = super(oiio,self)
+    parclass = super(simavr,self)
     parclass.__init__(options=options)
-    self.manifest = path.manifests()/"oiio"
-    self.OK = self.manifest.exists()
-
-  ########
-
-  def __str__(self):
-    return "OpenImageIO (homebrew)"
-
-  ########
+    self.manifest = path.manifests()/"simavr"
+    self.source_dest = path.builds()/"simavr"
 
   def provide(self): ##########################################################
-    if False==self.OK:
-      if host.IsOsx:
-        self.OK = 0==Command(["brew","install","openimageio"]).exec()
-      if self.OK:
-        self.manifest.touch()
 
+    git.Clone("https://github.com/tweakoz/simavr",self.source_dest,"master")
+    os.chdir(self.source_dest)
+    os.environ["INSTALL_PREFIX"] = str(path.prefix())
+    make.exec("install")
+    self.manifest.touch()
+    self.OK = self.manifest.exists()
     return self.OK
 
