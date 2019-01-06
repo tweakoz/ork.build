@@ -42,9 +42,7 @@ class pillar(dep.Provider):
 
     if False==self.OK:
       ork.git.Clone(self.url,self.source_dest,"master")
-      buildir = self.source_dest/".build"
-      pathtools.mkdir(buildir,clean=True)
-      os.chdir(buildir)
+      os.chdir(self.source_dest)
 
       # patch pillar
 
@@ -52,14 +50,9 @@ class pillar(dep.Provider):
       patcher.patch_list([[self.source_dest/"pillar","markdown.py"]])
 
       # install
-      pip = "pip3"
 
-      Command([pip,"install","raven"]).exec()
-      Command([pip,"install","bleach"]).exec()
-      Command([pip,"install","CommonMark"]).exec()
-      Command([pip,"install","Flask-Babel"]).exec()
-      Command([pip,"install","-e",".."]).exec()
-      Command([pip,"install","-U","-r","../requirements.txt"]).exec()
+      Command(["python3","setup.py", "install"]).exec()
+      
       self.manifest.touch()
 
     return True
