@@ -13,6 +13,7 @@ from ork.wget import wget
 import ork.git 
 from ork.command import Command
 import ork.patch
+import ork.pip
 
 deco = Deco()
     
@@ -43,6 +44,13 @@ class pillar(dep.Provider):
     if False==self.OK:
       ork.git.Clone(self.url,self.source_dest,"master")
       os.chdir(self.source_dest)
+
+      # install deps
+      ork.pip.install([ "raven",
+                        "celery",
+                        "bleach",
+                        "CommonMark",
+                        "Flask-Babel"])
 
       # patch pillar
 

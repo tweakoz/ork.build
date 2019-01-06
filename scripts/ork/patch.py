@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 import ork.deco
 from ork.command import Command
 

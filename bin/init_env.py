@@ -73,6 +73,8 @@ def setenv():
     ork.env.set("color_prompt","yes")
     ork.env.set("OBT_STAGE",OBT_STAGE)
     ork.env.set("OBT_ROOT",root_dir)
+    ork.env.set("OBT_PYLIB",ork.path.python_lib())
+    ork.env.set("OBT_PYPKG",ork.path.python_pkg())
     ork.env.prepend("PYTHONPATH",scripts_dir)
     ork.env.prepend("PATH",bin_dir)
     ork.env.prepend("PATH",OBT_STAGE/"bin")
@@ -104,7 +106,9 @@ def genBashRc(staging):
         "deps": "${OBT_ROOT}/deps",
 
         "stage": "${OBT_STAGE}",
-        "builds": "${OBT_STAGE}/builds"
+        "builds": "${OBT_STAGE}/builds",
+        "pylib": str(ork.path.python_lib()),
+        "pypkg": str(ork.path.python_pkg())
     }
 
     for k in dirs:
