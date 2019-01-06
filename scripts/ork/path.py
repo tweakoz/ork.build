@@ -13,6 +13,10 @@ def deps():
   root = Path(os.environ["OBT_ROOT"])
   return root/"deps"
 
+def patches():
+  root = Path(os.environ["OBT_ROOT"])
+  return root/"deps"/"patches"
+
 def prefix():
   staging = Path(os.environ["OBT_STAGE"])
   return staging

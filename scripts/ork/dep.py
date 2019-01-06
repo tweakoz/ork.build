@@ -37,7 +37,7 @@ class DepNode:
       self.module_path = ork.path.deps()/self.scrname
       self.module_spec = importlib.util.spec_from_file_location(self.name, str(self.module_path))
       self.module = importlib.util.module_from_spec(self.module_spec)
-      #print(dir(self.module))
+      #print(name,dir(self.module))
       self.module_spec.loader.exec_module(self.module)
       if(hasattr(self.module,name)):
         assert(hasattr(self.module,name))

@@ -8,7 +8,7 @@ import ork.pathtools
 # build dep dict
 ##########################################
 
-deps = ork.pathtools.recursive_patglob(ork.path.deps(),"*.py")
+deps = ork.pathtools.patglob(ork.path.deps(),"*.py")
 
 depnames = set()
 depnodes = dict()

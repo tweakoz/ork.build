@@ -16,6 +16,28 @@ def posixpath(path):
 
 ###############################################################################
 
+def patglob(path,pattern):
+    path = str(path)
+    l=[]
+    if path[-1]!='/':
+        path=path+'/'
+    try:
+        dirlist = os.listdir(path)
+        for i in dirlist:
+            ii=i
+            i=path+i
+            #print(i,os.path.isfile(i),pattern)
+            if os.path.isfile(i):
+                if fnmatch.fnmatch(os.path.basename(i),pattern):
+                    #print("match %s"%i)
+                    l.append(i)
+    except:
+        pass
+    
+    return l
+
+###############################################################################
+
 def recursive_patglob(path,pattern):
     path = str(path)
     l=[]
@@ -99,3 +121,11 @@ def globber( folderbase, wildcard, subdirlist, excludelist=[] ):
 			filtered_globs += [ posixpath(s) ]
 	#print filtered_globs
 	return filtered_globs
+
+###############################################################################
+
+def mkdir(p,clean=False):
+  if clean:
+  	if p.exists():
+  	  p.rmdir()
+  p.mkdir()

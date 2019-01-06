@@ -82,7 +82,7 @@ def search(word):
     for item in results:
       deco_path = "%-*s"%(60,deco.path(item.path))
       deco_lino = "%s %s"%(deco.magenta("Line"),deco.yellow(item.lineno))
-      deco_lino = "%-*s"%(32,deco_lino)
+      deco_lino = "%-*s"%(37,deco_lino)
       deco_text = deco.val(item.text)
       print("%s%s %s" % (deco_path, deco_lino, deco_text))
 
