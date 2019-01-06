@@ -109,8 +109,8 @@ def genBashRc(staging):
 
     for k in dirs:
         v = dirs[k]       
-        BASHRC += "obt_dir_goto_%s() { cd %s; };" % (k,v)
-        BASHRC += "obt_dir_push_%s() { pushd %s; };" % (k,v)
+        BASHRC += "obt_goto_%s() { cd %s; };" % (k,v)
+        BASHRC += "obt_push_%s() { pushd %s; };" % (k,v)
 
     f = open(str(try_staging/'.bashrc'), 'w')
     f.write(BASHRC)
