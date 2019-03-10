@@ -66,7 +66,6 @@ elif args["stack"]!=None:
   try_staging = Path(args["stack"])
 
 if try_staging!=None:
-  print(try_staging)
   OBT_STAGE = try_staging
 
 ###########################################
@@ -194,7 +193,7 @@ elif args["stack"]!=None:
     shell = "bash"
     bashrc = try_staging/".bashrc"
     my_log(deco.inf("System is <"+os.name+">"))
-    my_log("Launching env-shell<%s>" % deco.val(shell))
+    print("Stacking env<%s>" % deco.val(try_staging))
     my_log("ork.build eviron initialized OBT_ROOT<%s>"%deco.path(root_dir))
     if args["command"]!=None:
         Command([shell,"--init-file",bashrc,"-c",args["command"]],environment={}).exec()

@@ -7,10 +7,13 @@ def run(cmdlist=None,cpu=None,platform=None,target=None,triple=None):
       target = triple["target"]
 
   if isinstance(cmdlist,list):
-      cmdlist = " ".join(cmdlist)
+    tmplist = []
+    for item in cmdlist:
+      tmplist.append(str(item))
+    cmdlist = " ".join(tmplist)
 
-  ork.command.run(["obt_litex_env.py",
-                  "--cpu",cpu,
-                  "--platform",platform,
-                  "--target",target,
-                  "--exec", cmdlist ])
+    ork.command.run(["obt_litex_env.py",
+                    "--cpu",cpu,
+                    "--platform",platform,
+                    "--target",target,
+                    "--exec", cmdlist ])

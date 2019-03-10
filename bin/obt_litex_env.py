@@ -9,24 +9,33 @@ import json
 
 ###############################################
 # create or load litex env cache
+#  we cache these (via a json env dictionary)
+#  because they are quite heavy
+#  to create anew
 ###############################################
 
 def import_env_from_bashsource(envdir,triple):
   bashfile = envdir/"scripts"/"enter-env.sh"
   cachfile = envdir/(".cache_load_env_%s.sh"%triple)
-  print(cachfile)
-  if cachfile.exists():
+  if False:#cachfile.exists():
       with open(str(cachfile),"rt") as f:
         delta_dict = json.loads(f.read())
-      print(delta_dict)
       for key in delta_dict:
           os.environ[key] = delta_dict[key]
           print("key<%s> val<%s>"%(deco.key(key),deco.val(delta_dict[key])))
       pass
   else:
-      command = shlex.split("env -i bash -c 'source %s && env'"%str(bashfile))
+      #############################################
+      # just setting env vars does not seem to do the trick
+      #  we need to set vars on the bash source commandline
+      #############################################
+      var_str =  "PLATFORM=%s "%triple["PLATFORM"]
+      var_str += "CPU=%s "%triple["CPU"]
+      var_str += "TARGET=%s "%triple["TARGET"]
+      #############################################
+      command = shlex.split("env -i bash -c '%s source %s && env'"%(var_str,str(bashfile)))
       proc = subprocess.Popen(command, stdout = subprocess.PIPE)
-
+      #############################################
       litex_keys = {
         "MISOC_EXTRA_CMDLINE",
         "PATH",
@@ -64,7 +73,6 @@ def import_env_from_bashsource(envdir,triple):
       for line in proc.stdout:
         decoded = line.decode('utf-8')
         decoded = decoded.replace("\n","")
-        print(decoded)
         (key, _, value) = decoded.partition("=")
         if key in litex_keys:
             os.environ[key] = value
@@ -79,7 +87,6 @@ def import_env_from_bashsource(envdir,triple):
       with open(str(cachfile),"wt") as f:
         json.dump(delta_dict, f)
         f.close()
-        assert(False)
 
 ###############################################
 
@@ -90,6 +97,9 @@ parser.add_argument('--cpu', metavar="cpu", help='cpu(lm32,or1k,riscv32)' )
 parser.add_argument("--platform", metavar="platform", help="platform(cmod_a7,nexysvideo)")
 parser.add_argument('--target', metavar="target", help='target(base,net)' )
 parser.add_argument('--exec', metavar="exec", help='command to execute in-env' )
+parser.add_argument('--init', action="store_true", help='command to execute in-env' )
+parser.add_argument('--shell', action="store_true", help='enter shell in-env' )
+parser.add_argument('--update', action="store_true", help='update litex env' )
 
 args = vars(parser.parse_args())
 
@@ -104,13 +114,23 @@ platform = args["platform"]
 target = args["target"]
 triple = "%s_%s_%s" % (platform,cpu,target)
 
+triple_dict = {
+    "CPU": cpu,
+    "TARGET": target,
+    "PLATFORM": platform,
+}
+
 #################################################
 
 os.environ["PLATFORM"]=platform
 os.environ["CPU"]=cpu
 os.environ["TARGET"]=target
 os.environ["LITEX_TRIPLE"]=triple
-os.environ["ORK_PROJECT_NAME"]=triple
+os.environ["ORK_PROJECT_NAME"]=("obt-lx/%s"%triple)
+
+env_dir = ork.path.builds()/"litex_env"
+
+curdir = os.getcwd()
 
 #################################################
 
@@ -118,18 +138,15 @@ print( "cpu<%s>" % deco.key(cpu) )
 print( "platform<%s>" % deco.key(platform) )
 print( "target<%s>" % deco.key(target) )
 print( "triple<%s>" % deco.key(triple) )
-
-#################################################
-
-env_dir = ork.path.builds()/"litex_env"
 print( "env_dir<%s>" % deco.key(env_dir) )
 
-curdir = os.getcwd()
 ###############################################
 # create litex-env if it does not already exist
 #################################################
-if False == env_dir.exists():
-    print("does not exist")
+if False == env_dir.exists() or (args["init"]==True):
+    if env_dir.exists():
+        print("obliterating old litex install at<%s>" % str(deco.path(env_dir)))
+        os.system("rm -rf %s"%str(env_dir))
     ork.git.Clone("https://github.com/timvideos/litex-buildenv", \
                   env_dir, \
                   "master", \
@@ -138,7 +155,7 @@ if False == env_dir.exists():
 ###############################################
 # import env from bash source
 ###############################################
-import_env_from_bashsource(env_dir,triple)
+import_env_from_bashsource(env_dir,triple_dict)
 #################################################
 # enter or launch in litex-env
 ###############################################
@@ -147,10 +164,17 @@ cmdlist = [ \
     "--quiet",
     "--stack", str(ork.path.prefix())
 ]
-if args["exec"]!=None:
+###############################################
+# create litex-env if it does not already exist
+#################################################
+if args["update"]==True:
+    os.system(str(env_dir/"scripts"/"download-env.sh"))
+if args["shell"]==True:
+    Command(cmdlist).exec()
+#################################################
+elif args["exec"]!=None:
     cmdlist += ["--command"]
     print(args["exec"])
     cmdlist += [args["exec"]]
-
-Command(cmdlist).exec()
+    Command(cmdlist).exec()
 ###############################################
