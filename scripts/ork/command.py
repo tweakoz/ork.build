@@ -8,6 +8,7 @@
 
 import os,sys, platform, subprocess
 from ork.deco import Deco
+from ork.log import log
 deco = Deco()
 
 ###############################################################################
@@ -22,7 +23,7 @@ class Command:
 
         self.env = os.environ
         for k in environment.keys():
-            self.env[k]=str(environment[k]) 
+            self.env[k]=str(environment[k])
 
         if isinstance(command_list, str):
             self.command_list = shlex.split(command_list)
@@ -33,7 +34,7 @@ class Command:
                 newlist.append(str(item))
             self.command_list = newlist
 
-        print(deco.white(self.command_list))
+        log(deco.white(self.command_list))
 
     ###########################################################################
 
@@ -54,5 +55,16 @@ class Command:
         os.execve(self.command_list[0],self.command_list[1:],self.env)
 
 
-__all__ =   [ "Command" ]
+###############################################################################
 
+def run(command_list, environment=dict()):
+    Command(command_list,environment).exec()
+
+def system(command_list):
+    joined = " ".join(command_list)
+    print("cmd<%s>"%deco.key(joined))
+    os.system(joined)
+
+###############################################################################
+
+__all__ =   [ "Command" ]

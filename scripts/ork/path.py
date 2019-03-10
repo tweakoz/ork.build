@@ -9,23 +9,24 @@
 import os, inspect, sys
 from pathlib import Path
 
-def deps():
+def root():
   root = Path(os.environ["OBT_ROOT"])
-  return root/"deps"
+  return root
+
+def deps():
+  return root()/"deps"
 
 def patches():
-  root = Path(os.environ["OBT_ROOT"])
-  return root/"deps"/"patches"
+  return root()/"deps"/"patches"
 
 def pysite():
-  root = Path(os.environ["OBT_ROOT"])
-  return root/"scripts"/"ork"
+  return root()/"scripts"/"ork"
 
 def python_lib():
   pfx = Path(sys.prefix)
   ver = sys.version_info
   epfx = "python%d.%d" % (ver.major,ver.minor)
-  print(pfx,epfx)
+  #print(pfx,epfx)
   return pfx/"lib"/epfx
 
 def python_pkg():
@@ -54,3 +55,6 @@ def builds():
 def project_root():
   root = Path(os.environ["ORK_PROJECT_ROOT"])
   return root
+
+def vivado_base():
+  return Path("/opt/Xilinx/Vivado/2018.3")
