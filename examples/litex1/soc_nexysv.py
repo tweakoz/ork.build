@@ -62,7 +62,7 @@ elif args["uploadgw"]:
                     "-nojournal",
                     "-nolog"])
     ork.litex.run(triple=triple,
-                  cmdlist=["sudo",ork.path.litex_env_dir()/"build"/"conda"/"bin"/"openocd",
+                  cmdlist=[ork.path.litex_env_dir()/"build"/"conda"/"bin"/"openocd",
                    "-f","./nexysv.cfg",
                    "-c","init",
                    "-c","'svf %s/gateware/top.svf'"%str(build_dir),
