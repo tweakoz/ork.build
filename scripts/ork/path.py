@@ -40,6 +40,9 @@ def manifests():
   staging = Path(os.environ["OBT_STAGE"])
   return staging/"manifests"
 
+def litex_env_dir():
+    return builds()/"litex_env"
+
 def downloads():
   staging = Path(os.environ["OBT_STAGE"])
   return staging/"downloads"
