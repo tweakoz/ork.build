@@ -2,7 +2,7 @@
 
 ### STATUS
 
-[![CircleCI(IX)](https://circleci.com/gh/tweakoz/ork.build.svg?style=svg)](https://circleci.com/gh/tweakoz/ork.build)
+[CircleCI(IX)](https://circleci.com/gh/tweakoz/ork.build.svg?style=svg)](https://circleci.com/gh/tweakoz/ork.build)
 
 [TravisCI(OSX)](https://travis-ci.org/tweakoz/ork.build) ![Build Status](https://travis-ci.org/tweakoz/ork.build.svg?branch=master)
 
