@@ -13,7 +13,7 @@ from ork.wget import wget
 from ork.command import Command
 
 deco = Deco()
-    
+
 ###############################################################################
 
 class yarl(dep.Provider):
@@ -34,10 +34,8 @@ class yarl(dep.Provider):
 
   def provide(self): ##########################################################
     if False==self.OK:
-      if host.IsOsx:
-        self.OK = 0==Command(["pip3","install","yarl"]).exec()
+      self.OK = 0==Command(["pip3","install","yarl"]).exec()
       if self.OK:
         self.manifest.touch()
 
     return self.OK
-
