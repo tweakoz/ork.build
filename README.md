@@ -33,7 +33,7 @@ ork.build/bin/init_env.py --create <staging_folder>
 
 eg. boost
 ```
-obt_dep_require.py boost
+obt.dep.require.py boost
 ```
 
 **to get list of obt commands:** (from bash shell)
