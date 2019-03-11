@@ -52,24 +52,6 @@ my_log("IsCommandSet<%s>"%IsCommandSet)
 #print(args)
 ###########################################
 
-ORK_PROJECT_NAME = "obt"
-if "ORK_PROJECT_NAME" in os.environ:
-  ORK_PROJECT_NAME = os.environ["ORK_PROJECT_NAME"]
-OBT_STAGE = curwd/".staging"
-if "OBT_STAGE" in os.environ:
-  OBT_STAGE = Path(os.environ["OBT_STAGE"])
-if args["launch"]!=None:
-  try_staging = Path(args["launch"])
-elif args["create"]!=None:
-  try_staging = Path(args["create"])
-elif args["stack"]!=None:
-  try_staging = Path(args["stack"])
-
-if try_staging!=None:
-  OBT_STAGE = try_staging
-
-###########################################
-
 file_dir = os.path.realpath(__file__)
 my_log(file_dir)
 par1_dir = os.path.dirname(file_dir)
@@ -81,6 +63,26 @@ par5_dir = os.path.dirname(par4_dir)
 root_dir = Path(par2_dir)
 scripts_dir = root_dir/"scripts"
 sys.path.append(str(scripts_dir))
+
+###########################################
+
+ORK_PROJECT_NAME = "obt"
+if "ORK_PROJECT_NAME" in os.environ:
+  ORK_PROJECT_NAME = os.environ["ORK_PROJECT_NAME"]
+OBT_STAGE = curwd/".staging"
+if "OBT_STAGE" in os.environ:
+  OBT_STAGE = Path(os.environ["OBT_STAGE"])
+if args["launch"]!=None:
+  try_staging = Path(args["launch"]).resolve()
+elif args["create"]!=None:
+  try_staging = Path(args["create"]).resolve()
+elif args["stack"]!=None:
+  try_staging = Path(args["stack"]).resolve()
+
+if try_staging!=None:
+  OBT_STAGE = try_staging
+
+###########################################
 
 import ork.deco
 import ork.env
@@ -137,8 +139,8 @@ def genBashRc(staging):
 
     for k in dirs:
         v = dirs[k]
-        BASHRC += "obt_goto_%s() { cd %s; };" % (k,v)
-        BASHRC += "obt_push_%s() { pushd %s; };" % (k,v)
+        BASHRC += "obt.goto.%s() { cd %s; };" % (k,v)
+        BASHRC += "obt.push.%s() { pushd %s; };" % (k,v)
 
     f = open(str(try_staging/'.bashrc'), 'w')
     f.write(BASHRC)
@@ -162,7 +164,7 @@ if args["create"]!=None:
         rval = os.system(args["command"]) # call shell with new vars (just "exit" to exit)
         sys.exit(rval>>8)
     else:
-        Command([Path(file_dir),"--novars", "--init",try_staging]).exec()
+        Command([Path(file_dir),"--novars", "--init", "--launch", try_staging]).exec()
 ###########################################
 elif args["launch"]!=None:
 ###########################################
@@ -199,28 +201,6 @@ elif args["stack"]!=None:
         Command([shell,"--init-file",bashrc,"-c",args["command"]],environment={}).exec()
     else:
         Command([shell,"--init-file",bashrc],environment={}).exec()
-    pass
-###########################################
-elif args["init"]!=None:
-###########################################
-    try_staging = Path(args["init"])
-    my_log(try_staging)
-    assert(try_staging.exists())
-    OBT_STAGE = Path(os.path.realpath(try_staging))
-    setenv()
-    #############
-    lazyMakeDirs()
-    genBashRc(try_staging)
-    #############
-    shell = "bash"
-    bashrc = try_staging/".bashrc"
-    my_log(deco.inf("scanning for projects..."))
-    import ork.utils as obt
-    obt.check_for_projects(par3_dir)
-    my_log(deco.inf("System is <"+os.name+">"))
-    my_log("Launching env-shell<%s>" % deco.val(shell))
-    my_log("ork.build eviron initialized OBT_ROOT<%s>"%deco.path(root_dir))
-    Command([shell,"--init-file",bashrc],environment={}).exec()
     pass
 ###########################################
 else:

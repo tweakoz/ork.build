@@ -37,7 +37,7 @@ triple = {
 }
 #####################################
 def obtlxcmd(cmd):
-    ork.command.run(["obt_litex_env.py",
+    ork.command.run(["obt.litex.env.py",
                      "--cpu",triple["cpu"],
                      "--platform",triple["platform"],
                      "--target",triple["target"],

@@ -12,6 +12,10 @@ class pkgconfig(dep.Provider):
   def __init__(self,options=None): ############################################
 
     self.manifest = path.manifests()/"yarl"
+    self.extract_dir = path.builds()/"pkgconfig"
+    self.source_dir = self.extract_dir/("pkg-config-%s" % VER)
+    self.build_dir = self.source_dir/".build"
+    self.url = "http://pkgconfig.freedesktop.org/releases/pkg-config-%s.tar.gz" % VER
 
     if "force" in options and options["force"]==True:
       pass
@@ -19,14 +23,6 @@ class pkgconfig(dep.Provider):
     elif self.manifest.exists():
         self.OK = True
         return
-
-
-    self.extract_dir = path.builds()/"pkgconfig"
-    self.source_dir = self.extract_dir/("pkg-config-%s" % VER)
-    self.build_dir = self.source_dir/".build"
-
-    self.url = "http://pkgconfig.freedesktop.org/releases/pkg-config-%s.tar.gz" % VER
-
 
   def provide(self): ##########################################################
 
