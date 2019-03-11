@@ -7,4 +7,4 @@ items += ["avr_binutils","avr_gcc","avr_libc","simavr"]
 items += ["lm32_binutils","lm32_gcc"]
 
 for item in items:
-	Command(["obt_dep_require.py",item]).exec()
+	Command(["obt.dep.require.py",item]).exec()
