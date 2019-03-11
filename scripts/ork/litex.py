@@ -12,7 +12,7 @@ def run(cmdlist=None,cpu=None,platform=None,target=None,triple=None):
       tmplist.append(str(item))
     cmdlist = " ".join(tmplist)
 
-    ork.command.run(["obt_litex_env.py",
+    ork.command.run(["obt.litex.env.py",
                     "--cpu",cpu,
                     "--platform",platform,
                     "--target",target,
