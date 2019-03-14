@@ -36,6 +36,11 @@ def prefix():
   staging = Path(os.environ["OBT_STAGE"])
   return staging
 
+def includes():
+  return prefix()/"include"
+def libs():
+  return prefix()/"lib"
+
 def manifests():
   staging = Path(os.environ["OBT_STAGE"])
   return staging/"manifests"

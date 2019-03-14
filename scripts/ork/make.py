@@ -15,4 +15,4 @@ def exec(target=None,parallel=True):
 		cmd += ["-j",ork.host.NumCores]
 	if target!=None:
 		cmd += [target]
-	Command(cmd).exec()
+	return Command(cmd).exec()

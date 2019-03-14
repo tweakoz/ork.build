@@ -3,8 +3,20 @@
 import os, sys, pathlib, argparse
 from ork import dep, host, path
 
-if len(sys.argv)==2:
-	dep.require(sys.argv[1],options={"force":True})
-else:
-    print( "usage: dep.build.py <depname>")
+parser = argparse.ArgumentParser(description='ork.build dep builder')
+parser.add_argument('dependency', metavar='D', type=str, help='a dependency to build')
+parser.add_argument('--force', action="store_true", help='force rebuild' )
+parser.add_argument('--incremental', action="store_true", help='incremental rebuild' )
+
+_args = vars(parser.parse_args())
+
+if len(sys.argv)==1:
+    print(parser.format_usage())
     sys.exit(1)
+
+_options = {
+    "force": (_args["force"]==True),
+    "incremental": (_args["incremental"]==True)
+}
+
+dep.require(_args["dependency"],options=_options)

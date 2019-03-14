@@ -10,7 +10,7 @@ import os, inspect, tarfile
 from pathlib import Path
 import importlib.util
 import ork.path
-from ork.command import Command 
+from ork.command import Command
 from ork.deco import Deco
 from ork.wget import wget
 
@@ -21,8 +21,45 @@ deco = Deco()
 class Provider:
     """base class for all dependency providers"""
     def __init__(self,options={}):
-        self.options = options
+        self._options = options
+        self._node = None
         pass
+
+    #############################
+    ## force build ?
+    #############################
+
+    def force(self):
+        force = False
+        if "force" in self._options:
+          force = self._options["force"]==True
+        return force
+
+    #############################
+    ## force build ?
+    #############################
+
+    def incremental(self):
+        incremental = False
+        if "incremental" in self._options:
+          incremental = self._options["incremental"]==True
+        return incremental
+
+    #############################
+
+    def should_build(self):
+        no_manifest = (False==self.manifest.exists())
+        force = self.force()
+        incremental = self.incremental()
+        return no_manifest or force or incremental
+
+    #############################
+
+    def node(self):
+        return self._node
+
+    #############################
+
     def exists(self):
         return False
 
@@ -32,6 +69,7 @@ class DepNode:
     """dependency provider node"""
     def __init__(self,name=None,options={}):
       assert(isinstance(name,str))
+      self.options = options
       self.name = name
       self.scrname = ("%s.py"%name)
       self.module_path = ork.path.deps()/self.scrname
@@ -45,6 +83,7 @@ class DepNode:
         assert(inspect.isclass(self.module_class))
         assert(issubclass(self.module_class,Provider))
         self.instance = self.module_class(options=options)
+        self.instance._node = self
 
     ## string descriptor of dependency
 
@@ -64,7 +103,9 @@ class DepNode:
 
 def require(name_or_list,options={}):
     if(isinstance(name_or_list,str)):
-      return DepNode(name_or_list,options=options).provide()
+      node = DepNode(name_or_list,options=options)
+      node._status = node.provide()
+      return node.instance
     elif (isinstance(name_or_list,list)):
       return [DepNode(item,options=options).provide() for item in name_or_list]
 
