@@ -2,15 +2,14 @@
 
 ### STATUS
 
+[CircleCI(IX)](https://circleci.com/gh/tweakoz/ork.build) [![CircleCI](https://circleci.com/gh/tweakoz/ork.build.svg?style=svg)](https://circleci.com/gh/tweakoz/ork.build)
+
 [TravisCI(OSX)](https://travis-ci.org/tweakoz/ork.build) ![Build Status](https://travis-ci.org/tweakoz/ork.build.svg?branch=master)
-
-
-[CirrusCI(IX)](https://cirrus-ci.com/github/tweakoz/ork.build) ![Build Status](https://api.cirrus-ci.com/github/tweakoz/ork.build.svg)
 
 
 ### DESCRIPTION
 
-**ork.build** is a posix (Linux,OSX) *container based* build environment which provides shared functionality for common build automation tasks. **ork.build** also has a set of dependency providers for useful libraries, unlike homebrew or apt the dependency provider interface is consistent regardless if you are on OSX or Linux - in general the entire interface is consitent on both OSX and Linux. ork.build is implemented primarily in python3. If you need to compose a set of build products with a unified set of versions and configuration data, then ork.build might be for you. It is also important to realize that ork.build is not a replacement for docker style containers. ork.build is specifically a build container environment, as opposed to a machine or microservice container environment. For example, one might use ork.build to prep content for use in a docker container. 
+**ork.build** is a posix (Linux,OSX) *container based* build environment which provides shared functionality for common build automation tasks. **ork.build** also has a set of dependency providers for useful libraries. Unlike homebrew and apt the dependency provider interface is consistent regardless if you are on OSX or Linux - in general the entire interface is consistent on both OSX and Linux. ork.build is implemented primarily in python3. If you need to compose a set of build products with a unified set of versions and configuration data, then ork.build might be for you. It is also important to realize that ork.build is not a replacement for docker style containers. ork.build is specifically a build container environment, as opposed to a machine or microservice container environment. For example, one might use ork.build to prep content for use in a docker container. 
 
 
 ### USAGE
@@ -34,7 +33,7 @@ ork.build/bin/init_env.py --create <staging_folder>
 
 eg. boost
 ```
-obt_dep_require.py boost
+obt.dep.require.py boost
 ```
 
 **to get list of obt commands:** (from bash shell)
@@ -42,13 +41,13 @@ obt_dep_require.py boost
 we use bash's command line completion and ork.build's convention of prefixing all public commands with *obt*
 
 ```
-obt_<tab tab>
+obt.<tab tab>
 ```
 
 **which returns:** (example)
 
 ```
-obt_dep_list.py obt_dep_require.py obt_find.py
+obt.dep.list.py obt.dep.require.py obt.find.py
 ```
 
 
@@ -56,7 +55,7 @@ obt_dep_list.py obt_dep_require.py obt_find.py
 **to get list of obt dependency providers:**
 
 ```
-obt_dep_list.py
+obt.dep.list.py
 ```
 
 **which returns:** (example)
