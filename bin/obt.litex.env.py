@@ -129,6 +129,7 @@ os.environ["LITEX_TRIPLE"]=triple
 os.environ["ORK_PROJECT_NAME"]=("obt-lx/%s"%triple)
 
 env_dir = ork.path.builds()/"litex_env"
+os.environ["LITEX_BIN_DIR"] = str(env_dir/"build"/"conda"/"bin")
 
 curdir = os.getcwd()
 
