@@ -27,6 +27,7 @@ class context:
 
         self.newlib_xzname = "newlib-%s.tar.gz" % NEWLIB_VER
         self.newlib_extract_dir = ork.path.builds()/("newlib-%s" % NEWLIB_VER)
+
         self.newlib_arc = ork.dep.downloadAndExtract(["ftp://sourceware.org/pub/newlib/%s"%self.newlib_xzname],
                                                       self.newlib_xzname,
                                                       "gz",
@@ -74,53 +75,55 @@ class context:
 
         if variant=="newlib":
 
+            do_gcc = True
+            do_newlib = True
+
+            if do_gcc:
+                os.chdir(self.build_dir)
+                ork.command.run(["rm","-rf","libstdc++-v3"])
+
+            build_dest = self.build_dir/".build-with_newlib"
+
             enable_set = enable_set | set(["threads=single","multilib"])
             disable_set = disable_set | set(["shared","libssp","libatomic",
                                              "libgomp","libmudflap","libquadmath",
-                                             "nls","tls"])
-
-            os.chdir(self.build_dir)
-            ork.command.run(["rm","-rf","libstdc++-v3"])
+                                             "nls","tls","libgcc"])
 
             # STAGE 1
 
-            stg1_opts = ['--without-headers']
+            stg1_opts = ['--with-headers=%s'%str(self.newlib_extract_dir/"newlib"/"libc"/"include")]
             stg1_opts += ['--with-newlib']
 
-            stg1_opts += set2opts("--disable-",disable_set|set(["libgcc"]))
+            stg1_opts += set2opts("--disable-",disable_set)
             stg1_opts += set2opts("--enable-",enable_set)
 
-            stg1_opts += ['--program-prefix=%s-stage1-'%program_prefix]
-            stg1_opts += ['--enable-languages=c']
+            stg1_opts += ['--program-prefix=%s'%program_prefix]
+            stg1_opts += ['--enable-languages=c,c++']
+            stg1_opts += ['--prefix=/']
 
-            self._build( base_build_opts + stg1_opts,
-                         self.build_dir/".build-stage1")
+            if do_gcc:
+                os.environ["NEWLIB"] = str(self.newlib_extract_dir)
+                os.chdir(self.extract_dir)
+                os.system( "ln -s ../${NEWLIB}/newlib .")
+                os.system( "ln -s ../${NEWLIB}/libgloss .")
+                self._build( base_build_opts + stg1_opts, build_dest, prefix )
 
-
+            #######################
             # build newlib
+            #######################
 
-            nlbd = self.newlib_extract_dir/".build"
-            os.mkdir(nlbd)
-            os.chdir(nlbd)
-            ork.command.run([ "../newlib-%s/configure"%NEWLIB_VER,
-                              "--target=%s"%"self.target",
-                              "--prefix=%s"%prefix,
-                              "--disable-newlib-supplied-syscalls",
-                              "--enable-multilib"])
-            ork.command.run(["make"])
-            assert(False)
-
-            # STAGE 2
-
-            stg2_opts  = set2opts("--disable-",disable_set)
-            stg2_opts += set2opts("--enable-",enable_set|set(["libgcc"]))
-
-            stg2_opts += ['--program-prefix=%s'%program_prefix]
-            stg2_opts += ['--enable-languages=%s'%languages]
-            stg2_opts += ['--disable-newlib-supplied-syscalls']
-
-            self._build( base_build_opts + stg2_opts,
-                         self.build_dir/".build-stage2")
+            if do_newlib:
+              nlbd = self.newlib_extract_dir/".build"
+              os.system("rm -rf %s"%nlbd)
+              os.mkdir(nlbd)
+              os.chdir(nlbd)
+              ork.command.run([ "../newlib-%s/configure"%NEWLIB_VER,
+                                "--target=%s"%self.target,
+                                "--prefix=/",
+                                "--disable-newlib-supplied-syscalls",
+                                "--enable-multilib"])
+              ork.command.run(["make"])
+              ork.command.system(["make","DESTDIR=%s"%prefix,"install"])
 
         else: # // default, stdc++
             assert(False)
@@ -131,9 +134,9 @@ class context:
 
     #############################################
 
-    def _build(self,build_opts,bdest):
+    def _build(self,build_opts,bdest,prefix):
         os.mkdir(bdest)
         os.chdir(bdest)
         ork.command.run(['../configure']+build_opts)
         ork.make.exec("all")
-        ork.make.exec("install",parallel=False)
+        ork.command.system(["make","DESTDIR=%s"%prefix,"install"])

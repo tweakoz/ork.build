@@ -35,7 +35,7 @@ class rv32_binutils(dep.Provider):
 
     Command(['../configure',
              '--prefix=%s'%path.prefix(),
-             '--program-prefix=riscv32-unknown-elf-',
+             '--program-prefix=riscv32-elf-',
              '--target=riscv32-elf']).exec()
 
     make.exec("all")
