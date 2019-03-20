@@ -33,8 +33,9 @@ class lm32_binutils(dep.Provider):
     os.mkdir(bdest)
     os.chdir(bdest)
 
-    Command(['../configure', 
+    Command(['../configure',
              '--prefix=%s'%path.prefix(),
+             '--program-prefix=lm32-elf-',
              '--target=lm32-elf']).exec()
 
     make.exec("all")

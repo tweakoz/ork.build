@@ -10,6 +10,7 @@ import os, tarfile, sys
 from ork import dep, host, path, git, cmake, make
 from ork.deco import Deco
 from ork.wget import wget
+import ork.command
 from ork.command import Command
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -26,25 +27,9 @@ class lm32_gcc(dep.Provider):
     pass
 
   def provide(self): ##########################################################
-    gcc = _gcc.context("gcc-lm32")
+    gcc = _gcc.context("lm32-elf")
+    self.OK = gcc.build()
 
-    Command(["rm","-rf",gcc.build_dir/"libstdc++-v3"]).exec()
-
-    bdest = gcc.build_dir/".build"
-
-    os.mkdir(bdest)
-    os.chdir(bdest)
-
-    cmd = Command(['../configure', 
-                   '--prefix=%s'%path.prefix(),
-                   '--target=lm32-elf',
-                   '--enable-languages=c,c++',
-                   '--disable-libgcc',
-                   '--disable-libssp',
-                   ])
-    cmd.exec()
-    make.exec("all")
-    make.exec("install",parallel=False)
 
     self.OK = True
 

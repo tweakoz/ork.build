@@ -67,6 +67,8 @@ class context:
 
         base_build_opts = [ '--prefix=%s'%prefix,
                             '--target=%s'%self.target ]
+        base_build_opts += ['--enable-languages=c,c++']
+        base_build_opts += ['--prefix=/']
 
         ######################################
         # variant - newlib, default(stdc++, etc)
@@ -78,34 +80,36 @@ class context:
             do_gcc = True
             do_newlib = True
 
+            #######################
+
             if do_gcc:
                 os.chdir(self.build_dir)
                 ork.command.run(["rm","-rf","libstdc++-v3"])
 
-            build_dest = self.build_dir/".build-with_newlib"
-
             enable_set = enable_set | set(["threads=single","multilib"])
             disable_set = disable_set | set(["shared","libssp","libatomic",
                                              "libgomp","libmudflap","libquadmath",
-                                             "nls","tls","libgcc"])
+                                             "nls","tls", "libstdcxx"])
 
+            #######################
+
+            base_build_opts += ['--with-newlib'] # dont build with or against glibc
+            base_build_opts += set2opts("--disable-",disable_set)
+            base_build_opts += set2opts("--enable-",enable_set)
+
+            #######################
             # STAGE 1
-
-            stg1_opts = ['--with-headers=%s'%str(self.newlib_extract_dir/"newlib"/"libc"/"include")]
-            stg1_opts += ['--with-newlib']
-
-            stg1_opts += set2opts("--disable-",disable_set)
-            stg1_opts += set2opts("--enable-",enable_set)
-
-            stg1_opts += ['--program-prefix=%s'%program_prefix]
-            stg1_opts += ['--enable-languages=c,c++']
-            stg1_opts += ['--prefix=/']
+            #######################
 
             if do_gcc:
+                stg1_opts = ['--with-headers=%s'%str(self.newlib_extract_dir/"newlib"/"libc"/"include")] # no system headres
+                stg1_opts += ['--program-prefix=%s'%program_prefix]
+                stg1_opts += ["--disable-libgcc"]
                 os.environ["NEWLIB"] = str(self.newlib_extract_dir)
                 os.chdir(self.extract_dir)
-                os.system( "ln -s ../${NEWLIB}/newlib .")
-                os.system( "ln -s ../${NEWLIB}/libgloss .")
+                os.system( "ln -s ${NEWLIB}/newlib .")
+                os.system( "ln -s ${NEWLIB}/libgloss .")
+                build_dest = self.build_dir/".build-stage1"
                 self._build( base_build_opts + stg1_opts, build_dest, prefix )
 
             #######################
@@ -124,6 +128,22 @@ class context:
                                 "--enable-multilib"])
               ork.command.run(["make"])
               ork.command.system(["make","DESTDIR=%s"%prefix,"install"])
+
+            #######################
+            # STAGE 2
+            #######################
+
+            #--with-local-prefix=/tools # gcc search path prefix
+            #--with-native-system-header-dir=/tools/include # gcc headers search path
+
+
+            if do_gcc:
+                stg2_opts = ['--program-prefix=%s-newlib-'%program_prefix]
+                stg2_opts += ["--enable-libgcc"]
+                os.environ["NEWLIB"] = str(self.newlib_extract_dir)
+                os.chdir(self.extract_dir)
+                build_dest = self.build_dir/".build-stage2"
+                self._build( base_build_opts + stg2_opts, build_dest, prefix )
 
         else: # // default, stdc++
             assert(False)
