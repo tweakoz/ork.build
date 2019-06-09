@@ -9,6 +9,9 @@
 import os, inspect, sys
 from pathlib import Path
 
+def wrap(a):
+    return Path(str(a))
+
 def root():
   root = Path(os.environ["OBT_ROOT"])
   return root
@@ -46,7 +49,7 @@ def manifests():
   return staging/"manifests"
 
 def litex_env_dir():
-    return builds()/"litex_env"
+    return builds()/"litex-buildenv"
 
 def downloads():
   staging = Path(os.environ["OBT_STAGE"])

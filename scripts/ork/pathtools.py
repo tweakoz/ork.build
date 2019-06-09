@@ -33,7 +33,7 @@ def patglob(path,pattern):
                     l.append(i)
     except:
         pass
-    
+
     return l
 
 ###############################################################################
@@ -58,9 +58,9 @@ def recursive_patglob(path,pattern):
                     l.append(i)
     except:
         pass
-    
+
     return l
-	
+
 ###############################################################################
 
 def recursive_glob(path):
@@ -82,7 +82,7 @@ def recursive_glob(path):
 				l.append(i)
 	except:
 		pass
-	
+
 	return l
 
 ###############################################################################
@@ -127,5 +127,11 @@ def globber( folderbase, wildcard, subdirlist, excludelist=[] ):
 def mkdir(p,clean=False):
   if clean:
   	if p.exists():
-  	  p.rmdir()
-  p.mkdir()
+  	  os.system("rm -rf %s"%p)
+  if False==p.exists():
+     p.mkdir()
+
+###############################################################################
+
+def chdir(p):
+  os.chdir(str(p))

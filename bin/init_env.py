@@ -133,6 +133,8 @@ def genBashRc(staging):
 
         "stage": "${OBT_STAGE}",
         "builds": "${OBT_STAGE}/builds",
+        "litex": "${OBT_STAGE}/builds/litex_env",
+        "zephyr": "${OBT_STAGE}/builds/zephyr",
         "pylib": str(ork.path.python_lib()),
         "pypkg": str(ork.path.python_pkg())
     }
