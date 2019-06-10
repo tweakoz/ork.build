@@ -4,7 +4,7 @@ from ork import path, pathtools, utils
 import os
 
 build_dir = path.builds()/"litex_zephyrtest"
-this_dir = os.path.dirname(os.path.realpath(__file__))
+src_dir = os.path.dirname(os.path.realpath(__file__))
 
 pathtools.mkdir(build_dir,clean=True)
 pathtools.chdir(build_dir)

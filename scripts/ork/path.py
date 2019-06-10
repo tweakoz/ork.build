@@ -16,6 +16,9 @@ def root():
   root = Path(os.environ["OBT_ROOT"])
   return root
 
+def zephyr_base():
+  return Path(os.environ["ZEPHYR_BASE"])
+
 def deps():
   return root()/"deps"
 
