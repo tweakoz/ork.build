@@ -162,7 +162,7 @@ if args["create"]!=None:
     f.close()
     try_staging_sh = try_staging/".launch_env"
     os.system("chmod ugo+x %s"%str(try_staging/'.launch_env'))
-    if args["command"]!=None:
+    if IsCommandSet:
         rval = os.system(args["command"]) # call shell with new vars (just "exit" to exit)
         sys.exit(rval>>8)
     else:
