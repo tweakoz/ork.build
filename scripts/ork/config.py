@@ -2,7 +2,21 @@
 
 import json
 
-def load(configpath,defaults):
+def load(configpath):
+    inpstr = ""
+    load_dict = dict()
+    ########################
+    try:
+        with open(str(configpath),"r") as f:
+            inpstr = f.read()
+            load_dict = json.loads(inpstr)
+    except:
+        pass
+    ########################
+    return load_dict
+
+
+def merge(configpath,defaults):
     inpstr = ""
     overlay_dict = dict()
     ########################
