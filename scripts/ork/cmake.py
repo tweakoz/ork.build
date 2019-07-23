@@ -33,5 +33,5 @@ class context:
 
     cmdlist += [str(self.root)]
 
-    Command(cmdlist).exec()
+    return Command(cmdlist).exec()
     pass
