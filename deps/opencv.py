@@ -43,11 +43,11 @@ class opencv(dep.Provider):
 
         git.Clone("https://github.com/opencv/opencv.git",
                   self.cv_source_dest,
-                  "master")
+                  "4.1.0")
 
         git.Clone("https://github.com/opencv/opencv_contrib.git",
                   self.cvcontrib_source_dest,
-                  "master")
+                  "4.1.0")
 
         pathtools.mkdir(self.cv_build_dest,clean=True)
         pathtools.chdir(self.cv_build_dest)
