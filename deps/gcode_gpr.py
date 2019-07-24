@@ -13,7 +13,7 @@ from ork.wget import wget
 from ork.command import Command
 
 deco = Deco()
-    
+
 ###############################################################################
 
 class gcode_gpr(dep.Provider):
@@ -32,19 +32,18 @@ class gcode_gpr(dep.Provider):
   def __str__(self):
     return "A simple C++ G-code parser"
 
-  def clone(self): 
-    git.Clone("https://github.com/tweakoz/gpr",self.source_dest,"master")
+  def clone(self):
+    #git.Clone("https://github.com/tweakoz/gpr",self.source_dest,"master")
 
     os.system("rm -rf %s"%self.build_dest)
     os.mkdir(self.build_dest)
     os.chdir(self.build_dest)
     cmake_ctx = cmake.context("..")
     cmake_ctx.exec()
-    make.exec("install")
+    self.OK = (make.exec("install")==0)
 
   def provide(self): ##########################################################
 
       self.clone()
       self.manifest.touch()
       return self.OK
-
