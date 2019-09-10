@@ -15,10 +15,11 @@ from ork import dep, host, path
 from ork.deco import Deco
 from ork.wget import wget
 from ork.command import Command
+import ork.host
 import fileinput
 
 deco = Deco()
-    
+
 ###############################################################################
 
 class luajit(dep.Provider):
@@ -60,7 +61,14 @@ class luajit(dep.Provider):
   def build(self): ############################################################
 
     os.chdir(str(self.source_dir))
-    return 0 == Command(["make","-j",host.NumCores,"install"]).exec()
+
+    cmd = ["make","-j",host.NumCores]
+
+    if ork.host.IsOsx:
+        cmd += ["MACOSX_DEPLOYMENT_TARGET=10.14"]
+
+    cmd += ["install"]
+    return 0 == Command(cmd).exec()
 
   def provide(self): ##########################################################
     if False==self.OK:
@@ -70,4 +78,3 @@ class luajit(dep.Provider):
         self.manifest.touch()
 
     return self.OK
-
