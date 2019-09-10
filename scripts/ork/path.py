@@ -6,27 +6,55 @@
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
 
-import os, inspect, sys
-from pathlib import Path
+import os, inspect, sys, pathlib
+from pathlib import Path as _Path_, PosixPath as _PosixPath_, WindowsPath  as _WindowsPath_
+
+###############################################################################
+
+class Path(_Path_) :
+ def __new__(cls, *args, **kvps):
+  return super().__new__(WindowsPath if os.name == 'nt' else PosixPath, *args, **kvps)
+
+class WindowsPath(_WindowsPath_, Path) :
+ pass
+
+class PosixPath(_PosixPath_, Path) :
+ def chdir(self):
+   os.chdir(str(self))
+ pass
+
+###############################################################################
 
 def wrap(a):
     return Path(str(a))
+
+###############################################################################
 
 def root():
   root = Path(os.environ["OBT_ROOT"])
   return root
 
+###############################################################################
+
 def zephyr_base():
   return Path(os.environ["ZEPHYR_BASE"])
+
+###############################################################################
 
 def deps():
   return root()/"deps"
 
+###############################################################################
+
 def patches():
   return root()/"deps"/"patches"
 
+###############################################################################
+
 def pysite():
   return root()/"scripts"/"ork"
+
+###############################################################################
 
 def python_lib():
   pfx = Path(sys.prefix)
@@ -35,40 +63,68 @@ def python_lib():
   #print(pfx,epfx)
   return pfx/"lib"/epfx
 
+###############################################################################
+
 def python_pkg():
   return python_lib()/"site-packages"
 
-def prefix():
+###############################################################################
+
+def stage():
   staging = Path(os.environ["OBT_STAGE"])
   return staging
 
+###############################################################################
+
+def prefix():
+  return stage()
+
+###############################################################################
+
 def includes():
   return prefix()/"include"
+
+###############################################################################
+
 def libs():
   return prefix()/"lib"
+
+###############################################################################
 
 def manifests():
   staging = Path(os.environ["OBT_STAGE"])
   return staging/"manifests"
 
+###############################################################################
+
 def litex_env_dir():
     return builds()/"litex-buildenv"
+
+###############################################################################
 
 def downloads():
   staging = Path(os.environ["OBT_STAGE"])
   return staging/"downloads"
 
+###############################################################################
+
 def gitcache():
   staging = Path(os.environ["OBT_STAGE"])
   return staging/"gitcache"
+
+###############################################################################
 
 def builds():
   staging = Path(os.environ["OBT_STAGE"])
   return staging/"builds"
 
+###############################################################################
+
 def project_root():
   root = Path(os.environ["ORK_PROJECT_ROOT"])
   return root
+
+###############################################################################
 
 def vivado_base():
   return Path("/opt/Xilinx/Vivado/2018.3")

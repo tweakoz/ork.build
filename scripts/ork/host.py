@@ -10,7 +10,14 @@ import platform
 import multiprocessing
 SYSTEM = platform.system()
 IsOsx = (SYSTEM=="Darwin")
-IsIrix = (SYSTEM=="IRIX64") 
+IsIrix = (SYSTEM=="IRIX64")
 IsLinux = (SYSTEM=="Linux")
 IsIx = IsLinux or IsOsx or IsIrix
 NumCores = multiprocessing.cpu_count()
+
+if IsLinux:
+    PlatformId = "ix"
+elif IsOsx:
+    PlatformId = "osx"
+else:
+    PlatformId = "unknown"

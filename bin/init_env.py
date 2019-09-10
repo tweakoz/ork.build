@@ -52,9 +52,9 @@ my_log("IsCommandSet<%s>"%IsCommandSet)
 #print(args)
 ###########################################
 
-file_dir = os.path.realpath(__file__)
-my_log(file_dir)
-par1_dir = os.path.dirname(file_dir)
+file_path = os.path.realpath(__file__)
+my_log(file_path)
+par1_dir = os.path.dirname(file_path)
 par2_dir = os.path.dirname(par1_dir)
 par3_dir = os.path.dirname(par2_dir)
 par4_dir = os.path.dirname(par3_dir)
@@ -105,6 +105,14 @@ def setenv():
     ork.env.prepend("PATH",bin_dir)
     ork.env.prepend("PATH",OBT_STAGE/"bin")
     ork.env.prepend("LD_LIBRARY_PATH",OBT_STAGE/"lib")
+    subenv = root_dir/".."/"obt.project"/"scripts"/"init_env.py"
+    if subenv.exists():
+        import importlib
+        modulename = importlib.machinery.SourceFileLoader('modulename',str(subenv)).load_module()
+        print(modulename)
+        modulename.setup()
+        #modul.setup()
+
 
 ###########################################
 def lazyMakeDirs():
