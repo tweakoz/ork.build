@@ -54,8 +54,8 @@ my_log("IsCommandSet<%s>"%IsCommandSet)
 
 file_path = os.path.realpath(__file__)
 my_log(file_path)
-par1_dir = os.path.dirname(file_path)
-par2_dir = os.path.dirname(par1_dir)
+file_dir = os.path.dirname(file_path)
+par2_dir = os.path.dirname(file_dir)
 par3_dir = os.path.dirname(par2_dir)
 par4_dir = os.path.dirname(par3_dir)
 par5_dir = os.path.dirname(par4_dir)
@@ -174,7 +174,7 @@ if args["create"]!=None:
         rval = os.system(args["command"]) # call shell with new vars (just "exit" to exit)
         sys.exit(rval>>8)
     else:
-        Command([Path(file_dir),"--novars", "--init", "--launch", try_staging]).exec()
+        Command([Path(file_path),"--novars", "--init", "--launch", try_staging]).exec()
 ###########################################
 elif args["launch"]!=None:
 ###########################################
