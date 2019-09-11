@@ -24,7 +24,7 @@ def set(key,val):
 
 def prepend(key,val):
   if False==(str(key) in os.environ):
-    set(key,val)
+    set(key,str(val))
   else:
     os.environ[str(key)] = str(val) + ":" + os.environ[key]
     log(deco.magenta("prepend")+" var<" + deco.key(key) + "> to<" + deco.path(os.environ[key]) + ">")

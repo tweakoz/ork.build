@@ -66,6 +66,10 @@ sys.path.append(str(scripts_dir))
 
 ###########################################
 
+os.environ["OBT_SEARCH_EXTLIST"] = ".cpp:.c:.cc:.h:.hpp:.inl:.qml:.m:.mm:.py:.txt"
+
+###########################################
+
 ORK_PROJECT_NAME = "obt"
 if "ORK_PROJECT_NAME" in os.environ:
   ORK_PROJECT_NAME = os.environ["ORK_PROJECT_NAME"]

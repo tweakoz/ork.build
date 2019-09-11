@@ -121,7 +121,7 @@ def builds():
 ###############################################################################
 
 def project_root():
-  root = Path(os.environ["ORK_PROJECT_ROOT"])
+  root = Path(os.environ["ORKID_WORKSPACE_DIR"])
   return root
 
 ###############################################################################
