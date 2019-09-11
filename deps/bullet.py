@@ -48,14 +48,7 @@ class bullet(dep.Provider):
 
         cmakeEnv = {
             "CMAKE_BUILD_TYPE": "RELEASE",
-            "INSTALL_C_EXAMPLES": "ON",
-            "INSTALL_PYTHON_EXAMPLES": "ON",
-            "ENABLE_PRECOMPILED_HEADERS": "OFF",
             "BUILD_SHARED_LIBS": "ON",
-            "WITH_V4L": "ON",
-            "WITH_QT": "OFF",
-            "WITH_OPENGL": "OFF",
-            "BUILD_EXAMPLES": "ON"
         }
 
         cmake_ctx = cmake.context(root="..",env=cmakeEnv)
