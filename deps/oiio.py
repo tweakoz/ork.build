@@ -7,14 +7,13 @@
 ###############################################################################
 
 import os, tarfile
-from ork import dep, host, path
+from ork import dep, host, path, pathtools, git, cmake, make
 from ork.deco import Deco
 from ork.wget import wget
 from ork.command import Command
-from ork.cmake import context
 
 deco = Deco()
-    
+
 ###############################################################################
 
 class oiio(dep.Provider):
@@ -23,22 +22,39 @@ class oiio(dep.Provider):
 
     parclass = super(oiio,self)
     parclass.__init__(options=options)
-    self.manifest = path.manifests()/"oiio"
+    self.manifest = path.manifests()/"OpenImageIo"
     self.OK = self.manifest.exists()
+    self.source_dest = path.builds()/"OpenImageIo"
+    self.build_dest = self.source_dest/".build"
 
   ########
 
   def __str__(self):
-    return "OpenImageIO (homebrew)"
+    return "OpenEXR (github)"
 
   ########
 
   def provide(self): ##########################################################
     if False==self.OK:
-      if host.IsOsx:
-        self.OK = 0==Command(["brew","install","openimageio"]).exec()
-      if self.OK:
-        self.manifest.touch()
+
+        os.system("rm -rf %s"%self.source_dest)
+
+        git.Clone("https://github.com/OpenImageIO/oiio",
+                  self.source_dest,
+                  "spi-spcomp2-release-49")
+
+        pathtools.mkdir(self.build_dest,clean=True)
+        pathtools.chdir(self.build_dest)
+
+        cmakeEnv = {
+            "CMAKE_BUILD_TYPE": "RELEASE",
+            "BUILD_SHARED_LIBS": "ON",
+        }
+
+        cmake_ctx = cmake.context(root="..",env=cmakeEnv)
+        if cmake_ctx.exec()==0:
+            if make.exec("install")==0:
+                self.manifest.touch()
+                self.OK = True
 
     return self.OK
-
