@@ -50,7 +50,6 @@ def search_at_root(word, root):
    spl = os.path.splitext(path)
    ext = spl[1]
    not_obj = (spl[0].find("/obj/")==-1) and (spl[0].find("/pluginobj/")==-1)
-   #print spl[0], fobj
    if not_obj:
     if ext in ext_set:
      for line_number, line in finder(path):
@@ -100,3 +99,16 @@ def execute(word):
       deco_lino = "%-*s"%(37,deco_lino)
       deco_text = deco.val(item.text.strip())
       print("%s%s %s" % (deco_path, deco_lino, deco_text))
+
+
+
+#################################################################################
+
+def visit(word,visitor):
+  for path in pathlist:
+   results = search_at_root(word,str(path))
+   have_results = len(results)!=0
+   if have_results:
+     visitor.onPath(path)
+     for item in results:
+       visitor.onItem(item)
