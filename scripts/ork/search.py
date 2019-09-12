@@ -41,7 +41,11 @@ ext_set = set(os.environ["OBT_SEARCH_EXTLIST"].split(":"))
 
 #################################################################################
 
-def search_at_root(word, root):
+ignore_folder_keys = set(["/obj/", "/pluginobj/","/.build/"])
+
+#################################################################################
+
+def search_at_root(word, root,ignore_set = ignore_folder_keys):
  finder = find(word)
  results = list()
  for root, dirs, files in os.walk(root):
@@ -49,8 +53,11 @@ def search_at_root(word, root):
    path = os.path.join(root, f)
    spl = os.path.splitext(path)
    ext = spl[1]
-   not_obj = (spl[0].find("/obj/")==-1) and (spl[0].find("/pluginobj/")==-1)
-   if not_obj:
+   ignore = False
+   for item in ignore_set:
+       if (spl[0].find(item)!=-1):
+           ignore = True
+   if not ignore:
     if ext in ext_set:
      for line_number, line in finder(path):
       line = line.replace("\n","")
@@ -74,16 +81,14 @@ else:
 #################################################################################
 
 print(pthspec)
-pathlist = []
+default_pathlist = []
 for p in pthspec:
-  pathlist += [Path(p)]
-
-print(pathlist)
+  default_pathlist += [Path(p)]
 
 #################################################################################
 
-def execute(word):
-  for path in pathlist:
+def execute(word,path_list = default_pathlist):
+  for path in path_list:
    results = search_at_root(word,str(path))
    have_results = len(results)!=0
    if have_results:
@@ -104,8 +109,8 @@ def execute(word):
 
 #################################################################################
 
-def visit(word,visitor):
-  for path in pathlist:
+def visit(word,visitor, path_list = default_pathlist):
+  for path in path_list:
    results = search_at_root(word,str(path))
    have_results = len(results)!=0
    if have_results:
