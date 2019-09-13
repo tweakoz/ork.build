@@ -94,7 +94,11 @@ class DepNode:
 
     def provide(self):
       #print(self.instance)
-      if( False == self.instance.exists() ):
+      if self.instance.exists():
+        provide = self.instance.provide()
+        assert(provide==True)
+        return provide
+      else:
         provide = self.instance.provide()
         assert(provide==True)
         return provide

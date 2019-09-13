@@ -23,7 +23,7 @@ class bullet(dep.Provider):
     parclass = super(bullet,self)
     parclass.__init__(options=options)
     self.manifest = path.manifests()/"bullet"
-    self.OK = self.manifest.exists()
+    self.OK = False==self.should_build()
     self.source_dest = path.builds()/"bullet"
     self.build_dest = self.source_dest/".build"
 
@@ -47,7 +47,7 @@ class bullet(dep.Provider):
         pathtools.chdir(self.build_dest)
 
         cmakeEnv = {
-            "CMAKE_BUILD_TYPE": "RELEASE",
+            "CMAKE_BUILD_TYPE": "Release",
             "BUILD_SHARED_LIBS": "ON",
         }
 
