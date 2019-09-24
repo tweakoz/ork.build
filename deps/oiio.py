@@ -14,6 +14,9 @@ from ork.command import Command
 
 deco = Deco()
 
+dep.require("cmake314")
+dep.require("qt5")
+
 ###############################################################################
 
 class oiio(dep.Provider):
