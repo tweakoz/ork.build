@@ -50,6 +50,14 @@ class Command:
 
     ###########################################################################
 
+    def capture(self):
+
+        return subprocess.check_output(self.command_list,
+                                       universal_newlines=True,
+                                       env=self.env )
+
+    ###########################################################################
+
     def execr(self):
 
         os.execve(self.command_list[0],self.command_list[1:],self.env)
