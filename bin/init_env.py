@@ -66,7 +66,7 @@ sys.path.append(str(scripts_dir))
 
 ###########################################
 
-os.environ["OBT_SEARCH_EXTLIST"] = ".cpp:.c:.cc:.h:.hpp:.inl:.qml:.m:.mm:.py:.txt"
+os.environ["OBT_SEARCH_EXTLIST"] = ".cpp:.c:.cc:.h:.hpp:.inl:.qml:.m:.mm:.py:.txt:.glfx"
 
 ###########################################
 
@@ -96,7 +96,20 @@ from ork.command import Command
 deco = ork.deco.Deco()
 bin_dir = root_dir/"bin"
 
-###########################################
+############################################
+
+if try_staging!=None:
+  qtdir = OBT_STAGE/"qt5"
+  if qtdir.exists():
+      ork.env.set("QTDIR",qtdir)
+      ork.env.prepend("PATH",qtdir/"bin")
+      QTVERCMD = Command(["qtpaths","--qt-version"])
+      QTVER = QTVERCMD.capture().replace("\n","")
+      print("QTVER<%s>"%QTVER)
+      ork.env.set("QTVER",QTVER)
+      ork.env.prepend("LD_LIBRARY_PATH",qtdir/"lib")
+
+##########################################
 
 def setenv():
   if args["novars"]==False:
