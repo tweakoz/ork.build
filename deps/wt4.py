@@ -6,8 +6,8 @@
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
 
-VERSION = "4.0.3"
-HASH = "961c30bca7bf24e7e82d0b2033b29073"
+VERSION = "4.1.2"
+HASH = "3a4621dd15a774658008e43203f49137"
 
 import os, tarfile
 from yarl import URL
@@ -53,8 +53,7 @@ class wt4(dep.Provider):
 
   def build(self): ############################################################
 
-    boost = dep.require("boost").instance
-    psql = dep.require("postgresql").instance
+    #psql = dep.require("postgresql").instance
 
     source_dir = self.build_dest/("wt-%s"%VERSION)
     build_temp = source_dir/".build"
@@ -66,11 +65,12 @@ class wt4(dep.Provider):
     os.chdir(str(build_temp))
     cmakeEnv = {
       "BOOST_ALL_DYN_LINK": None,
-      "BOOST_COMPILER": boost.compiler,
-      "BOOST_PREFIX": path.prefix(),
-      "BOOST_VERSION": boost.version,
+      "WT_BOOST_DISCOVERY": 1,
+      #"BOOST_COMPILER": "clang++",
+      #"BOOST_PREFIX": path.prefix(),
+      #"BOOST_VERSION": boost.version,
       "ENABLE_MYSQL": False,
-      "ENABLE_POSTGRES": True,
+      #"ENABLE_POSTGRES": True,
       "ENABLE_QT4": False,
       "ENABLE_SQLITE": False,
       "WT_CPP_11_MODE": "-std=c++11",
