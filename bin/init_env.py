@@ -17,8 +17,10 @@ Path = pathlib.Path
 curwd = Path(os.getcwd())
 
 parser = argparse.ArgumentParser(description='ork.build environment launcher')
-parser.add_argument('--create', metavar="createdir", help='create staging folder' )
+parser.add_argument('--create', metavar="createdir", help='create staging folder and enter session' )
+parser.add_argument('--createonly', metavar="createdir", help='create staging folder and exit' )
 parser.add_argument('--launch', metavar="launchdir", help='launch from pre-existing folder' )
+parser.add_argument('--chdir', metavar="chdir", help='working directory of command' )
 parser.add_argument('--stack', metavar="stackdir", help='stack env' )
 parser.add_argument('--prompt', metavar="prompt", help='prompt suffix' )
 parser.add_argument("--command", metavar="command", help="execute in environ")
@@ -80,6 +82,8 @@ if args["launch"]!=None:
   try_staging = Path(args["launch"]).resolve()
 elif args["create"]!=None:
   try_staging = Path(args["create"]).resolve()
+elif args["createonly"]!=None:
+  try_staging = Path(args["createonly"]).resolve()
 elif args["stack"]!=None:
   try_staging = Path(args["stack"]).resolve()
 
@@ -173,8 +177,9 @@ def genBashRc(staging):
     f.write(BASHRC)
     f.close()
 ###########################################
-if args["create"]!=None:
+if args["create"] or args["createonly"]!=None:
 ###########################################
+    createOnly = args["createonly"]!=None
     setenv() # sets OBT_STAGE env var (which prefix() uses)
     ork.path.prefix().mkdir(parents=True,exist_ok=False)
     #############
@@ -187,7 +192,9 @@ if args["create"]!=None:
     f.close()
     try_staging_sh = try_staging/".launch_env"
     os.system("chmod ugo+x %s"%str(try_staging/'.launch_env'))
-    if IsCommandSet:
+    if createOnly:
+        sys.exit(0)
+    elif IsCommandSet:
         rval = os.system(args["command"]) # call shell with new vars (just "exit" to exit)
         sys.exit(rval>>8)
     else:
@@ -207,6 +214,8 @@ elif args["launch"]!=None:
     bashrc = try_staging/".bashrc"
     #############
     if args["command"]!=None:
+        if args["chdir"]!=None:
+            os.chdir(args["chdir"])
         rval = os.system(args["command"]) # call shell with new vars (just "exit" to exit)
         sys.exit(rval>>8)
     else:

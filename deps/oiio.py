@@ -14,9 +14,6 @@ from ork.command import Command
 
 deco = Deco()
 
-dep.require("cmake314")
-dep.require("qt5")
-
 ###############################################################################
 
 class oiio(dep.Provider):
@@ -39,6 +36,8 @@ class oiio(dep.Provider):
 
   def provide(self): ##########################################################
     if False==self.OK:
+        dep.require("cmake314")
+        dep.require("qt5")
 
         os.system("rm -rf %s"%self.source_dest)
 
@@ -51,6 +50,7 @@ class oiio(dep.Provider):
 
         cmakeEnv = {
             "CMAKE_BUILD_TYPE": "RELEASE",
+            "CMAKE_CXX_FLAGS": "-Wno-error=deprecated",
             "BUILD_SHARED_LIBS": "ON",
         }
 
