@@ -6,7 +6,7 @@
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
 
-VERSION ="master"
+VERSION ="v5.0.0"
 
 import os, tarfile
 from ork import dep, host, path, git, cmake, make
