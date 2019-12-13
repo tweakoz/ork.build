@@ -11,6 +11,7 @@ from ork import dep, host, path, cmake
 from ork.deco import Deco
 from ork.wget import wget
 from ork.command import Command
+import ork.pip
 
 deco = Deco()
 
@@ -34,7 +35,7 @@ class yarl(dep.Provider):
 
   def provide(self): ##########################################################
     if False==self.OK:
-      self.OK = 0==Command(["pip3","install","yarl"]).exec()
+      self.OK = 0==ork.pip.install("yarl")
       if self.OK:
         self.manifest.touch()
 
