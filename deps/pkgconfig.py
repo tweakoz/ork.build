@@ -41,6 +41,8 @@ class pkgconfig(dep.Provider):
               "--with-internal-glib"
              ]).exec()
 
+    #assert(False)
+
     make.exec( "install" )
     self.manifest.touch()
     self.OK = True

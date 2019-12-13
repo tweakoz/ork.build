@@ -123,6 +123,8 @@ def setenv():
     ork.env.set("OBT_PYLIB",ork.path.python_lib())
     ork.env.set("OBT_PYPKG",ork.path.python_pkg())
     ork.env.prepend("PYTHONPATH",scripts_dir)
+    ork.env.prepend("PKG_CONFIG",OBT_STAGE/"bin"/"pkg-config")
+    ork.env.prepend("PKG_CONFIG_PATH",OBT_STAGE/"lib"/"pkgconfig")
     ork.env.prepend("PATH",bin_dir)
     ork.env.prepend("PATH",OBT_STAGE/"bin")
     ork.env.prepend("LD_LIBRARY_PATH",OBT_STAGE/"lib")
