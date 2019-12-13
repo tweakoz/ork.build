@@ -109,7 +109,7 @@ if try_staging!=None:
       ork.env.prepend("PATH",qtdir/"bin")
       QTVERCMD = Command(["qtpaths","--qt-version"])
       QTVER = QTVERCMD.capture().replace("\n","")
-      print("QTVER<%s>"%QTVER)
+      #print("QTVER<%s>"%QTVER)
       ork.env.set("QTVER",QTVER)
       ork.env.prepend("LD_LIBRARY_PATH",qtdir/"lib")
 
@@ -132,7 +132,7 @@ def setenv():
     if subenv.exists():
         import importlib
         modulename = importlib.machinery.SourceFileLoader('modulename',str(subenv)).load_module()
-        print(modulename)
+        #print(modulename)
         modulename.setup()
         #modul.setup()
 
