@@ -13,6 +13,19 @@ deco = Deco()
 
 ###############################################################################
 
+def procargs(command_list):
+    rval = list()
+    if isinstance(command_list, str):
+        rval = shlex.split(command_list)
+    elif isinstance(command_list,list):
+        newlist = []
+        for item in command_list:
+            newlist.append(str(item))
+        rval = newlist
+    return rval
+
+###############################################################################
+
 class Command:
 
     """run a command with a provided environment"""
@@ -24,25 +37,17 @@ class Command:
         self.env = os.environ
         for k in environment.keys():
             self.env[k]=str(environment[k])
-
-        if isinstance(command_list, str):
-            self.command_list = shlex.split(command_list)
-
-        elif isinstance(command_list,list):
-            newlist = []
-            for item in command_list:
-                newlist.append(str(item))
-            self.command_list = newlist
-
+        self.command_list = procargs(command_list)
         log(deco.white(self.command_list))
 
     ###########################################################################
 
-    def exec(self):
+    def exec(self,use_shell=False):
 
         child_process = subprocess.Popen( self.command_list,
                                           universal_newlines=True,
-                                          env=self.env )
+                                          env=self.env,
+                                          shell=use_shell )
         child_process.communicate()
         child_process.wait()
 
@@ -69,9 +74,10 @@ def run(command_list, environment=dict()):
     Command(command_list,environment).exec()
 
 def system(command_list):
-    joined = " ".join(command_list)
+    args = procargs(command_list)
+    joined = " ".join(args)
     print("cmd<%s>"%deco.key(joined))
-    os.system(joined)
+    return os.system(joined)
 
 ###############################################################################
 

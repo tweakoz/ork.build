@@ -7,56 +7,58 @@
 ###############################################################################
 
 import os, tarfile
-from ork import dep, host, path, pathtools, git, cmake, make
+from ork import dep, host, path, pathtools, git, cmake, make, command
 from ork.deco import Deco
 from ork.wget import wget
-from ork.command import Command
 
 deco = Deco()
 
+VERSION = "release-1.3.5"
 ###############################################################################
 
-class openexr(dep.Provider):
+class fltk(dep.Provider):
 
   def __init__(self,options=None): ############################################
 
-    parclass = super(openexr,self)
+    parclass = super(fltk,self)
     parclass.__init__(options=options)
-    self.manifest = path.manifests()/"openexr"
+    self.manifest = path.manifests()/"fltk"
     self.OK = self.manifest.exists()
-    self.source_dest = path.builds()/"openexr"
+    self.source_dest = path.builds()/"fltk"
     self.build_dest = self.source_dest/".build"
 
   ########
 
   def __str__(self):
-    return "OpenEXR (github)"
+    return "FLTK (github-%s)" % VERSION
 
   ########
 
   def build(self): #############################################################
 
-    dep.require("fltk")
+    self.OK = False
 
     os.system("rm -rf %s"%self.source_dest)
 
-    git.Clone("https://github.com/openexr/openexr",
+    git.Clone("https://github.com/fltk/fltk",
               self.source_dest,
-              "v2.4.0")
+              VERSION)
 
     pathtools.mkdir(self.build_dest,clean=True)
     pathtools.chdir(self.build_dest)
 
     cmakeEnv = {
         "CMAKE_BUILD_TYPE": "RELEASE",
-        "BUILD_SHARED_LIBS": "ON",
+        "OPTION_BUILD_SHARED_LIBS": "ON",
     }
 
     cmake_ctx = cmake.context(root="..",env=cmakeEnv)
     if cmake_ctx.exec()==0:
         if make.exec("install")==0:
-            self.manifest.touch()
-            self.OK = True
+            err = command.system(["rm",path.stage()/"lib"/"libfltk*.a"])
+            if err==0:
+              self.manifest.touch()
+              self.OK = True
 
     return self.OK
 

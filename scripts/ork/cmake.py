@@ -7,11 +7,12 @@
 ###############################################################################
 
 from ork.command import Command
-from ork import path
+from ork import path, dep
 
 class context:
 
   def __init__(self,root="",env=dict()):
+    dep.require("cmake")
     self.root = root
     self.env = env
 
