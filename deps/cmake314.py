@@ -38,7 +38,10 @@ class cmake314(dep.Provider):
 
   def build(self): ##########################################################
 
-    git.Clone("https://github.com/Kitware/CMake",self.source_dest,VERSION)
+    if self.force():
+        os.system("rm -rf %s"%self.source_dest)
+
+    git.Clone("https://github.com/kitware/cmake",self.source_dest,VERSION,cache=False)
 
     os.system("rm -rf %s"%self.build_dest)
     os.mkdir(self.build_dest)

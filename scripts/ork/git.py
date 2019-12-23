@@ -19,13 +19,14 @@ deco = Deco()
 def Clone(url,
           dest,
           rev="master",
-          recursive=False):
+          recursive=False,
+          cache=True):
 
   dest_path = Path(dest)
   dest_name = dest_path.name
   cache_dest = ork.path.gitcache()/dest_name
-  
-  if recursive:
+
+  if recursive or (cache==False):
 
    print("Cloning URL<%s> to dest<%s>"%(deco.path(url),deco.path(dest_path)))
    Command(["git",
@@ -57,4 +58,3 @@ def Clone(url,
              str(dest_path)]).exec()
 
 ###############################################################################
-
