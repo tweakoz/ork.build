@@ -17,7 +17,7 @@ from ork.wget import wget
 from ork.command import Command
 
 deco = Deco()
-    
+
 ###############################################################################
 
 class wt4(dep.Provider):
@@ -36,7 +36,7 @@ class wt4(dep.Provider):
   ########
 
   def __str__(self):
-    return "WT4 (%s-source)" % VERSION
+    return "WT4 (github-%s)" % VERSION
 
   ########
 
@@ -90,4 +90,3 @@ class wt4(dep.Provider):
       if self.OK:
         self.manifest.touch()
     return self.OK
-

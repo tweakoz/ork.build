@@ -33,7 +33,7 @@ class zephyr(dep.Provider):
 
   def __str__(self): ##########################################################
 
-    return "ZEPHYR (litex-edition)"
+    return "ZEPHYR (github-tweakoz/litex-edition)"
 
   def build(self): ##########################################################
 

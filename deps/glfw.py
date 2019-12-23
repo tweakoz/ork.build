@@ -33,7 +33,7 @@ class glfw(dep.Provider):
 
   def __str__(self): ##########################################################
 
-    return "GLFW (src-%s)" % VERSION
+    return "GLFW (github-%s)" % VERSION
 
   def build(self): ############################################################
 

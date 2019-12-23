@@ -14,6 +14,7 @@ from ork.command import Command
 
 deco = Deco()
 
+VERSION = "v3.6.1"
 ###############################################################################
 
 class nlohmannjson(dep.Provider):
@@ -30,7 +31,7 @@ class nlohmannjson(dep.Provider):
   ########
 
   def __str__(self):
-    return "NLohmannJson (github)"
+    return "NLohmannJson (github-%s)" % VERSION
 
   ########
 
@@ -41,7 +42,7 @@ class nlohmannjson(dep.Provider):
 
         git.Clone("https://github.com/nlohmann/json",
                   self.json_source_dest,
-                  "v3.6.1")
+                  VERSION)
 
         pathtools.mkdir(self.json_build_dest,clean=True)
         pathtools.chdir(self.json_build_dest)

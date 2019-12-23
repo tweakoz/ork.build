@@ -33,7 +33,7 @@ class openvr(dep.Provider):
 
   def __str__(self): ##########################################################
 
-    return "OPENVR (src-%s)" % VERSION
+    return "OPENVR (github-%s)" % VERSION
 
   def build(self): ############################################################
 

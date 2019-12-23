@@ -14,6 +14,8 @@ from ork.command import Command
 
 deco = Deco()
 
+VERSION = "2.88"
+
 ###############################################################################
 
 class bullet(dep.Provider):
@@ -30,7 +32,7 @@ class bullet(dep.Provider):
   ########
 
   def __str__(self):
-    return "BulletPhysics (github)"
+    return "BulletPhysics (github-%s)" % VERSION
 
   ########
 
@@ -41,7 +43,7 @@ class bullet(dep.Provider):
 
         git.Clone("https://github.com/bulletphysics/bullet3",
                   self.source_dest,
-                  "2.88")
+                  VERSION)
 
         pathtools.mkdir(self.build_dest,clean=True)
         pathtools.chdir(self.build_dest)

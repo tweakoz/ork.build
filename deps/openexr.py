@@ -14,6 +14,8 @@ from ork.command import Command
 
 deco = Deco()
 
+VERSION = "v2.4.0"
+
 ###############################################################################
 
 class openexr(dep.Provider):
@@ -30,7 +32,7 @@ class openexr(dep.Provider):
   ########
 
   def __str__(self):
-    return "OpenEXR (github)"
+    return "OpenEXR (github-%s)" % VERSION
 
   ########
 
@@ -42,7 +44,7 @@ class openexr(dep.Provider):
 
     git.Clone("https://github.com/openexr/openexr",
               self.source_dest,
-              "v2.4.0")
+              VERSION)
 
     pathtools.mkdir(self.build_dest,clean=True)
     pathtools.chdir(self.build_dest)

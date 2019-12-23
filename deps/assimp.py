@@ -34,7 +34,7 @@ class assimp(dep.Provider):
 
   def __str__(self): ##########################################################
 
-    return "Assimp (homebrew)"
+    return "Assimp (github-%s)" % VERSION
 
   def build(self): ##########################################################
 

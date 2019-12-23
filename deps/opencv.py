@@ -14,6 +14,7 @@ from ork.command import Command
 
 deco = Deco()
 
+VERSION = "4.1.0"
 ###############################################################################
 
 class opencv(dep.Provider):
@@ -31,7 +32,7 @@ class opencv(dep.Provider):
   ########
 
   def __str__(self):
-    return "OpenCV (github)"
+    return "OpenCV (github-%s)" % VERSION
 
   ########
 
@@ -43,11 +44,11 @@ class opencv(dep.Provider):
 
         git.Clone("https://github.com/opencv/opencv.git",
                   self.cv_source_dest,
-                  "4.1.0")
+                  VERSION)
 
         git.Clone("https://github.com/opencv/opencv_contrib.git",
                   self.cvcontrib_source_dest,
-                  "4.1.0")
+                  VERSION)
 
         pathtools.mkdir(self.cv_build_dest,clean=True)
         pathtools.chdir(self.cv_build_dest)

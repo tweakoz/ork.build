@@ -33,7 +33,7 @@ class vrx(dep.Provider):
 
   def __str__(self): ##########################################################
 
-    return "VRX (%s-source)" % VERSION
+    return "VRX (github-%s)" % VERSION
 
   def build(self): ##########################################################
 

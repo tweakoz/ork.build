@@ -34,7 +34,7 @@ class unittestpp(dep.Provider):
   ########
 
   def __str__(self):
-    return "UnitTestPP (src-%s)" % VERSION
+    return "UnitTestPP (github-%s)" % VERSION
 
   ########
 

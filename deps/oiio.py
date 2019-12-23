@@ -14,6 +14,7 @@ from ork.command import Command
 
 deco = Deco()
 
+VERSION = "spi-spcomp2-release-49"
 ###############################################################################
 
 class oiio(dep.Provider):
@@ -30,7 +31,7 @@ class oiio(dep.Provider):
   ########
 
   def __str__(self):
-    return "OpenEXR (github)"
+    return "OpenImageIO (github-%s)" % VERSION
 
   ########
 
@@ -45,7 +46,7 @@ class oiio(dep.Provider):
 
         git.Clone("https://github.com/OpenImageIO/oiio",
                   self.source_dest,
-                  "spi-spcomp2-release-49")
+                  VERSION )
 
         pathtools.mkdir(self.build_dest,clean=True)
         pathtools.chdir(self.build_dest)

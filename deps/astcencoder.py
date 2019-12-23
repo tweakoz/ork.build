@@ -34,7 +34,7 @@ class astcencoder(dep.Provider):
 
   def __str__(self): ##########################################################
 
-    return "ARM ASTC encoder (latest)"
+    return "ARM ASTC encoder (github-%s)" % VERSION
 
   def build(self): ##########################################################
 

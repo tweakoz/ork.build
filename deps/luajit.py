@@ -39,7 +39,7 @@ class luajit(dep.Provider):
   ########
 
   def __str__(self):
-    return "LuaJit (%s-source)" % VERSION
+    return "LuaJit (luajit.org-source-%s)" % VERSION
 
   ########
 

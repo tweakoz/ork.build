@@ -17,7 +17,7 @@ from ork.wget import wget
 from ork.command import Command
 
 deco = Deco()
-    
+
 ###############################################################################
 
 class minetest(dep.Provider):
@@ -36,7 +36,7 @@ class minetest(dep.Provider):
   ########
 
   def __str__(self):
-    return "Minetest (commit-%s-source)" % VERSION
+    return "Minetest (github-commit-%s-source)" % VERSION
 
   ########
 
@@ -107,4 +107,3 @@ class minetest(dep.Provider):
         self.manifest.touch()
 
     return self.OK
-

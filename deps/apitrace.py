@@ -34,7 +34,7 @@ class apitrace(dep.Provider):
 
   def __str__(self): ##########################################################
 
-    return "Assimp (homebrew)"
+    return "Assimp (github-%s)" % VERSION
 
   def build(self): ##########################################################
 
@@ -63,5 +63,3 @@ class apitrace(dep.Provider):
     print(self.OK)
 
     return self.OK
-
-

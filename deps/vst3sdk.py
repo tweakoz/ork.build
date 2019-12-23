@@ -30,7 +30,7 @@ class vst3sdk(dep.Provider):
   ########
 
   def __str__(self):
-    return "FLTK (github-%s)" % VERSION
+    return "VST3SDK (github-%s)" % VERSION
 
   ########
 
