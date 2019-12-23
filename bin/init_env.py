@@ -130,6 +130,7 @@ def setenv():
     ork.env.prepend("PATH",bin_dir)
     ork.env.prepend("PATH",OBT_STAGE/"bin")
     ork.env.prepend("LD_LIBRARY_PATH",OBT_STAGE/"lib")
+    ork.env.prepend("LD_LIBRARY_PATH",OBT_STAGE/"lib64")
     subenv = root_dir/".."/"obt.project"/"scripts"/"init_env.py"
     if subenv.exists():
         import importlib
