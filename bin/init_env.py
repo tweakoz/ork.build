@@ -95,6 +95,7 @@ if try_staging!=None:
 import ork.deco
 import ork.env
 import ork.path
+import ork.host
 from ork.command import Command
 
 deco = ork.deco.Deco()
@@ -135,7 +136,13 @@ def setenv():
         #print(modulename)
         modulename.setup()
         #modul.setup()
-
+    if ork.host.IsLinux:
+        pkgcfgdir = ork.path.Path("/usr/lib/x86_64-linux-gnu/pkgconfig")
+        if pkgcfgdir.exists():
+            ork.env.append("PKG_CONFIG_PATH",pkgcfgdir)
+        pkgcfgdir = ork.path.Path("/usr/share/pkgconfig")
+        if pkgcfgdir.exists():
+            ork.env.append("PKG_CONFIG_PATH",pkgcfgdir)
 
 ###########################################
 def lazyMakeDirs():

@@ -12,7 +12,7 @@ from ork import path, dep
 class context:
 
   def __init__(self,root="",env=dict()):
-    dep.require("cmake")
+    dep.require("cmake314")
     self.root = root
     self.env = env
 
