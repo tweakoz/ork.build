@@ -56,7 +56,7 @@ class nvtt(dep.Provider):
     ############################################
     # because, cuda 10 requires it - todo - make dynamic
     ############################################
-    if host.IsIx:
+    if host.IsLinux:
         cmakeEnv["CMAKE_CXX_COMPILER"]="g++-8"
         cmakeEnv["CMAKE_C_COMPILER"]="gcc-8"
 
