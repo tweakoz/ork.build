@@ -56,7 +56,14 @@ class oiio(dep.Provider):
             "CMAKE_CXX_FLAGS": "-Wno-error=deprecated",
             "BUILD_SHARED_LIBS": "ON",
             "USE_NUKE": "OFF",
+            "USE_PYTHON": "OFF",
+            "OIIO_BUILD_TOOLS": "OFF",
+            "OIIO_BUILD_TESTS": "OFF"
         }
+
+        if host.IsLinux:
+           cmakeEnv["CMAKE_CXX_COMPILER"] = "g++-9"
+           cmakeEnv["CMAKE_C_COMPILER"] = "gcc-9"
 
         cmake_ctx = cmake.context(root="..",env=cmakeEnv)
         if cmake_ctx.exec()==0:

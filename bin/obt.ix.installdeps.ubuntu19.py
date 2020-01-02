@@ -2,7 +2,7 @@
 
 import os
 
-deplist =  ["libboost-dev","gcc-8","gcc-9"]
+deplist =  ["libboost-dev","gcc-8","gcc-9","g++-8","g++-9",]
 deplist += ["libboost-filesystem-dev","libboost-system-dev","libboost-thread-dev"]
 deplist += ["libglfw3-dev","libflac++-dev","scons","git"]
 deplist += ["rapidjson-dev","graphviz","doxygen","clang","libtiff-dev"]
