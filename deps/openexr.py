@@ -14,7 +14,7 @@ from ork.command import Command
 
 deco = Deco()
 
-VERSION = "v2.4.0"
+VERSION = "master"
 
 ###############################################################################
 
@@ -52,6 +52,7 @@ class openexr(dep.Provider):
     cmakeEnv = {
         "CMAKE_BUILD_TYPE": "RELEASE",
         "BUILD_SHARED_LIBS": "ON",
+        "CMAKE_MODULE_PATH": self.source_dest
     }
 
     cmake_ctx = cmake.context(root="..",env=cmakeEnv)
