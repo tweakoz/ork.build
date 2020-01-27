@@ -54,6 +54,8 @@ class qt5(dep.Provider):
 
   def build(self): ############################################################
 
+    self.download_and_extract()
+
     source_dir = self.build_dest
     build_temp = source_dir/".build"
     print(build_temp)
@@ -68,9 +70,12 @@ class qt5(dep.Provider):
     options += ["-opensource", "-confirm-license"]
     options += ["-nomake", "tests"]
     options += ["-opengl","desktop"]
+    options += ["-debug"]
 
     if host.IsOsx:
       options += ["-qt-libpng","-qt-zlib","-no-framework"]
+    else:
+      options += ["-qt-xcb"]
 
     b = Command(["sh", "../configure"]+options)
     result = b.exec()
@@ -78,10 +83,9 @@ class qt5(dep.Provider):
     make.exec(parallel=True)
     # uhhuh - https://bugreports.qt.io/browse/QTBUG-60496
     return (0==make.exec(target="install", parallel=False))
-    
+
   def provide(self): ##########################################################
-    if False==self.OK:
-      self.download_and_extract()
+    if self.should_build():
       self.OK = self.build()
       if self.OK:
         self.manifest.touch()
