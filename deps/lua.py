@@ -6,7 +6,7 @@
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
 
-VERSION = "v5.3.5"
+VERSION = "v5.2.1"
 
 import os, tarfile
 from yarl import URL
