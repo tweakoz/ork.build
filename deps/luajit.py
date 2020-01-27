@@ -6,12 +6,11 @@
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
 
-VERSION = "2.0.5"
-HASH = "48353202cbcacab84ee41a5a70ea0a2c"
+VERSION = "master"
 
 import os, tarfile
 from yarl import URL
-from ork import dep, host, path
+from ork import dep, host, path, git, pathtools
 from ork.deco import Deco
 from ork.wget import wget
 from ork.command import Command
@@ -29,12 +28,10 @@ class luajit(dep.Provider):
     parclass = super(luajit,self)
     parclass.__init__(options=options)
     #print(options)
-    build_dest = path.builds()/"luajit"
-    self.build_dest = build_dest
+    self.source_dest = path.builds()/"luajit"
+    self.build_dest = self.source_dest
     self.manifest = path.manifests()/"luajit"
     self.OK = self.manifest.exists()
-    self.fname = "luajit-stable-%s.tar.gz"%VERSION
-    self.source_dir = self.build_dest/("LuaJIT-%s"%VERSION)
 
   ########
 
@@ -45,22 +42,23 @@ class luajit(dep.Provider):
 
   def download_and_extract(self): #############################################
 
-    url = URL("http://luajit.org/download/LuaJIT-%s.tar.gz"%VERSION)
+    os.system("rm -rf %s"%self.source_dest)
 
-    self.arcpath = dep.downloadAndExtract([url],
-                                          self.fname,
-                                          "gz",
-                                          HASH,
-                                          self.build_dest)
+    git.Clone("https://github.com/LuaJIT/LuaJIT",
+              self.source_dest,
+              VERSION)
 
+    #pathtools.mkdir(self.build_dest,clean=True)
+    #pathtools.chdir(self.build_dest)
 
-    with fileinput.FileInput(str(self.source_dir/"Makefile"), inplace=True, backup='.bak') as file:
+    with fileinput.FileInput(str(self.source_dest/"Makefile"), inplace=True, backup='.bak') as file:
       for line in file:
         print(line.replace("export PREFIX= /usr/local", "export PREFIX=%s"%path.prefix()), end='')
 
   def build(self): ############################################################
 
-    os.chdir(str(self.source_dir))
+    self.download_and_extract()
+    os.chdir(str(self.source_dest))
 
     cmd = ["make","-j",host.NumCores]
 
@@ -71,8 +69,7 @@ class luajit(dep.Provider):
     return 0 == Command(cmd).exec()
 
   def provide(self): ##########################################################
-    if False==self.OK:
-      self.download_and_extract()
+    if self.should_build():
       self.OK = self.build()
       if self.OK:
         self.manifest.touch()
