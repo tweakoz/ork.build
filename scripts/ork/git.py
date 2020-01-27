@@ -31,6 +31,7 @@ def Clone(url,
    print("Cloning URL<%s> to dest<%s>"%(deco.path(url),deco.path(dest_path)))
    Command(["git",
              "clone",
+             "-b",rev,
              str(url),
              str(dest_path),
              "--recursive"]).exec()
@@ -52,6 +53,7 @@ def Clone(url,
 
     Command(["git",
              "clone",
+             "-b",rev,
              "--reference",
              str(cache_dest),
              str(url),

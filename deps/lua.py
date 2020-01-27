@@ -6,11 +6,11 @@
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
 
-VERSION = "master"
+VERSION = "v5.3.5"
 
 import os, tarfile
 from yarl import URL
-from ork import dep, host, path, git, pathtools
+from ork import dep, host, path, git, pathtools, command
 from ork.deco import Deco
 from ork.wget import wget
 from ork.command import Command
@@ -21,39 +21,47 @@ deco = Deco()
 
 ###############################################################################
 
-class luajit(dep.Provider):
+class lua(dep.Provider):
 
   def __init__(self,options=None): ############################################
 
-    parclass = super(luajit,self)
+    parclass = super(lua,self)
     parclass.__init__(options=options)
     #print(options)
-    self.source_dest = path.builds()/"luajit"
+    self.source_dest = path.builds()/"lua"
     self.build_dest = self.source_dest
-    self.manifest = path.manifests()/"luajit"
+    self.header_dest = path.prefix()/"include"/"lua"
+    self.manifest = path.manifests()/"lua"
     self.OK = self.manifest.exists()
 
   ########
 
   def __str__(self):
-    return "LuaJit (luajit.org-source-%s)" % VERSION
+    return "lua (lua.org-source-%s)" % VERSION
 
   ########
 
   def download_and_extract(self): #############################################
 
-    os.system("rm -rf %s"%self.source_dest)
+    command.system("rm -rf %s"%self.source_dest)
 
-    git.Clone("https://github.com/LuaJIT/LuaJIT",
+    git.Clone("https://github.com/lua/lua",
               self.source_dest,
-              rev=VERSION)
+              rev=VERSION,
+              cache=False)
 
-    #pathtools.mkdir(self.build_dest,clean=True)
-    #pathtools.chdir(self.build_dest)
-
-    with fileinput.FileInput(str(self.source_dest/"Makefile"), inplace=True, backup='.bak') as file:
+    with fileinput.FileInput(str(self.source_dest/"makefile"), inplace=True, backup='.bak') as file:
       for line in file:
-        print(line.replace("export PREFIX= /usr/local", "export PREFIX=%s"%path.prefix()), end='')
+        print(line.replace("CC= clang-3.8", "CC= g++"), end='')
+    with fileinput.FileInput(str(self.source_dest/"makefile"), inplace=True, backup='.bak') as file:
+      for line in file:
+        print(line.replace("CFLAGS= -Wall -O2 $(MYCFLAGS)", "CFLAGS= -Wall -O2 $(MYCFLAGS) -fPIC"), end='')
+    with fileinput.FileInput(str(self.source_dest/"makefile"), inplace=True, backup='.bak') as file:
+      for line in file:
+        print(line.replace("MYLDFLAGS= $(LOCAL) -Wl,-E", "MYLDFLAGS= $(LOCAL) -Wl,-E -fPIC"), end='')
+
+
+
 
   def build(self): ############################################################
 
@@ -65,8 +73,16 @@ class luajit(dep.Provider):
     if ork.host.IsOsx:
         cmd += ["MACOSX_DEPLOYMENT_TARGET=10.14"]
 
-    cmd += ["install"]
-    return 0 == Command(cmd).exec()
+    ok = (0 == Command(cmd).exec())
+    if ok:
+      cmd = ["cp",self.source_dest/"liblua.a",path.prefix()/"lib"/"liblua.a"]
+      ok = (0 == Command(cmd).exec())
+      if ok:
+        pathtools.mkdir(self.header_dest,clean=True)
+        cmd = ["cp", self.source_dest/"*.h",str(self.header_dest)+"/"]
+        ok = (0 == command.system(cmd))
+
+    return ok
 
   def provide(self): ##########################################################
     if self.should_build():

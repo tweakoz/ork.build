@@ -6,7 +6,7 @@
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
 
-import os,sys, platform, subprocess
+import os,sys, platform, subprocess, shlex
 from ork.deco import Deco
 from ork.log import log
 deco = Deco()
