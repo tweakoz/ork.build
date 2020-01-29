@@ -10,12 +10,11 @@ VERSION = "v5.2.1"
 
 import os, tarfile
 from yarl import URL
-from ork import dep, host, path, git, pathtools, command
+from ork import dep, host, path, git, pathtools, command, patch
 from ork.deco import Deco
 from ork.wget import wget
 from ork.command import Command
 import ork.host
-import fileinput
 
 deco = Deco()
 
@@ -50,18 +49,16 @@ class lua(dep.Provider):
               rev=VERSION,
               cache=False)
 
-    with fileinput.FileInput(str(self.source_dest/"makefile"), inplace=True, backup='.bak') as file:
-      for line in file:
-        print(line.replace("CC= clang-3.8", "CC= g++"), end='')
-    with fileinput.FileInput(str(self.source_dest/"makefile"), inplace=True, backup='.bak') as file:
-      for line in file:
-        print(line.replace("CFLAGS= -Wall -O2 $(MYCFLAGS)", "CFLAGS= -Wall -O2 $(MYCFLAGS) -fPIC"), end='')
-    with fileinput.FileInput(str(self.source_dest/"makefile"), inplace=True, backup='.bak') as file:
-      for line in file:
-        print(line.replace("MYLDFLAGS= $(LOCAL) -Wl,-E", "MYLDFLAGS= $(LOCAL) -Wl,-E -fPIC"), end='')
+    patch_items = dict()
+    patch_items["CC= clang-3.8"]="CC= g++"
+    patch_items["CFLAGS= -Wall -O2 $(MYCFLAGS)"]="CFLAGS= -Wall -O2 $(MYCFLAGS) -fPIC"
+    if ork.host.IsLinux:
+        patch_items["MYLDFLAGS= $(LOCAL) -Wl,-E"]="MYLDFLAGS= $(LOCAL) -Wl,-E -fPIC"
+    else:
+        patch_items["MYLDFLAGS= $(LOCAL) -Wl,-E"]="MYLDFLAGS= $(LOCAL) -fPIC"
+        patch_items["-lhistory"]=""
 
-
-
+    patch.patch_with_dict(self.source_dest/"makefile",patch_items)
 
   def build(self): ############################################################
 

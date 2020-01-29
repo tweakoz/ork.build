@@ -10,7 +10,7 @@ VERSION = "master"
 
 import os, tarfile
 from yarl import URL
-from ork import dep, host, path, git, pathtools
+from ork import dep, host, path, git, pathtools, patch
 from ork.deco import Deco
 from ork.wget import wget
 from ork.command import Command
@@ -51,9 +51,9 @@ class luajit(dep.Provider):
     #pathtools.mkdir(self.build_dest,clean=True)
     #pathtools.chdir(self.build_dest)
 
-    with fileinput.FileInput(str(self.source_dest/"Makefile"), inplace=True, backup='.bak') as file:
-      for line in file:
-        print(line.replace("export PREFIX= /usr/local", "export PREFIX=%s"%path.prefix()), end='')
+    patch_items = dict()
+    patch_items["export PREFIX= /usr/local"]="export PREFIX=%s"%path.prefix()
+    patch.patch_with_dict(self.source_dest/"Makefile",patch_items)
 
   def build(self): ############################################################
 

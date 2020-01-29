@@ -1,5 +1,6 @@
 import ork.deco
 from ork.command import Command
+import fileinput
 
 deco = ork.deco.Deco()
 
@@ -19,3 +20,11 @@ class patcher:
     for i in list_of_items:
       print(i)
       self.patch(i[0],i[1])
+
+
+def patch_with_dict(filename,item_dict):
+  for k in item_dict.keys():
+    v = item_dict[k]
+    with fileinput.FileInput(str(filename), inplace=True, backup='.bak') as file:
+      for line in file:
+        print(line.replace(k, v), end='')
