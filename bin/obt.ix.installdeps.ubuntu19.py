@@ -13,6 +13,17 @@ deplist += ["libxcb-cursor-dev","libxcb-proto-dev","libxcb-keysyms1-dev"]
 deplist += ["libxcb-xkb-dev","libxkbcommon-x11-dev"]
 deplist += ["libgtkmm-3.0-dev"]
 deplist += ["libfltk1.3-dev","freeglut3-dev"]
+deplist += ["libxcb-input-dev","libxcb-xf86drio-dev"]
+deplist += ["libfontconfig1-dev"]
+deplist += ["libfreetype6-dev"]
+deplist += ["libx11-dev"]
+deplist += ["libxext-dev"]
+deplist += ["libxfixes-dev"]
+deplist += ["libxi-dev"]
+deplist += ["libxrender-dev"]
+deplist += ["libxcb1-dev"]
+deplist += ["libx11-xcb-dev"]
+deplist += ["libxcb-glx0-dev"]
 
 for item in deplist:
     os.system("sudo apt install %s" % item)
