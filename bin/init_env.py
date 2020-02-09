@@ -104,7 +104,10 @@ bin_dir = root_dir/"bin"
 ############################################
 
 if try_staging!=None:
-  qtdir = OBT_STAGE/"qt5"
+  if ork.host.IsOsx:
+    qtdir = Path("/")/"usr"/"local"/"opt"/"qt5"
+  else:
+    qtdir = OBT_STAGE/"qt5"
   if qtdir.exists():
       ork.env.set("QTDIR",qtdir)
       ork.env.prepend("PATH",qtdir/"bin")

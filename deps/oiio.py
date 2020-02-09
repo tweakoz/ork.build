@@ -14,7 +14,7 @@ from ork.command import Command
 
 deco = Deco()
 
-VERSION = "spi-spcomp2-release-49"
+VERSION = "spi-spcomp2-release-49.4"
 ###############################################################################
 
 class oiio(dep.Provider):
@@ -23,9 +23,9 @@ class oiio(dep.Provider):
 
     parclass = super(oiio,self)
     parclass.__init__(options=options)
-    self.manifest = path.manifests()/"OpenImageIo"
+    self.manifest = path.manifests()/"oiio"
     self.OK = self.manifest.exists()
-    self.source_dest = path.builds()/"OpenImageIo"
+    self.source_dest = path.builds()/"oiio"
     self.build_dest = self.source_dest/".build"
 
   ########
@@ -39,7 +39,7 @@ class oiio(dep.Provider):
     if False==self.OK:
         dep.require("pkgconfig")
         dep.require("cmake314")
-        dep.require("qt5")
+        #dep.require("qt5")
         dep.require("openexr")
 
         os.system("rm -rf %s"%self.source_dest)
