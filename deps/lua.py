@@ -9,7 +9,6 @@
 VERSION = "v5.2.1"
 
 import os, tarfile
-from yarl import URL
 from ork import dep, host, path, git, pathtools, command
 from ork.deco import Deco
 from ork.wget import wget

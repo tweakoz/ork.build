@@ -7,8 +7,8 @@
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
 
-VERSION = "10.4"
-HASH = "8e8770c289b3e0bdb779b5b171593479"
+VERSION = "3.8.1"
+HASH = "f215fa2f55a78de739c1787ec56b2bcd"
 
 import os, tarfile
 from yarl import URL
@@ -19,42 +19,43 @@ from ork.command import Command
 
 deco = Deco()
 
+
 ###############################################################################
 
-class postgresql(dep.Provider):
+class python(dep.Provider):
 
   def __init__(self,options=None): ############################################
 
-    parclass = super(postgresql,self)
+    parclass = super(python,self)
     parclass.__init__(options=options)
     #print(options)
-    build_dest = path.builds()/"postgresql"
+    build_dest = path.builds()/"python"
     self.build_dest = build_dest
-    self.manifest = path.manifests()/"postgresql"
+    self.manifest = path.manifests()/"python"
     self.OK = self.manifest.exists()
-    self.fname = "postgresql-%s.tar.bz2"%VERSION
+    self.fname = "Python-%s.tgz"%VERSION
 
   ########
 
   def __str__(self):
-    return "Postgresql (%s-source)" % VERSION
+    return "Python3 (%s-source)" % VERSION
 
   ########
 
   def download_and_extract(self): #############################################
 
-    url = URL("https://ftp.postgresql.org/pub/source/v%s/postgresql-%s.tar.bz2"%(VERSION,VERSION))
+    url = URL("https://www.python.org/ftp/python/%s/%s"%(VERSION,self.fname))
 
     self.arcpath = dep.downloadAndExtract([url],
                                           self.fname,
-                                          "bz2",
+                                          "gz",
                                           HASH,
                                           self.build_dest)
 
 
   def build(self): ############################################################
-    self.download_and_extract()
-    source_dir = self.build_dest/("postgresql-%s"%VERSION)
+
+    source_dir = self.build_dest/("python-%s"%VERSION)
     build_temp = source_dir/".build"
     print(build_temp)
     if build_temp.exists():
@@ -62,5 +63,9 @@ class postgresql(dep.Provider):
 
     build_temp.mkdir(parents=True,exist_ok=True)
     os.chdir(str(build_temp))
-    Command(["../configure","--prefix",path.prefix()]).exec()
+    options = [
+        "--prefix",path.prefix(),
+        "--with-pydebug",
+    ]
+    Command(["../configure"]+options).exec()
     return 0==Command(["make","-j",host.NumCores,"install"]).exec()
