@@ -9,8 +9,7 @@
 VERSION = "master"
 
 import os, tarfile
-from yarl import URL
-from ork import dep, host, path, cmake, git, make
+from ork import dep, host, path, cmake, git, make, command
 from ork.deco import Deco
 from ork.wget import wget
 from ork.command import Command
@@ -19,44 +18,41 @@ deco = Deco()
 
 ###############################################################################
 
-class vrx(dep.Provider):
+class moltenvk(dep.Provider):
 
   def __init__(self,options=None): ############################################
 
-    parclass = super(vrx,self)
+    parclass = super(moltenvk,self)
     parclass.__init__(options=options)
     #print(options)
-    self.source_dest = path.builds()/"vrx"
-    self.build_dest = path.builds()/"vrx"/".build"
-    self.manifest = path.manifests()/"vrx"
+    self.source_dest = path.builds()/"moltenvk"
+    self.build_dest = path.builds()/"moltenvk"/".build"
+    self.manifest = path.manifests()/"moltenvk"
     self.OK = self.manifest.exists()
 
   def __str__(self): ##########################################################
 
-    return "VRX (github-%s)" % VERSION
+    return "MoltenVK (github-%s)" % VERSION
 
   def build(self): ##########################################################
 
-    assimp = dep.require("assimp")
-    glfw = dep.require("glfw")
-    utpp = dep.require("unittestpp")
+    #glfw = dep.require("glfw")
 
     if self.incremental():
         os.chdir(self.build_dest)
     else:
-        git.Clone("https://github.com/tweakoz/vrx",self.source_dest,VERSION)
-        os.system("rm -rf %s"%self.build_dest)
-        os.mkdir(self.build_dest)
-        os.chdir(self.build_dest)
-        cmake_ctx = cmake.context("..")
-        cmake_ctx.exec()
+        git.Clone("https://github.com/KhronosGroup/MoltenVK",self.source_dest,VERSION)
 
-    rval = (make.exec("install")==0)
-    return rval
 
-  def linkenv(self): ##########################################################
-    LIBS = ["ork_vrx"]
-    return {
-        "LIBS": LIBS,
-        "LFLAGS": ["-l%s"%item for item in LIBS]
-    }
+    os.chdir(self.source_dest)
+
+    command.system(["./fetchDependencies"])
+    cmd = ["make", "macos"]
+    ok = (0 == command.system(cmd))
+    if ok:
+      cmd = ["cp","Package/Latest/MoltenVK/macOS/static/libMoltenVK.a",path.libs()/"libMoltenVK.a"]
+      ok = (0 == command.system(cmd))
+      if ok:
+        cmd = ["cp","-r","Package/Latest/MoltenVK/include/*",path.includes()]
+        ok = (0 == command.system(cmd))
+    return ok

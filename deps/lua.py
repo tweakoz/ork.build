@@ -79,11 +79,3 @@ class lua(dep.Provider):
         ok = (0 == command.system(cmd))
 
     return ok
-
-  def provide(self): ##########################################################
-    if self.should_build():
-      self.OK = self.build()
-      if self.OK:
-        self.manifest.touch()
-
-    return self.OK
