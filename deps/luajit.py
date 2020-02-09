@@ -67,11 +67,3 @@ class luajit(dep.Provider):
 
     cmd += ["install"]
     return 0 == Command(cmd).exec()
-
-  def provide(self): ##########################################################
-    if self.should_build():
-      self.OK = self.build()
-      if self.OK:
-        self.manifest.touch()
-
-    return self.OK

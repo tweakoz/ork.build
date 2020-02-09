@@ -52,6 +52,7 @@ class openexr(dep.Provider):
     cmakeEnv = {
         "CMAKE_BUILD_TYPE": "RELEASE",
         "BUILD_SHARED_LIBS": "ON",
+        "OPENEXR_VIEWERS_ENABLE": "OFF",
         "CMAKE_MODULE_PATH": self.source_dest
     }
 

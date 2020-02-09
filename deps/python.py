@@ -11,7 +11,6 @@ VERSION = "3.8.1"
 HASH = "f215fa2f55a78de739c1787ec56b2bcd"
 
 import os, tarfile
-from yarl import URL
 from ork import dep, host, path, cmake
 from ork.deco import Deco
 from ork.wget import wget
@@ -44,7 +43,7 @@ class python(dep.Provider):
 
   def download_and_extract(self): #############################################
 
-    url = URL("https://www.python.org/ftp/python/%s/%s"%(VERSION,self.fname))
+    url = "https://www.python.org/ftp/python/%s/%s"%(VERSION,self.fname)
 
     self.arcpath = dep.downloadAndExtract([url],
                                           self.fname,
@@ -54,8 +53,8 @@ class python(dep.Provider):
 
 
   def build(self): ############################################################
-
-    source_dir = self.build_dest/("python-%s"%VERSION)
+    self.download_and_extract()
+    source_dir = self.build_dest/("Python-%s"%VERSION)
     build_temp = source_dir/".build"
     print(build_temp)
     if build_temp.exists():
@@ -66,6 +65,7 @@ class python(dep.Provider):
     options = [
         "--prefix",path.prefix(),
         "--with-pydebug",
+        "--enable-shared"
     ]
     Command(["../configure"]+options).exec()
     return 0==Command(["make","-j",host.NumCores,"install"]).exec()

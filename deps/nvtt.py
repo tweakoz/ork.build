@@ -13,7 +13,7 @@ from ork.wget import wget
 
 deco = Deco()
 
-VERSION = "2.1.1"
+VERSION = "master"
 ###############################################################################
 
 class nvtt(dep.Provider):
