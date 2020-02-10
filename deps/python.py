@@ -69,6 +69,8 @@ class python(dep.Provider):
     ]
     if host.IsOsx:
        options += ["--with-openssl=/usr/local/Cellar/openssl@1.1/1.1.1d/"]
+    else:
+       options += ["--with-openssl=/usr"]
 
     Command(["../configure"]+options).exec()
     return 0==Command(["make","-j",host.NumCores,"install"]).exec()
