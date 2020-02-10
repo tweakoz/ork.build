@@ -67,5 +67,8 @@ class python(dep.Provider):
         "--with-pydebug",
         "--enable-shared"
     ]
+    if host.IsOsx:
+       options += ["--with-openssl=/usr/local/Cellar/openssl@1.1/1.1.1d/"]
+
     Command(["../configure"]+options).exec()
     return 0==Command(["make","-j",host.NumCores,"install"]).exec()
