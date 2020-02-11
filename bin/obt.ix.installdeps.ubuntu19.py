@@ -24,6 +24,8 @@ deplist += ["libxrender-dev"]
 deplist += ["libxcb1-dev"]
 deplist += ["libx11-xcb-dev"]
 deplist += ["libxcb-glx0-dev"]
+deplist += ["libavformat-dev"]
+deplist += ["libavcodec-dev"]
 
 for item in deplist:
     os.system("sudo apt install %s" % item)
