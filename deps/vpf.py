@@ -28,6 +28,7 @@ class vpf(dep.Provider):
     self.source_dest = path.builds()/"vpf"
     self.build_dest = path.builds()/"vpf"/".build"
     self.manifest = path.manifests()/"vpf"
+    self.sdk_dir = path.Path("/opt/nvencsdk")
     self.OK = self.manifest.exists()
 
   def __str__(self): ##########################################################
@@ -38,6 +39,12 @@ class vpf(dep.Provider):
     os.system("rm -rf %s"%self.source_dest)
 
   def build(self): ##########################################################
+
+    if not self.sdk_dir.exists():
+        print(deco.red("you need the nvenc SDK at <%s>" % self.sdk_dir ))
+        print(deco.red("download @ https://developer.nvidia.com/nvidia-video-codec-sdk"))
+        print(deco.yellow(" * requires login which is why I cannot download it for you!"))
+        assert(False)
 
     python = dep.require("python")
     pybind11 = dep.require("pybind11")
@@ -63,7 +70,7 @@ class vpf(dep.Provider):
 
         cmakeEnv = {
             "CMAKE_BUILD_TYPE": "RELEASE",
-            "VIDEO_CODEC_SDK_INCLUDE_DIR": "/opt/nvencsdk/include/",
+            "VIDEO_CODEC_SDK_INCLUDE_DIR": self.sdk_dir/"include",
             "GENERATE_PYTHON_BINDINGS": True
         }
 
