@@ -9,7 +9,7 @@
 VERSION = "master"
 
 import os, tarfile
-from ork import dep, host, path, cmake, git, make
+from ork import dep, host, path, cmake, git, make, pathtools
 from ork.deco import Deco
 from ork.wget import wget
 from ork.command import Command
@@ -34,17 +34,31 @@ class vpf(dep.Provider):
 
     return "VPF (github-%s)" % VERSION
 
+  def wipe(self): #############################################################
+    os.system("rm -rf %s"%self.source_dest)
+
   def build(self): ##########################################################
 
     python = dep.require("python")
     pybind11 = dep.require("pybind11")
 
+    #########################################
+    # fetch source
+    #########################################
+
+    if not self.source_dest.exists():
+        git.Clone("https://github.com/tweakoz/VideoProcessingFramework",self.source_dest,VERSION)
+
+    #########################################
+    # prep for build
+    #########################################
+
+    ok2build = True
     if self.incremental():
         os.chdir(self.build_dest)
     else:
-        #git.Clone("https://github.com/tweakoz/VideoProcessingFramework",self.source_dest,VERSION)
-        os.system("rm -rf %s"%self.build_dest)
-        os.mkdir(self.build_dest)
+
+        pathtools.mkdir(self.build_dest,clean=True)
         os.chdir(self.build_dest)
 
         cmakeEnv = {
@@ -54,10 +68,15 @@ class vpf(dep.Provider):
         }
 
         cmake_ctx = cmake.context("..",env=cmakeEnv)
-        cmake_ctx.exec()
+        ok2build = cmake_ctx.exec()==0
 
-    rval = (make.exec("install")==0)
-    return rval
+    #########################################
+    # build
+    #########################################
+
+    if ok2build:
+        self.OK = (make.exec("install")==0)
+    return self.OK
 
   def linkenv(self): ##########################################################
     LIBS = ["ork_vpf"]

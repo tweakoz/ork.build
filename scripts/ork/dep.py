@@ -26,6 +26,16 @@ class Provider:
         pass
 
     #############################
+    ## wipe build ?
+    #############################
+
+    def should_wipe(self):
+        wipe = False
+        if "wipe" in self._options:
+          wipe = self._options["wipe"]==True
+        return wipe
+
+    #############################
     ## force build ?
     #############################
 
@@ -56,11 +66,18 @@ class Provider:
     #############################
 
     def provide(self):
+      if self.should_wipe():
+        self.wipe()
       if self.should_build():
         self.OK = self.build()
       if self.OK:
         self.manifest.touch()
       return self.OK
+
+    #############################
+
+    def wipe(self):
+        pass
 
     #############################
 

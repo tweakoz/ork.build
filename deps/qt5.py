@@ -36,7 +36,8 @@ class qt5(dep.Provider):
     self.name = "qt-everywhere-src-%s" % self.fullver
     self.xzname = "%s.tar.xz" % self.name
     self.url = self.baseurl/MAJOR_VERSION/self.fullver/"single"/self.xzname
-    self.build_dest = path.builds()/"qt5"/self.name
+    self.source_dest = path.builds()/"qt5"/self.name
+    self.build_dest = self.source_dest/".build"
 
   ########
 
@@ -50,35 +51,53 @@ class qt5(dep.Provider):
                                            self.xzname,
                                            "xz",
                                            HASH,
-                                           path.builds()/"qt5")
+                                           self.source_dest)
+
+  ########
+
+  def wipe(self):
+    os.system("rm -rf %s"%self.source_dest)
+
+  ########
 
   def build(self): ############################################################
 
-    self.download_and_extract()
+    #########################################
+    # fetch source
+    #########################################
 
-    source_dir = self.build_dest
-    build_temp = source_dir/".build"
-    print(build_temp)
-    if build_temp.exists():
-      Command(["rm","-rf",build_temp]).exec()
+    if not self.source_dest.exists():
+        self.download_and_extract()
 
-    build_temp.mkdir(parents=True,exist_ok=True)
-    os.chdir(str(build_temp))
+    #########################################
+    # prep for build
+    #########################################
 
-    options =  ["-prefix", path.qt5dir()]
-    options += ["-c++std", "c++14", "-shared"]
-    options += ["-opensource", "-confirm-license"]
-    options += ["-nomake", "tests"]
-    options += ["-opengl","desktop"]
-    options += ["-debug"]
-
-    if host.IsOsx:
-      options += ["-qt-libpng","-qt-zlib","-no-framework"]
+    if self.incremental():
+        os.chdir(self.build_dest)
     else:
-      options += ["-qt-xcb"]
+        pathtools.mkdir(self.build_dest,clean=True)
+        os.chdir(self.build_dest)
 
-    b = Command(["sh", "../configure"]+options)
-    result = b.exec()
+        options =  ["-prefix", path.qt5dir()]
+        options += ["-c++std", "c++14", "-shared"]
+        options += ["-opensource", "-confirm-license"]
+        options += ["-nomake", "tests"]
+        options += ["-opengl","desktop"]
+        options += ["-debug"]
+
+        if host.IsOsx:
+          options += ["-qt-libpng","-qt-zlib","-no-framework"]
+        else:
+          options += ["-qt-xcb"]
+
+        b = Command(["sh", "../configure"]+options)
+        result = b.exec()
+
+    #########################################
+    # build
+    #########################################
+
     make.exec(parallel=True)
     make.exec(parallel=True)
     # uhhuh - https://bugreports.qt.io/browse/QTBUG-60496

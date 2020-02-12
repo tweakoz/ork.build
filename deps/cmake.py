@@ -6,35 +6,38 @@
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
 
-VERSION = "master"
+VERSION ="v3.16.4"
 
 import os, tarfile
-from ork import dep, host, path, cmake, git, make, command, pathtools
+import ork.cmake
+from ork import dep, host, path, git, make, pathtools
 from ork.deco import Deco
 from ork.wget import wget
 from ork.command import Command
+from ork.cmake import context
 
 deco = Deco()
 
 ###############################################################################
 
-class pybind11(dep.Provider):
+class cmake(dep.Provider):
 
   def __init__(self,options=None): ############################################
 
-    parclass = super(pybind11,self)
+    parclass = super(cmake,self)
     parclass.__init__(options=options)
-    #print(options)
-    self.source_dest = path.builds()/"pybind11"
-    self.build_dest = path.builds()/"pybind11"/".build"
-    self.manifest = path.manifests()/"pybind11"
+
+    self.source_dest = path.builds()/"cmake"
+    self.build_dest = path.builds()/"cmake"/".build"
+    self.manifest = path.manifests()/"cmake"
+
     self.OK = self.manifest.exists()
 
   def __str__(self): ##########################################################
 
-    return "PyBind11 (github-%s)" % VERSION
+    return "CMAKE (latest)"
 
-  def wipe(self): #############################################################
+  def wipe(self): ##########################################################
     os.system("rm -rf %s"%self.source_dest)
 
   def build(self): ##########################################################
@@ -44,32 +47,22 @@ class pybind11(dep.Provider):
     #########################################
 
     if not self.source_dest.exists():
-        git.Clone("https://github.com/pybind/pybind11",self.source_dest,VERSION)
+        git.Clone("https://github.com/kitware/cmake",self.source_dest,VERSION,cache=False)
 
     #########################################
     # prep for build
     #########################################
 
-    ok2build = True
     if self.incremental():
         os.chdir(self.build_dest)
     else:
-        pathtools.mkdir(self.build_dest,clean=True)
-        pathtools.chdir(self.build_dest)
-
-        cmakeEnv = {
-            "CMAKE_BUILD_TYPE": "RELEASE",
-            "BUILD_SHARED_LIBS": "ON",
-        }
-
-        cmake_ctx = cmake.context(root="..",env=cmakeEnv)
-        ok2build = cmake_ctx.exec()==0
+        pathtools.mkdir(self.build_dest, clean=True)
+        os.chdir(self.build_dest)
+        cmake_ctx = ork.cmake.context("..")
+        cmake_ctx.exec()
 
     #########################################
     # build
     #########################################
 
-    if ok2build:
-        self.OK = (make.exec("install")==0)
-
-    return self.OK
+    return (make.exec("install")==0)
