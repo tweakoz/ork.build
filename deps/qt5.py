@@ -36,7 +36,8 @@ class qt5(dep.Provider):
     self.name = "qt-everywhere-src-%s" % self.fullver
     self.xzname = "%s.tar.xz" % self.name
     self.url = self.baseurl/MAJOR_VERSION/self.fullver/"single"/self.xzname
-    self.source_dest = path.builds()/"qt5"/self.name
+    self.source_base = path.builds()/"qt5"
+    self.source_dest = self.source_base/self.name
     self.build_dest = self.source_dest/".build"
 
   ########
@@ -51,7 +52,7 @@ class qt5(dep.Provider):
                                            self.xzname,
                                            "xz",
                                            HASH,
-                                           self.source_dest)
+                                           self.source_base)
 
   ########
 
@@ -102,11 +103,3 @@ class qt5(dep.Provider):
     make.exec(parallel=True)
     # uhhuh - https://bugreports.qt.io/browse/QTBUG-60496
     return (0==make.exec(target="install", parallel=False))
-
-  def provide(self): ##########################################################
-    if self.should_build():
-      self.OK = self.build()
-      if self.OK:
-        self.manifest.touch()
-
-    return self.OK
