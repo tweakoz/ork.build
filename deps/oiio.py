@@ -38,7 +38,6 @@ class oiio(dep.Provider):
   def provide(self): ##########################################################
     if False==self.OK:
         dep.require("pkgconfig")
-        dep.require("cmake314")
         #dep.require("qt5")
         dep.require("openexr")
 

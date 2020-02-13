@@ -38,7 +38,7 @@ class openexr(dep.Provider):
 
   def build(self): #############################################################
 
-    dep.require(["fltk","cmake314"])
+    dep.require(["fltk"])
 
     os.system("rm -rf %s"%self.source_dest)
 
