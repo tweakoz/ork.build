@@ -26,6 +26,7 @@ deplist += ["libx11-xcb-dev"]
 deplist += ["libxcb-glx0-dev"]
 deplist += ["libavformat-dev"]
 deplist += ["libavcodec-dev"]
+deplist += ["libssl-dev"]
 deplist += ["wget","git","vim"]
 
 for item in deplist:
