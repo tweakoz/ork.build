@@ -11,7 +11,7 @@ MINOR_VERSION = "5"
 HASH = "d8c9ed842d39f1a5f31a7ab31e4e886c"
 
 import os, tarfile
-from ork import dep, host, path, git, make
+from ork import dep, host, path, git, make, pathtools
 from ork.deco import Deco
 from ork.wget import wget
 from ork.command import Command
