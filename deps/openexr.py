@@ -65,10 +65,3 @@ class openexr(dep.Provider):
     return self.OK
 
   ########
-
-  def provide(self): ##########################################################
-
-    if self.should_build():
-      self.OK = self.build()
-    print(self.OK)
-    return self.OK

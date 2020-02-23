@@ -6,36 +6,40 @@
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
 
-VERSION = "master"
+VERSION ="llvmorg-8.0.1"
 
 import os, tarfile
-from ork import dep, host, path, cmake, git, make, command, pathtools
+from ork import dep, host, path, git, cmake, make
 from ork.deco import Deco
 from ork.wget import wget
 from ork.command import Command
+from ork.cmake import context
 
 deco = Deco()
 
 ###############################################################################
 
-class pybind11(dep.Provider):
+class llvm(dep.Provider):
 
   def __init__(self,options=None): ############################################
 
-    parclass = super(pybind11,self)
+    parclass = super(llvm,self)
     parclass.__init__(options=options)
-    #print(options)
-    self.source_dest = path.builds()/"pybind11"
-    self.build_dest = path.builds()/"pybind11"/".build"
-    self.manifest = path.manifests()/"pybind11"
+
+    self.dest_base = path.builds()/"llvm"
+    self.llvm_source_dest = self.dest_base/"llvm"
+    self.llvm_build_dest = self.dest_base/"llvm"/".build"
+    self.clang_source_dest = self.dest_base/"clang"
+    self.clang_build_dest = self.dest_base/"clang"/".build"
+    self.manifest = path.manifests()/"llvm"
+
     self.OK = self.manifest.exists()
 
   def __str__(self): ##########################################################
-
-    return "PyBind11 (github-%s)" % VERSION
+    return "LLVM (github-%s)" % VERSION
 
   def wipe(self): #############################################################
-    os.system("rm -rf %s"%self.source_dest)
+    os.system("rm -rf %s"%self.dest_base)
 
   def build(self): ##########################################################
 
@@ -43,8 +47,8 @@ class pybind11(dep.Provider):
     # fetch source
     #########################################
 
-    if not self.source_dest.exists():
-        git.Clone("https://github.com/pybind/pybind11",self.source_dest,VERSION)
+    if not self.dest_base.exists():
+        git.Clone("https://github.com/llvm/llvm-project",self.dest_base,VERSION)
 
     #########################################
     # build
@@ -54,5 +58,7 @@ class pybind11(dep.Provider):
         "CMAKE_BUILD_TYPE": "RELEASE",
         "BUILD_SHARED_LIBS": "ON",
     }
-    self.OK = self._std_cmake_build(self.source_dest,self.build_dest,cmakeEnv)
+    self.OK = self._std_cmake_build(self.llvm_source_dest,self.llvm_build_dest,cmakeEnv)
+    if self.OK:
+        self.OK = self._std_cmake_build(self.clang_source_dest,self.clang_build_dest,cmakeEnv)
     return self.OK

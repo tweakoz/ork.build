@@ -13,6 +13,7 @@ import ork.path
 from ork.command import Command
 from ork.deco import Deco
 from ork.wget import wget
+from ork import pathtools, cmake, make
 
 deco = Deco()
 
@@ -73,6 +74,21 @@ class Provider:
       if self.OK:
         self.manifest.touch()
       return self.OK
+
+    #############################
+
+    def _std_cmake_build(self,srcdir,blddir,cmakeEnv):
+      ok2build = True
+      if self.incremental():
+        os.chdir(blddir)
+      else:
+        pathtools.mkdir(blddir,clean=True)
+        pathtools.chdir(blddir)
+        cmake_ctx = cmake.context(root=srcdir,env=cmakeEnv)
+        ok2build = cmake_ctx.exec()==0
+        if ok2build:
+          return (make.exec("install")==0)
+      return False
 
     #############################
 

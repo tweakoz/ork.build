@@ -46,13 +46,4 @@ class pkgconfig(dep.Provider):
         os.system( "rm -f %s" % f2r)
 
     self.OK = (make.exec( "install" )==0)
-    if self.OK:
-        self.manifest.touch()
-    return self.OK
-
-  def provide(self): ##########################################################
-    if self.should_build():
-      self.OK = self.build()
-      if self.OK:
-        self.manifest.touch()
     return self.OK

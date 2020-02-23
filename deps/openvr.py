@@ -47,13 +47,3 @@ class openvr(dep.Provider):
     })
     cmake_ctx.exec()
     return (make.exec("install")==0)
-
-  def provide(self): ##########################################################
-
-    if self.should_build():
-
-      self.OK = self.build()
-      if self.OK:
-        self.manifest.touch()
-
-    return self.OK

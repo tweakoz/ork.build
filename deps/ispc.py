@@ -6,7 +6,7 @@
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
 
-VERSION ="v5.0.0"
+VERSION ="v1.12.0"
 
 import os, tarfile
 from ork import dep, host, path, git, cmake, make
@@ -19,35 +19,41 @@ deco = Deco()
 
 ###############################################################################
 
-class assimp(dep.Provider):
+class ispc(dep.Provider):
 
   def __init__(self,options=None): ############################################
 
-    parclass = super(assimp,self)
+    parclass = super(ispc,self)
     parclass.__init__(options=options)
 
-    self.source_dest = path.builds()/"assimp"
-    self.build_dest = path.builds()/"assimp"/".build"
-    self.manifest = path.manifests()/"assimp"
+    self.source_dest = path.builds()/"ispc"
+    self.build_dest = path.builds()/"ispc"/".build"
+    self.manifest = path.manifests()/"ispc"
 
     self.OK = self.manifest.exists()
 
   def __str__(self): ##########################################################
+    return "Intel ISPC Compiler (github-%s)" % VERSION
 
-    return "Assimp (github-%s)" % VERSION
+  def wipe(self): #############################################################
+    os.system("rm -rf %s"%self.source_dest)
 
   def build(self): ##########################################################
 
-    git.Clone("https://github.com/assimp/assimp",self.source_dest,VERSION)
+    #########################################
+    # fetch source
+    #########################################
 
-    os.system("rm -rf %s"%self.build_dest)
-    os.mkdir(self.build_dest)
-    os.chdir(self.build_dest)
-    cmake_ctx = cmake.context("..")
-    cmake_ctx.exec()
-    return (make.exec("install")==0)
+    if not self.source_dest.exists():
+        git.Clone("https://github.com/ispc/ispc",self.source_dest,VERSION)
 
-  def linkenv(self): ##########################################################
-    return {
-        "LIBS": ["assimp"]
+    #########################################
+    # build
+    #########################################
+
+    cmakeEnv = {
+        "CMAKE_BUILD_TYPE": "RELEASE",
+        "BUILD_SHARED_LIBS": "ON",
     }
+    self.OK = self._std_cmake_build(self.source_dest,self.build_dest,cmakeEnv)
+    return self.OK

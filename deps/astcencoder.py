@@ -53,10 +53,3 @@ class astcencoder(dep.Provider):
         err = cmd.exec()
         self.manifest.touch()
     return (err==0)
-
-  def provide(self): ##########################################################
-
-    if self.should_build():
-      self.OK = self.build()
-    print(self.OK)
-    return self.OK
