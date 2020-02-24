@@ -6,40 +6,36 @@
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
 
-VERSION ="llvmorg-8.0.1"
+VERSION = "master"
 
 import os, tarfile
-from ork import dep, host, path, git, cmake, make
+from ork import dep, host, path, cmake, git, make, command, pathtools, patch
 from ork.deco import Deco
 from ork.wget import wget
 from ork.command import Command
-from ork.cmake import context
 
 deco = Deco()
 
 ###############################################################################
 
-class llvm(dep.Provider):
+class ispctexc(dep.Provider):
 
   def __init__(self,options=None): ############################################
 
-    parclass = super(llvm,self)
+    parclass = super(ispctexc,self)
     parclass.__init__(options=options)
-
-    self.dest_base = path.builds()/"llvm"
-    self.source_dest = self.dest_base/"llvm"
-    self.build_dest = self.source_dest/".build"
-    self.utils_source_dest = self.dest_base/"llvm"/"utils"
-    self.utils_build_dest = self.utils_source_dest/".build"
-    self.manifest = path.manifests()/"llvm"
-
+    #print(options)
+    self.source_dest = path.builds()/"ispctexc"
+    self.build_dest = path.builds()/"ispctexc"/"build"
+    self.manifest = path.manifests()/"ispctexc"
     self.OK = self.manifest.exists()
 
   def __str__(self): ##########################################################
-    return "LLVM (github-%s)" % VERSION
+
+    return "PyBind11 (github-%s)" % VERSION
 
   def wipe(self): #############################################################
-    os.system("rm -rf %s"%self.dest_base)
+    os.system("rm -rf %s"%self.source_dest)
 
   def build(self): ##########################################################
 
@@ -47,18 +43,24 @@ class llvm(dep.Provider):
     # fetch source
     #########################################
 
-    if not self.dest_base.exists():
-        git.Clone("https://github.com/llvm/llvm-project",self.dest_base,VERSION)
+    if not self.source_dest.exists():
+        git.Clone("https://github.com/GameTechDev/ISPCTextureCompressor",self.source_dest,VERSION)
 
     #########################################
     # build
     #########################################
 
-    cmakeEnv = {
-        "CMAKE_BUILD_TYPE": "RELEASE",
-        "BUILD_SHARED_LIBS": "ON",
-        "LLVM_INSTALL_UTILS": "ON",
-        "LLVM_ENABLE_DUMP": "ON"
+    self.source_dest.chdir()
+
+    ENV = {
+        "ISPC": path.stage()/"bin"/"ispc"
     }
-    self.OK = self._std_cmake_build(self.source_dest,self.build_dest,cmakeEnv)
+    r = Command(["make","-f","Makefile.linux"],environment=ENV).exec()
+    self.OK = (r==0)
+    if self.OK:
+      sonam = "libispc_texcomp.so"
+      hdrnam = "ispc_texcomp.h"
+      pathtools.copyfile(self.build_dest/sonam,path.stage()/"lib"/sonam)
+      pathtools.copyfile(self.source_dest/"ispc_texcomp"/hdrnam,path.stage()/"include"/hdrnam)
+
     return self.OK

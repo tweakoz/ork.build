@@ -135,3 +135,8 @@ def mkdir(p,clean=False):
 
 def chdir(p):
   os.chdir(str(p))
+
+###############################################################################
+
+def copyfile(file_from,file_dest):
+  os.system("cp \"%s\" \"%s\"" % (str(file_from), str(file_dest)))

@@ -6,8 +6,6 @@
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
 
-VERSION ="llvmorg-8.0.1"
-
 import os, tarfile
 from ork import dep, host, path, git, cmake, make
 from ork.deco import Deco
@@ -19,46 +17,29 @@ deco = Deco()
 
 ###############################################################################
 
-class llvm(dep.Provider):
+class clang(dep.Provider):
 
   def __init__(self,options=None): ############################################
 
-    parclass = super(llvm,self)
+    parclass = super(clang,self)
     parclass.__init__(options=options)
 
-    self.dest_base = path.builds()/"llvm"
-    self.source_dest = self.dest_base/"llvm"
+    self.llvm = dep.require("llvm")
+
+    self.source_dest = self.llvm.dest_base/"clang"
     self.build_dest = self.source_dest/".build"
-    self.utils_source_dest = self.dest_base/"llvm"/"utils"
-    self.utils_build_dest = self.utils_source_dest/".build"
-    self.manifest = path.manifests()/"llvm"
+    self.manifest = path.manifests()/"clang"
 
     self.OK = self.manifest.exists()
 
   def __str__(self): ##########################################################
-    return "LLVM (github-%s)" % VERSION
-
-  def wipe(self): #############################################################
-    os.system("rm -rf %s"%self.dest_base)
+    return "Clang (github-llvm)"
 
   def build(self): ##########################################################
-
-    #########################################
-    # fetch source
-    #########################################
-
-    if not self.dest_base.exists():
-        git.Clone("https://github.com/llvm/llvm-project",self.dest_base,VERSION)
-
-    #########################################
-    # build
-    #########################################
 
     cmakeEnv = {
         "CMAKE_BUILD_TYPE": "RELEASE",
         "BUILD_SHARED_LIBS": "ON",
-        "LLVM_INSTALL_UTILS": "ON",
-        "LLVM_ENABLE_DUMP": "ON"
     }
     self.OK = self._std_cmake_build(self.source_dest,self.build_dest,cmakeEnv)
     return self.OK
