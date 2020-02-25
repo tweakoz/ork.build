@@ -27,7 +27,7 @@ class ispc(dep.Provider):
     parclass.__init__(options=options)
 
     self.source_dest = path.builds()/"ispc"
-    self.build_dest = path.builds()/"ispc"/".build"
+    self.build_dest = path.builds()/"ispc"
     self.manifest = path.manifests()/"ispc"
 
     self.OK = self.manifest.exists()
@@ -40,14 +40,14 @@ class ispc(dep.Provider):
 
   def build(self): ##########################################################
 
-    dep.require("llvm")
+    dep.require(["llvm","clang"])
 
     #########################################
     # fetch source
     #########################################
 
     if not self.source_dest.exists():
-        git.Clone("https://github.com/ispc/ispc",self.source_dest,VERSION)
+        git.Clone("https://github.com/ispc/ispc",self.source_dest,VERSION,cache=False,recursive=False)
 
     #########################################
     # build
@@ -57,5 +57,7 @@ class ispc(dep.Provider):
         "CMAKE_BUILD_TYPE": "RELEASE",
         "BUILD_SHARED_LIBS": "ON",
     }
-    self.OK = self._std_cmake_build(self.source_dest,self.build_dest,cmakeEnv)
+    os.chdir(str(self.source_dest))
+    this_dir = path.Path(".")
+    self.OK = self._std_cmake_build(this_dir,this_dir,cmakeEnv)
     return self.OK
