@@ -64,7 +64,7 @@ class avr_libc(dep.Provider):
               ]).exec()
 
       make.exec("all")
-      make.exec("install",parallel=False)
+      make.exec("install",parallelism=0.0)
       self.manifest.touch()
       self.OK = True
       return self.OK

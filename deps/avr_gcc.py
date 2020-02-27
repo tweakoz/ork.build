@@ -59,7 +59,7 @@ class avr_gcc(dep.Provider):
 
       cmd.exec()
       make.exec()
-      make.exec("install",parallel=False)
+      make.exec("install",parallelism=0.0)
 
       self.OK = True
       self.manifest.touch()

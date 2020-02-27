@@ -99,7 +99,7 @@ class qt5(dep.Provider):
     # build
     #########################################
 
-    make.exec(parallel=True)
-    make.exec(parallel=True)
+    make.exec(parallelism=1.0)
+    make.exec(parallelism=1.0)
     # uhhuh - https://bugreports.qt.io/browse/QTBUG-60496
-    return (0==make.exec(target="install", parallel=False))
+    return (0==make.exec(target="install", parallelism=0.0))

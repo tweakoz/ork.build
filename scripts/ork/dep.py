@@ -77,7 +77,7 @@ class Provider:
 
     #############################
 
-    def _std_cmake_build(self,srcdir,blddir,cmakeEnv):
+    def _std_cmake_build(self,srcdir,blddir,cmakeEnv,parallelism=1.0):
       ok2build = True
       if self.incremental():
         os.chdir(blddir)
@@ -86,8 +86,8 @@ class Provider:
         pathtools.chdir(blddir)
         cmake_ctx = cmake.context(root=srcdir,env=cmakeEnv)
         ok2build = cmake_ctx.exec()==0
-        if ok2build:
-          return (make.exec("install")==0)
+      if ok2build:
+        return (make.exec("install",parallelism=parallelism)==0)
       return False
 
     #############################

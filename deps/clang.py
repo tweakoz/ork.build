@@ -41,5 +41,5 @@ class clang(dep.Provider):
         "CMAKE_BUILD_TYPE": "RELEASE",
         "BUILD_SHARED_LIBS": "ON",
     }
-    self.OK = self._std_cmake_build(self.source_dest,self.build_dest,cmakeEnv)
+    self.OK = self._std_cmake_build(self.source_dest,self.build_dest,cmakeEnv,parallelism=0.5)
     return self.OK

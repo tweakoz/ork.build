@@ -67,16 +67,14 @@ def search_at_root(word, root,ignore_set = ignore_folder_keys):
 
 #################################################################################
 
-pthspec = []
+p = os.environ["OBT_ROOT"]
+pthspec = p.split(":")
 
 #################################################################################
 
-if "ORK_FIND_PATH" in os.environ:
-  p = os.environ["ORK_FIND_PATH"]
-  pthspec = p.split(":")
-else:
-  p = os.environ["OBT_ROOT"]
-  pthspec = p.split(":")
+if "OBT_SEARCH_PATH" in os.environ:
+  p = os.environ["OBT_SEARCH_PATH"]
+  pthspec += p.split(":")
 
 #################################################################################
 

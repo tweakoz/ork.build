@@ -39,7 +39,7 @@ class lm32_binutils(dep.Provider):
              '--target=lm32-elf']).exec()
 
     make.exec("all")
-    make.exec("install",parallel=False)
+    make.exec("install",parallelism=0.0)
 
     self.OK = True
     return self.OK

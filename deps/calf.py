@@ -58,7 +58,7 @@ class calf(dep.Provider):
                         '--prefix=%s'%path.prefix(),
                        ]).exec()==0:
       if make.exec("all")==0:
-        if make.exec("install",parallel=False)==0:
+        if make.exec("install",parallelism=0.0)==0:
           self.OK = True
           self.manifest.touch()
 
