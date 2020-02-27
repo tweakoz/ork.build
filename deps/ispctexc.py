@@ -16,6 +16,8 @@ from ork.command import Command
 
 deco = Deco()
 
+dep.require("ispc")
+
 ###############################################################################
 
 class ispctexc(dep.Provider):
@@ -32,7 +34,7 @@ class ispctexc(dep.Provider):
 
   def __str__(self): ##########################################################
 
-    return "PyBind11 (github-%s)" % VERSION
+    return "ISPCTextureCompressor (github-%s)" % VERSION
 
   def wipe(self): #############################################################
     os.system("rm -rf %s"%self.source_dest)

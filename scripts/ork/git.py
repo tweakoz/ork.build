@@ -26,9 +26,9 @@ def Clone(url,
   dest_name = dest_path.name
   cache_dest = ork.path.gitcache()/dest_name
 
-  if recursive or (cache==False):
+  if recursive and (cache==False):
 
-   print("Cloning URL<%s> to dest<%s>"%(deco.path(url),deco.path(dest_path)))
+   print("Cloning (recursive) URL<%s> to dest<%s>"%(deco.path(url),deco.path(dest_path)))
    Command(["git",
              "clone",
              "-b",rev,
@@ -36,7 +36,7 @@ def Clone(url,
              str(dest_path),
              "--recursive"]).exec()
 
-  else:
+  elif cache:
     if False==cache_dest.exists():
       print("Mirroring URL<%s> to dest<%s>"%(deco.path(url),deco.path(cache_dest)))
 
@@ -56,6 +56,14 @@ def Clone(url,
              "-b",rev,
              "--reference",
              str(cache_dest),
+             str(url),
+             str(dest_path)]).exec()
+
+  else:
+    print("Cloning URL<%s> to dest<%s>"%(deco.path(url),deco.path(dest_path)))
+    Command(["git",
+             "clone",
+             "-b",rev,
              str(url),
              str(dest_path)]).exec()
 
