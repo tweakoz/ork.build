@@ -29,6 +29,7 @@ deplist += ["libavcodec-dev"]
 deplist += ["libswscale-dev"]
 deplist += ["libssl-dev"]
 deplist += ["wget","git","vim"]
+deplist += ["m4","bison","flex"]
 
 for item in deplist:
     os.system("sudo apt install %s" % item)
