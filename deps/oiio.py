@@ -33,41 +33,39 @@ class oiio(dep.Provider):
   def __str__(self):
     return "OpenImageIO (github-%s)" % VERSION
 
+  def wipe(self): #############################################################
+    os.system("rm -rf %s"%self.source_dest)
+
   ########
 
   def provide(self): ##########################################################
-    if False==self.OK:
-        dep.require("pkgconfig")
-        #dep.require("qt5")
-        dep.require("openexr")
 
-        os.system("rm -rf %s"%self.source_dest)
+    dep.require(["pkgconfig","openexr","pybind11"])
+    if host.IsLinux:
+        dep.require(["qt5"])
 
-        git.Clone("https://github.com/OpenImageIO/oiio",
-                  self.source_dest,
-                  VERSION )
+    #########################################
+    # fetch source
+    #########################################
 
-        pathtools.mkdir(self.build_dest,clean=True)
-        pathtools.chdir(self.build_dest)
+    if not self.source_dest.exists():
+      git.Clone("https://github.com/OpenImageIO/oiio",
+                self.source_dest,
+                VERSION )
 
-        cmakeEnv = {
-            "CMAKE_BUILD_TYPE": "RELEASE",
-            "CMAKE_CXX_FLAGS": "-Wno-error=deprecated",
-            "BUILD_SHARED_LIBS": "ON",
-            "USE_NUKE": "OFF",
-            "USE_PYTHON": "OFF",
-            "OIIO_BUILD_TOOLS": "OFF",
-            "OIIO_BUILD_TESTS": "OFF"
-        }
+    cmakeEnv = {
+        "CMAKE_BUILD_TYPE": "RELEASE",
+        "CMAKE_CXX_FLAGS": "-Wno-error=deprecated",
+        "BUILD_SHARED_LIBS": "ON",
+        "USE_NUKE": "OFF",
+        "USE_PYTHON": "ON",
+        "OIIO_BUILD_TOOLS": "ON",
+        "OIIO_BUILD_TESTS": "ON"
+    }
 
-        if host.IsLinux:
-           cmakeEnv["CMAKE_CXX_COMPILER"] = "g++-9"
-           cmakeEnv["CMAKE_C_COMPILER"] = "gcc-9"
+    if host.IsLinux:
+       cmakeEnv["CMAKE_CXX_COMPILER"] = "g++-9"
+       cmakeEnv["CMAKE_C_COMPILER"] = "gcc-9"
 
-        cmake_ctx = cmake.context(root="..",env=cmakeEnv)
-        if cmake_ctx.exec()==0:
-            if make.exec("install")==0:
-                self.manifest.touch()
-                self.OK = True
-
+    self.OK = self._std_cmake_build(self.source_dest,self.build_dest,cmakeEnv)
     return self.OK

@@ -36,18 +36,22 @@ class openexr(dep.Provider):
 
   ########
 
+  def wipe(self): #############################################################
+    os.system("rm -rf %s"%self.source_dest)
+
+  ########
   def build(self): #############################################################
 
     dep.require(["fltk"])
 
-    os.system("rm -rf %s"%self.source_dest)
+    #########################################
+    # fetch source
+    #########################################
 
-    git.Clone("https://github.com/openexr/openexr",
-              self.source_dest,
-              VERSION)
-
-    pathtools.mkdir(self.build_dest,clean=True)
-    pathtools.chdir(self.build_dest)
+    if not self.source_dest.exists():
+        git.Clone("https://github.com/openexr/openexr",
+                  self.source_dest,
+                  VERSION)
 
     cmakeEnv = {
         "CMAKE_BUILD_TYPE": "RELEASE",
@@ -56,12 +60,7 @@ class openexr(dep.Provider):
         "CMAKE_MODULE_PATH": self.source_dest
     }
 
-    cmake_ctx = cmake.context(root="..",env=cmakeEnv)
-    if cmake_ctx.exec()==0:
-        if make.exec("install")==0:
-            self.manifest.touch()
-            self.OK = True
-
+    self.OK = self._std_cmake_build(self.source_dest,self.build_dest,cmakeEnv)
     return self.OK
 
   ########

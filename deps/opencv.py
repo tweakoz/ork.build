@@ -36,40 +36,48 @@ class opencv(dep.Provider):
 
   ########
 
+  def wipe(self): #############################################################
+    os.system("rm -rf %s"%self.cv_source_dest)
+    os.system("rm -rf %s"%self.cvcontrib_source_dest)
+
+  ########
+
   def provide(self): ##########################################################
-    if False==self.OK:
 
-        os.system("rm -rf %s"%self.cv_source_dest)
-        os.system("rm -rf %s"%self.cvcontrib_source_dest)
+    dep.require(["pkgconfig","qt5","pybind11"])
 
-        git.Clone("https://github.com/opencv/opencv.git",
-                  self.cv_source_dest,
-                  VERSION)
+    python_dep = dep.require("python")
 
-        git.Clone("https://github.com/opencv/opencv_contrib.git",
-                  self.cvcontrib_source_dest,
-                  VERSION)
+    if not self.cv_source_dest.exists():
+      git.Clone("https://github.com/opencv/opencv.git",
+                self.cv_source_dest,
+                VERSION)
 
-        pathtools.mkdir(self.cv_build_dest,clean=True)
-        pathtools.chdir(self.cv_build_dest)
+    if not self.cvcontrib_source_dest.exists():
+      git.Clone("https://github.com/opencv/opencv_contrib.git",
+                self.cvcontrib_source_dest,
+                VERSION)
 
-        cmakeEnv = {
-            "CMAKE_BUILD_TYPE": "RELEASE",
-            "INSTALL_C_EXAMPLES": "ON",
-            "INSTALL_PYTHON_EXAMPLES": "ON",
-            "ENABLE_PRECOMPILED_HEADERS": "OFF",
-            "WITH_TBB": "OFF",
-            "WITH_V4L": "ON",
-            "WITH_QT": "OFF",
-            "WITH_OPENGL": "OFF",
-            "OPENCV_EXTRA_MODULES_PATH": "../../opencv_contrib/modules",
-            "BUILD_EXAMPLES": "ON"
-        }
+    cmakeEnv = {
+      "CMAKE_BUILD_TYPE": "RELEASE",
+      "INSTALL_C_EXAMPLES": "ON",
+      "INSTALL_PYTHON_EXAMPLES": "ON",
+      "ENABLE_PRECOMPILED_HEADERS": "OFF",
+      "WITH_TBB": "OFF",
+      "WITH_QT": "ON",
+      "WITH_OPENGL": "OFF",
+      "OPENCV_EXTRA_MODULES_PATH": "../../opencv_contrib/modules",
+      "PYTHON_DEFAULT_EXECUTABLE": python_dep.executable(),
+      # todo get internal python3 working
+      # todo get internal openexr working
+      "PYTHON3_EXECUTABLE": python_dep.executable(),
+      "PYTHON3_LIBRARY": python_dep.lib(),
+      "PYTHON_INCLUDE_DIR": python_dep.include_dir(),
+      "PYTHON3_PACKAGES_PATH": python_dep.site_packages_dir(),
+      "BUILD_EXAMPLES": "ON"
+    }
+    if host.IsLinux:
+      cmakeEnv["WITH_V4L"]="ON"
 
-        cmake_ctx = cmake.context(root="..",env=cmakeEnv)
-        if cmake_ctx.exec()==0:
-            if make.exec("install")==0:
-                self.manifest.touch()
-                self.OK = True
-
+    self.OK = self._std_cmake_build(self.cv_source_dest,self.cv_build_dest,cmakeEnv)
     return self.OK

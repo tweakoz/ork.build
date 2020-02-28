@@ -41,6 +41,24 @@ class python(dep.Provider):
 
   ########
 
+  def version(self):
+    return VERSION
+  def executable(self):
+    return path.bin()/"python3"
+  def lib(self):
+    # todo - use pkgconfig ?
+    return path.libs()/"libpython3.8d.so"
+  def libdir(self):
+    # todo - use pkgconfig ?
+    return path.libs()/"python3.8"
+  def site_packages_dir(self):
+    # todo - use pkgconfig ?
+    return self.libdir()/"site-packages"
+  def include_dir(self):
+    return path.includes()/(VERSION+"d")
+
+  ########
+
   def download_and_extract(self): #############################################
 
     url = "https://www.python.org/ftp/python/%s/%s"%(VERSION,self.fname)
