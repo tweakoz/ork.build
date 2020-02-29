@@ -2,7 +2,7 @@
 
 import os
 
-deplist =  ["cmake"]
+deplist =  ["cmake","wget","curl"]
 
 for item in deplist:
     os.system("brew install %s" % item)
