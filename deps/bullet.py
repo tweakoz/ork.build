@@ -18,5 +18,5 @@ class bullet(dep.StdProvider):
     parclass.__init__(name=name,miscoptions=miscoptions)
     self._fetcher = dep.GitFetcher(name)
     self._fetcher._git_url = "https://github.com/bulletphysics/bullet3"
-    self._fetcher._revision = "2.88"
+    self._fetcher._revision = "2.89"
     self._builder = dep.CMakeBuilder(name)
