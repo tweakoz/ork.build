@@ -23,7 +23,7 @@ class pillar(dep.Provider):
 
   ################################
 
-  def __init__(self,options=None):
+  def __init__(self,miscoptions=None):
     self.source_dest = path.builds()/"pillar-python-sdk"
     self.url = "https://github.com/armadillica/pillar"
     self.manifest = path.manifests()/"pillar-python-sdk"

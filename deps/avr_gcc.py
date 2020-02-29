@@ -22,7 +22,7 @@ deco = Deco()
 
 class avr_gcc(dep.Provider):
 
-  def __init__(self,options=None): ############################################
+  def __init__(self,miscoptions=None): ############################################
     self.manifest = path.manifests()/"avr_gcc"
     self.OK = self.manifest.exists()
 

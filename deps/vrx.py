@@ -21,10 +21,10 @@ deco = Deco()
 
 class vrx(dep.Provider):
 
-  def __init__(self,options=None): ############################################
+  def __init__(self,miscoptions=None): ############################################
 
     parclass = super(vrx,self)
-    parclass.__init__(options=options)
+    parclass.__init__(miscoptions=miscoptions)
     #print(options)
     self.source_dest = path.builds()/"vrx"
     self.build_dest = path.builds()/"vrx"/".build"

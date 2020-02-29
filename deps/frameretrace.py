@@ -21,10 +21,10 @@ deco = Deco()
 
 class frameretrace(dep.Provider):
 
-  def __init__(self,options=None): ############################################
+  def __init__(self,miscoptions=None): ############################################
 
     parclass = super(frameretrace,self)
-    parclass.__init__(options=options)
+    parclass.__init__(miscoptions=miscoptions)
 
     self.source_dest = path.builds()/"frameretrace"
     self.build_dest = path.builds()/"frameretrace"/".build"

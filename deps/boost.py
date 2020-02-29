@@ -25,9 +25,9 @@ class boost(dep.Provider):
 
   ########
 
-  def __init__(self,options=None):
+  def __init__(self,miscoptions=None):
     parclass = super(boost,self)
-    parclass.__init__(options=options)
+    parclass.__init__(miscoptions=miscoptions)
     self.version = VERSION
     self.versiond = self.version.replace("_",".")
     self.baseurl = URL("https://dl.bintray.com/boostorg/release")

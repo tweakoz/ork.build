@@ -18,10 +18,10 @@ deco = Deco()
 
 class simavr(dep.Provider):
 
-  def __init__(self,options=None): ############################################
+  def __init__(self,miscoptions=None): ############################################
 
     parclass = super(simavr,self)
-    parclass.__init__(options=options)
+    parclass.__init__(miscoptions=miscoptions)
     self.manifest = path.manifests()/"simavr"
     self.source_dest = path.builds()/"simavr"
 

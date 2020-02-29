@@ -18,10 +18,10 @@ VERSION = "2.20.2"
 
 class faust(dep.Provider):
 
-  def __init__(self,options=None): ############################################
+  def __init__(self,miscoptions=None): ############################################
 
     parclass = super(faust,self)
-    parclass.__init__(options=options)
+    parclass.__init__(miscoptions=miscoptions)
     self.manifest = path.manifests()/"faust"
     self.OK = self.manifest.exists()
     self.source_dest = path.builds()/"faust"

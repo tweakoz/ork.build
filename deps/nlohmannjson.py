@@ -19,10 +19,10 @@ VERSION = "v3.6.1"
 
 class nlohmannjson(dep.Provider):
 
-  def __init__(self,options=None): ############################################
+  def __init__(self,miscoptions=None): ############################################
 
     parclass = super(nlohmannjson,self)
-    parclass.__init__(options=options)
+    parclass.__init__(miscoptions=miscoptions)
     self.manifest = path.manifests()/"nlohmannjson"
     self.OK = self.manifest.exists()
     self.json_source_dest = path.builds()/"nlohmannjson"

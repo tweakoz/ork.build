@@ -22,10 +22,10 @@ dep.require("ispc")
 
 class ispctexc(dep.Provider):
 
-  def __init__(self,options=None): ############################################
+  def __init__(self,miscoptions=None): ############################################
 
     parclass = super(ispctexc,self)
-    parclass.__init__(options=options)
+    parclass.__init__(miscoptions=miscoptions)
     #print(options)
     self.source_dest = path.builds()/"ispctexc"
     self.build_dest = path.builds()/"ispctexc"/"build"

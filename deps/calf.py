@@ -18,10 +18,10 @@ VERSION = "master"
 
 class calf(dep.Provider):
 
-  def __init__(self,options=None): ############################################
+  def __init__(self,miscoptions=None): ############################################
 
     parclass = super(calf,self)
-    parclass.__init__(options=options)
+    parclass.__init__(miscoptions=miscoptions)
     self.manifest = path.manifests()/"calf"
     self.OK = self.manifest.exists()
     self.source_dest = path.builds()/"calf"

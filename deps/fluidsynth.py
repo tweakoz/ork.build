@@ -18,10 +18,10 @@ VERSION = "v2.1.0"
 
 class fluidsynth(dep.Provider):
 
-  def __init__(self,options=None): ############################################
+  def __init__(self,miscoptions=None): ############################################
 
     parclass = super(fluidsynth,self)
-    parclass.__init__(options=options)
+    parclass.__init__(miscoptions=miscoptions)
     self.manifest = path.manifests()/"fluidsynth"
     self.OK = self.manifest.exists()
     self.source_dest = path.builds()/"fluidsynth"

@@ -19,10 +19,10 @@ deco = Deco()
 
 class yarl(dep.Provider):
 
-  def __init__(self,options=None): ############################################
+  def __init__(self,miscoptions=None): ############################################
 
     parclass = super(yarl,self)
-    parclass.__init__(options=options)
+    parclass.__init__(miscoptions=miscoptions)
     self.manifest = path.manifests()/"yarl"
     self.OK = self.manifest.exists()
 

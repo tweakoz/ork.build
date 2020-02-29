@@ -18,11 +18,11 @@ deco = Deco()
 
 class gcode_gpr(dep.Provider):
 
-  def __init__(self,options=None): ############################################
+  def __init__(self,miscoptions=None): ############################################
 
 
     parclass = super(gcode_gpr,self)
-    parclass.__init__(options=options)
+    parclass.__init__(miscoptions=miscoptions)
     self.manifest = path.manifests()/"gcode_gpr"
     self.source_dest = path.builds()/"gcode_gpr"
     self.build_dest = self.source_dest/".build"

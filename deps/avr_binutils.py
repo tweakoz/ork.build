@@ -22,7 +22,7 @@ deco = Deco()
 
 class avr_binutils(dep.Provider):
 
-  def __init__(self,options=None): ############################################
+  def __init__(self,miscoptions=None): ############################################
 
     self.manifest = path.manifests()/"avr_binutils"
     self.OK = self.manifest.exists()

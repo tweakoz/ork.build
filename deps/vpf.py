@@ -20,10 +20,10 @@ deco = Deco()
 
 class vpf(dep.Provider):
 
-  def __init__(self,options=None): ############################################
+  def __init__(self,miscoptions=None): ############################################
 
     parclass = super(vpf,self)
-    parclass.__init__(options=options)
+    parclass.__init__(miscoptions=miscoptions)
     #print(options)
     self.source_dest = path.builds()/"vpf"
     self.build_dest = path.builds()/"vpf"/".build"

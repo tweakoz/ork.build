@@ -21,10 +21,10 @@ deco = Deco()
 
 class fcollada(dep.Provider):
 
-  def __init__(self,options=None): ############################################
+  def __init__(self,miscoptions=None): ############################################
 
     parclass = super(fcollada,self)
-    parclass.__init__(options=options)
+    parclass.__init__(miscoptions=miscoptions)
 
     self.source_dest = path.builds()/"fcollada"
     self.build_dest = path.builds()/"fcollada"/".build"

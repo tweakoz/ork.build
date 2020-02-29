@@ -21,10 +21,10 @@ deco = Deco()
 
 class llvm(dep.Provider):
 
-  def __init__(self,options=None): ############################################
+  def __init__(self,miscoptions=None): ############################################
 
     parclass = super(llvm,self)
-    parclass.__init__(options=options)
+    parclass.__init__(miscoptions=miscoptions)
 
     self.dest_base = path.builds()/"llvm"
     self.source_dest = self.dest_base/"llvm"
