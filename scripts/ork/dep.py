@@ -13,16 +13,26 @@ import ork.path
 from ork.command import Command
 from ork.deco import Deco
 from ork.wget import wget
-from ork import pathtools, cmake, make
+from ork import pathtools, cmake, make, path, git
 
 deco = Deco()
 
 ###############################################################################
 
+def require(name_or_list,miscoptions={}):
+    if(isinstance(name_or_list,str)):
+      node = DepNode(name_or_list,miscoptions=miscoptions)
+      node._status = node.provide()
+      return node.instance
+    elif (isinstance(name_or_list,list)):
+      return [DepNode(item,miscoptions=miscoptions).provide() for item in name_or_list]
+
+###############################################################################
+
 class Provider:
     """base class for all dependency providers"""
-    def __init__(self,options={}):
-        self._options = options
+    def __init__(self,miscoptions={}):
+        self._miscoptions = miscoptions
         self._node = None
         pass
 
@@ -32,8 +42,8 @@ class Provider:
 
     def should_wipe(self):
         wipe = False
-        if "wipe" in self._options:
-          wipe = self._options["wipe"]==True
+        if "wipe" in self._miscoptions:
+          wipe = self._miscoptions["wipe"]==True
         return wipe
 
     #############################
@@ -42,8 +52,8 @@ class Provider:
 
     def force(self):
         force = False
-        if "force" in self._options:
-          force = self._options["force"]==True
+        if "force" in self._miscoptions:
+          force = self._miscoptions["force"]==True
         return force
 
     #############################
@@ -52,8 +62,8 @@ class Provider:
 
     def incremental(self):
         incremental = False
-        if "incremental" in self._options:
-          incremental = self._options["incremental"]==True
+        if "incremental" in self._miscoptions:
+          incremental = self._miscoptions["incremental"]==True
         return incremental
 
     #############################
@@ -77,7 +87,16 @@ class Provider:
 
     #############################
 
-    def _std_cmake_build(self,srcdir,blddir,cmakeEnv,parallelism=1.0):
+    def _std_cmake_vars():
+      cmakeEnv = {
+        "CMAKE_BUILD_TYPE": "Release",
+        "BUILD_SHARED_LIBS": "ON",
+      }
+      return cmakeEnv
+
+    #############################
+
+    def _std_cmake_build(self,srcdir,blddir,cmakeEnv=_std_cmake_vars(),parallelism=1.0):
       ok2build = True
       if self.incremental():
         os.chdir(blddir)
@@ -107,11 +126,148 @@ class Provider:
 
 ###############################################################################
 
+class GitFetcher:
+  ###########################################
+  def __init__(self,name):
+    self._name = name
+    self._git_url = ""
+    self._revision = ""
+  ###########################################
+  def descriptor(self):
+    return "%s (git-%s)" % (self._name,self._revision)
+  ###########################################
+  def fetch(self,dest):
+    git.Clone(self._git_url,dest,self._revision)
+  ###########################################
+
+###############################################################################
+
+class CMakeBuilder:
+  ###########################################
+  def __init__(self,name):
+    ##################################
+    # ensure environment cmake present
+    ##################################
+    if name!="cmake":
+      require("cmake")
+    ##################################
+    self._name = name
+    self._cmakeenv = {
+      "CMAKE_BUILD_TYPE": "Release",
+      "BUILD_SHARED_LIBS": "ON",
+    }
+    self._parallelism=1.0
+    self._deps = []
+  ###########################################
+  def requires(self,deplist):
+    self._deps += deplist
+  ###########################################
+  def setCmVar(self,key,value):
+    self._cmakeenv[key] = value
+  ###########################################
+  def setCmVars(self,othdict):
+    for k in othdict:
+      self._cmakeenv[k] = othdict[k]
+  ###########################################
+  def build(self,srcdir,blddir,incremental=False):
+    require(self._deps)
+    ok2build = True
+    if incremental:
+      os.chdir(blddir)
+    else:
+      pathtools.mkdir(blddir,clean=True)
+      pathtools.chdir(blddir)
+      cmake_ctx = cmake.context(root=srcdir,env=self._cmakeenv)
+      ok2build = cmake_ctx.exec()==0
+    if ok2build:
+      return (make.exec(parallelism=self._parallelism)==0)
+    return False
+  ###########################################
+  def install(self,blddir):
+    pathtools.chdir(blddir)
+    return (make.exec("install",parallelism=0.0)==0)
+  ###########################################
+
+###############################################################################
+
+class StdProvider(Provider):
+
+    #############################
+
+    def __init__(self,name,miscoptions={}):
+      parclass = super(StdProvider,self)
+      parclass.__init__(miscoptions=miscoptions)
+      self._fetcher = None
+      self._builder = None
+      self._node = None
+      self.manifest = path.manifests()/name
+      self.OK = self.manifest.exists()
+      self.source_dest = path.builds()/name
+      self.build_dest = self.source_dest/".build"
+
+    #############################
+
+    def postinit(self):
+      pass
+
+    #############################
+
+    def install(self):
+      return self._builder.install(self.build_dest)
+
+    #############################
+
+    def __str__(self):
+      return self._fetcher.descriptor()
+
+    #############################
+
+    def wipe(self):
+      os.system("rm -rf %s"%self.source_dest)
+
+    #############################
+
+    def build(self):
+
+      #########################################
+      # fetch source
+      #########################################
+
+      if not self.source_dest.exists():
+        self._fetcher.fetch(self.source_dest)
+
+      #########################################
+      # build
+      #########################################
+
+      self.OK = self._builder.build(self.source_dest,self.build_dest,self.incremental())
+
+
+      #########################################
+
+      return self.OK
+
+    #########################################
+
+    def provide(self):
+      self.postinit()
+      if self.should_wipe():
+        self.wipe()
+      if self.should_build():
+        self.OK = self.build()
+        if self.OK:
+          self.OK = self.install()
+      if self.OK:
+        self.manifest.touch()
+      return self.OK
+
+###############################################################################
+
 class DepNode:
     """dependency provider node"""
-    def __init__(self,name=None,options={}):
+    def __init__(self,name=None,miscoptions=None):
       assert(isinstance(name,str))
-      self.options = options
+      self.miscoptions = miscoptions
       self.name = name
       self.scrname = ("%s.py"%name)
       self.module_path = ork.path.deps()/self.scrname
@@ -124,7 +280,7 @@ class DepNode:
         self.module_class = getattr(self.module,name)
         assert(inspect.isclass(self.module_class))
         assert(issubclass(self.module_class,Provider))
-        self.instance = self.module_class(options=options)
+        self.instance = self.module_class(miscoptions=miscoptions)
         self.instance._node = self
 
     ## string descriptor of dependency
@@ -144,16 +300,6 @@ class DepNode:
         provide = self.instance.provide()
         assert(provide==True)
         return provide
-
-###############################################################################
-
-def require(name_or_list,options={}):
-    if(isinstance(name_or_list,str)):
-      node = DepNode(name_or_list,options=options)
-      node._status = node.provide()
-      return node.instance
-    elif (isinstance(name_or_list,list)):
-      return [DepNode(item,options=options).provide() for item in name_or_list]
 
 ###############################################################################
 

@@ -21,4 +21,4 @@ _options = {
     "incremental": (_args["incremental"]==True)
 }
 
-dep.require(_args["dependency"],options=_options)
+dep.require(_args["dependency"],miscoptions=_options)

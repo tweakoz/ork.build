@@ -24,10 +24,10 @@ deco = Deco()
 
 class qt5(dep.Provider):
 
-  def __init__(self,options=None): ############################################
+  def __init__(self,miscoptions=None): ############################################
 
     parclass = super(qt5,self)
-    parclass.__init__(options=options)
+    parclass.__init__(miscoptions=miscoptions)
     #print(options)
     self.manifest = path.manifests()/"qt5"
     self.OK = self.manifest.exists()

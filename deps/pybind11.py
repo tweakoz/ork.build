@@ -6,53 +6,17 @@
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
 
-VERSION = "master"
-
-import os, tarfile
-from ork import dep, host, path, cmake, git, make, command, pathtools
-from ork.deco import Deco
-from ork.wget import wget
-from ork.command import Command
-
-deco = Deco()
+from ork import dep
 
 ###############################################################################
 
-class pybind11(dep.Provider):
+class pybind11(dep.StdProvider):
 
-  def __init__(self,options=None): ############################################
-
+  def __init__(self,miscoptions):
+    name = "pybind11"
     parclass = super(pybind11,self)
-    parclass.__init__(options=options)
-    #print(options)
-    self.source_dest = path.builds()/"pybind11"
-    self.build_dest = path.builds()/"pybind11"/".build"
-    self.manifest = path.manifests()/"pybind11"
-    self.OK = self.manifest.exists()
-
-  def __str__(self): ##########################################################
-
-    return "PyBind11 (github-%s)" % VERSION
-
-  def wipe(self): #############################################################
-    os.system("rm -rf %s"%self.source_dest)
-
-  def build(self): ##########################################################
-
-    #########################################
-    # fetch source
-    #########################################
-
-    if not self.source_dest.exists():
-        git.Clone("https://github.com/pybind/pybind11",self.source_dest,VERSION)
-
-    #########################################
-    # build
-    #########################################
-
-    cmakeEnv = {
-        "CMAKE_BUILD_TYPE": "RELEASE",
-        "BUILD_SHARED_LIBS": "ON",
-    }
-    self.OK = self._std_cmake_build(self.source_dest,self.build_dest,cmakeEnv)
-    return self.OK
+    parclass.__init__(name=name,miscoptions=miscoptions)
+    self._fetcher = dep.GitFetcher(name)
+    self._fetcher._git_url = "https://github.com/pybind/pybind11"
+    self._fetcher._revision = "master"
+    self._builder = dep.CMakeBuilder(name)

@@ -1,49 +1,25 @@
 ###############################################################################
 # Orkid Build System
-# Copyright 2010-2018, Michael T. Mayers
+# Copyright 2010-2020, Michael T. Mayers
 # email: michael@tweakoz.com
 # The Orkid Build System is published under the GPL 2.0 license
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
 
-VERSION ="master"
-
-import os, tarfile
-from ork import dep, host, path, git, make, cmake
-from ork.deco import Deco
-from ork.wget import wget
-from ork.command import Command
-
-deco = Deco()
+from ork import dep
 
 ###############################################################################
 
-class openvr(dep.Provider):
+class openvr(dep.StdProvider):
 
-  def __init__(self,options=None): ############################################
-
+  def __init__(self,miscoptions):
+    name = "openvr"
     parclass = super(openvr,self)
-    parclass.__init__(options=options)
-
-    self.source_dest = path.builds()/"openvr"
-    self.build_dest = path.builds()/"openvr"/".build"
-    self.manifest = path.manifests()/"openvr"
-
-    self.OK = self.manifest.exists()
-
-  def __str__(self): ##########################################################
-
-    return "OPENVR (github-%s)" % VERSION
-
-  def build(self): ############################################################
-
-    git.Clone("https://github.com/ValveSoftware/openvr",self.source_dest,VERSION)
-
-    os.system("rm -rf %s"%self.build_dest)
-    os.mkdir(self.build_dest)
-    os.chdir(self.build_dest)
-    cmake_ctx = cmake.context("..",env={
-        "BUILD_SHARED_LIBS": "ON"
-    })
-    cmake_ctx.exec()
-    return (make.exec("install")==0)
+    parclass.__init__(name=name,fetcher=fetcher,builder=builder,miscoptions=miscoptions)
+    self._fetcher = dep.GitFetcher(name)
+    self._fetcher._git_url = "https://github.com/ValveSoftware/openvr"
+    self._fetcher._revision = "master"
+    self._builder = dep.CMakeBuilder(name)
+    self._builder._cmakeenv = {
+      "BUILD_SHARED_LIBS": "ON"
+    }
