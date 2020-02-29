@@ -30,6 +30,7 @@ deplist += ["libswscale-dev"]
 deplist += ["libssl-dev"]
 deplist += ["wget","git","vim"]
 deplist += ["m4","bison","flex"]
+deplist += ["libcurl4-openssl-dev"]
 
 for item in deplist:
     os.system("sudo apt install %s" % item)
