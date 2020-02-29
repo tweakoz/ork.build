@@ -15,7 +15,7 @@ class openvr(dep.StdProvider):
   def __init__(self,miscoptions):
     name = "openvr"
     parclass = super(openvr,self)
-    parclass.__init__(name=name,fetcher=fetcher,builder=builder,miscoptions=miscoptions)
+    parclass.__init__(name=name,miscoptions=miscoptions)
     self._fetcher = dep.GitFetcher(name)
     self._fetcher._git_url = "https://github.com/ValveSoftware/openvr"
     self._fetcher._revision = "master"
