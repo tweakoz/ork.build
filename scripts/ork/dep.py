@@ -132,12 +132,14 @@ class GitFetcher:
     self._name = name
     self._git_url = ""
     self._revision = ""
+    self._recursive = False
+    self._cache = True
   ###########################################
   def descriptor(self):
     return "%s (git-%s)" % (self._name,self._revision)
   ###########################################
   def fetch(self,dest):
-    git.Clone(self._git_url,dest,self._revision)
+    git.Clone(self._git_url,dest,self._revision,recursive=self._recursive,cache=self._cache)
   ###########################################
 
 ###############################################################################

@@ -6,47 +6,30 @@
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
 
-VERSION = "master"
-
-import os, tarfile
-from ork import dep, host, path, cmake, git, make, command, pathtools, patch
-from ork.deco import Deco
-from ork.wget import wget
+from ork import dep, host, path, pathtools
 from ork.command import Command
-
-deco = Deco()
-
-dep.require("ispc")
-
 ###############################################################################
 
-class ispctexc(dep.Provider):
-
-  def __init__(self,miscoptions=None): ############################################
-
+class ispctexc(dep.StdProvider):
+  def __init__(self,miscoptions=None):
+    name = "ispctexc"
     parclass = super(ispctexc,self)
-    parclass.__init__(miscoptions=miscoptions)
-    #print(options)
-    self.source_dest = path.builds()/"ispctexc"
-    self.build_dest = path.builds()/"ispctexc"/"build"
-    self.manifest = path.manifests()/"ispctexc"
-    self.OK = self.manifest.exists()
+    parclass.__init__(name=name,miscoptions=miscoptions)
+    self._fetcher = dep.GitFetcher(name)
+    self._fetcher._git_url = "https://github.com/GameTechDev/ISPCTextureCompressor"
+    self._fetcher._cache=False,
+    self._fetcher._recursive=False
+    self._fetcher._revision = "master"
+    self.build_dest = self.source_dest/"build"
 
-  def __str__(self): ##########################################################
-
-    return "ISPCTextureCompressor (github-%s)" % VERSION
-
-  def wipe(self): #############################################################
-    os.system("rm -rf %s"%self.source_dest)
-
-  def build(self): ##########################################################
+  def build(self):
 
     #########################################
     # fetch source
     #########################################
 
     if not self.source_dest.exists():
-        git.Clone("https://github.com/GameTechDev/ISPCTextureCompressor",self.source_dest,VERSION)
+      self._fetcher.fetch(self.source_dest)
 
     #########################################
     # build
@@ -59,10 +42,13 @@ class ispctexc(dep.Provider):
     }
     r = Command(["make","-f","Makefile.linux"],environment=ENV).exec()
     self.OK = (r==0)
+
+    return self.OK
+
+  def install(self):
     if self.OK:
       sonam = "libispc_texcomp.so"
       hdrnam = "ispc_texcomp.h"
       pathtools.copyfile(self.build_dest/sonam,path.stage()/"lib"/sonam)
       pathtools.copyfile(self.source_dest/"ispc_texcomp"/hdrnam,path.stage()/"include"/hdrnam)
-
     return self.OK
