@@ -24,6 +24,8 @@ class ispctexc(dep.StdProvider):
 
   def build(self):
 
+    dep.require("ispc")
+
     #########################################
     # fetch source
     #########################################
