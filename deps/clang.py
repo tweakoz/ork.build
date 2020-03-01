@@ -6,40 +6,22 @@
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
 
-import os, tarfile
-from ork import dep, host, path, git, cmake, make
-from ork.deco import Deco
-from ork.wget import wget
-from ork.command import Command
-from ork.cmake import context
-
-deco = Deco()
+from ork import dep, host, path
 
 ###############################################################################
 
-class clang(dep.Provider):
-
-  def __init__(self,miscoptions=None): ############################################
-
+class clang(dep.StdProvider):
+  def __init__(self,miscoptions=None):
+    name = "clang"
     parclass = super(clang,self)
-    parclass.__init__(miscoptions=miscoptions)
-
+    parclass.__init__(name=name,miscoptions=miscoptions)
     self.llvm = dep.require("llvm")
-
-    self.source_dest = self.llvm.dest_base/"clang"
+    self._fetcher = dep.NopFetcher(name)
+    self._fetcher._revision = self.llvm._fetcher._revision
+    self._builder = dep.CMakeBuilder(name)
+    ##########################################
+    # llvm cmake file is 1 subdir deeper than usual
+    ##########################################
+    self.dest_base = path.builds()/"llvm"
+    self.source_dest = self.dest_base/"clang"
     self.build_dest = self.source_dest/".build"
-    self.manifest = path.manifests()/"clang"
-
-    self.OK = self.manifest.exists()
-
-  def __str__(self): ##########################################################
-    return "Clang (github-llvm)"
-
-  def build(self): ##########################################################
-
-    cmakeEnv = {
-        "CMAKE_BUILD_TYPE": "RELEASE",
-        "BUILD_SHARED_LIBS": "ON",
-    }
-    self.OK = self._std_cmake_build(self.source_dest,self.build_dest,cmakeEnv)
-    return self.OK
