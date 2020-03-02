@@ -7,6 +7,7 @@
 ###############################################################################
 
 from ork import dep, host, path
+from ork.command import Command
 
 class llvm(dep.StdProvider):
 
@@ -31,10 +32,12 @@ class llvm(dep.StdProvider):
         "LLVM_ENABLE_DUMP": "ON"
     })
     if host.IsOsx:
+      sysroot_cmd = Command(["xcrun","--show-sdk-path"])
+      sysroot = sysroot_cmd.capture()
       self._builder.setCmVars({
         "CMAKE_OSX_ARCHITECTURES:STRING":"x86_64",
         "CMAKE_OSX_DEPLOYMENT_TARGET:STRING":"10.14",
-        "CMAKE_OSX_SYSROOT:STRING":"$(xcrun --show-sdk-path)",
+        "CMAKE_OSX_SYSROOT:STRING":sysroot,
         "CMAKE_SKIP_INSTALL_RPATH:BOOL":"NO",
         "CMAKE_SKIP_RPATH:BOOL":"NO",
       })
