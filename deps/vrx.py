@@ -26,7 +26,7 @@ class vrx(dep.Provider):
     parclass = super(vrx,self)
     parclass.__init__(miscoptions=miscoptions)
     #print(options)
-    self.source_dest = path.builds()/"vrx"
+    self.source_root = path.builds()/"vrx"
     self.build_dest = path.builds()/"vrx"/".build"
     self.manifest = path.manifests()/"vrx"
     self.OK = self.manifest.exists()
@@ -44,7 +44,7 @@ class vrx(dep.Provider):
     if self.incremental():
         os.chdir(self.build_dest)
     else:
-        git.Clone("https://github.com/tweakoz/vrx",self.source_dest,VERSION)
+        git.Clone("https://github.com/tweakoz/vrx",self.source_root,VERSION)
         os.system("rm -rf %s"%self.build_dest)
         os.mkdir(self.build_dest)
         os.chdir(self.build_dest)

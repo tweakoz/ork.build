@@ -25,7 +25,7 @@ class vpf(dep.Provider):
     parclass = super(vpf,self)
     parclass.__init__(miscoptions=miscoptions)
     #print(options)
-    self.source_dest = path.builds()/"vpf"
+    self.source_root = path.builds()/"vpf"
     self.build_dest = path.builds()/"vpf"/".build"
     self.manifest = path.manifests()/"vpf"
     self.sdk_dir = path.Path("/opt/nvencsdk")
@@ -36,7 +36,7 @@ class vpf(dep.Provider):
     return "VPF (github-%s)" % VERSION
 
   def wipe(self): #############################################################
-    os.system("rm -rf %s"%self.source_dest)
+    os.system("rm -rf %s"%self.source_root)
 
   def build(self): ##########################################################
 
@@ -53,8 +53,8 @@ class vpf(dep.Provider):
     # fetch source
     #########################################
 
-    if not self.source_dest.exists():
-        git.Clone("https://github.com/tweakoz/VideoProcessingFramework",self.source_dest,VERSION)
+    if not self.source_root.exists():
+        git.Clone("https://github.com/tweakoz/VideoProcessingFramework",self.source_root,VERSION)
 
     #########################################
     # prep for build

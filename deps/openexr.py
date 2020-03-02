@@ -23,5 +23,5 @@ class openexr(dep.StdProvider):
 
     self._builder = dep.CMakeBuilder(name)
     self._builder.setCmVar("OPENEXR_VIEWERS_ENABLE","OFF")
-    self._builder.setCmVar("CMAKE_MODULE_PATH",self.source_dest)
+    self._builder.setCmVar("CMAKE_MODULE_PATH",self.source_root)
     self._builder.requires(["fltk"])

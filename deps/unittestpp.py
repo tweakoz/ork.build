@@ -25,7 +25,7 @@ class unittestpp(dep.Provider):
     parclass = super(unittestpp,self)
     parclass.__init__(miscoptions=miscoptions)
 
-    self.source_dest = path.builds()/"unittestpp"
+    self.source_root = path.builds()/"unittestpp"
     self.build_dest = path.builds()/"unittestpp"/".build"
     self.manifest = path.manifests()/"unittestpp"
 
@@ -40,7 +40,7 @@ class unittestpp(dep.Provider):
 
   def build(self): ############################################################
 
-    git.Clone("https://github.com/tweakoz/unittestpp",self.source_dest,VERSION)
+    git.Clone("https://github.com/tweakoz/unittestpp",self.source_root,VERSION)
 
     os.system("rm -rf %s"%self.build_dest)
     os.mkdir(self.build_dest)

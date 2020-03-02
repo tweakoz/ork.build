@@ -28,8 +28,8 @@ class luajit(dep.Provider):
     parclass = super(luajit,self)
     parclass.__init__(miscoptions=miscoptions)
     #print(options)
-    self.source_dest = path.builds()/"luajit"
-    self.build_dest = self.source_dest
+    self.source_root = path.builds()/"luajit"
+    self.build_dest = self.source_root
     self.manifest = path.manifests()/"luajit"
     self.OK = self.manifest.exists()
 
@@ -42,10 +42,10 @@ class luajit(dep.Provider):
 
   def download_and_extract(self): #############################################
 
-    os.system("rm -rf %s"%self.source_dest)
+    os.system("rm -rf %s"%self.source_root)
 
     git.Clone("https://github.com/LuaJIT/LuaJIT",
-              self.source_dest,
+              self.source_root,
               rev=VERSION)
 
     #pathtools.mkdir(self.build_dest,clean=True)
@@ -53,12 +53,12 @@ class luajit(dep.Provider):
 
     patch_items = dict()
     patch_items["export PREFIX= /usr/local"]="export PREFIX=%s"%path.prefix()
-    patch.patch_with_dict(self.source_dest/"Makefile",patch_items)
+    patch.patch_with_dict(self.source_root/"Makefile",patch_items)
 
   def build(self): ############################################################
 
     self.download_and_extract()
-    os.chdir(str(self.source_dest))
+    os.chdir(str(self.source_root))
 
     cmd = ["make","-j",host.NumCores]
 

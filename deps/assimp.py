@@ -26,7 +26,7 @@ class assimp(dep.Provider):
     parclass = super(assimp,self)
     parclass.__init__(miscoptions=miscoptions)
 
-    self.source_dest = path.builds()/"assimp"
+    self.source_root = path.builds()/"assimp"
     self.build_dest = path.builds()/"assimp"/".build"
     self.manifest = path.manifests()/"assimp"
 
@@ -38,7 +38,7 @@ class assimp(dep.Provider):
 
   def build(self): ##########################################################
 
-    git.Clone("https://github.com/assimp/assimp",self.source_dest,VERSION)
+    git.Clone("https://github.com/assimp/assimp",self.source_root,VERSION)
 
     os.system("rm -rf %s"%self.build_dest)
     os.mkdir(self.build_dest)

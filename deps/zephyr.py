@@ -26,7 +26,7 @@ class zephyr(dep.Provider):
     parclass = super(zephyr,self)
     parclass.__init__(miscoptions=miscoptions)
 
-    self.source_dest = path.builds()/"zephyr"
+    self.source_root = path.builds()/"zephyr"
     self.build_dest = path.builds()/"zephyr"/".build"
     self.manifest = path.manifests()/"zephyr"
     self.OK = self.manifest.exists()
@@ -37,7 +37,7 @@ class zephyr(dep.Provider):
 
   def build(self): ##########################################################
 
-    git.Clone("https://github.com/tweakoz/zephyr",self.source_dest,VERSION)
+    git.Clone("https://github.com/tweakoz/zephyr",self.source_root,VERSION)
 
     os.system("rm -rf %s"%self.build_dest)
     os.mkdir(self.build_dest)

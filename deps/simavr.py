@@ -23,12 +23,12 @@ class simavr(dep.Provider):
     parclass = super(simavr,self)
     parclass.__init__(miscoptions=miscoptions)
     self.manifest = path.manifests()/"simavr"
-    self.source_dest = path.builds()/"simavr"
+    self.source_root = path.builds()/"simavr"
 
   def provide(self): ##########################################################
 
-    git.Clone("https://github.com/tweakoz/simavr",self.source_dest,"master")
-    os.chdir(self.source_dest)
+    git.Clone("https://github.com/tweakoz/simavr",self.source_root,"master")
+    os.chdir(self.source_root)
     os.environ["INSTALL_PREFIX"] = str(path.prefix())
     make.exec("install")
     self.manifest.touch()

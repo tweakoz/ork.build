@@ -25,9 +25,9 @@ class opencv(dep.Provider):
     parclass.__init__(miscoptions=miscoptions)
     self.manifest = path.manifests()/"opencv"
     self.OK = self.manifest.exists()
-    self.cv_source_dest = path.builds()/"opencv"
-    self.cv_build_dest = self.cv_source_dest/".build"
-    self.cvcontrib_source_dest = path.builds()/"opencv_contrib"
+    self.cv_source_root = path.builds()/"opencv"
+    self.cv_build_dest = self.cv_source_root/".build"
+    self.cvcontrib_source_root = path.builds()/"opencv_contrib"
 
   ########
 
@@ -37,8 +37,8 @@ class opencv(dep.Provider):
   ########
 
   def wipe(self): #############################################################
-    os.system("rm -rf %s"%self.cv_source_dest)
-    os.system("rm -rf %s"%self.cvcontrib_source_dest)
+    os.system("rm -rf %s"%self.cv_source_root)
+    os.system("rm -rf %s"%self.cvcontrib_source_root)
 
   ########
 
@@ -48,14 +48,14 @@ class opencv(dep.Provider):
 
     python_dep = dep.require("python")
 
-    if not self.cv_source_dest.exists():
+    if not self.cv_source_root.exists():
       git.Clone("https://github.com/opencv/opencv.git",
-                self.cv_source_dest,
+                self.cv_source_root,
                 VERSION)
 
-    if not self.cvcontrib_source_dest.exists():
+    if not self.cvcontrib_source_root.exists():
       git.Clone("https://github.com/opencv/opencv_contrib.git",
-                self.cvcontrib_source_dest,
+                self.cvcontrib_source_root,
                 VERSION)
 
     cmakeEnv = {
@@ -79,5 +79,5 @@ class opencv(dep.Provider):
     if host.IsLinux:
       cmakeEnv["WITH_V4L"]="ON"
 
-    self.OK = self._std_cmake_build(self.cv_source_dest,self.cv_build_dest,cmakeEnv)
+    self.OK = self._std_cmake_build(self.cv_source_root,self.cv_build_dest,cmakeEnv)
     return self.OK

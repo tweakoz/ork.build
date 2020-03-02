@@ -26,7 +26,7 @@ class frameretrace(dep.Provider):
     parclass = super(frameretrace,self)
     parclass.__init__(miscoptions=miscoptions)
 
-    self.source_dest = path.builds()/"frameretrace"
+    self.source_root = path.builds()/"frameretrace"
     self.build_dest = path.builds()/"frameretrace"/".build"
     self.manifest = path.manifests()/"frameretrace"
 
@@ -38,7 +38,7 @@ class frameretrace(dep.Provider):
 
   def build(self): ##########################################################
 
-    git.Clone("https://github.com/janesma/apitrace",self.source_dest,VERSION)
+    git.Clone("https://github.com/janesma/apitrace",self.source_root,VERSION)
 
     os.system("rm -rf %s"%self.build_dest)
     os.mkdir(self.build_dest)

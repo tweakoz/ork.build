@@ -26,7 +26,7 @@ class vulkan(dep.Provider):
     parclass = super(vulkan,self)
     parclass.__init__(miscoptions=miscoptions)
     #print(options)
-    self.source_dest = path.builds()/"vulkan"
+    self.source_root = path.builds()/"vulkan"
     self.build_dest = path.builds()/"vulkan"/".build"
     self.manifest = path.manifests()/"vulkan"
     self.OK = self.manifest.exists()
@@ -39,8 +39,8 @@ class vulkan(dep.Provider):
     nam = "vulkansdk-linux-x86_64-%s.tar.gz"%VERSION
     url = "https://sdk.lunarg.com/sdk/download/%s/linux/%s"%(VERSION,nam)
     wget(urls=[url],output_name=nam,md5val=MD5)
-    self.source_dest.mkdir(parents=True,exist_ok=True)
-    os.chdir(self.source_dest)
+    self.source_root.mkdir(parents=True,exist_ok=True)
+    os.chdir(self.source_root)
     ok = (command.system(["rm","-rf",VERSION])==0)
     ok = (command.system(["tar","xvf",path.downloads()/nam])==0)
 

@@ -24,8 +24,8 @@ class gcode_gpr(dep.Provider):
     parclass = super(gcode_gpr,self)
     parclass.__init__(miscoptions=miscoptions)
     self.manifest = path.manifests()/"gcode_gpr"
-    self.source_dest = path.builds()/"gcode_gpr"
-    self.build_dest = self.source_dest/".build"
+    self.source_root = path.builds()/"gcode_gpr"
+    self.build_dest = self.source_root/".build"
 
     self.OK = self.manifest.exists()
 
@@ -33,7 +33,7 @@ class gcode_gpr(dep.Provider):
     return "A simple C++ G-code parser"
 
   def clone(self):
-    #git.Clone("https://github.com/tweakoz/gpr",self.source_dest,"master")
+    #git.Clone("https://github.com/tweakoz/gpr",self.source_root,"master")
 
     os.system("rm -rf %s"%self.build_dest)
     os.mkdir(self.build_dest)

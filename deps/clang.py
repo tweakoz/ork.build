@@ -22,6 +22,6 @@ class clang(dep.StdProvider):
     ##########################################
     # llvm cmake file is 1 subdir deeper than usual
     ##########################################
-    self.dest_base = path.builds()/"llvm"
-    self.source_dest = self.dest_base/"clang"
-    self.build_dest = self.source_dest/".build"
+    self.source_root = path.builds()/"llvm"
+    self.build_src = self.source_root/"clang"
+    self.build_dest = self.source_root/".build"

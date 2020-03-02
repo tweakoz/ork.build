@@ -24,7 +24,7 @@ class pillar(dep.Provider):
   ################################
 
   def __init__(self,miscoptions=None):
-    self.source_dest = path.builds()/"pillar-python-sdk"
+    self.source_root = path.builds()/"pillar-python-sdk"
     self.url = "https://github.com/armadillica/pillar"
     self.manifest = path.manifests()/"pillar-python-sdk"
     self.OK = self.manifest.exists()
@@ -42,8 +42,8 @@ class pillar(dep.Provider):
   def provide(self):
 
     if False==self.OK:
-      ork.git.Clone(self.url,self.source_dest,"master")
-      os.chdir(self.source_dest)
+      ork.git.Clone(self.url,self.source_root,"master")
+      os.chdir(self.source_root)
 
       # install deps
       ork.pip.install([ "raven",
@@ -55,7 +55,7 @@ class pillar(dep.Provider):
       # patch pillar
 
       patcher = ork.patch.patcher("pillar")
-      patcher.patch_list([[self.source_dest/"pillar","markdown.py"]])
+      patcher.patch_list([[self.source_root/"pillar","markdown.py"]])
 
       # install
 

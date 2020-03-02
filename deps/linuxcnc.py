@@ -25,13 +25,13 @@ class linuxcnc(dep.Provider):
     parclass = super(linuxcnc,self)
     parclass.__init__(miscoptions=miscoptions)
     self.manifest = path.manifests()/"linuxcnc"
-    self.source_dest = path.builds()/"linuxcnc"
+    self.source_root = path.builds()/"linuxcnc"
 
   def provide(self): ##########################################################
     dep.require("boost")
     pfx = path.prefix()
-    git.Clone("https://github.com/linuxcnc/linuxcnc",self.source_dest,"master")
-    os.chdir(self.source_dest/"src")
+    git.Clone("https://github.com/linuxcnc/linuxcnc",self.source_root,"master")
+    os.chdir(self.source_root/"src")
     #os.environ["INSTALL_PREFIX"] = str(path.prefix())
     os.environ["CXXFLAGS"]="-I%s"%(pfx/"include")
     os.environ["LDFLAGS"]="-L%s"%(pfx/"lib")

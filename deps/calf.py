@@ -24,8 +24,8 @@ class calf(dep.Provider):
     parclass.__init__(miscoptions=miscoptions)
     self.manifest = path.manifests()/"calf"
     self.OK = self.manifest.exists()
-    self.source_dest = path.builds()/"calf"
-    self.build_dest = self.source_dest/".build"
+    self.source_root = path.builds()/"calf"
+    self.build_dest = self.source_root/".build"
 
   ########
 
@@ -40,13 +40,13 @@ class calf(dep.Provider):
     self.OK = False
 
 
-    os.system("rm -rf %s"%self.source_dest)
+    os.system("rm -rf %s"%self.source_root)
 
     git.Clone("https://github.com/calf-studio-gear/calf",
-              self.source_dest,
+              self.source_root,
               VERSION)
 
-    pathtools.chdir(self.source_dest)
+    pathtools.chdir(self.source_root)
 
     os.system("aclocal --force")
     os.system("libtoolize --force --automake --copy")

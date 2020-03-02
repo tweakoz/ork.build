@@ -26,8 +26,8 @@ class lua(dep.Provider):
     parclass = super(lua,self)
     parclass.__init__(miscoptions=miscoptions)
     #print(options)
-    self.source_dest = path.builds()/"lua"
-    self.build_dest = self.source_dest
+    self.source_root = path.builds()/"lua"
+    self.build_dest = self.source_root
     self.header_dest = path.prefix()/"include"/"lua"
     self.manifest = path.manifests()/"lua"
     self.OK = self.manifest.exists()
@@ -41,10 +41,10 @@ class lua(dep.Provider):
 
   def download_and_extract(self): #############################################
 
-    command.system("rm -rf %s"%self.source_dest)
+    command.system("rm -rf %s"%self.source_root)
 
     git.Clone("https://github.com/lua/lua",
-              self.source_dest,
+              self.source_root,
               rev=VERSION,
               cache=False)
 
@@ -57,12 +57,12 @@ class lua(dep.Provider):
         patch_items["MYLDFLAGS= $(LOCAL) -Wl,-E"]="MYLDFLAGS= $(LOCAL) -fPIC"
         patch_items["-lhistory"]=""
 
-    patch.patch_with_dict(self.source_dest/"makefile",patch_items)
+    patch.patch_with_dict(self.source_root/"makefile",patch_items)
 
   def build(self): ############################################################
 
     self.download_and_extract()
-    os.chdir(str(self.source_dest))
+    os.chdir(str(self.source_root))
 
     cmd = ["make","-j",host.NumCores]
 
@@ -71,11 +71,11 @@ class lua(dep.Provider):
 
     ok = (0 == Command(cmd).exec())
     if ok:
-      cmd = ["cp",self.source_dest/"liblua.a",path.prefix()/"lib"/"liblua.a"]
+      cmd = ["cp",self.source_root/"liblua.a",path.prefix()/"lib"/"liblua.a"]
       ok = (0 == Command(cmd).exec())
       if ok:
         pathtools.mkdir(self.header_dest,clean=True)
-        cmd = ["cp", self.source_dest/"*.h",str(self.header_dest)+"/"]
+        cmd = ["cp", self.source_root/"*.h",str(self.header_dest)+"/"]
         ok = (0 == command.system(cmd))
 
     return ok

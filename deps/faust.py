@@ -24,8 +24,8 @@ class faust(dep.Provider):
     parclass.__init__(miscoptions=miscoptions)
     self.manifest = path.manifests()/"faust"
     self.OK = self.manifest.exists()
-    self.source_dest = path.builds()/"faust"
-    self.build_dest = self.source_dest/".build"
+    self.source_root = path.builds()/"faust"
+    self.build_dest = self.source_root/".build"
 
   ########
 
@@ -38,14 +38,14 @@ class faust(dep.Provider):
 
     self.OK = False
     if self.force():
-        os.system("rm -rf %s"%self.source_dest)
+        os.system("rm -rf %s"%self.source_root)
 
     git.Clone("https://github.com/grame-cncm/faust",
-              self.source_dest,
+              self.source_root,
               VERSION,
               recursive=True)
 
-    pathtools.chdir(self.source_dest)
+    pathtools.chdir(self.source_root)
 
     makeenv = {
         "PREFIX": path.stage()

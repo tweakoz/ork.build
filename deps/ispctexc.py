@@ -20,7 +20,7 @@ class ispctexc(dep.StdProvider):
     self._fetcher._cache=False,
     self._fetcher._recursive=False
     self._fetcher._revision = "master"
-    self.build_dest = self.source_dest/"build"
+    self.build_dest = self.source_root/"build"
 
   def build(self):
 
@@ -30,14 +30,14 @@ class ispctexc(dep.StdProvider):
     # fetch source
     #########################################
 
-    if not self.source_dest.exists():
-      self._fetcher.fetch(self.source_dest)
+    if not self.source_root.exists():
+      self._fetcher.fetch(self.source_root)
 
     #########################################
     # build
     #########################################
 
-    self.source_dest.chdir()
+    self.source_root.chdir()
 
     ENV = {
         "ISPC": path.stage()/"bin"/"ispc"
@@ -52,5 +52,5 @@ class ispctexc(dep.StdProvider):
       sonam = "libispc_texcomp.so"
       hdrnam = "ispc_texcomp.h"
       pathtools.copyfile(self.build_dest/sonam,path.stage()/"lib"/sonam)
-      pathtools.copyfile(self.source_dest/"ispc_texcomp"/hdrnam,path.stage()/"include"/hdrnam)
+      pathtools.copyfile(self.source_root/"ispc_texcomp"/hdrnam,path.stage()/"include"/hdrnam)
     return self.OK

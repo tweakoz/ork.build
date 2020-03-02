@@ -25,7 +25,7 @@ class moltenvk(dep.Provider):
     parclass = super(moltenvk,self)
     parclass.__init__(miscoptions=miscoptions)
     #print(options)
-    self.source_dest = path.builds()/"moltenvk"
+    self.source_root = path.builds()/"moltenvk"
     self.build_dest = path.builds()/"moltenvk"/".build"
     self.manifest = path.manifests()/"moltenvk"
     self.OK = self.manifest.exists()
@@ -41,10 +41,10 @@ class moltenvk(dep.Provider):
     if self.incremental():
         os.chdir(self.build_dest)
     else:
-        git.Clone("https://github.com/KhronosGroup/MoltenVK",self.source_dest,VERSION)
+        git.Clone("https://github.com/KhronosGroup/MoltenVK",self.source_root,VERSION)
 
 
-    os.chdir(self.source_dest)
+    os.chdir(self.source_root)
 
     command.system(["./fetchDependencies"])
     cmd = ["make", "macos"]

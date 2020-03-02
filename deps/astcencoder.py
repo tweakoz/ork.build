@@ -26,7 +26,7 @@ class astcencoder(dep.Provider):
     parclass = super(astcencoder,self)
     parclass.__init__(miscoptions=miscoptions)
 
-    self.source_dest = path.builds()/"astcencoder"
+    self.source_root = path.builds()/"astcencoder"
     self.build_dest = path.builds()/"astcencoder"/"Source"
     self.manifest = path.manifests()/"astcencoder"
 
@@ -40,8 +40,8 @@ class astcencoder(dep.Provider):
 
     dep.require("openexr")
 
-    os.system("rm -rf %s"%self.source_dest)
-    git.Clone("https://github.com/ARM-software/astc-encoder",self.source_dest,VERSION)
+    os.system("rm -rf %s"%self.source_root)
+    git.Clone("https://github.com/ARM-software/astc-encoder",self.source_root,VERSION)
     os.chdir(self.build_dest)
     cmd = Command(["make","-j",host.NumCores])
     err = cmd.exec()

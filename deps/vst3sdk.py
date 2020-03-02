@@ -24,8 +24,8 @@ class vst3sdk(dep.Provider):
     parclass.__init__(miscoptions=miscoptions)
     self.manifest = path.manifests()/"vst3sdk"
     self.OK = self.manifest.exists()
-    self.source_dest = path.builds()/"vst3sdk"
-    self.build_dest = self.source_dest/".build"
+    self.source_root = path.builds()/"vst3sdk"
+    self.build_dest = self.source_root/".build"
 
   ########
 
@@ -38,10 +38,10 @@ class vst3sdk(dep.Provider):
 
     self.OK = False
     if self.force():
-        os.system("rm -rf %s"%self.source_dest)
+        os.system("rm -rf %s"%self.source_root)
 
     git.Clone("https://github.com/steinbergmedia/vst3sdk",
-              self.source_dest,
+              self.source_root,
               VERSION,
               recursive = True)
 

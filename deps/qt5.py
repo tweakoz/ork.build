@@ -37,8 +37,8 @@ class qt5(dep.Provider):
     self.xzname = "%s.tar.xz" % self.name
     self.url = self.baseurl/MAJOR_VERSION/self.fullver/"single"/self.xzname
     self.source_base = path.builds()/"qt5"
-    self.source_dest = self.source_base/self.name
-    self.build_dest = self.source_dest/".build"
+    self.source_root = self.source_base/self.name
+    self.build_dest = self.source_root/".build"
 
   ########
 
@@ -57,7 +57,7 @@ class qt5(dep.Provider):
   ########
 
   def wipe(self):
-    os.system("rm -rf %s"%self.source_dest)
+    os.system("rm -rf %s"%self.source_root)
 
   ########
 
@@ -67,7 +67,7 @@ class qt5(dep.Provider):
     # fetch source
     #########################################
 
-    if not self.source_dest.exists():
+    if not self.source_root.exists():
         self.download_and_extract()
 
     #########################################

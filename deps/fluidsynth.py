@@ -24,8 +24,8 @@ class fluidsynth(dep.Provider):
     parclass.__init__(miscoptions=miscoptions)
     self.manifest = path.manifests()/"fluidsynth"
     self.OK = self.manifest.exists()
-    self.source_dest = path.builds()/"fluidsynth"
-    self.build_dest = self.source_dest/".build"
+    self.source_root = path.builds()/"fluidsynth"
+    self.build_dest = self.source_root/".build"
 
   ########
 
@@ -38,10 +38,10 @@ class fluidsynth(dep.Provider):
 
     self.OK = False
 
-    os.system("rm -rf %s"%self.source_dest)
+    os.system("rm -rf %s"%self.source_root)
 
     git.Clone("https://github.com/FluidSynth/fluidsynth",
-              self.source_dest,
+              self.source_root,
               VERSION)
 
     pathtools.mkdir(self.build_dest,clean=True)

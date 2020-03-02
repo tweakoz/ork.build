@@ -26,7 +26,7 @@ class fcollada(dep.Provider):
     parclass = super(fcollada,self)
     parclass.__init__(miscoptions=miscoptions)
 
-    self.source_dest = path.builds()/"fcollada"
+    self.source_root = path.builds()/"fcollada"
     self.build_dest = path.builds()/"fcollada"/".build"
     self.manifest = path.manifests()/"fcollada"
 
@@ -38,7 +38,7 @@ class fcollada(dep.Provider):
 
   def build(self): ##########################################################
 
-    git.Clone("https://github.com/tweakoz/ork.fcollada",self.source_dest,VERSION)
+    git.Clone("https://github.com/tweakoz/ork.fcollada",self.source_root,VERSION)
 
     os.system("rm -rf %s"%self.build_dest)
     os.mkdir(self.build_dest)

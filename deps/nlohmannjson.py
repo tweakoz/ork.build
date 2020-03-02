@@ -25,8 +25,8 @@ class nlohmannjson(dep.Provider):
     parclass.__init__(miscoptions=miscoptions)
     self.manifest = path.manifests()/"nlohmannjson"
     self.OK = self.manifest.exists()
-    self.json_source_dest = path.builds()/"nlohmannjson"
-    self.json_build_dest = self.json_source_dest/".build"
+    self.json_source_root = path.builds()/"nlohmannjson"
+    self.json_build_dest = self.json_source_root/".build"
 
   ########
 
@@ -38,10 +38,10 @@ class nlohmannjson(dep.Provider):
   def provide(self): ##########################################################
     if False==self.OK:
 
-        os.system("rm -rf %s"%self.json_source_dest)
+        os.system("rm -rf %s"%self.json_source_root)
 
         git.Clone("https://github.com/nlohmann/json",
-                  self.json_source_dest,
+                  self.json_source_root,
                   VERSION)
 
         pathtools.mkdir(self.json_build_dest,clean=True)

@@ -219,8 +219,9 @@ class StdProvider(Provider):
       self._node = None
       self.manifest = path.manifests()/name
       self.OK = self.manifest.exists()
-      self.source_dest = path.builds()/name
-      self.build_dest = self.source_dest/".build"
+      self.source_root = path.builds()/name
+      self.build_src = self.source_root
+      self.build_dest = self.source_root/".build"
 
     #############################
 
@@ -240,7 +241,7 @@ class StdProvider(Provider):
     #############################
 
     def wipe(self):
-      os.system("rm -rf %s"%self.source_dest)
+      os.system("rm -rf %s"%self.source_root)
 
     #############################
 
@@ -250,14 +251,14 @@ class StdProvider(Provider):
       # fetch source
       #########################################
 
-      if not self.source_dest.exists():
-        self._fetcher.fetch(self.source_dest)
+      if not self.source_root.exists():
+        self._fetcher.fetch(self.source_root)
 
       #########################################
       # build
       #########################################
 
-      self.OK = self._builder.build(self.source_dest,self.build_dest,self.incremental())
+      self.OK = self._builder.build(self.build_src,self.build_dest,self.incremental())
 
 
       #########################################
