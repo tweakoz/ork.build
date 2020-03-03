@@ -136,5 +136,12 @@ def project_root():
 
 ###############################################################################
 
+def osx_brewcellar():
+  homebrewdir = Path("/usr/local")
+  cellardir = homebrewdir/"Cellar"
+  return cellardir
+
+###############################################################################
+
 def vivado_base():
   return Path("/opt/Xilinx/Vivado/2018.3")
