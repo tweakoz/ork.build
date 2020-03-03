@@ -30,7 +30,7 @@ class oiio(dep.StdProvider):
       "OIIO_BUILD_TOOLS": "ON",
       "OIIO_BUILD_TESTS": "ON"
     })
+    self._builder.requires(["qt5"])
     if host.IsLinux:
-      self._builder.requires(["qt5"])
       self._builder.setCmVar("CMAKE_CXX_COMPILER","g++-9")
       self._builder.setCmVar("CMAKE_C_COMPILER","gcc-9")
