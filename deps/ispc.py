@@ -26,7 +26,7 @@ class ispc(dep.StdProvider):
     self._builder = dep.CMakeBuilder(name)
     self._builder.requires(["llvm"])
     if host.IsOsx:
-      self._builder.setCmVar("BISON_EXECUTABLE",path.osx_brewcellar()/"bison"/"3.5.2"/"bin"/"bison")
+      self._builder.setCmVar("BISON_EXECUTABLE",path.osx_brewopt()/"bison"/"bin"/"bison")
       sysroot_cmd = Command(["xcrun","--show-sdk-path"])
       sysroot = sysroot_cmd.capture().replace("\n","")
       print(sysroot)

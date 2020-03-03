@@ -136,10 +136,19 @@ def project_root():
 
 ###############################################################################
 
+def osx_brewdir():
+  return Path("/usr/local")
+
+
+###############################################################################
+
+def osx_brewopt():
+  return osx_brewdir()/"opt"
+
+###############################################################################
+
 def osx_brewcellar():
-  homebrewdir = Path("/usr/local")
-  cellardir = homebrewdir/"Cellar"
-  return cellardir
+  return osx_brewdir()/"Cellar"
 
 ###############################################################################
 
