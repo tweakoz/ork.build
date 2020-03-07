@@ -47,6 +47,22 @@ class Provider:
         return wipe
 
     #############################
+    ## serial build ?
+    #############################
+
+    def should_serial_build(self):
+        serial = False
+        if "serial" in self._miscoptions:
+          serial = self._miscoptions["serial"]==True
+        return serial
+
+    def default_parallelism(self):
+      parallelism = 1.0
+      if self.should_serial_build():
+        parallelism=0.0
+      return parallelism
+
+    #############################
     ## force build ?
     #############################
 

@@ -14,10 +14,18 @@ class context:
   def __init__(self,root="",env=dict()):
     self.root = root
     self.env = env
+    self._verbose = False
+
+  def verbose(self,enable):
+    self._verbose = enable
 
   def exec(self):
 
     cmdlist = ["cmake"]
+
+    if self._verbose:
+      cmdlist += ["--verbose"]
+
     cmdlist += ["-DCMAKE_INSTALL_PREFIX=%s"%path.prefix()]
     for k in self.env.keys():
       v = self.env[k]

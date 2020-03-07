@@ -6,9 +6,9 @@
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
 
-MAJOR_VERSION = "5.12"
-MINOR_VERSION = "5"
-HASH = "d8c9ed842d39f1a5f31a7ab31e4e886c"
+MAJOR_VERSION = "5.14"
+MINOR_VERSION = "1"
+HASH = "781c3179410aff7ef84607214e1e91b4"
 
 import os, tarfile
 from ork import dep, host, path, git, make, pathtools
@@ -38,7 +38,7 @@ class qt5(dep.Provider):
     self.url = self.baseurl/MAJOR_VERSION/self.fullver/"single"/self.xzname
     self.source_base = path.builds()/"qt5"
     self.source_root = self.source_base/self.name
-    self.build_dest = self.source_root/".build"
+    self.build_dest = path.builds()/"qt5"/"qt5-build"
 
   ########
 
@@ -58,10 +58,13 @@ class qt5(dep.Provider):
 
   def wipe(self):
     os.system("rm -rf %s"%self.source_root)
+    os.system("rm -rf %s"%self.build_dest)
 
   ########
 
   def build(self): ############################################################
+
+    self.OK = True
 
     #########################################
     # fetch source
@@ -74,6 +77,7 @@ class qt5(dep.Provider):
     # prep for build
     #########################################
 
+
     if self.incremental():
         os.chdir(self.build_dest)
     else:
@@ -81,25 +85,39 @@ class qt5(dep.Provider):
         os.chdir(self.build_dest)
 
         options =  ["-prefix", path.qt5dir()]
-        options += ["-c++std", "c++14", "-shared"]
+        options += ["-release"]
         options += ["-opensource", "-confirm-license"]
-        options += ["-nomake", "tests"]
-        options += ["-opengl","desktop"]
-        options += ["-debug"]
+        #options += ["-c++std", "c++14", "-shared"]
+        #options += ["-nomake", "tests"]
+        #options += ["-nomake", "examples"]
+        #options += ["-opengl","desktop"]
 
         if host.IsOsx:
-          options += ["-qt-libpng","-qt-zlib","-no-framework"]
+          print("yo")
+          #options += ["-qt-libpng","-qt-zlib","-no-framework"]
+          #options += [,"-qt-libjpeg","-qt-pcre","-qt-freetype"]
+          #options += ["-no-feature-sql"] # xcode11 + sql-tds (long long / uint64_t typedef compile errors)
+          #options += ["-no-feature-location"]
         else:
+          options += ["-system-zlib"]
           options += ["-qt-xcb"]
 
-        b = Command(["sh", "../configure"]+options)
-        result = b.exec()
+        #options += ["-no-rpath"]
+        #options += ["-pkg-config"]
+        #options += ["-proprietary-codecs"]
+
+        b = Command(["sh", self.source_root/"configure"]+options)
+        self.OK = (b.exec()==0)
 
     #########################################
     # build
     #########################################
 
-    make.exec(parallelism=1.0)
-    make.exec(parallelism=1.0)
+    if self.OK:
+      self.OK == (make.exec(parallelism=self.default_parallelism())==0)
+    if self.OK:
+      self.OK = (make.exec(parallelism=self.default_parallelism())==0)
     # uhhuh - https://bugreports.qt.io/browse/QTBUG-60496
-    return (0==make.exec(target="install", parallelism=0.0))
+    if self.OK:
+      self.OK = (0==make.exec(target="install", parallelism=0.0))
+    return self.OK
