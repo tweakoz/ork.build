@@ -1,7 +1,5 @@
 # ORK.BUILD TOOLS (OBT)
 
-### STATUS
-
 [![CISTATUS](http://tweakoz.com:16777/builds/master/status.svg)](http://tweakoz.com:16777/)
 
 
