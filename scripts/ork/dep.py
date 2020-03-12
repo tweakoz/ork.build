@@ -92,6 +92,14 @@ class Provider:
 
     #############################
 
+    def should_fetch(self):
+        fetch = False
+        if "nofetch" in self._miscoptions:
+          fetch = self._miscoptions["nofetch"]==False
+        return fetch
+
+    #############################
+
     def provide(self):
       if self.should_wipe():
         self.wipe()

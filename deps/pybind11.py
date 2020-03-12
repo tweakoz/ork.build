@@ -17,6 +17,6 @@ class pybind11(dep.StdProvider):
     parclass = super(pybind11,self)
     parclass.__init__(name=name,miscoptions=miscoptions)
     self._fetcher = dep.GitFetcher(name)
-    self._fetcher._git_url = "https://github.com/pybind/pybind11"
-    self._fetcher._revision = "master"
+    self._fetcher._git_url = "https://github.com/tweakoz/pybind11"
+    self._fetcher._revision = "toz/findnewtest"
     self._builder = dep.CMakeBuilder(name)
