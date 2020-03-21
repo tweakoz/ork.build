@@ -8,7 +8,7 @@
 ###############################################################################
 
 
-import os, sys, pathlib, argparse
+import os, sys, pathlib, argparse, multiprocessing
 
 as_main = (__name__ == '__main__')
 
@@ -24,6 +24,7 @@ parser.add_argument('--chdir', metavar="chdir", help='working directory of comma
 parser.add_argument('--stack', metavar="stackdir", help='stack env' )
 parser.add_argument('--prompt', metavar="prompt", help='prompt suffix' )
 parser.add_argument("--command", metavar="command", help="execute in environ")
+parser.add_argument("--numcores", metavar="numcores", help="numcores for environment")
 parser.add_argument("--quiet", action="store_true", help="no output")
 parser.add_argument('--novars', action="store_true", help='do not set env vars' )
 parser.add_argument('--init', action="store_true" )
@@ -86,6 +87,12 @@ elif args["createonly"]!=None:
   try_staging = Path(args["createonly"]).resolve()
 elif args["stack"]!=None:
   try_staging = Path(args["stack"]).resolve()
+
+NumCores = multiprocessing.cpu_count()
+if args["numcores"]!=None:
+  NumCores = int(args["numcores"])
+if "OBT_NUM_CORES" not in os.environ:
+  os.environ["OBT_NUM_CORES"]=str(NumCores)
 
 if try_staging!=None:
   OBT_STAGE = try_staging
@@ -201,7 +208,7 @@ if args["create"] or args["createonly"]!=None:
     lazyMakeDirs()
     genBashRc(try_staging)
     #############
-    LAUNCHER = "%s/bin/init_env.py --launch %s;\n" % (root_dir,try_staging)
+    LAUNCHER = "%s/bin/init_env.py --numcores %d --launch %s;\n" % (root_dir,NumCores,try_staging)
     f = open(str(try_staging/'.launch_env'), 'w')
     f.write(LAUNCHER)
     f.close()

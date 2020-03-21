@@ -6,14 +6,18 @@
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
 
-import platform
+import platform, os
 import multiprocessing
 SYSTEM = platform.system()
 IsOsx = (SYSTEM=="Darwin")
 IsIrix = (SYSTEM=="IRIX64")
 IsLinux = (SYSTEM=="Linux")
 IsIx = IsLinux or IsOsx or IsIrix
-NumCores = multiprocessing.cpu_count()
+
+if "OBT_NUM_CORES" in os.environ:
+  NumCores = int(os.environ["OBT_NUM_CORES"])
+else:
+  NumCores = multiprocessing.cpu_count()
 
 if IsLinux:
     PlatformId = "ix"
