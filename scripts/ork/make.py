@@ -21,7 +21,7 @@ def exec(target=None,parallelism=1.0):
   cmd = ["make"]
   if parallelism!=0.0:
     p = ork.math.clamp(parallelism,0.0,1.0)
-    numcores = int(ork.host.NumCores*p*0.5)
+    numcores = int(ork.host.NumCores*p)
     numcores = ork.math.clamp(numcores,1,ork.host.NumCores)
     cmd += ["-j",numcores]
   if target!=None:
