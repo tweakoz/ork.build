@@ -11,7 +11,7 @@ VERSION = "3.8.1"
 HASH = "f215fa2f55a78de739c1787ec56b2bcd"
 
 import os, tarfile
-from ork import dep, host, path, cmake, env
+from ork import dep, host, path, cmake, env, pip
 from ork.deco import Deco
 from ork.wget import wget
 from ork.command import Command
@@ -106,4 +106,11 @@ class python(dep.Provider):
        options += ["--with-openssl=/usr"]
 
     Command(["../configure"]+options).exec()
-    return 0==Command(["make","-j",host.NumCores,"install"]).exec()
+    OK = (0==Command(["make","-j",host.NumCores,"install"]).exec())
+    ################################
+    # install default packages
+    ################################
+    if OK:
+      pip.install(["pytest","yarl","numpi","zmq"])
+    ################################
+    return OK

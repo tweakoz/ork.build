@@ -10,7 +10,6 @@ VERSION = "03edcafdda550e55e29bf48a682097028ae01306"
 HASH = "1453e79e663ea3bd8b528ef20a17109b"
 
 import os, tarfile
-from yarl import URL
 from ork import dep, host, path, git, cmake
 from ork.deco import Deco
 from ork.wget import wget
@@ -39,7 +38,7 @@ class minetest(dep.Provider):
   ########
 
   def download_and_extract(self): #############################################
-
+    from yarl import URL
     url = URL("https://github.com/minetest/minetest/archive/%s.zip"%VERSION)
 
     self.arcpath = dep.downloadAndExtract([url],
