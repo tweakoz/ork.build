@@ -22,3 +22,4 @@ class cmake(dep.StdProvider):
 
     self._builder = dep.CMakeBuilder(name)
     self._builder._cmakeenv["CMAKE_USE_SYSTEM_CURL"]="YES"
+    self._builder.requires(["pkgconfig"])

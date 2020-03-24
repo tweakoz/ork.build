@@ -67,6 +67,28 @@ def require(name_or_list):
       rval = None
   return rval
 
+###############################################################################
+
+def require_opts(name_or_list,opts):
+  global global_options
+  if (isinstance(name_or_list,list)):
+    rval = []
+    global_options = opts
+    for item in name_or_list:
+      inst = _get_instance(item)
+      inst.provide()
+      rval += [inst]
+    global_options = []
+  else:
+    global_options = opts
+    inst = _get_instance(name_or_list)
+    global_options = []
+    ok = inst.provide()
+    if ok:
+      rval = inst
+    else:
+      rval = None
+  return rval
 
 ###############################################################################
 

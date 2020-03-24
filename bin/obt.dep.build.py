@@ -26,8 +26,7 @@ _options = {
     "serial": (_args["serial"]==True)
 }
 
-dep.global_options = _options
 depname = _args["dependency"]
-status = dep.require(depname)!=None
+status = dep.require_opts(depname,_options)!=None
 
 print("dep<%s> returned<%s>"%(depname,status))

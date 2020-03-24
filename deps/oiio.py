@@ -6,7 +6,7 @@
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
 
-from ork import dep, host
+from ork import dep, host, path
 
 ###############################################################################
 
@@ -18,14 +18,16 @@ class oiio(dep.StdProvider):
 
     self._fetcher = dep.GitFetcher(name)
     self._fetcher._git_url = "https://github.com/OpenImageIO/oiio"
-    self._fetcher._revision = "spi-spcomp2-release-49.4"
+    self._fetcher._revision = "release"
 
     self._builder = dep.CMakeBuilder(name)
     self._builder.requires(["pkgconfig","openexr","pybind11"])
     self._builder.setCmVars({
       "CMAKE_CXX_FLAGS": "-Wno-error=deprecated",
       "USE_NUKE": "OFF",
-      "USE_PYTHON": "ON",
+      "USE_PYTHON": "OFF",
+      #"OIIO_PYTHON_VERSION": "3.8.1",
+      #"pybind11_ROOT": path.stage(),
       "OIIO_BUILD_TOOLS": "ON",
       "OIIO_BUILD_TESTS": "ON"
     })
