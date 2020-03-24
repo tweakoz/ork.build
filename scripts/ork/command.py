@@ -71,13 +71,15 @@ class Command:
 ###############################################################################
 
 def run(command_list, environment=dict()):
-    Command(command_list,environment).exec()
+  return Command(command_list,environment).exec()
+
+###############################################################################
 
 def system(command_list):
-    args = procargs(command_list)
-    joined = " ".join(args)
-    print("cmd<%s>"%deco.key(joined))
-    return os.system(joined)
+  args = procargs(command_list)
+  joined = " ".join(args)
+  print("cmd<%s>"%deco.key(joined))
+  return os.system(joined)
 
 ###############################################################################
 

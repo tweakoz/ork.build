@@ -8,9 +8,9 @@
 
 import os, shutil
 import ork.path
-from pathlib import Path
+from pathlib import PosixPath
 from ork.deco import Deco
-from ork.command import Command
+from ork.command import run
 
 deco = Deco()
 
@@ -22,71 +22,90 @@ def Clone(url,
           recursive=False,
           cache=True):
 
+  cwd = os.getcwd()
   rval = False
+  retc = 0
 
-  dest_path = Path(dest)
+  dest_path = PosixPath(dest)
   dest_name = dest_path.name
   cache_dest = ork.path.gitcache()/dest_name
 
+  ##############################################################################
+
+  def _checkoutrevandupdate():
+    nonlocal cwd
+    nonlocal retc
+    nonlocal rev
+    nonlocal dest_path
+    nonlocal recursive
+    OK = (0 == retc)
+    #print("OK1<%s> retc<%s>"%(OK,retc))
+    try:
+      os.chdir(dest_path)
+      if OK:
+        retc = run(["git","checkout",rev])
+        OK = (0 == retc)
+        #print("OK2<%d>"%OK)
+        if OK:
+          if recursive:
+            retc = run(["git","submodule","update"])
+            OK = (0 == retc)
+            #print("OK3<%d>"%OK)
+    finally:
+      os.chdir(cwd)
+    return OK
+
+  ##############################################################################
   if recursive and (cache==False):
+  ##############################################################################
 
-   print("Cloning (recursive) URL<%s> to dest<%s>"%(deco.path(url),deco.path(dest_path)))
-   retc = Command(["git",
-                  "clone",
-                  "-n",
-                  str(url),
-                  str(dest_path),
-                  "--recursive"]).exec()
+    print("Cloning1 (recursive) URL<%s> to dest<%s>"%(deco.path(url),deco.path(dest_path)))
+    retc = run(["git",
+                "clone",
+                "-n",
+                str(url),
+                str(dest_path),
+                "--recursive"])
 
-   if 0 == retc:
-     retc = Command(["git","checkout",rev]).exec()
-     if 0 == retc and recursive:
-       retc = Command(["git","submodule","update"]).exec()
-       if 0 == retc:
-         return True
+    if False==_checkoutrevandupdate():
+      return False
 
+  ##############################################################################
   elif cache:
-    retc = 0
+  ##############################################################################
+
+    destpar = (dest_path/"..").resolve()
+    print(destpar)
     if False==cache_dest.exists():
       print("Mirroring URL<%s> to dest<%s>"%(deco.path(url),deco.path(cache_dest)))
-
-      retc = Command(["git",
-                      "clone",
-                      str(url),
-                      str(cache_dest),
-                      "--mirror"]).exec()
-
-    print("Cloning (from gitcache<%s>) to dest<%s>"%(deco.path(cache_dest),deco.path(dest)))
-
+      retc = run(["git",
+                  "clone",
+                  str(url),
+                  str(cache_dest),
+                  "--mirror"])
+    print("Cloning2 (from gitcache<%s>) to dest<%s> retc<%s>"%(deco.path(cache_dest),deco.path(dest),retc))
     if dest_path.exists():
       shutil.rmtree(str(dest_path))
-
     if 0 == retc:
-      retc = Command(["git",
-                      "clone",
-                      "--reference",
-                      str(cache_dest),
-                      str(url),
-                      str(dest_path)]).exec()
+      retc = run(["git",
+                  "clone",
+                  "--reference",
+                  str(cache_dest),
+                  str(url),
+                  str(dest_path)])
+      return _checkoutrevandupdate()
 
-    if 0 == retc:
-      retc = Command(["git","checkout",rev,str(dest_path)]).exec()
-    if 0 == retc and recursive:
-      retc = Command(["git","submodule","update",str(dest_path)]).exec()
-
-    return retc==0
+  ##############################################################################
   else:
-    print("Cloning URL<%s> to dest<%s>"%(deco.path(url),deco.path(dest_path)))
-    retc = Command(["git",
-                    "clone",
-                    str(url),
-                    str(dest_path)]).exec()
+  ##############################################################################
 
+    print("Cloning3 URL<%s> to dest<%s>"%(deco.path(url),deco.path(dest_path)))
+    retc = run(["git",
+                "clone",
+                str(url),
+                str(dest_path)])
     if 0 == retc:
-      retc = Command(["git","checkout",rev,str(dest_path)]).exec()
-    if 0 == retc and recursive:
-      retc = Command(["git","submodule","update",str(dest_path)]).exec()
-    return 0 == retc
+      return _checkoutrevandupdate()
 
+  ##############################################################################
   return False
-###############################################################################

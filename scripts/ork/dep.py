@@ -261,7 +261,11 @@ class GitFetcher:
     return "%s (git-%s)" % (self._name,self._revision)
   ###########################################
   def fetch(self,dest):
-    git.Clone(self._git_url,dest,self._revision,recursive=self._recursive,cache=self._cache)
+    git.Clone(self._git_url,
+              dest,
+              rev=self._revision,
+              recursive=self._recursive,
+              cache=self._cache)
   ###########################################
 
 ###############################################################################

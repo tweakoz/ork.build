@@ -124,6 +124,7 @@ def setenv():
   if args["novars"]==False:
     ork.env.set("color_prompt","yes")
     ork.env.set("OBT_STAGE",OBT_STAGE)
+    ork.env.set("OBT_BUILDS",OBT_STAGE/"builds")
     ork.env.set("OBT_ROOT",root_dir)
     ork.env.prepend("PYTHONPATH",scripts_dir)
     ork.env.prepend("PKG_CONFIG",OBT_STAGE/"bin"/"pkg-config")
