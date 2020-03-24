@@ -25,9 +25,8 @@ class boost(dep.Provider):
 
   ########
 
-  def __init__(self,miscoptions=None):
-    parclass = super(boost,self)
-    parclass.__init__(miscoptions=miscoptions)
+  def __init__(self):
+    super().__init__()
     self.version = VERSION
     self.versiond = self.version.replace("_",".")
     self.baseurl = URL("https://dl.bintray.com/boostorg/release")
@@ -35,10 +34,10 @@ class boost(dep.Provider):
     build_dest = path.builds()/"boost"
     self.build_dest = build_dest
     self.manifest = path.manifests()/"boost"
-    self.OK = self.manifest.exists()
-    if "force" in options and options["force"]!=True:
-      self.OK = False 
     self.compiler = "clang++" if host.IsOsx else "g++"
+    self.OK = self.manifest.exists()
+    if self.option("force")==True:
+      self.OK = False
 
   ########
 
@@ -90,7 +89,7 @@ class boost(dep.Provider):
            else ['-Wl,-rpath',str(path.prefix()/"lib")]
 
     if host.IsOsx:
-      linkflags += ["-stdlib=libc++"] 
+      linkflags += ["-stdlib=libc++"]
 
 
     c = Command(["./b2",

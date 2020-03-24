@@ -12,10 +12,9 @@ from ork import dep
 
 class pybind11(dep.StdProvider):
 
-  def __init__(self,miscoptions):
+  def __init__(self):
     name = "pybind11"
-    parclass = super(pybind11,self)
-    parclass.__init__(name=name,miscoptions=miscoptions)
+    super().__init__(name)
     self._fetcher = dep.GitFetcher(name)
     self._fetcher._git_url = "https://github.com/tweakoz/pybind11"
     self._fetcher._revision = "toz/findnewtest"

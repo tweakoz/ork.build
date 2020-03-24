@@ -9,11 +9,12 @@
 VERSION = "v5.2.1"
 
 import os, tarfile
-from ork import dep, host, path, git, pathtools, command, patch
+from ork import dep, host, path, git, pathtools, command, patch, env
 from ork.deco import Deco
 from ork.wget import wget
 from ork.command import Command
 import ork.host
+from ork.log import log
 
 deco = Deco()
 
@@ -21,10 +22,8 @@ deco = Deco()
 
 class lua(dep.Provider):
 
-  def __init__(self,miscoptions=None): ############################################
-
-    parclass = super(lua,self)
-    parclass.__init__(miscoptions=miscoptions)
+  def __init__(self): ############################################
+    super().__init__()
     #print(options)
     self.source_root = path.builds()/"lua"
     self.build_dest = self.source_root
@@ -36,6 +35,12 @@ class lua(dep.Provider):
 
   def __str__(self):
     return "lua (lua.org-source-%s)" % VERSION
+
+  ########
+
+  def env_init(self):
+    log(deco.white("BEGIN lua-env_init"))
+    log(deco.white("END lua-env_init"))
 
   ########
 

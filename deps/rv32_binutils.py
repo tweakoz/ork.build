@@ -22,7 +22,8 @@ deco = Deco()
 
 class rv32_binutils(dep.Provider):
 
-  def __init__(self,miscoptions=None): ############################################
+  def __init__(self): ############################################
+    super().__init__()
     pass
 
 

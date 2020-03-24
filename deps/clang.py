@@ -12,14 +12,14 @@ from ork.command import Command
 ###############################################################################
 
 class clang(dep.StdProvider):
-  def __init__(self,miscoptions=None):
+  def __init__(self):
     name = "clang"
-    parclass = super(clang,self)
-    parclass.__init__(name=name,miscoptions=miscoptions)
-    self.llvm = dep.require("llvm")
+    super().__init__(name=name)
+    self.llvm = dep.instance("llvm")
     self._fetcher = dep.NopFetcher(name)
     self._fetcher._revision = self.llvm._fetcher._revision
     self._builder = dep.CMakeBuilder(name)
+    self._builder.requires([self.llvm])
     ##########################################
     # llvm cmake file is 1 subdir deeper than usual
     ##########################################

@@ -36,4 +36,4 @@ def append(key,val):
     set(key,val)
   else:
     os.environ[str(key)] = os.environ[str(key)]+":"+str(val)
-    log(deco.cyan("append")+" var<" + deco.key(key) + "> to<" + deco.val(os.environ[key]) + ">")
+    log(deco.cyan("append")+" var<" + deco.key(key) + "> to<" + deco.path(os.environ[key]) + ">")

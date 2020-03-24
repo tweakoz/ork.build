@@ -19,10 +19,8 @@ VERSION = "4.1.0"
 
 class opencv(dep.Provider):
 
-  def __init__(self,miscoptions=None): ############################################
-
-    parclass = super(opencv,self)
-    parclass.__init__(miscoptions=miscoptions)
+  def __init__(self): ############################################
+    super().__init__()
     self.manifest = path.manifests()/"opencv"
     self.OK = self.manifest.exists()
     self.cv_source_root = path.builds()/"opencv"

@@ -22,10 +22,8 @@ deco = Deco()
 
 class wt4(dep.Provider):
 
-  def __init__(self,miscoptions=None): ############################################
-
-    parclass = super(wt4,self)
-    parclass.__init__(miscoptions=miscoptions)
+  def __init__(self): ############################################
+    super().__init__()
     #print(options)
     build_dest = path.builds()/"wt4"
     self.build_dest = build_dest

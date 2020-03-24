@@ -22,10 +22,8 @@ deco = Deco()
 
 class minetest(dep.Provider):
 
-  def __init__(self,miscoptions=None): ############################################
-
-    parclass = super(minetest,self)
-    parclass.__init__(miscoptions=miscoptions)
+  def __init__(self): ############################################
+    super().__init__()
     #print(options)
     build_dest = path.builds()/"minetest"
     self.build_dest = build_dest

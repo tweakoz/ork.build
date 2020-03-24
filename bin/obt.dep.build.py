@@ -2,6 +2,7 @@
 
 import os, sys, pathlib, argparse
 from ork import dep, host, path
+import ork._globals
 
 parser = argparse.ArgumentParser(description='ork.build dep builder')
 parser.add_argument('dependency', metavar='D', type=str, help='a dependency to build')
@@ -25,4 +26,8 @@ _options = {
     "serial": (_args["serial"]==True)
 }
 
-dep.require(_args["dependency"],miscoptions=_options)
+dep.global_options = _options
+depname = _args["dependency"]
+status = dep.require(depname)!=None
+
+print("dep<%s> returned<%s>"%(depname,status))

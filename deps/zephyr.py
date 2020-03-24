@@ -21,11 +21,8 @@ deco = Deco()
 
 class zephyr(dep.Provider):
 
-  def __init__(self,miscoptions=None): ############################################
-
-    parclass = super(zephyr,self)
-    parclass.__init__(miscoptions=miscoptions)
-
+  def __init__(self): ############################################
+    super().__init__()
     self.source_root = path.builds()/"zephyr"
     self.build_dest = path.builds()/"zephyr"/".build"
     self.manifest = path.manifests()/"zephyr"
@@ -34,6 +31,12 @@ class zephyr(dep.Provider):
   def __str__(self): ##########################################################
 
     return "ZEPHYR (github-tweakoz/litex-edition)"
+
+  def env_goto(self): #########################################################
+    return {
+      "zephyr-src": self.source_root,
+      "zephyr-build": self.build_dest
+    }
 
   def build(self): ##########################################################
 

@@ -13,15 +13,13 @@ from ork.wget import wget
 from ork.command import Command
 
 deco = Deco()
-    
+
 ###############################################################################
 
 class irrlicht(dep.Provider):
 
-  def __init__(self,miscoptions=None): ############################################
-
-    parclass = super(irrlicht,self)
-    parclass.__init__(miscoptions=miscoptions)
+  def __init__(self): ############################################
+    super().__init__()
     self.manifest = path.manifests()/"irrlicht"
     self.OK = self.manifest.exists()
 
@@ -40,4 +38,3 @@ class irrlicht(dep.Provider):
         self.manifest.touch()
 
     return self.OK
-

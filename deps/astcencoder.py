@@ -23,8 +23,7 @@ class astcencoder(dep.Provider):
 
   def __init__(self,miscoptions=None): ############################################
 
-    parclass = super(astcencoder,self)
-    parclass.__init__(miscoptions=miscoptions)
+    super().__init__()
 
     self.source_root = path.builds()/"astcencoder"
     self.build_dest = path.builds()/"astcencoder"/"Source"

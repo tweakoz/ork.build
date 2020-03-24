@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 ###############################################################################
 # Orkid Build System
-# Copyright 2010-2018, Michael T. Mayers
+# Copyright 2010-2020, Michael T. Mayers
 # email: michael@tweakoz.com
 # The Orkid Build System is published under the GPL 2.0 license
 # see http://www.gnu.org/licenses/gpl-2.0.html
@@ -21,6 +21,7 @@ parser.add_argument('--create', metavar="createdir", help='create staging folder
 parser.add_argument('--createonly', metavar="createdir", help='create staging folder and exit' )
 parser.add_argument('--launch', metavar="launchdir", help='launch from pre-existing folder' )
 parser.add_argument('--chdir', metavar="chdir", help='working directory of command' )
+parser.add_argument('--wipe', action="store_true", help='wipe old staging folder' )
 parser.add_argument('--stack', metavar="stackdir", help='stack env' )
 parser.add_argument('--prompt', metavar="prompt", help='prompt suffix' )
 parser.add_argument("--command", metavar="command", help="execute in environ")
@@ -73,6 +74,9 @@ os.environ["OBT_SEARCH_EXTLIST"] = ".cpp:.c:.cc:.h:.hpp:.inl:.qml:.m:.mm:.py:.tx
 
 ###########################################
 
+
+###########################################
+
 ORK_PROJECT_NAME = "obt"
 if "ORK_PROJECT_NAME" in os.environ:
   ORK_PROJECT_NAME = os.environ["ORK_PROJECT_NAME"]
@@ -83,6 +87,8 @@ if args["launch"]!=None:
   try_staging = Path(args["launch"]).resolve()
 elif args["create"]!=None:
   try_staging = Path(args["create"]).resolve()
+  if args["wipe"] and try_staging.exists():
+    os.system( "rm -rf %s"%try_staging)
 elif args["createonly"]!=None:
   try_staging = Path(args["createonly"]).resolve()
 elif args["stack"]!=None:
@@ -103,26 +109,14 @@ import ork.deco
 import ork.env
 import ork.path
 import ork.host
+import ork.dep
+import ork._globals as _glob
 from ork.command import Command
 
 deco = ork.deco.Deco()
 bin_dir = root_dir/"bin"
 
-############################################
-
-if try_staging!=None:
-  if ork.host.IsOsx:
-    qtdir = Path("/")/"usr"/"local"/"opt"/"qt5"
-  else:
-    qtdir = OBT_STAGE/"qt5"
-  if qtdir.exists():
-      ork.env.set("QTDIR",qtdir)
-      ork.env.prepend("PATH",qtdir/"bin")
-      QTVERCMD = Command(["qtpaths","--qt-version"])
-      QTVER = QTVERCMD.capture().replace("\n","")
-      #print("QTVER<%s>"%QTVER)
-      ork.env.set("QTVER",QTVER)
-      ork.env.prepend("LD_LIBRARY_PATH",qtdir/"lib")
+print( _glob.yo )
 
 ##########################################
 
@@ -131,11 +125,8 @@ def setenv():
     ork.env.set("color_prompt","yes")
     ork.env.set("OBT_STAGE",OBT_STAGE)
     ork.env.set("OBT_ROOT",root_dir)
-    ork.env.set("OBT_PYLIB",ork.path.python_lib())
-    ork.env.set("OBT_PYPKG",ork.path.python_pkg())
     ork.env.prepend("PYTHONPATH",scripts_dir)
     ork.env.prepend("PKG_CONFIG",OBT_STAGE/"bin"/"pkg-config")
-    ork.env.prepend("PKG_CONFIG_PATH",OBT_STAGE/"qt5"/"lib"/"pkgconfig")
     ork.env.prepend("PKG_CONFIG_PATH",OBT_STAGE/"lib"/"pkgconfig")
     ork.env.prepend("PKG_CONFIG_PATH",OBT_STAGE/"lib64"/"pkgconfig")
     ork.env.prepend("PATH",bin_dir)
@@ -144,24 +135,35 @@ def setenv():
     ork.env.prepend("LD_LIBRARY_PATH",OBT_STAGE/"lib64")
     subenv = root_dir/".."/"obt.project"/"scripts"/"init_env.py"
     if subenv.exists():
-        import importlib
-        modulename = importlib.machinery.SourceFileLoader('modulename',str(subenv)).load_module()
-        #print(modulename)
-        modulename.setup()
-        #modul.setup()
+      import importlib
+      modulename = importlib.machinery.SourceFileLoader('modulename',str(subenv)).load_module()
+      #print(modulename)
+      modulename.setup()
+      #modul.setup()
     if ork.host.IsLinux:
-        pkgcfgdir = ork.path.Path("/usr/lib/x86_64-linux-gnu/pkgconfig")
-        if pkgcfgdir.exists():
-            ork.env.append("PKG_CONFIG_PATH",pkgcfgdir)
-        pkgcfgdir = ork.path.Path("/usr/share/pkgconfig")
-        if pkgcfgdir.exists():
-            ork.env.append("PKG_CONFIG_PATH",pkgcfgdir)
+      pkgcfgdir = ork.path.Path("/usr/lib/x86_64-linux-gnu/pkgconfig")
+      if pkgcfgdir.exists():
+        ork.env.append("PKG_CONFIG_PATH",pkgcfgdir)
+      pkgcfgdir = ork.path.Path("/usr/share/pkgconfig")
+      if pkgcfgdir.exists():
+        ork.env.append("PKG_CONFIG_PATH",pkgcfgdir)
+
+###########################################
+# per dep dynamic env init
+###########################################
+
+def dynamicInit():
+  depitems = ork.dep.enumerate_with_method("env_init")
+  for depitemk in depitems:
+    depitem = depitems[depitemk]
+    depitem.env_init()
 
 ###########################################
 def lazyMakeDirs():
     my_log(deco.white("Making required directories"))
     (ork.path.prefix()/"lib").mkdir(parents=True,exist_ok=True)
     (ork.path.prefix()/"bin").mkdir(parents=True,exist_ok=True)
+    (ork.path.prefix()/"include").mkdir(parents=True,exist_ok=True)
     ork.path.downloads().mkdir(parents=True,exist_ok=True)
     ork.path.builds().mkdir(parents=True,exist_ok=True)
     ork.path.manifests().mkdir(parents=True,exist_ok=True)
@@ -178,17 +180,30 @@ def genBashRc(staging):
     BASHRC += "\nexport PS1='%s';\n" % PROMPT
     BASHRC += "alias ls='ls -G';\n"
 
+    #########################################
+    # statically defined goto and push methods
+    #########################################
+
     dirs = {
         "root": "${OBT_ROOT}",
         "deps": "${OBT_ROOT}/deps",
-
         "stage": "${OBT_STAGE}",
         "builds": "${OBT_STAGE}/builds",
-        "litex": "${OBT_STAGE}/builds/litex_env",
-        "zephyr": "${OBT_STAGE}/builds/zephyr",
-        "pylib": str(ork.path.python_lib()),
-        "pypkg": str(ork.path.python_pkg())
+        "litex": "${OBT_STAGE}/builds/litex_env", # todo convert obt.litex.env.py to litex dep
     }
+
+    #########################################
+    # dynamic goto and pushd methods
+    #  generated from individual deps
+    #########################################
+
+    depitems = ork.dep.enumerate_with_method("env_goto")
+    for depitemk in depitems:
+      depitem = depitems[depitemk]
+      gotos = depitem.env_goto()
+      dirs.update(gotos)
+
+    #########################################
 
     for k in dirs:
         v = dirs[k]
@@ -231,6 +246,7 @@ elif args["launch"]!=None:
     #############
     lazyMakeDirs()
     genBashRc(try_staging)
+    dynamicInit()
     #############
     shell = "bash"
     bashrc = try_staging/".bashrc"

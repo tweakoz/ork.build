@@ -9,10 +9,8 @@ HASH = "f6e931e319531b736fadc017f470e68a"
 
 class pkgconfig(dep.Provider):
 
-  def __init__(self,miscoptions=None): ############################################
-
-    parclass = super(pkgconfig,self)
-    parclass.__init__(miscoptions=miscoptions)
+  def __init__(self): ############################################
+    super().__init__()
 
     self.manifest = path.manifests()/"yarl"
     self.extract_dir = path.builds()/"pkgconfig"

@@ -11,10 +11,9 @@ from ork.command import Command
 
 class llvm(dep.StdProvider):
 
-  def __init__(self,miscoptions):
+  def __init__(self):
     name = "llvm"
-    parclass = super(llvm,self)
-    parclass.__init__(name=name,miscoptions=miscoptions)
+    super().__init__(name)
     self._fetcher = dep.GitFetcher(name)
     self._fetcher._git_url = "https://github.com/llvm/llvm-project"
     self._fetcher._revision = "llvmorg-9.0.1"

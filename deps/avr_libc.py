@@ -27,7 +27,8 @@ HASH = "2360981cd5d94e1d7a70dfc6983bdf15"
 
 class avr_libc(dep.Provider):
 
-  def __init__(self,miscoptions=None): ############################################
+  def __init__(self): ############################################
+    super().__init__()
 
     self.manifest = path.manifests()/"avr_binutils"
     self.OK = self.manifest.exists()
@@ -46,7 +47,7 @@ class avr_libc(dep.Provider):
 
   def provide(self): ##########################################################
     if False==self.OK:
-  
+
       self.arcpath = dep.downloadAndExtract([self.url],
                                              "%s.tar.bz2"%self.name,
                                              "bz2",
@@ -57,7 +58,7 @@ class avr_libc(dep.Provider):
       os.mkdir(self.build_dir)
       os.chdir(self.build_dir)
 
-      Command(['../configure', 
+      Command(['../configure',
                '--prefix=%s'%path.prefix(),
                "--build=x86_64-unknown-linux-gnu",
                "--host=avr",

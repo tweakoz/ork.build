@@ -11,10 +11,9 @@ from ork.command import Command
 ###############################################################################
 
 class ispctexc(dep.StdProvider):
-  def __init__(self,miscoptions=None):
+  def __init__(self):
     name = "ispctexc"
-    parclass = super(ispctexc,self)
-    parclass.__init__(name=name,miscoptions=miscoptions)
+    super().__init__(name)
     self._fetcher = dep.GitFetcher(name)
     self._fetcher._git_url = "https://github.com/GameTechDev/ISPCTextureCompressor"
     self._fetcher._cache=False,
@@ -38,11 +37,7 @@ class ispctexc(dep.StdProvider):
     #########################################
 
     self.source_root.chdir()
-
-    ENV = {
-        "ISPC": path.stage()/"bin"/"ispc"
-    }
-    r = Command(["make","-f","Makefile.linux"],environment=ENV).exec()
+    r = Command(["make","-f","Makefile.linux"]).exec()
     self.OK = (r==0)
 
     return self.OK

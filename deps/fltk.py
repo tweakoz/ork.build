@@ -13,10 +13,9 @@ from ork import dep, command, path
 
 class fltk(dep.StdProvider):
   #############################################
-  def __init__(self,miscoptions=None):
+  def __init__(self):
     name = "fltk"
-    parclass = super(fltk,self)
-    parclass.__init__(name,miscoptions=miscoptions)
+    super().__init__(name)
     self._fetcher = dep.GitFetcher(name)
     self._fetcher._git_url = "https://github.com/fltk/fltk"
     self._fetcher._revision = "release-1.3.5"

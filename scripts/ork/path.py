@@ -56,20 +56,6 @@ def pysite():
 
 ###############################################################################
 
-def python_lib():
-  pfx = Path(sys.prefix)
-  ver = sys.version_info
-  epfx = "python%d.%d" % (ver.major,ver.minor)
-  #print(pfx,epfx)
-  return pfx/"lib"/epfx
-
-###############################################################################
-
-def python_pkg():
-  return python_lib()/"site-packages"
-
-###############################################################################
-
 def stage():
   staging = Path(os.environ["OBT_STAGE"])
   return staging

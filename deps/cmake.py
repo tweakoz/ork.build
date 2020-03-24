@@ -12,11 +12,9 @@ from ork import dep
 
 class cmake(dep.StdProvider):
 
-  def __init__(self,miscoptions=None):
+  def __init__(self):
     name = "cmake"
-
-    parclass = super(cmake,self)
-    parclass.__init__(name,miscoptions=miscoptions)
+    super().__init__(name)
 
     self._fetcher = dep.GitFetcher(name)
     self._fetcher._git_url = "https://github.com/kitware/cmake"

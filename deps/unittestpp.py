@@ -20,10 +20,8 @@ deco = Deco()
 
 class unittestpp(dep.Provider):
 
-  def __init__(self,miscoptions=None): ############################################
-
-    parclass = super(unittestpp,self)
-    parclass.__init__(miscoptions=miscoptions)
+  def __init__(self): ############################################
+    super().__init__()
 
     self.source_root = path.builds()/"unittestpp"
     self.build_dest = path.builds()/"unittestpp"/".build"

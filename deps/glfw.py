@@ -12,10 +12,9 @@ from ork import dep
 
 class glfw(dep.StdProvider):
 
-  def __init__(self,miscoptions):
+  def __init__(self):
     name = "glfw"
-    parclass = super(glfw,self)
-    parclass.__init__(name=name,miscoptions=miscoptions)
+    super().__init__(name)
     self._fetcher = dep.GitFetcher(name)
     self._fetcher._git_url = "https://github.com/glfw/glfw"
     self._fetcher._revision = "master"

@@ -11,10 +11,11 @@ VERSION = "3.8.1"
 HASH = "f215fa2f55a78de739c1787ec56b2bcd"
 
 import os, tarfile
-from ork import dep, host, path, cmake
+from ork import dep, host, path, cmake, env
 from ork.deco import Deco
 from ork.wget import wget
 from ork.command import Command
+from ork.log import log
 
 deco = Deco()
 
@@ -23,10 +24,8 @@ deco = Deco()
 
 class python(dep.Provider):
 
-  def __init__(self,miscoptions=None): ############################################
-
-    parclass = super(python,self)
-    parclass.__init__(miscoptions=miscoptions)
+  def __init__(self): ############################################
+    super().__init__()
     #print(options)
     build_dest = path.builds()/"python"
     self.build_dest = build_dest
@@ -38,6 +37,22 @@ class python(dep.Provider):
 
   def __str__(self):
     return "Python3 (%s-source)" % VERSION
+
+  ########
+
+  def env_init(self):
+    log(deco.white("BEGIN python-env_init"))
+    env.set("OBT_PYLIB",self.libdir())
+    env.set("OBT_PYPKG",self.site_packages_dir())
+    log(deco.white("END python-env_init"))
+
+  ########
+
+  def env_goto(self):
+    return {
+      "pylib": str(self.libdir()),
+      "pypkg": str(self.site_packages_dir())
+    }
 
   ########
 

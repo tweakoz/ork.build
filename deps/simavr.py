@@ -13,15 +13,13 @@ from ork.wget import wget
 from ork.command import Command
 
 deco = Deco()
-    
+
 ###############################################################################
 
 class simavr(dep.Provider):
 
-  def __init__(self,miscoptions=None): ############################################
-
-    parclass = super(simavr,self)
-    parclass.__init__(miscoptions=miscoptions)
+  def __init__(self): ############################################
+    super().__init__()
     self.manifest = path.manifests()/"simavr"
     self.source_root = path.builds()/"simavr"
 
@@ -34,4 +32,3 @@ class simavr(dep.Provider):
     self.manifest.touch()
     self.OK = self.manifest.exists()
     return self.OK
-

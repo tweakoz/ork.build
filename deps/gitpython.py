@@ -15,15 +15,13 @@ from ork.command import Command
 from ork.cmake import context
 
 deco = Deco()
-    
+
 ###############################################################################
 
 class gitpython(dep.Provider):
 
-  def __init__(self,miscoptions=None): ############################################
-
-    parclass = super(gitpython,self)
-    parclass.__init__(miscoptions=miscoptions)
+  def __init__(self): ############################################
+    super().__init__()
     self.manifest = path.manifests()/"gitpython"
     self.OK = self.manifest.exists()
 
@@ -41,4 +39,3 @@ class gitpython(dep.Provider):
       self.manifest.touch()
 
     return self.OK
-

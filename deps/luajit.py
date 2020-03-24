@@ -23,10 +23,8 @@ deco = Deco()
 
 class luajit(dep.Provider):
 
-  def __init__(self,miscoptions=None): ############################################
-
-    parclass = super(luajit,self)
-    parclass.__init__(miscoptions=miscoptions)
+  def __init__(self): ############################################
+    super().__init__()
     #print(options)
     self.source_root = path.builds()/"luajit"
     self.build_dest = self.source_root

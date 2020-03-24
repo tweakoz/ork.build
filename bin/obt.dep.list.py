@@ -3,23 +3,13 @@
 import os, sys, pathlib, argparse
 from ork import dep, host, path
 import ork.pathtools
+import ork._globals
 
 ##########################################
 # build dep dict
 ##########################################
 
-deps = ork.pathtools.patglob(ork.path.deps(),"*.py")
-
-depnames = set()
-depnodes = dict()
-for item in deps:
-	d = os.path.basename(item)
-	d = os.path.splitext(d)[0]
-	depnames.add(d)
-	#print(d)
-	dn = ork.dep.DepNode(d)
-	if dn:
-		depnodes[d] = dn
+depnodes = ork.dep.enumerate()
 
 ##########################################
 
@@ -38,4 +28,3 @@ for key in sorted(depnodes):
 	  line += col_v
 	  print(line)
 	  line_index += 1
-

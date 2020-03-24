@@ -22,7 +22,8 @@ deco = Deco()
 
 class avr_gcc(dep.Provider):
 
-  def __init__(self,miscoptions=None): ############################################
+  def __init__(self): ############################################
+    super().__init__()
     self.manifest = path.manifests()/"avr_gcc"
     self.OK = self.manifest.exists()
 
@@ -42,7 +43,7 @@ class avr_gcc(dep.Provider):
       os.mkdir(bdest)
       os.chdir(bdest)
 
-      cmd = Command(['../configure', 
+      cmd = Command(['../configure',
                      '--prefix=%s'%path.prefix(),
                      '--target=avr',
                      '--enable-languages=c,c++',

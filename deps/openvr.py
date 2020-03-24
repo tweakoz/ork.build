@@ -12,10 +12,9 @@ from ork import dep
 
 class openvr(dep.StdProvider):
 
-  def __init__(self,miscoptions):
+  def __init__(self):
     name = "openvr"
-    parclass = super(openvr,self)
-    parclass.__init__(name=name,miscoptions=miscoptions)
+    super().__init__(name)
     self._fetcher = dep.GitFetcher(name)
     self._fetcher._git_url = "https://github.com/ValveSoftware/openvr"
     self._fetcher._revision = "v1.9.16"

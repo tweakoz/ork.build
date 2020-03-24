@@ -23,7 +23,8 @@ deco = Deco()
 
 class rv32_gcc(dep.Provider):
 
-  def __init__(self,miscoptions=None): ############################################
+  def __init__(self): ############################################
+    super().__init__()
     pass
 
   def provide(self): ##########################################################

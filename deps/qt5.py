@@ -11,11 +11,12 @@ MINOR_VERSION = "1"
 HASH = "781c3179410aff7ef84607214e1e91b4"
 
 import os, tarfile
-from ork import dep, host, path, git, make, pathtools
+from ork import dep, host, path, git, make, pathtools, env
 from ork.deco import Deco
 from ork.wget import wget
 from ork.command import Command
 from ork.cmake import context as cmake_context
+from ork.log import log
 from yarl import URL
 
 deco = Deco()
@@ -24,10 +25,8 @@ deco = Deco()
 
 class qt5(dep.Provider):
 
-  def __init__(self,miscoptions=None): ############################################
-
-    parclass = super(qt5,self)
-    parclass.__init__(miscoptions=miscoptions)
+  def __init__(self): ############################################
+    super().__init__()
     #print(options)
     self.manifest = path.manifests()/"qt5"
     self.OK = self.manifest.exists()
@@ -44,6 +43,32 @@ class qt5(dep.Provider):
 
   def __str__(self):
     return "QT5 (%s)" % self.name
+
+  ########
+
+  def env_init(self):
+    log(deco.white("BEGIN qt5-env_init"))
+    if host.IsOsx:
+      qtdir = Path("/")/"usr"/"local"/"opt"/"qt5"
+    else:
+      qtdir = path.stage()/"qt5"
+    if qtdir.exists():
+      env.set("QTDIR",qtdir)
+      env.prepend("PATH",qtdir/"bin")
+      QTVERCMD = Command(["qtpaths","--qt-version"])
+      QTVER = QTVERCMD.capture().replace("\n","")
+      env.set("QTVER",QTVER)
+      env.prepend("LD_LIBRARY_PATH",qtdir/"lib")
+      env.prepend("PKG_CONFIG_PATH",qtdir/"lib"/"pkgconfig")
+    log(deco.white("END qt5-env_init"))
+
+  ########
+
+  def env_goto(self):
+    return {
+      "qt5-src": self.source_root,
+      "qt5-build": self.build_dest
+    }
 
   ########
 

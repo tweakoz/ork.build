@@ -12,13 +12,12 @@ from ork import dep, host
 
 class nvtt(dep.StdProvider):
 
-  def __init__(self,miscoptions):
+  def __init__(self):
     name = "nvtt"
-    parclass = super(nvtt,self)
-    parclass.__init__(name=name,miscoptions=miscoptions)
+    super().__init__(name)
     self._fetcher = dep.GitFetcher(name)
-    self._fetcher._git_url = "https://github.com/castano/nvidia-texture-tools"
-    self._fetcher._revision = "b45560cfc4684fec8a79d812a20780e5d79df9b3"
+    self._fetcher._git_url = "https://github.com/tweakoz/nvidia-texture-tools"
+    self._fetcher._revision = "toz_orkdotbuild"
     self._builder = dep.CMakeBuilder(name)
     self._builder.requires(["openexr"])
     self._builder._cmakeenv = {

@@ -10,27 +10,27 @@ import os, tarfile
 from ork import dep, host, path, pathtools
 from ork.deco import Deco
 from ork.wget import wget
-import ork.git 
+import ork.git
 from ork.command import Command
 import ork.patch
 import ork.pip
 
 deco = Deco()
-    
+
 ###########################################################
 
 class pillar(dep.Provider):
 
   ################################
 
-  def __init__(self,miscoptions=None):
+  def __init__(self):
+    super().__init__()
     self.source_root = path.builds()/"pillar-python-sdk"
     self.url = "https://github.com/armadillica/pillar"
     self.manifest = path.manifests()/"pillar-python-sdk"
     self.OK = self.manifest.exists()
-    if "force" in options and options["force"]==True:
+    if self.option("force")==True:
       self.OK = False
-    pass
 
   ################################
 
@@ -60,13 +60,7 @@ class pillar(dep.Provider):
       # install
 
       Command(["python3","setup.py", "install"]).exec()
-      
+
       self.manifest.touch()
 
     return True
-    
-
-
-
-
-

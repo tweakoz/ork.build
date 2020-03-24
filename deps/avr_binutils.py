@@ -22,7 +22,9 @@ deco = Deco()
 
 class avr_binutils(dep.Provider):
 
-  def __init__(self,miscoptions=None): ############################################
+  def __init__(self): ############################################
+
+    super().__init__()
 
     self.manifest = path.manifests()/"avr_binutils"
     self.OK = self.manifest.exists()
@@ -35,7 +37,7 @@ class avr_binutils(dep.Provider):
   ########
 
   def provide(self): ##########################################################
-    
+
     if False==self.OK:
         bu = _binutils.context("binutils-avr")
         bdest = bu.build_dir/".build"
@@ -43,7 +45,7 @@ class avr_binutils(dep.Provider):
         os.mkdir(bdest)
         os.chdir(bdest)
 
-        Command(['../configure', 
+        Command(['../configure',
                  '--prefix=%s'%path.prefix(),
                  '--target=avr',
                  '--disable-werror',

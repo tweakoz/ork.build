@@ -23,8 +23,7 @@ class assimp(dep.Provider):
 
   def __init__(self,miscoptions=None): ############################################
 
-    parclass = super(assimp,self)
-    parclass.__init__(miscoptions=miscoptions)
+    super().__init__()
 
     self.source_root = path.builds()/"assimp"
     self.build_dest = path.builds()/"assimp"/".build"

@@ -12,10 +12,9 @@ from ork import dep
 
 class openexr(dep.StdProvider):
 
-  def __init__(self,miscoptions=None):
+  def __init__(self):
     name = "openexr"
-    parclass = super(openexr,self)
-    parclass.__init__(name=name,miscoptions=miscoptions)
+    super().__init__(name)
 
     self._fetcher = dep.GitFetcher(name)
     self._fetcher._git_url = "https://github.com/openexr/openexr"
