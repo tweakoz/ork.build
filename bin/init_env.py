@@ -116,8 +116,6 @@ from ork.command import Command
 deco = ork.deco.Deco()
 bin_dir = root_dir/"bin"
 
-print( _glob.yo )
-
 ##########################################
 
 def setenv():

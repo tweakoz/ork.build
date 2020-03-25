@@ -28,19 +28,6 @@ class _ispc_from_source(dep.StdProvider):
     self._builder.requires([self.llvm])
     if host.IsOsx:
       self._builder.setCmVar("BISON_EXECUTABLE",path.osx_brewopt()/"bison"/"bin"/"bison")
-      sysroot_cmd = Command(["xcrun","--show-sdk-path"])
-      sysroot = sysroot_cmd.capture().replace("\n","")
-      print(sysroot)
-      self._builder.setCmVars({
-        "CMAKE_OSX_ARCHITECTURES:STRING":"x86_64",
-        "CMAKE_OSX_DEPLOYMENT_TARGET:STRING":"10.14",
-        "CMAKE_OSX_SYSROOT:STRING":sysroot,
-        "CMAKE_MACOSX_RPATH": "1",
-        "CMAKE_INSTALL_RPATH": path.libs(),
-        "CMAKE_SKIP_INSTALL_RPATH:BOOL":"NO",
-        "CMAKE_SKIP_RPATH:BOOL":"NO",
-        "CMAKE_INSTALL_NAME_DIR": "@executable_path/../lib"
-      })
 
 ###############################################################################
 

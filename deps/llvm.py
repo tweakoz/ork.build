@@ -31,15 +31,3 @@ class llvm(dep.StdProvider):
         "LLVM_ENABLE_DUMP": "ON",
         "LLVM_ENABLE_PROJECTS": "clang;libcxx;libcxxabi"
     })
-    if host.IsOsx:
-      sysroot_cmd = Command(["xcrun","--show-sdk-path"])
-      sysroot = sysroot_cmd.capture().replace("\n","")
-      print(sysroot)
-      self._builder.setCmVars({
-        "CMAKE_OSX_ARCHITECTURES:STRING":"x86_64",
-        "CMAKE_OSX_DEPLOYMENT_TARGET:STRING":"10.14",
-        "CMAKE_OSX_SYSROOT:STRING":sysroot,
-        "CMAKE_SKIP_INSTALL_RPATH:BOOL":"NO",
-        "CMAKE_SKIP_RPATH:BOOL":"NO",
-        "CMAKE_INSTALL_NAME_DIR": "@executable_path/../lib"
-      })

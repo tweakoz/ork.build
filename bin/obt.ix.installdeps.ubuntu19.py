@@ -31,6 +31,9 @@ deplist += ["libssl-dev"]
 deplist += ["wget","git","vim"]
 deplist += ["m4","bison","flex"]
 deplist += ["libcurl4-openssl-dev"]
+deplist += ["libreadline-dev"]
+deplist += ["libxcb-xfixes0-dev"]
+
 
 for item in deplist:
-    os.system("sudo apt install %s" % item)
+  os.system("sudo apt -y install %s" % item)

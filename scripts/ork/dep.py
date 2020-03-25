@@ -9,7 +9,7 @@
 import os, inspect, tarfile
 from pathlib import Path
 import importlib.util
-import ork.path
+import ork.path, ork.host
 from ork.command import Command
 from ork.deco import Deco
 from ork.wget import wget
@@ -329,7 +329,7 @@ class BinInstaller:
     require(self._deps)
     for item in self._items:
       exists = item._src.exists()
-      print(item,item._src,exists)
+      #print(item,item._src,exists)
       if False==exists:
         self._OK = False
         return False
@@ -355,12 +355,29 @@ class CMakeBuilder:
     ##################################
     # ensure environment cmake present
     ##################################
-    ##################################
     self._name = name
     self._cmakeenv = {
       "CMAKE_BUILD_TYPE": "Release",
       "BUILD_SHARED_LIBS": "ON",
     }
+    ##################################
+    # default OSX stuff
+    ##################################
+    if ork.host.IsOsx:
+      sysroot_cmd = Command(["xcrun","--show-sdk-path"],do_log=False)
+      sysroot = sysroot_cmd.capture().replace("\n","")
+      self._cmakeenv.update({
+        "CMAKE_OSX_ARCHITECTURES:STRING":"x86_64",
+        "CMAKE_OSX_DEPLOYMENT_TARGET:STRING":"10.14",
+        "CMAKE_OSX_SYSROOT:STRING":sysroot,
+        "CMAKE_MACOSX_RPATH": "1",
+        "CMAKE_INSTALL_RPATH": path.libs(),
+        "CMAKE_SKIP_INSTALL_RPATH:BOOL":"NO",
+        "CMAKE_SKIP_RPATH:BOOL":"NO",
+        "CMAKE_INSTALL_NAME_DIR": "@executable_path/../lib"
+      })
+
+    ##################################
     self._parallelism=1.0
     self._deps = []
     if name!="cmake":
@@ -415,7 +432,8 @@ class StdProvider(Provider):
     #############################
 
     def postinit(self):
-      print(self._deps)
+      pass
+      #print(self._deps)
 
     #############################
 
@@ -540,5 +558,9 @@ def downloadAndExtract(urls,
         tf.extractall(path=str(build_dest))
 
   return arcpath
+
+###############################################################################
+
+
 
 ###############################################################################

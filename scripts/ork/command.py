@@ -32,13 +32,14 @@ class Command:
 
     ###########################################################################
 
-    def __init__(self, command_list, environment=dict()):
+    def __init__(self, command_list, environment=dict(),do_log=True):
 
         self.env = os.environ
         for k in environment.keys():
             self.env[k]=str(environment[k])
         self.command_list = procargs(command_list)
-        log(deco.white(self.command_list))
+        if do_log:
+          log(deco.white(self.command_list))
 
     ###########################################################################
 
