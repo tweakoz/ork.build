@@ -31,6 +31,16 @@ class _ispc_from_source(dep.StdProvider):
 
 ###############################################################################
 
+class _ispc_from_homebrew(dep.HomebrewProvider):
+  def __init__(self,name):
+    super().__init__(name,name)
+  def env_init(self):
+    log(deco.white("BEGIN ispc-env_init"))
+    env.set("ISPC",self.brew_prefix()/"bin"/"ispc")
+    log(deco.white("END ispc-env_init"))
+
+###############################################################################
+
 class _ispc_from_wget(dep.StdProvider):
   def __init__(self,name):
     super().__init__(name)
@@ -44,19 +54,19 @@ class _ispc_from_wget(dep.StdProvider):
     src_dir = path.builds()/"ispc"/"ispc-v1.12.0-linux"
     dst_dir = path.stage()
     self._builder.declare(src_dir/"bin"/"ispc",dst_dir/"bin"/"ispc")
+  def env_init(self):
+    log(deco.white("BEGIN ispc-env_init"))
+    env.set("ISPC",path.stage()/"bin"/"ispc")
+    log(deco.white("END ispc-env_init"))
 
 ###############################################################################
 
 BASE = _ispc_from_wget
 if host.IsOsx:
-  BASE = _ispc_from_source
+  BASE = _ispc_from_homebrew
 
 ###############################################################################
 
 class ispc(BASE):
   def __init__(self):
     super().__init__("ispc")
-  def env_init(self):
-    log(deco.white("BEGIN ispc-env_init"))
-    env.set("ISPC",path.stage()/"bin"/"ispc")
-    log(deco.white("END ispc-env_init"))

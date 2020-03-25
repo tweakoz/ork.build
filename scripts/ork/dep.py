@@ -248,6 +248,19 @@ def enumerate_with_method(named):
 
 ###############################################################################
 
+class HomebrewProvider(Provider):
+  def __init__(self,name,pkgname):
+    super().__init__()
+    self.manifest = path.manifests()/name
+    self.OK = self.manifest.exists()
+  def brew_prefix(self):
+    return Path("/")/"usr"/"local"
+  def build(self):
+    if 0 == Command(["brew","install",pkgname]).exec():
+      self.manifest.touch()
+
+###############################################################################
+
 class GitFetcher:
   ###########################################
   def __init__(self,name):

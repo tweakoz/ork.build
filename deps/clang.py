@@ -16,13 +16,14 @@ class clang(dep.StdProvider):
     name = "clang"
     super().__init__(name=name)
     self.llvm = dep.instance("llvm")
-    self._fetcher = dep.NopFetcher(name)
-    self._fetcher._revision = self.llvm._fetcher._revision
-    self._builder = dep.CMakeBuilder(name)
-    self._builder.requires([self.llvm])
-    ##########################################
-    # llvm cmake file is 1 subdir deeper than usual
-    ##########################################
-    self.source_root = path.builds()/"llvm"
-    self.build_src = self.source_root/"clang"
-    self.build_dest = self.source_root/".build"
+    if hasattr(self.llvm,"_fetcher"):
+      self._fetcher = dep.NopFetcher(name)
+      self._fetcher._revision = self.llvm._fetcher._revision
+      self._builder = dep.CMakeBuilder(name)
+      self._builder.requires([self.llvm])
+      ##########################################
+      # llvm cmake file is 1 subdir deeper than usual
+      ##########################################
+      self.source_root = path.builds()/"llvm"
+      self.build_src = self.source_root/"clang"
+      self.build_dest = self.source_root/".build"

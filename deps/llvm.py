@@ -8,11 +8,13 @@
 
 from ork import dep, host, path
 from ork.command import Command
+from ork.log import log
+from ork.deco import Deco
+deco = Deco()
 
-class llvm(dep.StdProvider):
+class _llvm_from_source(dep.StdProvider):
 
-  def __init__(self):
-    name = "llvm"
+  def __init__(self,name):
     super().__init__(name)
     self._fetcher = dep.GitFetcher(name)
     self._fetcher._git_url = "https://github.com/llvm/llvm-project"
@@ -31,3 +33,25 @@ class llvm(dep.StdProvider):
         "LLVM_ENABLE_DUMP": "ON",
         "LLVM_ENABLE_PROJECTS": "clang;libcxx;libcxxabi"
     })
+
+
+###############################################################################
+
+class _llvm_from_homebrew(dep.HomebrewProvider):
+  def __init__(self,name):
+    super().__init__(name,name)
+
+###############################################################################
+
+BASE = _llvm_from_source
+if host.IsOsx:
+  BASE = _llvm_from_homebrew
+
+###############################################################################
+
+class llvm(BASE):
+  def __init__(self):
+    super().__init__("llvm")
+  def env_init(self):
+    log(deco.white("BEGIN llvm-env_init"))
+    log(deco.white("END llvm-env_init"))
