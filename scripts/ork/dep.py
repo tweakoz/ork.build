@@ -253,10 +253,11 @@ class HomebrewProvider(Provider):
     super().__init__()
     self.manifest = path.manifests()/name
     self.OK = self.manifest.exists()
+    self.pkgname = pkgname
   def brew_prefix(self):
     return Path("/")/"usr"/"local"
   def build(self):
-    if 0 == Command(["brew","install",pkgname]).exec():
+    if 0 == Command(["brew","install",self.pkgname]).exec():
       self.manifest.touch()
 
 ###############################################################################

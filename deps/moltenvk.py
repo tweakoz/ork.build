@@ -6,7 +6,7 @@
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
 
-VERSION = "master"
+VERSION = "v1.0.40"
 
 import os, tarfile
 from ork import dep, host, path, cmake, git, make, command
@@ -32,15 +32,16 @@ class moltenvk(dep.Provider):
 
     return "MoltenVK (github-%s)" % VERSION
 
+  def wipe(self): #############################################################
+    os.system("rm -rf %s"%self.source_root)
+    os.system("rm -rf %s"%self.build_dest)
+
   def build(self): ##########################################################
 
     #glfw = dep.require("glfw")
 
-    if self.incremental():
-        os.chdir(self.build_dest)
-    else:
-        git.Clone("https://github.com/KhronosGroup/MoltenVK",self.source_root,VERSION)
-
+    if not self.source_root.exists():
+      git.Clone("https://github.com/KhronosGroup/MoltenVK",self.source_root,VERSION)
 
     os.chdir(self.source_root)
 

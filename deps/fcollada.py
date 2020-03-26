@@ -49,15 +49,3 @@ class fcollada(dep.Provider):
     return {
         "LIBS": ["fcollada"]
     }
-
-  def provide(self): ##########################################################
-
-    if self.should_build():
-
-      self.OK = self.build()
-      if self.OK:
-        self.manifest.touch()
-
-    print(self.OK)
-
-    return self.OK
