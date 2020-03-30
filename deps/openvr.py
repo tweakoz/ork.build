@@ -17,7 +17,7 @@ class openvr(dep.StdProvider):
     super().__init__(name)
     self._fetcher = dep.GitFetcher(name)
     self._fetcher._git_url = "https://github.com/ValveSoftware/openvr"
-    self._fetcher._revision = "v1.9.16"
+    self._fetcher._revision = "v1.10.20"
     self._builder = dep.CMakeBuilder(name)
     self._builder._cmakeenv = {
       "BUILD_SHARED_LIBS": "ON"
