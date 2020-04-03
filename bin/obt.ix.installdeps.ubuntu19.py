@@ -2,6 +2,8 @@
 
 import os
 
+os.system("sudo update-alternatives --install /usr/bin/python python /usr/bin/python3 1")
+
 deplist =  ["libboost-dev","gcc-8","gcc-9","g++-8","g++-9",]
 deplist += ["libboost-filesystem-dev","libboost-system-dev","libboost-thread-dev"]
 deplist += ["libglfw3-dev","libflac++-dev","scons","git"]
@@ -28,7 +30,7 @@ deplist += ["libavformat-dev"]
 deplist += ["libavcodec-dev"]
 deplist += ["libswscale-dev"]
 deplist += ["libssl-dev"]
-deplist += ["wget","git","vim"]
+deplist += ["wget","git","vim","cmake","python3-yarl"]
 deplist += ["m4","bison","flex"]
 deplist += ["libcurl4-openssl-dev"]
 deplist += ["libreadline-dev"]
