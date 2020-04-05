@@ -17,7 +17,7 @@ class oiio(dep.StdProvider):
     super().__init__(name)
 
     self._fetcher = dep.GitFetcher(name)
-    self._fetcher._git_url = "https://github.com/OpenImageIO/oiio"
+    self._fetcher._git_url = "http://github.com/OpenImageIO/oiio"
     self._fetcher._revision = "release"
 
     self._builder = dep.CMakeBuilder(name)
