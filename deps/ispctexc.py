@@ -46,6 +46,11 @@ class ispctexc(dep.StdProvider):
     if self.OK:
       sonam = "libispc_texcomp.so"
       hdrnam = "ispc_texcomp.h"
+      if host.IsOsx:
+        cmd = ["install_name_tool",
+               "-id","@rpath/libispc_texcomp.so",
+               self.build_dest/sonam]
+        Command(cmd).exec()
       pathtools.copyfile(self.build_dest/sonam,path.stage()/"lib"/sonam)
       pathtools.copyfile(self.source_root/"ispc_texcomp"/hdrnam,path.stage()/"include"/hdrnam)
     return self.OK

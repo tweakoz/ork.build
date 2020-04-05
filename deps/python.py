@@ -111,6 +111,8 @@ class python(dep.Provider):
     # install default packages
     ################################
     if OK:
+      Command(["pip3","install","--upgrade","pip"]).exec()
       pip.install(["pytest","yarl","numpi","zmq"])
+      Command(["pip3","install","--upgrade","Pillow"]).exec()
     ################################
     return OK
