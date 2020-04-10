@@ -35,8 +35,15 @@ class avr_gcc(dep.Provider):
 
   ########
 
+  def wipe(self):
+    os.system("rm -rf %s"%self.source_root)
+    os.system("rm -rf %s"%self.build_dest)
+
+  ########
+
   def provide(self): ##########################################################
-    if False==self.OK:
+    if True: #False==self.OK:
+      binutils = dep.require("avr_binutils")
       gcc = _gcc.context("gcc-avr")
       bdest = gcc.build_dir/".build"
       pfx = path.prefix()

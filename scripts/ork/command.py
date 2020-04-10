@@ -74,6 +74,9 @@ class Command:
 def run(command_list, environment=dict()):
   return Command(command_list,environment).exec()
 
+def capture(command_list,environment=dict()):
+  return Command(command_list,environment).capture()
+
 ###############################################################################
 
 def system(command_list):
