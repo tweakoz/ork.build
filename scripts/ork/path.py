@@ -139,4 +139,4 @@ def osx_brewcellar():
 ###############################################################################
 
 def vivado_base():
-  return Path("/opt/Xilinx/Vivado/2018.3")
+  return Path("/opt/Xilinx/Vivado/2019.1")

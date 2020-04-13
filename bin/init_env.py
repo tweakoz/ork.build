@@ -146,6 +146,8 @@ def setenv():
       pkgcfgdir = ork.path.Path("/usr/share/pkgconfig")
       if pkgcfgdir.exists():
         ork.env.append("PKG_CONFIG_PATH",pkgcfgdir)
+    if ork.path.vivado_base().exists():
+        ork.env.append("PATH",ork.path.vivado_base()/"bin")
 
 ###########################################
 # per dep dynamic env init

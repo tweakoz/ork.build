@@ -164,7 +164,7 @@ if False == env_dir.exists() or (args["init"]==True):
     if env_dir.exists():
         print("obliterating old litex install at<%s>" % str(deco.path(env_dir)))
         os.system("rm -rf %s"%str(env_dir))
-    ork.git.Clone("https://github.com/timvideos/litex-buildenv", \
+    ork.git.Clone("http://github.com/timvideos/litex-buildenv", \
                   env_dir, \
                   "master", \
                   True )
