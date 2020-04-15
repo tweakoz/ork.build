@@ -10,17 +10,14 @@ from ork import dep
 
 ###############################################################################
 
-class igl(dep.StdProvider):
+class eigen(dep.StdProvider):
 
   def __init__(self):
-    name = "igl"
+    name = "eigen"
     super().__init__(name)
     self._fetcher = dep.GitFetcher(name)
-    self._fetcher._git_url = "http://github.com/libigl/libigl"
-    self._fetcher._revision = "v2.2.0"
+    self._fetcher._git_url = "http://gitlab.com/libeigen/eigen"
+    self._fetcher._revision = "3.3"
 
-    self._builder = dep.NopBuilder(name)
-    self._builder.requires(["cgal","lapack","eigen"])
-    #self._builder = dep.CMakeBuilder(name)
-    #self._builder.setCmVar("LIBIGL_WITH_CGAL","TRUE")
-    #self._builder.setCmVar("LIBIGL_USE_STATIC_LIBRARY","ON")
+    self._builder = dep.CMakeBuilder(name)
+    self._builder.requires(["lapack"])

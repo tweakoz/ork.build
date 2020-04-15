@@ -363,6 +363,21 @@ class BinInstaller:
 
 ###############################################################################
 
+class NopBuilder:
+  def __init__(self,name):
+    self._name = name
+    self._deps = []
+    pass
+  def requires(self,deplist):
+    self._deps += deplist
+  def build(self,srcdir,blddir,incremental=False):
+    require(self._deps)
+    return True
+  def install(self,blddir):
+    return True
+
+###############################################################################
+
 class CMakeBuilder:
   ###########################################
   def __init__(self,name):
