@@ -98,7 +98,8 @@ class python(dep.Provider):
     options = [
         "--prefix",path.prefix(),
         "--with-pydebug",
-        "--enable-shared"
+        "--enable-shared",
+        "--enable-loadable-sqlite-extensions"
     ]
     if host.IsOsx:
        options += ["--with-openssl=/usr/local/Cellar/openssl@1.1/1.1.1d/"]
@@ -112,7 +113,8 @@ class python(dep.Provider):
     ################################
     if OK:
       Command(["pip3","install","--upgrade","pip"]).exec()
-      pip.install(["pytest","yarl","numpi","zmq"])
-      Command(["pip3","install","--upgrade","Pillow"]).exec()
+      pip.install(["pytest","yarl","numpy","zmq"])
+      Command(["pip3","install","--upgrade",
+               "Pillow","pysqlite3","jupyter","plotly"]).exec()
     ################################
     return OK

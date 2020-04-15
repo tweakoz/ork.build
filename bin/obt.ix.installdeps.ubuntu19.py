@@ -35,6 +35,8 @@ deplist += ["m4","bison","flex"]
 deplist += ["libcurl4-openssl-dev"]
 deplist += ["libreadline-dev"]
 deplist += ["libxcb-xfixes0-dev"]
+deplist += ["libsqlite3-dev"]
+
 
 
 for item in deplist:
