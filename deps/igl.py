@@ -21,6 +21,6 @@ class igl(dep.StdProvider):
 
     self._builder = dep.NopBuilder(name)
     self._builder.requires(["cgal","lapack","eigen"])
-    #self._builder = dep.CMakeBuilder(name)
-    #self._builder.setCmVar("LIBIGL_WITH_CGAL","TRUE")
-    #self._builder.setCmVar("LIBIGL_USE_STATIC_LIBRARY","ON")
+    self._builder = dep.CMakeBuilder(name)
+    self._builder.setCmVar("LIBIGL_WITH_CGAL","TRUE")
+    self._builder.setCmVar("LIBIGL_USE_STATIC_LIBRARY","OFF")
