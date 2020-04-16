@@ -36,6 +36,8 @@ deplist += ["libcurl4-openssl-dev"]
 deplist += ["libreadline-dev"]
 deplist += ["libxcb-xfixes0-dev"]
 deplist += ["libsqlite3-dev"]
+deplist += ["libtbb-dev"]
+deplist += ["openctm-tools"] # ctmviewer
 
 
 
