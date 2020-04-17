@@ -118,6 +118,6 @@ class python(dep.Provider):
                    "matplotlib",
                    "zmq"])
       Command(["pip3","install","--upgrade",
-               "Pillow","pysqlite3","jupyter","plotly"]).exec()
+               "Pillow","pysqlite3","jupyter","plotly","trimesh"]).exec()
     ################################
     return OK

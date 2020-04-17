@@ -38,6 +38,7 @@ deplist += ["libxcb-xfixes0-dev"]
 deplist += ["libsqlite3-dev"]
 deplist += ["libtbb-dev"]
 deplist += ["openctm-tools"] # ctmviewer
+deplist += ["openscad"] # for trimesh
 
 
 
