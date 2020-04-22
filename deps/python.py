@@ -102,7 +102,7 @@ class python(dep.Provider):
         "--enable-loadable-sqlite-extensions"
     ]
     if host.IsOsx:
-       options += ["--with-openssl=/usr/local/Cellar/openssl@1.1/1.1.1d/"]
+       options += ["--with-openssl=/usr/local/opt/openssl@1.1"]
     else:
        options += ["--with-openssl=/usr"]
 
