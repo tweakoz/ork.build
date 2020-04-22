@@ -113,7 +113,7 @@ class python(dep.Provider):
     ################################
     if OK:
       Command(["pip3","install","--upgrade","pip"]).exec()
-      pip.install(["pytest","yarl",
+      pip.install(["yarl","pytest",
                    "numpy","scipy",
                    "matplotlib",
                    "zmq"])

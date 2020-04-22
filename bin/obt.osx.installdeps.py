@@ -8,3 +8,6 @@ deplist += ["scons","ffmpeg","qt5","rapidjson","zlib"]
 
 for item in deplist:
     os.system("brew install %s" % item)
+
+pip3 install yarl
+
