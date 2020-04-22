@@ -8,7 +8,7 @@
 
 from ork import dep, host, path
 from ork.command import Command
-from ork.log import log
+from ork import log
 from ork.deco import Deco
 deco = Deco()
 
@@ -53,5 +53,5 @@ class llvm(BASE):
   def __init__(self):
     super().__init__("llvm")
   def env_init(self):
-    log(deco.white("BEGIN llvm-env_init"))
-    log(deco.white("END llvm-env_init"))
+    log.marker("BEGIN llvm-env_init")
+    log.marker("END llvm-env_init")

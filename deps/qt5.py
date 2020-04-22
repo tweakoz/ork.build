@@ -16,7 +16,7 @@ from ork.deco import Deco
 from ork.wget import wget
 from ork.command import Command
 from ork.cmake import context as cmake_context
-from ork.log import log
+from ork import log
 from yarl import URL
 from pathlib import Path
 
@@ -48,7 +48,7 @@ class qt5(dep.Provider):
   ########
 
   def env_init(self):
-    log(deco.white("BEGIN qt5-env_init"))
+    log.marker("BEGIN qt5-env_init")
     if host.IsOsx:
       qtdir = Path("/")/"usr"/"local"/"opt"/"qt5"
     else:
@@ -61,7 +61,7 @@ class qt5(dep.Provider):
       env.set("QTVER",QTVER)
       env.prepend("LD_LIBRARY_PATH",qtdir/"lib")
       env.prepend("PKG_CONFIG_PATH",qtdir/"lib"/"pkgconfig")
-    log(deco.white("END qt5-env_init"))
+    log.marker("END qt5-env_init")
 
   ########
 

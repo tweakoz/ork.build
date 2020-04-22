@@ -14,7 +14,7 @@ from ork.deco import Deco
 from ork.wget import wget
 from ork.command import Command
 import ork.host
-from ork.log import log
+from ork import log
 
 deco = Deco()
 
@@ -39,8 +39,8 @@ class lua(dep.Provider):
   ########
 
   def env_init(self):
-    log(deco.white("BEGIN lua-env_init"))
-    log(deco.white("END lua-env_init"))
+    log.marker("BEGIN lua-env_init")
+    log.marker("END lua-env_init")
 
   ########
 

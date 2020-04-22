@@ -8,7 +8,7 @@
 
 import os,sys, platform, subprocess, shlex
 from ork.deco import Deco
-from ork.log import log
+from ork import log
 deco = Deco()
 
 ###############################################################################
@@ -39,7 +39,7 @@ class Command:
             self.env[k]=str(environment[k])
         self.command_list = procargs(command_list)
         if do_log:
-          log(deco.white(self.command_list))
+          log.output(deco.white(self.command_list))
 
     ###########################################################################
 

@@ -13,7 +13,7 @@ import ork.path, ork.host
 from ork.command import Command
 from ork.deco import Deco
 from ork.wget import wget
-from ork import pathtools, cmake, make, path, git
+from ork import pathtools, cmake, make, path, git, host
 
 deco = Deco()
 
@@ -89,6 +89,20 @@ def require_opts(name_or_list,opts):
     else:
       rval = None
   return rval
+
+###############################################################################
+
+def switch(linux=None,macos=None):
+  if host.IsOsx:
+    if macos==None:
+      assert(False) # dep not supported on platform
+    return macos
+  elif host.IsIx:
+    if linux==None:
+      assert(False) # dep not supported on platform
+    return macos
+  else:
+   return linux
 
 ###############################################################################
 
@@ -254,11 +268,21 @@ class HomebrewProvider(Provider):
     self.manifest = path.manifests()/name
     self.OK = self.manifest.exists()
     self.pkgname = pkgname
+    self._deps = list()
+  ###########################################
+  def requires(self,deplist):
+    self._deps += deplist
+  ###########################################
   def brew_prefix(self):
     return Path("/")/"usr"/"local"
+  ###########################################
   def build(self):
-    if 0 == Command(["brew","install",self.pkgname]).exec():
+    require(self._deps)
+    retc = Command(["brew","install",self.pkgname]).exec()
+    if 0 == retc:
       self.manifest.touch()
+    return 0==retc
+  ###########################################
 
 ###############################################################################
 
@@ -463,6 +487,11 @@ class StdProvider(Provider):
     def postinit(self):
       pass
       #print(self._deps)
+
+    #############################
+
+    def requires(self,deplist):
+      self._builder.requires(deplist)
 
     #############################
 

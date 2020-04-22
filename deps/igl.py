@@ -6,7 +6,7 @@
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
 
-from ork import dep
+from ork import dep, host
 
 ###############################################################################
 
@@ -19,8 +19,10 @@ class igl(dep.StdProvider):
     self._fetcher._git_url = "http://github.com/libigl/libigl"
     self._fetcher._revision = "v2.2.0"
 
-    self._builder = dep.NopBuilder(name)
-    self._builder.requires(["cgal","lapack","eigen"])
     self._builder = dep.CMakeBuilder(name)
+    self._builder.requires(["cgal","lapack","eigen"])
     self._builder.setCmVar("LIBIGL_WITH_CGAL","TRUE")
     self._builder.setCmVar("LIBIGL_USE_STATIC_LIBRARY","OFF")
+    if host.IsOsx: # sadly mac igl-embree support is broken..
+      # https://github.com/libigl/libigl/issues/1302
+      self._builder.setCmVar("LIBIGL_WITH_EMBREE","OFF")

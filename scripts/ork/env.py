@@ -9,7 +9,7 @@
 import os
 
 import ork.deco
-from ork.log import log
+from ork import log
 
 deco = ork.deco.Deco()
 
@@ -17,7 +17,7 @@ deco = ork.deco.Deco()
 
 def set(key,val):
 
-  log(deco.orange("set")+" var<" + deco.key(str(key))+"> to <" + deco.path(val) + ">")
+  log.output(deco.orange("set")+" var<" + deco.key(str(key))+"> to <" + deco.path(val) + ">")
   os.environ[str(key)] = str(val)
 
 ###########################################
@@ -27,7 +27,7 @@ def prepend(key,val):
     set(key,str(val))
   else:
     os.environ[str(key)] = str(val) + ":" + os.environ[key]
-    log(deco.magenta("prepend")+" var<" + deco.key(key) + "> to<" + deco.path(os.environ[key]) + ">")
+    log.output(deco.magenta("prepend")+" var<" + deco.key(key) + "> to<" + deco.path(os.environ[key]) + ">")
 
 ###########################################
 
@@ -36,4 +36,4 @@ def append(key,val):
     set(key,val)
   else:
     os.environ[str(key)] = os.environ[str(key)]+":"+str(val)
-    log(deco.cyan("append")+" var<" + deco.key(key) + "> to<" + deco.path(os.environ[key]) + ">")
+    log.output(deco.cyan("append")+" var<" + deco.key(key) + "> to<" + deco.path(os.environ[key]) + ">")

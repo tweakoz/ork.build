@@ -15,7 +15,7 @@ from ork import dep, host, path, cmake, env, pip
 from ork.deco import Deco
 from ork.wget import wget
 from ork.command import Command
-from ork.log import log
+from ork import log
 
 deco = Deco()
 
@@ -41,10 +41,10 @@ class python(dep.Provider):
   ########
 
   def env_init(self):
-    log(deco.white("BEGIN python-env_init"))
+    log.marker("BEGIN python-env_init")
     env.set("OBT_PYLIB",self.libdir())
     env.set("OBT_PYPKG",self.site_packages_dir())
-    log(deco.white("END python-env_init"))
+    log.marker("END python-env_init")
 
   ########
 

@@ -8,10 +8,11 @@
 ###############################################################################
 
 from ork import dep
+from ork import log
 
 ###############################################################################
 
-class cgal(dep.StdProvider):
+class _cgal_from_source(dep.StdProvider):
 
   def __init__(self):
     name = "cgal"
@@ -22,3 +23,21 @@ class cgal(dep.StdProvider):
 
     self._builder = dep.CMakeBuilder(name)
     self._builder.requires(["lapack"])
+
+###############################################################################
+
+class _cgal_from_homebrew(dep.HomebrewProvider):
+  def __init__(self,name):
+    super().__init__(name,name)
+
+###############################################################################
+
+BASE = dep.switch(linux=_cgal_from_source,
+                  macos=_cgal_from_homebrew)
+
+class cgal(BASE):
+  def __init__(self):
+    super().__init__("cgal")
+  def env_init(self):
+    log.marker("BEGIN cgal-env_init")
+    log.marker("END cgal-env_init")

@@ -6,9 +6,8 @@
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
 
-from ork import dep, host, path, env
+from ork import dep, host, path, env, log
 from ork.path import Path
-from ork.log import log
 from ork.command import Command
 from ork.deco import Deco
 deco = Deco()
@@ -35,9 +34,9 @@ class _ispc_from_homebrew(dep.HomebrewProvider):
   def __init__(self,name):
     super().__init__(name,name)
   def env_init(self):
-    log(deco.white("BEGIN ispc-env_init"))
+    log.marker("BEGIN ispc-env_init")
     env.set("ISPC",self.brew_prefix()/"bin"/"ispc")
-    log(deco.white("END ispc-env_init"))
+    log.marker("END ispc-env_init")
 
 ###############################################################################
 
@@ -55,17 +54,14 @@ class _ispc_from_wget(dep.StdProvider):
     dst_dir = path.stage()
     self._builder.declare(src_dir/"bin"/"ispc",dst_dir/"bin"/"ispc")
   def env_init(self):
-    log(deco.white("BEGIN ispc-env_init"))
+    log.marker("BEGIN ispc-env_init")
     env.set("ISPC",path.stage()/"bin"/"ispc")
-    log(deco.white("END ispc-env_init"))
+    log.marker("END ispc-env_init")
 
 ###############################################################################
 
-BASE = _ispc_from_wget
-if host.IsOsx:
-  BASE = _ispc_from_homebrew
-
-###############################################################################
+BASE = dep.switch(linux=_ispc_from_wget,
+                  macos=_ispc_from_homebrew)
 
 class ispc(BASE):
   def __init__(self):
