@@ -16,6 +16,7 @@ class qt5forpython(dep.StdProvider):
     self._fetcher = dep.GitFetcher(name)
     self._fetcher._git_url = "git://code.qt.io/pyside/pyside-setup.git"
     self._fetcher._revision = "5.14.1"
+    srcroot = self.source_root
     #################################################
     class Builder(dep.BaseBuilder):
       def __init__(self,name):
@@ -24,9 +25,10 @@ class qt5forpython(dep.StdProvider):
         dep.require(self._deps)
         return True
       def install(self,blddir):
+        srcroot.chdir()
         cmd = [ "python3","./setup.py","install"]
         env = {
-          "MAKEFLAGS":host.NumCores
+          "MAKEFLAGS":"-j %d"%host.NumCores
         }
         return command.run(cmd,env)==0
     #################################################
