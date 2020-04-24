@@ -387,6 +387,15 @@ class BinInstaller:
 
 ###############################################################################
 
+class BaseBuilder:
+  def __init__(self,name):
+    self._name = name
+    self._deps = []
+  def requires(self,deplist):
+    self._deps += deplist
+
+###############################################################################
+
 class NopBuilder:
   def __init__(self,name):
     self._name = name
