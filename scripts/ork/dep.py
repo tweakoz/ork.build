@@ -10,7 +10,7 @@ import os, inspect, tarfile
 from pathlib import Path
 import importlib.util
 import ork.path, ork.host
-from ork.command import Command
+from ork.command import Command, run
 from ork.deco import Deco
 from ork.wget import wget
 from ork import pathtools, cmake, make, path, git, host
@@ -304,6 +304,24 @@ class GitFetcher:
               rev=self._revision,
               recursive=self._recursive,
               cache=self._cache)
+  ###########################################
+
+class SvnFetcher:
+  ###########################################
+  def __init__(self,name):
+    self._name = name
+    self._url = ""
+    self._revision = ""
+    self._recursive = False
+    self._cache = True
+  ###########################################
+  def descriptor(self):
+    return "%s (svn-%s)" % (self._name,self._revision)
+  ###########################################
+  def fetch(self,dest):
+    url = self._url+"/"+self._revision
+    cmd = ["svn","checkout", url, dest]
+    run(cmd)
   ###########################################
 
 ###############################################################################
