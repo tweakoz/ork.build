@@ -55,10 +55,10 @@ class qt5forpython(dep.StdProvider):
     #return "%s.abi3.so"%name
   ##############################################################################
   def pyside_qtlibrary(self,name):
-    return "%s.cpython-38d-x86_64-linux-gnu.so"%name
+    return self.pyside_library_dir()/("%s.cpython-38d-x86_64-linux-gnu.so"%name)
     #return "%s.abi3.so"%name
   ##############################################################################
-  def pyside_library_file(self,name):
+  def pyside_library_file(self):
     return self.pyside_library_dir()/self.pyside_library()
   ##############################################################################
   ## shiboken
@@ -73,6 +73,8 @@ class qt5forpython(dep.StdProvider):
     return pypkg/"shiboken2"
   def library_file(self): ###########################################
     return self.library_path()/("libshiboken2.abi3.so.%s"%self.major_version)
+  def library_file2(self): ###########################################
+    return self.library_path()/("libshiboken2.cpython-38d-x86_64-linux-gnu.so.%s"%self.major_version)
   def env_init(self): ###########################################
     log.marker("registering qt5forpython SDK")
     env.append("LD_LIBRARY_PATH",self.pyside_dir())
