@@ -6,7 +6,7 @@
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
 
-from ork import dep, host
+from ork import dep, host, command, path
 
 ###############################################################################
 
@@ -18,7 +18,26 @@ class nvtt(dep.StdProvider):
     self._fetcher = dep.GitFetcher(name)
     self._fetcher._git_url = "https://github.com/tweakoz/nvidia-texture-tools"
     self._fetcher._revision = "toz_orkdotbuild"
-    self._builder = dep.CMakeBuilder(name)
+    ###########################################
+    ## nvtt installs with wrong rpath install name
+    ##  on mac, so we fix it up here..
+    ###########################################
+    class FixOsx(dep.CMakeBuilder):
+      def __init__(self,name):
+        super().__init__(name)
+      def install(self,blddir):
+        success = super().install(blddir)
+        if success:
+          dylibname = "libnvtt.dylib"
+          retc = command.run(["install_name_tool","-id",
+                              "@rpath/"+dylibname,path.libs()/dylibname])
+          success = retc==0
+        return success
+    ###########################################
+    builder_class = dep.switch(linux=dep.CMakeBuilder,
+                               macos=FixOsx)
+    self._builder = builder_class(name)
+    ###########################################
     self._builder.requires(["openexr"])
     self._builder._cmakeenv = {
       "BUILD_SHARED_LIBS": "ON"

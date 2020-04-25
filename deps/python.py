@@ -7,7 +7,9 @@
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
 
-VERSION = "3.8.1"
+VERSION_MAJOR = "3.8"
+VERSION_MINOR = "1"
+VERSION = "%s.%s" % (VERSION_MAJOR,VERSION_MINOR)
 HASH = "f215fa2f55a78de739c1787ec56b2bcd"
 
 import os, tarfile
@@ -41,36 +43,49 @@ class python(dep.Provider):
   ########
 
   def env_init(self):
-    log.marker("BEGIN python-env_init")
-    env.set("OBT_PYLIB",self.libdir())
+    log.marker("registering Python(%s) SDK"%VERSION)
+    env.set("OBT_PYLIB",self.library_dir())
     env.set("OBT_PYPKG",self.site_packages_dir())
-    log.marker("END python-env_init")
 
   ########
 
   def env_goto(self):
     return {
-      "pylib": str(self.libdir()),
+      "pylib": str(self.library_dir()),
       "pypkg": str(self.site_packages_dir())
+    }
+
+  ########
+
+  def env_properties(self):
+    return {
+      "pylib": self.libdir(),
+      "pypkg": self.site_packages_dir()
     }
 
   ########
 
   def version(self):
     return VERSION
+  def version_major(self):
+    return VERSION_MAJOR
   def executable(self):
     return path.bin()/"python3"
-  def lib(self):
+  def _deconame(self):
+    return "python%s"%VERSION_MAJOR
+  def _deconame_d(self):
+    return "python%sd"%VERSION_MAJOR
+  def library_dir(self):
     # todo - use pkgconfig ?
-    return path.libs()/"libpython3.8d.so"
-  def libdir(self):
+    return path.libs()/self._deconame()
+  def library_file(self):
     # todo - use pkgconfig ?
-    return path.libs()/"python3.8"
+    return path.libs()/("lib%s.so"%self._deconame_d())
   def site_packages_dir(self):
     # todo - use pkgconfig ?
-    return self.libdir()/"site-packages"
+    return self.library_dir()/"site-packages"
   def include_dir(self):
-    return path.includes()/(VERSION+"d")
+    return path.includes()/self._deconame()
 
   ########
 
@@ -113,6 +128,7 @@ class python(dep.Provider):
     ################################
     if OK:
       Command(["pip3","install","--upgrade","pip"]).exec()
+      pip.install(["virtualenv"])
       pip.install(["yarl","pytest",
                    "numpy","scipy",
                    "matplotlib",

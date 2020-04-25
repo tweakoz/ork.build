@@ -7,25 +7,28 @@
 ###############################################################################
 
 from ork import dep, log
-
 ###############################################################################
 
 class _embree_from_source(dep.StdProvider):
-
+  VERSION = "v3.9.0"
   def __init__(self):
     name = "embree"
     super().__init__(name)
     self._fetcher = dep.GitFetcher(name)
     self._fetcher._git_url = "https://github.com/embree/embree"
-    self._fetcher._revision = "v3.9.0"
+    self._fetcher._revision = VERSION
 
     self._builder = dep.CMakeBuilder(name)
+  def env_init(self):
+    log.marker("registering embree(%s) SDK"%VERSION)
 
 ###############################################################################
 
 class _embree_from_homebrew(dep.HomebrewProvider):
   def __init__(self,name):
     super().__init__(name,name)
+  def env_init(self):
+    log.marker("registering embree SDK")
 
 ###############################################################################
 
@@ -36,6 +39,3 @@ class embree(BASE):
   def __init__(self):
     super().__init__("embree")
     self.requires(["ispc"])
-  def env_init(self):
-    log.marker("BEGIN embree-env_init")
-    log.marker("END embree-env_init")

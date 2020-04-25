@@ -39,5 +39,4 @@ class cgal(BASE):
   def __init__(self):
     super().__init__("cgal")
   def env_init(self):
-    log.marker("BEGIN cgal-env_init")
-    log.marker("END cgal-env_init")
+    log.marker("registering cgal SDK")

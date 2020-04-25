@@ -48,7 +48,7 @@ class qt5(dep.Provider):
   ########
 
   def env_init(self):
-    log.marker("BEGIN qt5-env_init")
+    log.marker("registering QT5(%s) SDK"%self.fullver)
     if host.IsOsx:
       qtdir = Path("/")/"usr"/"local"/"opt"/"qt5"
     else:
@@ -61,7 +61,6 @@ class qt5(dep.Provider):
       env.set("QTVER",QTVER)
       env.prepend("LD_LIBRARY_PATH",qtdir/"lib")
       env.prepend("PKG_CONFIG_PATH",qtdir/"lib"/"pkgconfig")
-    log.marker("END qt5-env_init")
 
   ########
 

@@ -53,5 +53,4 @@ class llvm(BASE):
   def __init__(self):
     super().__init__("llvm")
   def env_init(self):
-    log.marker("BEGIN llvm-env_init")
-    log.marker("END llvm-env_init")
+    log.marker("registering LLVM SDK")

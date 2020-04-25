@@ -34,9 +34,8 @@ class _ispc_from_homebrew(dep.HomebrewProvider):
   def __init__(self,name):
     super().__init__(name,name)
   def env_init(self):
-    log.marker("BEGIN ispc-env_init")
+    log.marker("registering ispc SDK")
     env.set("ISPC",self.brew_prefix()/"bin"/"ispc")
-    log.marker("END ispc-env_init")
 
 ###############################################################################
 
@@ -54,9 +53,8 @@ class _ispc_from_wget(dep.StdProvider):
     dst_dir = path.stage()
     self._builder.declare(src_dir/"bin"/"ispc",dst_dir/"bin"/"ispc")
   def env_init(self):
-    log.marker("BEGIN ispc-env_init")
+    log.marker("registering ispc SDK")
     env.set("ISPC",path.stage()/"bin"/"ispc")
-    log.marker("END ispc-env_init")
 
 ###############################################################################
 
