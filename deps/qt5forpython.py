@@ -31,7 +31,9 @@ class qt5forpython(dep.StdProvider):
         srcroot.chdir()
         cmd = [ "python3","./setup.py","install"]
         env = {
-          "MAKEFLAGS":"-j %d"%host.NumCores
+          "MAKEFLAGS":"-j %d"%host.NumCores,
+          "CXX": "clang++",
+          "CC": "clang",
         }
         return command.run(cmd,env)==0
     #################################################
@@ -66,7 +68,8 @@ class qt5forpython(dep.StdProvider):
   def include_dir(self):
     python_dep = dep.instance("python")
     pypkg = python_dep.site_packages_dir()
-    return pypkg/"shiboken2_generator/include"
+    rval =  pypkg/"shiboken2_generator/include"
+    return rval
   def library_path(self): ###########################################
     python_dep = dep.instance("python")
     pypkg = python_dep.site_packages_dir()
