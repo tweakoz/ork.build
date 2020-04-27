@@ -39,65 +39,34 @@ class _qt5_from_source(dep.Provider):
     self.source_base = path.builds()/"qt5"
     self.source_root = self.source_base/self.name
     self.build_dest = path.builds()/"qt5"/"qt5-build"
-
   ########
-
-  def env_init(self):
-    log.marker("registering QT5(%s) SDK"%self.fullver)
-    if host.IsOsx:
-      qtdir = Path("/")/"usr"/"local"/"opt"/"qt5"
-    else:
-      qtdir = path.stage()/"qt5"
-    if qtdir.exists():
-      env.set("QTDIR",qtdir)
-      env.prepend("PATH",qtdir/"bin")
-      QTVERCMD = Command(["qtpaths","--qt-version"])
-      QTVER = QTVERCMD.capture().replace("\n","")
-      env.set("QTVER",QTVER)
-      env.prepend("LD_LIBRARY_PATH",qtdir/"lib")
-      env.prepend("PKG_CONFIG_PATH",qtdir/"lib"/"pkgconfig")
-
-  ########
-
   def env_goto(self):
     return {
       "qt5-src": self.source_root,
       "qt5-build": self.build_dest
     }
-
   ########
-
   def download_and_extract(self): #############################################
     self.arcpath = dep.downloadAndExtract([self.url],
                                            self.xzname,
                                            "xz",
                                            HASH,
                                            self.source_base)
-
   ########
-
   def wipe(self):
     os.system("rm -rf %s"%self.source_root)
     os.system("rm -rf %s"%self.build_dest)
-
   ########
-
   def build(self): ############################################################
-
     self.OK = True
-
     #########################################
     # fetch source
     #########################################
-
     if not self.source_root.exists():
         self.download_and_extract()
-
     #########################################
     # prep for build
     #########################################
-
-
     if self.incremental():
         os.chdir(self.build_dest)
     else:
@@ -128,11 +97,9 @@ class _qt5_from_source(dep.Provider):
 
         b = Command(["sh", self.source_root/"configure"]+options)
         self.OK = (b.exec()==0)
-
     #########################################
     # build
     #########################################
-
     if self.OK:
       self.OK == (make.exec(parallelism=self.default_parallelism())==0)
     if self.OK:
@@ -145,8 +112,8 @@ class _qt5_from_source(dep.Provider):
 ###############################################################################
 
 class _qt5_from_homebrew(dep.HomebrewProvider):
-  def __init__(self,name):
-    super().__init__(name,name)
+  def __init__(self):
+    super().__init__("qt5","qt5")
     self.fullver = "5.14.2"
   def install_dir(self):
     return path.Path("/usr/local/opt/qt5")
@@ -161,8 +128,22 @@ if host.IsOsx:
 
 class qt5(BASE):
   def __init__(self):
-    super().__init__("qt5")
+    super().__init__()
+  ########
   def __str__(self):
     return "QT5"
+  ########
   def env_init(self):
-    log.marker("registering QT5 SDK")
+    log.marker("registering QT5(%s) SDK"%self.fullver)
+    if host.IsOsx:
+      qtdir = Path("/")/"usr"/"local"/"opt"/"qt5"
+    else:
+      qtdir = path.stage()/"qt5"
+    if qtdir.exists():
+      env.set("QTDIR",qtdir)
+      env.prepend("PATH",qtdir/"bin")
+      QTVERCMD = Command(["qtpaths","--qt-version"])
+      QTVER = QTVERCMD.capture().replace("\n","")
+      env.set("QTVER",QTVER)
+      env.prepend("LD_LIBRARY_PATH",qtdir/"lib")
+      env.prepend("PKG_CONFIG_PATH",qtdir/"lib"/"pkgconfig")

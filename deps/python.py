@@ -44,23 +44,23 @@ class python(dep.Provider):
 
   def env_init(self):
     log.marker("registering Python(%s) SDK"%VERSION)
-    env.set("OBT_PYLIB",self.library_dir())
-    env.set("OBT_PYPKG",self.site_packages_dir())
+    env.set("OBT_PYLIB",self.library_dir)
+    env.set("OBT_PYPKG",self.site_packages_dir)
 
   ########
 
   def env_goto(self):
     return {
-      "pylib": str(self.library_dir()),
-      "pypkg": str(self.site_packages_dir())
+      "pylib": str(self.library_dir),
+      "pypkg": str(self.site_packages_dir)
     }
 
   ########
 
   def env_properties(self):
     return {
-      "pylib": self.libdir(),
-      "pypkg": self.site_packages_dir()
+      "pylib": self.library_dir,
+      "pypkg": self.site_packages_dir
     }
 
   ########

@@ -128,5 +128,5 @@ class qt5forpython(dep.StdProvider):
   ##############################################################################
   def env_goto(self):
     return {
-      "pyside2": str(self.pyside_dir()),
+      "pyside2": str(self.pyside_dir),
     }
