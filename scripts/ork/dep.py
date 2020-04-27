@@ -232,6 +232,14 @@ class Provider(object):
     def exists(self):
         return False
 
+    #############################
+
+    @property
+    def shlib_extension(self):
+      if host.IsOsx:
+        return "dylib"
+      if host.IsIx:
+        return "so"
 ###############################################################################
 
 def enumerate():

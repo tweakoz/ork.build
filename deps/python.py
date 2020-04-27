@@ -65,28 +65,46 @@ class python(dep.Provider):
 
   ########
 
+  @property
   def version(self):
     return VERSION
+  ########
+  @property
   def version_major(self):
     return VERSION_MAJOR
+  ########
+  @property
   def executable(self):
     return path.bin()/"python3"
+  ########
+  @property
   def _deconame(self):
     return "python%s"%VERSION_MAJOR
+  ########
+  @property
   def _deconame_d(self):
     return "python%sd"%VERSION_MAJOR
+  ########
+  @property
   def library_dir(self):
     # todo - use pkgconfig ?
-    return path.libs()/self._deconame()
+    return path.libs()/self._deconame
+  ########
+  @property
   def library_file(self):
     # todo - use pkgconfig ?
-    return path.libs()/("lib%s.so"%self._deconame_d())
+    return path.libs()/("lib%s.%s"%(\
+                        self._deconame_d,\
+                        self.shlib_extension))
+  ########
+  @property
   def site_packages_dir(self):
     # todo - use pkgconfig ?
-    return self.library_dir()/"site-packages"
+    return self.library_dir/"site-packages"
+  ########
+  @property
   def include_dir(self):
-    return path.includes()/self._deconame()
-
+    return path.includes()/self._deconame
   ########
 
   def download_and_extract(self): #############################################

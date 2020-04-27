@@ -24,7 +24,7 @@ deco = Deco()
 
 ###############################################################################
 
-class qt5(dep.Provider):
+class _qt5_from_source(dep.Provider):
 
   def __init__(self): ############################################
     super().__init__()
@@ -39,11 +39,6 @@ class qt5(dep.Provider):
     self.source_base = path.builds()/"qt5"
     self.source_root = self.source_base/self.name
     self.build_dest = path.builds()/"qt5"/"qt5-build"
-
-  ########
-
-  def __str__(self):
-    return "QT5 (%s)" % self.name
 
   ########
 
@@ -146,3 +141,28 @@ class qt5(dep.Provider):
     if self.OK:
       self.OK = (0==make.exec(target="install", parallelism=0.0))
     return self.OK
+
+###############################################################################
+
+class _qt5_from_homebrew(dep.HomebrewProvider):
+  def __init__(self,name):
+    super().__init__(name,name)
+    self.fullver = "5.14.2"
+  def install_dir(self):
+    return path.Path("/usr/local/opt/qt5")
+
+###############################################################################
+
+BASE = _qt5_from_source
+if host.IsOsx:
+  BASE = _qt5_from_homebrew
+
+###############################################################################
+
+class qt5(BASE):
+  def __init__(self):
+    super().__init__("qt5")
+  def __str__(self):
+    return "QT5"
+  def env_init(self):
+    log.marker("registering QT5 SDK")

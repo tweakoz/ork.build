@@ -15,7 +15,7 @@ class ispctexc(dep.StdProvider):
     name = "ispctexc"
     super().__init__(name)
     self._fetcher = dep.GitFetcher(name)
-    self._fetcher._git_url = "https://github.com/GameTechDev/ISPCTextureCompressor"
+    self._fetcher._git_url = "https://github.com/tweakoz/ISPCTextureCompressor"
     self._fetcher._cache=False,
     self._fetcher._recursive=False
     self._fetcher._revision = "master"

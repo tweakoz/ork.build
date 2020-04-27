@@ -33,13 +33,16 @@ class _llvm_from_source(dep.StdProvider):
         "LLVM_ENABLE_DUMP": "ON",
         "LLVM_ENABLE_PROJECTS": "clang;libcxx;libcxxabi"
     })
-
+  def install_dir(self):
+    return path.stage()
 
 ###############################################################################
 
 class _llvm_from_homebrew(dep.HomebrewProvider):
   def __init__(self,name):
     super().__init__(name,name)
+  def install_dir(self):
+    return path.Path("/usr/local/opt/llvm")
 
 ###############################################################################
 
