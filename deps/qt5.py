@@ -147,3 +147,7 @@ class qt5(BASE):
       env.set("QTVER",QTVER)
       env.prepend("LD_LIBRARY_PATH",qtdir/"lib")
       env.prepend("PKG_CONFIG_PATH",qtdir/"lib"/"pkgconfig")
+  ########
+  @property
+  def include_dir(self):
+    return path.qt5dir()/"include"
