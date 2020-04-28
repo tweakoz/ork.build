@@ -13,12 +13,11 @@ import ork.path, ork.host
 from ork.command import Command, run
 from ork.deco import Deco
 from ork.wget import wget
-from ork import pathtools, cmake, make, path, git, host
-
+from ork import pathtools, cmake, make, path, git, host, globals
+from ork.dep_fetch import *
+from ork.dep_build import *
+from ork.dep_provider import *
 deco = Deco()
-
-global global_options
-global_options =[]
 
 ###############################################################################
 
@@ -70,19 +69,18 @@ def require(name_or_list):
 ###############################################################################
 
 def require_opts(name_or_list,opts):
-  global global_options
   if (isinstance(name_or_list,list)):
     rval = []
-    global_options = opts
+    globals.options = opts
     for item in name_or_list:
       inst = _get_instance(item)
       inst.provide()
       rval += [inst]
-    global_options = []
+    globals.options = []
   else:
-    global_options = opts
+    globals.options = opts
     inst = _get_instance(name_or_list)
-    global_options = []
+    globals.options = []
     ok = inst.provide()
     if ok:
       rval = inst
@@ -104,155 +102,7 @@ def switch(linux=None,macos=None):
   else:
    return linux
 
-###############################################################################
 
-class Provider(object):
-    """base class for all dependency providers"""
-    def __init__(self):
-      self._miscoptions = global_options
-      self._node = None
-      self._deps = {}
-
-    #############################
-    ## wipe build ?
-    #############################
-
-    @property
-    def should_wipe(self):
-      """predicate controlling build-clean during provisioning of a dependency"""
-      wipe = False
-      if "wipe" in self._miscoptions:
-        wipe = self._miscoptions["wipe"]==True
-      return wipe
-
-    #############################
-    ## serial build ?
-    #############################
-
-    @property
-    def should_serial_build(self):
-      """predicate controlling 1cpu build during provisioning of a dependency (for build debugging)"""
-      serial = False
-      if "serial" in self._miscoptions:
-        serial = self._miscoptions["serial"]==True
-      return serial
-
-    @property
-    def default_parallelism(self):
-      parallelism = 1.0
-      if self.should_serial_build:
-        parallelism=0.0
-      return parallelism
-
-    #############################
-    ## force build ?
-    #############################
-
-    @property
-    def should_force_build(self):
-        force = False
-        if "force" in self._miscoptions:
-          force = self._miscoptions["force"]==True
-        return force
-
-    #############################
-    ## force build ?
-    #############################
-
-    @property
-    def should_incremental_build(self):
-        incremental = False
-        if "incremental" in self._miscoptions:
-          incremental = self._miscoptions["incremental"]==True
-        return incremental
-
-    #############################
-
-    @property
-    def should_build(self):
-        return (False==self.manifest.exists()) or \
-               self.should_force_build or \
-               self.should_incremental_build
-
-    #############################
-
-    @property
-    def should_fetch(self):
-        fetch = False
-        if "nofetch" in self._miscoptions:
-          fetch = self._miscoptions["nofetch"]==False
-        return fetch
-
-    #############################
-
-    @property
-    def _std_cmake_vars():
-      cmakeEnv = {
-        "CMAKE_BUILD_TYPE": "Release",
-        "BUILD_SHARED_LIBS": "ON",
-      }
-      return cmakeEnv
-
-    #############################
-
-    @property
-    def exists(self):
-        return False
-
-    #############################
-
-    def option(self,named):
-      if named in self._miscoptions:
-        return self._miscoptions[named]
-      else:
-        return None
-
-    #############################
-
-    def provide(self):
-      if self.should_wipe:
-        self.wipe()
-      if self.should_build:
-        self.OK = self.build()
-      if self.OK:
-        self.manifest.touch()
-      return self.OK
-
-
-    #############################
-
-    def _std_cmake_build(self,srcdir,blddir,cmakeEnv=_std_cmake_vars,parallelism=1.0):
-      ok2build = True
-      if self.should_incremental_build:
-        os.chdir(blddir)
-      else:
-        pathtools.mkdir(blddir,clean=True)
-        pathtools.chdir(blddir)
-        cmake_ctx = cmake.context(root=srcdir,env=cmakeEnv)
-        ok2build = cmake_ctx.exec()==0
-      if ok2build:
-        return (make.exec("install",parallelism=parallelism)==0)
-      return False
-
-    #############################
-
-    def wipe(self):
-        pass
-
-    #############################
-
-    def node(self):
-        return self._node
-
-
-    #############################
-
-    @property
-    def shlib_extension(self):
-      if host.IsOsx:
-        return "dylib"
-      if host.IsIx:
-        return "so"
 ###############################################################################
 
 def enumerate():
@@ -281,303 +131,6 @@ def enumerate_with_method(named):
         rval[depitemk] = depitem.instance
   return rval
 
-###############################################################################
-
-class HomebrewProvider(Provider):
-  def __init__(self,name,pkgname):
-    super().__init__()
-    self.manifest = path.manifests()/name
-    self.OK = self.manifest.exists()
-    self.pkgname = pkgname
-    self._deps = list()
-  ###########################################
-  def requires(self,deplist):
-    self._deps += deplist
-  ###########################################
-  def brew_prefix(self):
-    return Path("/")/"usr"/"local"
-  ###########################################
-  def build(self):
-    require(self._deps)
-    retc = Command(["brew","install",self.pkgname]).exec()
-    if 0 == retc:
-      self.manifest.touch()
-    return 0==retc
-  ###########################################
-
-###############################################################################
-
-class GitFetcher:
-  ###########################################
-  def __init__(self,name):
-    self._name = name
-    self._git_url = ""
-    self._revision = ""
-    self._recursive = False
-    self._cache = True
-  ###########################################
-  def descriptor(self):
-    return "%s (git-%s)" % (self._name,self._revision)
-  ###########################################
-  def fetch(self,dest):
-    git.Clone(self._git_url,
-              dest,
-              rev=self._revision,
-              recursive=self._recursive,
-              cache=self._cache)
-  ###########################################
-
-class SvnFetcher:
-  ###########################################
-  def __init__(self,name):
-    self._name = name
-    self._url = ""
-    self._revision = ""
-    self._recursive = False
-    self._cache = True
-  ###########################################
-  def descriptor(self):
-    return "%s (svn-%s)" % (self._name,self._revision)
-  ###########################################
-  def fetch(self,dest):
-    url = self._url+"/"+self._revision
-    cmd = ["svn","checkout", url, dest]
-    run(cmd)
-  ###########################################
-
-###############################################################################
-
-class WgetFetcher:
-  ###########################################
-  def __init__(self,name):
-    self._name = name
-    self._fname = ""
-    self._url = ""
-    self._md5 = ""
-    self._arcpath = ""
-    self._arctype = ""
-  ###########################################
-  def descriptor(self):
-    return "%s (wget: %s)" % (self._name,self._url)
-  ###########################################
-  def fetch(self,dest):
-    from yarl import URL
-    url = URL(self._url)
-    dest = path.builds()/self._name
-    self._arcpath = downloadAndExtract([url],
-                                       self._fname,
-                                       self._arctype,
-                                       self._md5,
-                                       dest)
-    return self._arcpath!=None
-  ###########################################
-
-###############################################################################
-
-class NopFetcher:
-  ###########################################
-  def __init__(self,name):
-    self._name = name
-    self._revision = ""
-  ###########################################
-  def descriptor(self):
-    return "%s (%s)" % (self._name,self._revision)
-  ###########################################
-  def fetch(self,dest):
-    pass
-  ###########################################
-
-###############################################################################
-# BaseBuilder : builder basic interface
-###############################################################################
-
-class BaseBuilder(object):
-  def __init__(self,name):
-    super().__init__()
-    self._name = name
-    self._deps = []
-  def requires(self,deplist):
-    """declare that this dep module depends on others"""
-    self._deps += deplist
-  def build(self,srcdir,blddir,incremental=False):
-    """execute build phase"""
-    require(self._deps)
-  def install(self,blddir):
-    """execute install phase"""
-    return True
-
-###############################################################################
-# NopBuilder : do nothing builder (but still installs child dependencies)
-###############################################################################
-
-class NopBuilder(BaseBuilder):
-  """Do nothing builder (but still installs child dependencies)"""
-  def __init__(self,name):
-    super().__init__(name)
-
-###############################################################################
-# BinInstaller : install binaries from downloaded package
-###############################################################################
-
-class BinInstaller(BaseBuilder):
-  """Install binaries from downloaded package"""
-  ###########################
-  class InstallerItem:
-    def __init__(self,src,dst):
-      self._src = src
-      self._dst = dst
-  ###########################
-  def __init__(self,name):
-    super().__init__(name)
-    self._items = []
-    self._OK = True
-  ###########################################
-  """declare an install item given a source-path and dest-path"""
-  def install_item(self,source=None,destination=None):
-    self._items += [BinInstaller.InstallerItem(source,destination)]
-  ###########################################
-  def build(self,srcdir,blddir,incremental=False):
-    require(self._deps)
-    for item in self._items:
-      exists = item._src.exists()
-      #print(item,item._src,exists)
-      if False==exists:
-        self._OK = False
-        return False
-    return True
-  ###########################################
-  def install(self,blddir):
-    for item in self._items:
-      cmd = [
-        "cp", str(item._src), str(item._dst)
-      ]
-      Command(cmd).exec()
-    return self._OK
-
-###############################################################################
-
-class CMakeBuilder(BaseBuilder):
-  ###########################################
-  def __init__(self,name):
-    super().__init__(name)
-    ##################################
-    # ensure environment cmake present
-    ##################################
-    self._cmakeenv = {
-      "CMAKE_BUILD_TYPE": "Release",
-      "BUILD_SHARED_LIBS": "ON",
-    }
-    ##################################
-    # default OSX stuff
-    ##################################
-    if ork.host.IsOsx:
-      sysroot_cmd = Command(["xcrun","--show-sdk-path"],do_log=False)
-      sysroot = sysroot_cmd.capture().replace("\n","")
-      self._cmakeenv.update({
-        "CMAKE_OSX_ARCHITECTURES:STRING":"x86_64",
-        "CMAKE_OSX_DEPLOYMENT_TARGET:STRING":"10.14",
-        "CMAKE_OSX_SYSROOT:STRING":sysroot,
-        "CMAKE_MACOSX_RPATH": "1",
-        "CMAKE_INSTALL_RPATH": path.libs(),
-        "CMAKE_SKIP_INSTALL_RPATH:BOOL":"NO",
-        "CMAKE_SKIP_RPATH:BOOL":"NO",
-        "CMAKE_INSTALL_NAME_DIR": "@executable_path/../lib"
-      })
-
-    ##################################
-    self._parallelism=1.0
-    ##################################
-    # implicit dependencies
-    ##################################
-    if name!="cmake":
-      self._deps += ["cmake"]
-  ###########################################
-  def requires(self,deplist):
-    self._deps += deplist
-  ###########################################
-  def setCmVar(self,key,value):
-    self._cmakeenv[key] = value
-  ###########################################
-  def setCmVars(self,othdict):
-    for k in othdict:
-      self._cmakeenv[k] = othdict[k]
-  ###########################################
-  def build(self,srcdir,blddir,incremental=False):
-    require(self._deps)
-    ok2build = True
-    if incremental:
-      os.chdir(blddir)
-    else:
-      pathtools.mkdir(blddir,clean=True)
-      pathtools.chdir(blddir)
-      cmake_ctx = cmake.context(root=srcdir,env=self._cmakeenv)
-      ok2build = cmake_ctx.exec()==0
-    if ok2build:
-      return (make.exec(parallelism=self._parallelism)==0)
-    return False
-  ###########################################
-  def install(self,blddir):
-    pathtools.chdir(blddir)
-    return (make.exec("install",parallelism=0.0)==0)
-  ###########################################
-
-###############################################################################
-
-class StdProvider(Provider):
-    #############################
-    def __init__(self,name):
-      super().__init__()
-      self._fetcher = None
-      self._builder = None
-      self._node = None
-      self.manifest = path.manifests()/name
-      self.OK = self.manifest.exists()
-      self.source_root = path.builds()/name
-      self.build_src = self.source_root
-      self.build_dest = self.source_root/".build"
-    #############################
-    def postinit(self):
-      pass
-    #############################
-    def requires(self,deplist):
-      self._builder.requires(deplist)
-    #############################
-    def install(self):
-      return self._builder.install(self.build_dest)
-    #############################
-    def __str__(self):
-      return self._fetcher.descriptor()
-    #############################
-    def wipe(self):
-      os.system("rm -rf %s"%self.source_root)
-    #############################
-    def build(self):
-      #########################################
-      # fetch source
-      #########################################
-      if not self.source_root.exists():
-        fetchOK = self._fetcher.fetch(self.source_root)
-        if False==fetchOK:
-          self.OK = False
-          return False
-      #########################################
-      # build
-      #########################################
-      self.OK = self._builder.build(self.build_src,self.build_dest,self.should_incremental_build)
-      #########################################
-      return self.OK
-    #########################################
-    def provide(self):
-      self.postinit()
-      if self.should_wipe:
-        self.wipe()
-      if self.should_build:
-        self.OK = self.build()
-        if self.OK:
-          self.OK = self.install()
-      if self.OK:
-        self.manifest.touch()
-      return self.OK
 
 ###############################################################################
 
@@ -585,7 +138,7 @@ class DepNode:
     """dependency provider node"""
     def __init__(self,name=None):
       assert(isinstance(name,str))
-      self.miscoptions = global_options
+      self.miscoptions = globals.options
       self.name = name
       self.scrname = ("%s.py"%name)
       self.module_path = ork.path.deps()/self.scrname
@@ -650,9 +203,5 @@ def downloadAndExtract(urls,
         tf.extractall(path=str(build_dest))
 
   return arcpath
-
-###############################################################################
-
-
 
 ###############################################################################
