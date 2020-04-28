@@ -15,7 +15,8 @@ class bullet(dep.StdProvider):
   def __init__(self):
     name = "bullet"
     super().__init__(name)
-    self._fetcher = dep.GitFetcher(name)
-    self._fetcher._git_url = "https://github.com/bulletphysics/bullet3"
-    self._fetcher._revision = "2.89"
+    self._fetcher = dep.GithubFetcher(name=name,
+                                      repospec="bulletphysics/bullet3",
+                                      revision="2.89",
+                                      recursive=False)
     self._builder = dep.CMakeBuilder(name)
