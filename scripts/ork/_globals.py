@@ -8,3 +8,5 @@
 
 global yo
 yo = "yo"
+global options
+options =[]

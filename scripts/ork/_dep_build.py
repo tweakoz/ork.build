@@ -14,7 +14,7 @@ from ork.command import Command, run
 from ork.deco import Deco
 from ork.wget import wget
 from ork import pathtools, cmake, make, path, git, host
-from ork.dep_impl import *
+from ork._dep_provider import require
 
 deco = Deco()
 

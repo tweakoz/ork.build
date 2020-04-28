@@ -8,6 +8,7 @@
 
 import os, inspect, tarfile
 from pathlib import Path
+from yarl import URL
 import importlib.util
 import ork.path, ork.host
 from ork.command import Command, run
@@ -35,7 +36,8 @@ class GitFetcher:
               dest,
               rev=self._revision,
               recursive=self._recursive,
-              cache=self._cache)
+              cache=self._cache,
+              shallow=False)
 ###############################################################################
 
 class GithubFetcher: # github specific git fetcher
@@ -44,25 +46,51 @@ class GithubFetcher: # github specific git fetcher
                name=None,
                repospec=None,
                revision="master",
-               recursive=False):
+               recursive=False,
+               cache=False,
+               shallow=True):
     self._name = name
     # todo : allow user control over protocols
     #  since ssh requires key setup..
     self._git_url = "git@github.com:"+repospec
+    self._repospec = repospec
     #self._git_url = "http://github.com/"+repospec
     self._revision = revision
     self._recursive = recursive
-    self._cache = True
+    self._cache = cache
+    self._shallow = shallow
   ###########################################
   def descriptor(self):
     return "%s (git-%s)" % (self._name,self._revision)
   ###########################################
   def fetch(self,dest):
-    git.Clone(self._git_url,
-              dest,
-              rev=self._revision,
-              recursive=self._recursive,
-              cache=self._cache)
+    ####################################################
+    # try to use githubs tarball fetch feature
+    # when appropriate because its hella faster
+    ####################################################
+    if True==self._shallow and \
+       False==self._recursive:
+      curdir = os.getcwd()
+      ghbase = URL("https://github.com")
+      url = ghbase/self._repospec/"tarball"/self._revision
+      outfname = self._repospec+("-%s.tar.gz"%self._revision)
+      outfname = outfname.replace("/","_")
+      fetched_path = wget([url],outfname,None)
+      if dest.exists():
+        shutil.rmtree(str(dest))
+      run(["mkdir","-p",dest])
+      os.chdir(dest)
+      run(["tar","xvf",fetched_path,"--strip","1"])
+      os.chdir(curdir)
+    ####################################################
+    else: # tried and true way
+    ####################################################
+      git.Clone(self._git_url,
+                dest,
+                rev=self._revision,
+                recursive=self._recursive,
+                cache=self._cache,
+                shallow=self._shallow)
 
 ###############################################################################
 

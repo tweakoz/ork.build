@@ -13,7 +13,8 @@ import ork.path, ork.host
 from ork.command import Command, run
 from ork.deco import Deco
 from ork.wget import wget
-from ork import pathtools, cmake, make, path, git, host, globals
+from ork import pathtools, cmake, make, path, git, host
+from ork import _dep_impl, _globals
 
 deco = Deco()
 ###############################################################################
@@ -21,7 +22,7 @@ deco = Deco()
 class Provider(object):
     """base class for all dependency providers"""
     def __init__(self):
-      self._miscoptions = globals.options
+      self._miscoptions = _globals.options
       self._node = None
       self._deps = {}
 
@@ -246,3 +247,43 @@ class StdProvider(Provider):
       if self.OK:
         self.manifest.touch()
       return self.OK
+
+###############################################################################
+
+def require(name_or_list):
+  if (isinstance(name_or_list,list)):
+    rval = []
+    for item in name_or_list:
+      inst = _dep_impl._get_instance(item)
+      inst.provide()
+      rval += [inst]
+  else:
+    inst = _dep_impl.instance(name_or_list)
+    ok = inst.provide()
+    if ok:
+      rval = inst
+    else:
+      rval = None
+  return rval
+
+###############################################################################
+
+def require_opts(name_or_list,opts):
+  if (isinstance(name_or_list,list)):
+    rval = []
+    _globals.options = opts
+    for item in name_or_list:
+      inst = instance(item)
+      inst.provide()
+      rval += [inst]
+    _globals.options = []
+  else:
+    _globals.options = opts
+    inst = _dep_impl.instance(name_or_list)
+    _globals.options = []
+    ok = inst.provide()
+    if ok:
+      rval = inst
+    else:
+      rval = None
+  return rval

@@ -13,8 +13,9 @@ import ork.path, ork.host
 from ork.command import Command, run
 from ork.deco import Deco
 from ork.wget import wget
-from ork import pathtools, cmake, make, path, git, host, globals
-from ork.dep_fetch import *
-from ork.dep_build import *
-from ork.dep_provider import *
-from ork.dep_impl import *
+from ork import pathtools, cmake, make, path, git, host, _globals
+from ork._dep_fetch import *
+from ork._dep_build import *
+from ork._dep_provider import *
+from ork._dep_impl import *
+from ork._dep_node import *

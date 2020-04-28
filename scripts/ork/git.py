@@ -20,7 +20,8 @@ def Clone(url,
           dest,
           rev="master",
           recursive=False,
-          cache=True):
+          cache=True,
+          shallow=False):
 
   cwd = os.getcwd()
   rval = False
@@ -100,10 +101,20 @@ def Clone(url,
   ##############################################################################
 
     print("Cloning3 URL<%s> to dest<%s>"%(deco.path(url),deco.path(dest_path)))
-    retc = run(["git",
-                "clone",
-                str(url),
-                str(dest_path)])
+    if shallow:
+      # shallow clone of speciific rev
+      if dest_path.exists():
+        shutil.rmtree(str(dest_path))
+      run(["mkdir","-p",dest_path])
+      curdir = os.getcwd()
+      os.chdir(dest_path)
+      run(["git","init"])
+      run(["git","remote","add","origin",url])
+      run(["git","fetch","--depth","1","origin",rev])
+      retc = run(["git","checkout","FETCH_HEAD"])
+      os.chdir(curdir)
+    else:
+        retc = run(["git","clone",url,dest_path])
     if 0 == retc:
       return _checkoutrevandupdate()
 

@@ -1,2 +1,0 @@
-global options
-options =[]

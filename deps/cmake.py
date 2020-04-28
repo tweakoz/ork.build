@@ -16,7 +16,7 @@ class cmake(dep.StdProvider):
     super().__init__(name)
     self._fetcher = dep.GithubFetcher(name=name,
                                       repospec="kitware/cmake",
-                                      revision="v3.16.4.89",
+                                      revision="v3.17.2",
                                       recursive=False)
     self._builder = dep.CMakeBuilder(name)
     self._builder._cmakeenv["CMAKE_USE_SYSTEM_CURL"]="YES"
