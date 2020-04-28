@@ -11,15 +11,13 @@ from ork import dep, host, path
 ###############################################################################
 
 class oiio(dep.StdProvider):
-
   def __init__(self): ############################################
     name = "oiio"
     super().__init__(name)
-
-    self._fetcher = dep.GitFetcher(name)
-    self._fetcher._git_url = "http://github.com/OpenImageIO/oiio"
-    self._fetcher._revision = "release"
-
+    self._fetcher = dep.GithubFetcher(name=name,
+                                      repospec="OpenImageIO/oiio",
+                                      revision="release",
+                                      recursive=False)
     self._builder = dep.CMakeBuilder(name)
     self._builder.requires(["pkgconfig","openexr","pybind11"])
     self._builder.setCmVars({

@@ -12,12 +12,11 @@ from ork import dep
 ###############################################################################
 
 class lapack(dep.StdProvider):
-
   def __init__(self):
     name = "lapack"
     super().__init__(name)
-    self._fetcher = dep.GitFetcher(name)
-    self._fetcher._git_url = "https://github.com/Reference-LAPACK/lapack"
-    self._fetcher._revision = "v3.9.0"
-
+    self._fetcher = dep.GithubFetcher(name=name,
+                                      repospec="Reference-LAPACK/lapack",
+                                      revision="v3.9.0",
+                                      recursive=False)
     self._builder = dep.CMakeBuilder(name)

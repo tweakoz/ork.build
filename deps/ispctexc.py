@@ -14,11 +14,11 @@ class ispctexc(dep.StdProvider):
   def __init__(self):
     name = "ispctexc"
     super().__init__(name)
-    self._fetcher = dep.GitFetcher(name)
-    self._fetcher._git_url = "https://github.com/tweakoz/ISPCTextureCompressor"
+    self._fetcher = dep.GithubFetcher(name=name,
+                                      repospec="tweakoz/ISPCTextureCompressor",
+                                      revision="master",
+                                      recursive=False)
     self._fetcher._cache=False,
-    self._fetcher._recursive=False
-    self._fetcher._revision = "master"
     self.build_dest = self.source_root/"build"
 
   def build(self):

@@ -24,8 +24,9 @@ class easyprof(dep.StdProvider):
   def __init__(self):
     name = "easyprof"
     super().__init__(name)
-    self._fetcher = dep.GitFetcher(name)
-    self._fetcher._git_url = "https://github.com/yse/easy_profiler"
-    self._fetcher._revision = VERSION
+    self._fetcher = dep.GithubFetcher(name=name,
+                                      repospec="yse/easy_profiler",
+                                      revision=VERSION,
+                                      recursive=False)
     self._builder = dep.CMakeBuilder(name)
   #############################################

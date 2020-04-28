@@ -15,10 +15,10 @@ class igl(dep.StdProvider):
   def __init__(self):
     name = "igl"
     super().__init__(name)
-    self._fetcher = dep.GitFetcher(name)
-    self._fetcher._git_url = "http://github.com/libigl/libigl"
-    self._fetcher._revision = "v2.2.0"
-
+    self._fetcher = dep.GithubFetcher(name=name,
+                                      repospec="libigl/libigl",
+                                      revision="v2.2.0",
+                                      recursive=False)
     self._builder = dep.CMakeBuilder(name)
     self._builder.requires(["cgal","lapack","eigen"])
     self._builder.setCmVar("LIBIGL_WITH_CGAL","TRUE")

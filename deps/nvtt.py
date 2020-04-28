@@ -11,13 +11,13 @@ from ork import dep, host, command, path
 ###############################################################################
 
 class nvtt(dep.StdProvider):
-
   def __init__(self):
     name = "nvtt"
     super().__init__(name)
-    self._fetcher = dep.GitFetcher(name)
-    self._fetcher._git_url = "https://github.com/tweakoz/nvidia-texture-tools"
-    self._fetcher._revision = "toz_orkdotbuild"
+    self._fetcher = dep.GithubFetcher(name=name,
+                                      repospec="tweakoz/nvidia-texture-tools",
+                                      revision="toz_orkdotbuild",
+                                      recursive=False)
     ###########################################
     ## nvtt installs with wrong rpath install name
     ##  on mac, so we fix it up here..

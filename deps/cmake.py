@@ -11,15 +11,13 @@ from ork import dep
 ###############################################################################
 
 class cmake(dep.StdProvider):
-
   def __init__(self):
     name = "cmake"
     super().__init__(name)
-
-    self._fetcher = dep.GitFetcher(name)
-    self._fetcher._git_url = "https://github.com/kitware/cmake"
-    self._fetcher._revision = "v3.16.4"
-
+    self._fetcher = dep.GithubFetcher(name=name,
+                                      repospec="kitware/cmake",
+                                      revision="v3.16.4.89",
+                                      recursive=False)
     self._builder = dep.CMakeBuilder(name)
     self._builder._cmakeenv["CMAKE_USE_SYSTEM_CURL"]="YES"
     self._builder.requires(["pkgconfig"])

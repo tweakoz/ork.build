@@ -16,9 +16,10 @@ class fltk(dep.StdProvider):
   def __init__(self):
     name = "fltk"
     super().__init__(name)
-    self._fetcher = dep.GitFetcher(name)
-    self._fetcher._git_url = "https://github.com/fltk/fltk"
-    self._fetcher._revision = "release-1.3.5"
+    self._fetcher = dep.GithubFetcher(name=name,
+                                      repospec="fltk/fltk",
+                                      revision="release-1.3.5",
+                                      recursive=False)
     self._builder = dep.CMakeBuilder(name)
   #############################################
   def install(self):

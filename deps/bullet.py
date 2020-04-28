@@ -11,7 +11,6 @@ from ork import dep
 ###############################################################################
 
 class bullet(dep.StdProvider):
-
   def __init__(self):
     name = "bullet"
     super().__init__(name)

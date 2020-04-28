@@ -16,9 +16,10 @@ class _llvm_from_source(dep.StdProvider):
 
   def __init__(self,name):
     super().__init__(name)
-    self._fetcher = dep.GitFetcher(name)
-    self._fetcher._git_url = "https://github.com/llvm/llvm-project"
-    self._fetcher._revision = "llvmorg-9.0.1"
+    self._fetcher = dep.GithubFetcher(name=name,
+                                      repospec="llvm/llvm-project",
+                                      revision="llvmorg-9.0.1",
+                                      recursive=False)
     self._builder = dep.CMakeBuilder(name)
     ##########################################
     # llvm cmake file is 1 subdir deeper than usual

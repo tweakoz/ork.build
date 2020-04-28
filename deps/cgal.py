@@ -13,13 +13,12 @@ from ork import log
 ###############################################################################
 
 class _cgal_from_source(dep.StdProvider):
-
   def __init__(self,name):
     super().__init__(name)
-    self._fetcher = dep.GitFetcher(name)
-    self._fetcher._git_url = "http://github.com/CGAL/cgal"
-    self._fetcher._revision = "CGAL-5.0.2"
-
+    self._fetcher = dep.GithubFetcher(name=name,
+                                      repospec="CGAL/cgal",
+                                      revision="CGAL-5.0.2",
+                                      recursive=False)
     self._builder = dep.CMakeBuilder(name)
     self._builder.requires(["lapack"])
 

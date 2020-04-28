@@ -15,9 +15,10 @@ class glfw(dep.StdProvider):
   def __init__(self):
     name = "glfw"
     super().__init__(name)
-    self._fetcher = dep.GitFetcher(name)
-    self._fetcher._git_url = "https://github.com/glfw/glfw"
-    self._fetcher._revision = "master"
+    self._fetcher = dep.GithubFetcher(name=name,
+                                      repospec="glfw/glfw",
+                                      revision="master",
+                                      recursive=False)
     ###########################################
     ## GLFW installs with wrong rpath install name
     ##  on mac, so we fix it up here..
