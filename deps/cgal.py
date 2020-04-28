@@ -14,8 +14,7 @@ from ork import log
 
 class _cgal_from_source(dep.StdProvider):
 
-  def __init__(self):
-    name = "cgal"
+  def __init__(self,name):
     super().__init__(name)
     self._fetcher = dep.GitFetcher(name)
     self._fetcher._git_url = "http://github.com/CGAL/cgal"

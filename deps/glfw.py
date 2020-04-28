@@ -27,7 +27,7 @@ class glfw(dep.StdProvider):
         super().__init__(name)
       def install(self,blddir):
         success = super().install(blddir)
-        if success:
+        if success and host.IsOsx:
           dylibname = "libglfw.3.dylib"
           retc = command.run(["install_name_tool","-id",
                               "@rpath/"+dylibname,path.libs()/dylibname])

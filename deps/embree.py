@@ -10,17 +10,17 @@ from ork import dep, log
 ###############################################################################
 
 class _embree_from_source(dep.StdProvider):
-  VERSION = "v3.9.0"
-  def __init__(self):
-    name = "embree"
+  def __init__(self,name):
     super().__init__(name)
+    self.VERSION = "v3.9.0"
+
     self._fetcher = dep.GitFetcher(name)
     self._fetcher._git_url = "https://github.com/embree/embree"
-    self._fetcher._revision = VERSION
+    self._fetcher._revision = self.VERSION
 
     self._builder = dep.CMakeBuilder(name)
   def env_init(self):
-    log.marker("registering embree(%s) SDK"%VERSION)
+    log.marker("registering embree(%s) SDK"%self.VERSION)
 
 ###############################################################################
 

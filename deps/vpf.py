@@ -59,7 +59,7 @@ class vpf(dep.Provider):
     #########################################
 
     ok2build = True
-    if self.incremental():
+    if self.should_incremental_build:
         os.chdir(self.build_dest)
     else:
 

@@ -100,7 +100,7 @@ def switch(linux=None,macos=None):
   elif host.IsIx:
     if linux==None:
       assert(False) # dep not supported on platform
-    return macos
+    return linux
   else:
    return linux
 
@@ -112,37 +112,35 @@ class Provider(object):
       self._miscoptions = global_options
       self._node = None
       self._deps = {}
-    #############################
-
-    def option(self,named):
-      if named in self._miscoptions:
-        return self._miscoptions[named]
-      else:
-        return None
 
     #############################
     ## wipe build ?
     #############################
 
+    @property
     def should_wipe(self):
-        wipe = False
-        if "wipe" in self._miscoptions:
-          wipe = self._miscoptions["wipe"]==True
-        return wipe
+      """predicate controlling build-clean during provisioning of a dependency"""
+      wipe = False
+      if "wipe" in self._miscoptions:
+        wipe = self._miscoptions["wipe"]==True
+      return wipe
 
     #############################
     ## serial build ?
     #############################
 
+    @property
     def should_serial_build(self):
-        serial = False
-        if "serial" in self._miscoptions:
-          serial = self._miscoptions["serial"]==True
-        return serial
+      """predicate controlling 1cpu build during provisioning of a dependency (for build debugging)"""
+      serial = False
+      if "serial" in self._miscoptions:
+        serial = self._miscoptions["serial"]==True
+      return serial
 
+    @property
     def default_parallelism(self):
       parallelism = 1.0
-      if self.should_serial_build():
+      if self.should_serial_build:
         parallelism=0.0
       return parallelism
 
@@ -150,7 +148,8 @@ class Provider(object):
     ## force build ?
     #############################
 
-    def force(self):
+    @property
+    def should_force_build(self):
         force = False
         if "force" in self._miscoptions:
           force = self._miscoptions["force"]==True
@@ -160,7 +159,8 @@ class Provider(object):
     ## force build ?
     #############################
 
-    def incremental(self):
+    @property
+    def should_incremental_build(self):
         incremental = False
         if "incremental" in self._miscoptions:
           incremental = self._miscoptions["incremental"]==True
@@ -168,14 +168,15 @@ class Provider(object):
 
     #############################
 
+    @property
     def should_build(self):
-        no_manifest = (False==self.manifest.exists())
-        force = self.force()
-        incremental = self.incremental()
-        return no_manifest or force or incremental
+        return (False==self.manifest.exists()) or \
+               self.should_force_build or \
+               self.should_incremental_build
 
     #############################
 
+    @property
     def should_fetch(self):
         fetch = False
         if "nofetch" in self._miscoptions:
@@ -184,17 +185,7 @@ class Provider(object):
 
     #############################
 
-    def provide(self):
-      if self.should_wipe():
-        self.wipe()
-      if self.should_build():
-        self.OK = self.build()
-      if self.OK:
-        self.manifest.touch()
-      return self.OK
-
-    #############################
-
+    @property
     def _std_cmake_vars():
       cmakeEnv = {
         "CMAKE_BUILD_TYPE": "Release",
@@ -204,9 +195,35 @@ class Provider(object):
 
     #############################
 
-    def _std_cmake_build(self,srcdir,blddir,cmakeEnv=_std_cmake_vars(),parallelism=1.0):
+    @property
+    def exists(self):
+        return False
+
+    #############################
+
+    def option(self,named):
+      if named in self._miscoptions:
+        return self._miscoptions[named]
+      else:
+        return None
+
+    #############################
+
+    def provide(self):
+      if self.should_wipe:
+        self.wipe()
+      if self.should_build:
+        self.OK = self.build()
+      if self.OK:
+        self.manifest.touch()
+      return self.OK
+
+
+    #############################
+
+    def _std_cmake_build(self,srcdir,blddir,cmakeEnv=_std_cmake_vars,parallelism=1.0):
       ok2build = True
-      if self.incremental():
+      if self.should_incremental_build:
         os.chdir(blddir)
       else:
         pathtools.mkdir(blddir,clean=True)
@@ -227,10 +244,6 @@ class Provider(object):
     def node(self):
         return self._node
 
-    #############################
-
-    def exists(self):
-        return False
 
     #############################
 
@@ -375,19 +388,53 @@ class NopFetcher:
   ###########################################
 
 ###############################################################################
-class InstallerItem:
-  def __init__(self,src,dst):
-    self._src = src
-    self._dst = dst
-class BinInstaller:
+# BaseBuilder : builder basic interface
+###############################################################################
+
+class BaseBuilder(object):
   def __init__(self,name):
-    self._deps = []
-    self._items = []
+    super().__init__()
     self._name = name
+    self._deps = []
+  def requires(self,deplist):
+    """declare that this dep module depends on others"""
+    self._deps += deplist
+  def build(self,srcdir,blddir,incremental=False):
+    """execute build phase"""
+    require(self._deps)
+  def install(self,blddir):
+    """execute install phase"""
+    return True
+
+###############################################################################
+# NopBuilder : do nothing builder (but still installs child dependencies)
+###############################################################################
+
+class NopBuilder(BaseBuilder):
+  """Do nothing builder (but still installs child dependencies)"""
+  def __init__(self,name):
+    super().__init__(name)
+
+###############################################################################
+# BinInstaller : install binaries from downloaded package
+###############################################################################
+
+class BinInstaller(BaseBuilder):
+  """Install binaries from downloaded package"""
+  ###########################
+  class InstallerItem:
+    def __init__(self,src,dst):
+      self._src = src
+      self._dst = dst
+  ###########################
+  def __init__(self,name):
+    super().__init__(name)
+    self._items = []
     self._OK = True
   ###########################################
-  def requires(self,deplist):
-    self._deps += deplist
+  """declare an install item given a source-path and dest-path"""
+  def install_item(self,source=None,destination=None):
+    self._items += [BinInstaller.InstallerItem(source,destination)]
   ###########################################
   def build(self,srcdir,blddir,incremental=False):
     require(self._deps)
@@ -399,9 +446,6 @@ class BinInstaller:
         return False
     return True
   ###########################################
-  def declare(self,src,dst):
-    self._items += [InstallerItem(src,dst)]
-  ###########################################
   def install(self,blddir):
     for item in self._items:
       cmd = [
@@ -409,41 +453,16 @@ class BinInstaller:
       ]
       Command(cmd).exec()
     return self._OK
-  ###########################################
 
 ###############################################################################
 
-class BaseBuilder:
-  def __init__(self,name):
-    self._name = name
-    self._deps = []
-  def requires(self,deplist):
-    self._deps += deplist
-
-###############################################################################
-
-class NopBuilder:
-  def __init__(self,name):
-    self._name = name
-    self._deps = []
-    pass
-  def requires(self,deplist):
-    self._deps += deplist
-  def build(self,srcdir,blddir,incremental=False):
-    require(self._deps)
-    return True
-  def install(self,blddir):
-    return True
-
-###############################################################################
-
-class CMakeBuilder:
+class CMakeBuilder(BaseBuilder):
   ###########################################
   def __init__(self,name):
+    super().__init__(name)
     ##################################
     # ensure environment cmake present
     ##################################
-    self._name = name
     self._cmakeenv = {
       "CMAKE_BUILD_TYPE": "Release",
       "BUILD_SHARED_LIBS": "ON",
@@ -467,7 +486,9 @@ class CMakeBuilder:
 
     ##################################
     self._parallelism=1.0
-    self._deps = []
+    ##################################
+    # implicit dependencies
+    ##################################
     if name!="cmake":
       self._deps += ["cmake"]
   ###########################################
@@ -503,9 +524,7 @@ class CMakeBuilder:
 ###############################################################################
 
 class StdProvider(Provider):
-
     #############################
-
     def __init__(self,name):
       super().__init__()
       self._fetcher = None
@@ -516,63 +535,43 @@ class StdProvider(Provider):
       self.source_root = path.builds()/name
       self.build_src = self.source_root
       self.build_dest = self.source_root/".build"
-
     #############################
-
     def postinit(self):
       pass
-      #print(self._deps)
-
     #############################
-
     def requires(self,deplist):
       self._builder.requires(deplist)
-
     #############################
-
     def install(self):
       return self._builder.install(self.build_dest)
-
     #############################
-
     def __str__(self):
       return self._fetcher.descriptor()
-
     #############################
-
     def wipe(self):
       os.system("rm -rf %s"%self.source_root)
-
     #############################
-
     def build(self):
-
       #########################################
       # fetch source
       #########################################
-
       if not self.source_root.exists():
         fetchOK = self._fetcher.fetch(self.source_root)
         if False==fetchOK:
           self.OK = False
           return False
-
       #########################################
       # build
       #########################################
-
-      self.OK = self._builder.build(self.build_src,self.build_dest,self.incremental())
-
+      self.OK = self._builder.build(self.build_src,self.build_dest,self.should_incremental_build)
       #########################################
       return self.OK
-
     #########################################
-
     def provide(self):
       self.postinit()
-      if self.should_wipe():
+      if self.should_wipe:
         self.wipe()
-      if self.should_build():
+      if self.should_build:
         self.OK = self.build()
         if self.OK:
           self.OK = self.install()

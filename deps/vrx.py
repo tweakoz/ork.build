@@ -39,7 +39,7 @@ class vrx(dep.Provider):
     glfw = dep.require("glfw")
     utpp = dep.require("unittestpp")
 
-    if self.incremental():
+    if self.should_incremental_build:
         os.chdir(self.build_dest)
     else:
         git.Clone("https://github.com/tweakoz/vrx",self.source_root,VERSION)

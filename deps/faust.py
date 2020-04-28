@@ -35,7 +35,7 @@ class faust(dep.Provider):
   def build(self): #############################################################
 
     self.OK = False
-    if self.force():
+    if self.should_force_build:
         os.system("rm -rf %s"%self.source_root)
 
     git.Clone("https://github.com/grame-cncm/faust",
@@ -60,7 +60,7 @@ class faust(dep.Provider):
 
   def provide(self): ##########################################################
 
-    if self.should_build():
+    if self.should_build:
       self.OK = self.build()
     print(self.OK)
     return self.OK
