@@ -6,7 +6,7 @@
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
 
-VERSION = "v1.0.40"
+VERSION = "v1.0.41"
 
 import os, tarfile
 from ork import dep, host, path, cmake, git, make, command

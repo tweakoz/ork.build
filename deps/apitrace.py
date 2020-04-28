@@ -33,7 +33,7 @@ class apitrace(dep.Provider):
 
   def __str__(self): ##########################################################
 
-    return "Assimp (github-%s)" % VERSION
+    return "ApiTrace (github-%s)" % VERSION
 
   def build(self): ##########################################################
 
@@ -42,7 +42,9 @@ class apitrace(dep.Provider):
     os.system("rm -rf %s"%self.build_dest)
     os.mkdir(self.build_dest)
     os.chdir(self.build_dest)
-    cmake_ctx = cmake.context("..")
+    cmake_ctx = cmake.context("..",env={
+      "ENABLE_GUI":"TRUE"
+    })
     cmake_ctx.exec()
     return (make.exec("install")==0)
 
