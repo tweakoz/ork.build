@@ -67,7 +67,7 @@ class _qt5_from_source(dep.Provider):
     #########################################
     # prep for build
     #########################################
-    if self.incremental():
+    if self.should_incremental_build:
         os.chdir(self.build_dest)
     else:
         pathtools.mkdir(self.build_dest,clean=True)
@@ -101,9 +101,9 @@ class _qt5_from_source(dep.Provider):
     # build
     #########################################
     if self.OK:
-      self.OK == (make.exec(parallelism=self.default_parallelism())==0)
+      self.OK == (make.exec(parallelism=self.default_parallelism)==0)
     if self.OK:
-      self.OK = (make.exec(parallelism=self.default_parallelism())==0)
+      self.OK = (make.exec(parallelism=self.default_parallelism)==0)
     # uhhuh - https://bugreports.qt.io/browse/QTBUG-60496
     if self.OK:
       self.OK = (0==make.exec(target="install", parallelism=0.0))

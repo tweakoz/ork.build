@@ -66,7 +66,7 @@ class calf(dep.Provider):
 
   def provide(self): ##########################################################
 
-    if self.should_build():
+    if self.should_build:
       self.OK = self.build()
     print(self.OK)
     return self.OK

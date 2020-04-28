@@ -55,7 +55,7 @@ class apitrace(dep.Provider):
 
   def provide(self): ##########################################################
 
-    if self.should_build():
+    if self.should_build:
 
       self.OK = self.build()
       if self.OK:

@@ -26,14 +26,17 @@ class nvtt(dep.StdProvider):
       def __init__(self,name):
         super().__init__(name)
       def install(self,blddir):
-        dylibname = "libnvtt.dylib"
-        dylibpath = self.build_dest/"src"/"nvtt"/dylibname
-        nvcpath = self.build_dest/"src"/"nvtt"/dylibname
-        retc = command.run(["install_name_tool","-id",
-                            "@rpath/../lib/"+dylibname,
-                            dylibpath])
-        success = retc==0
-        if success:
+        if host.IsOsx:
+          dylibname = "libnvtt.dylib"
+          dylibpath = self.build_dest/"src"/"nvtt"/dylibname
+          nvcpath = self.build_dest/"src"/"nvtt"/dylibname
+          retc = command.run(["install_name_tool","-id",
+                              "@rpath/../lib/"+dylibname,
+                              dylibpath])
+          success = retc==0
+          if success:
+            success = super().install(blddir)
+        else: # Linux
           success = super().install(blddir)
         return success
     ###########################################

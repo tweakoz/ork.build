@@ -119,6 +119,7 @@ class python(dep.Provider):
 
 
   def build(self): ############################################################
+    dep.require("pkgconfig")
     self.download_and_extract()
     source_dir = self.build_dest/("Python-%s"%VERSION)
     build_temp = source_dir/".build"
