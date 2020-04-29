@@ -5,13 +5,9 @@
 # The Orkid Build System is published under the GPL 2.0 license
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
-
 from ork import dep, host
-
 ###############################################################################
-
 class igl(dep.StdProvider):
-
   def __init__(self):
     name = "igl"
     super().__init__(name)
