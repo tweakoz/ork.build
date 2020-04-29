@@ -15,6 +15,7 @@ from ork.command import Command, run
 from ork.deco import Deco
 from ork.wget import wget
 from ork import pathtools, cmake, make, path, git, host
+from ork._dep_impl import downloadAndExtract
 
 deco = Deco()
 ###############################################################################
@@ -80,17 +81,18 @@ class GithubFetcher: # github specific git fetcher
         shutil.rmtree(str(dest))
       run(["mkdir","-p",dest])
       os.chdir(dest)
-      run(["tar","xvf",fetched_path,"--strip","1"])
+      retc = run(["tar","xvf",fetched_path,"--strip","1"])
       os.chdir(curdir)
+      return retc==0
     ####################################################
     else: # tried and true way
     ####################################################
-      git.Clone(self._git_url,
-                dest,
-                rev=self._revision,
-                recursive=self._recursive,
-                cache=self._cache,
-                shallow=self._shallow)
+      return git.Clone(self._git_url,
+                       dest,
+                       rev=self._revision,
+                       recursive=self._recursive,
+                       cache=self._cache,
+                       shallow=self._shallow)
 
 ###############################################################################
 
@@ -109,7 +111,8 @@ class SvnFetcher:
   def fetch(self,dest):
     url = self._url+"/"+self._revision
     cmd = ["svn","checkout", url, dest]
-    run(cmd)
+    retc = run(cmd)
+    return retc==0
   ###########################################
 
 ###############################################################################
@@ -151,5 +154,5 @@ class NopFetcher:
     return "%s (%s)" % (self._name,self._revision)
   ###########################################
   def fetch(self,dest):
-    pass
+    return True
   ###########################################
