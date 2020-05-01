@@ -17,7 +17,7 @@ class openexr(dep.StdProvider):
     super().__init__(name)
     self._fetcher = dep.GithubFetcher(name=name,
                                       repospec="openexr/openexr",
-                                      revision="master",
+                                      revision="v2.4.1",
                                       recursive=False)
     self._builder = dep.CMakeBuilder(name)
     self._builder.setCmVar("OPENEXR_VIEWERS_ENABLE","OFF")

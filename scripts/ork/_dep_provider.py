@@ -226,6 +226,7 @@ class StdProvider(Provider):
       #########################################
       if not self.source_root.exists():
         fetchOK = self._fetcher.fetch(self.source_root)
+        assert(fetchOK==True or fetchOK==False)
         if False==fetchOK:
           self.OK = False
           return False
