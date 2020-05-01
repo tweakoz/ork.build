@@ -43,6 +43,7 @@ deplist += ["libtbb-dev"]
 deplist += ["openctm-tools"] # ctmviewer
 deplist += ["openscad"] # for trimesh
 deplist += ["libclang-dev"]
+deplist += ["libgmp-dev","libmpfr-dev"]
 
 merged = " ".join(deplist)
 os.system("sudo apt -y install %s" % merged)
