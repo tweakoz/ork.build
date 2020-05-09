@@ -150,6 +150,7 @@ class python(dep.Provider):
       pip.install(["virtualenv"])
       pip.install(["yarl","pytest",
                    "numpy","scipy",
+                   "numba","pyopencl",
                    "matplotlib",
                    "zmq"])
       Command(["pip3","install","--upgrade",
