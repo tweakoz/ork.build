@@ -54,3 +54,11 @@ def wget(urls=[],
           return None
 
   return output_path
+
+################################################################################
+# batch downloads
+################################################################################
+def batch_wget(fset):
+  for k in fset.keys():
+    v = fset[k]
+    wget(urls=[k],output_name=v[0],md5val=v[1])
