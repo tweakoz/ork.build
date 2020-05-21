@@ -215,7 +215,10 @@ class StdProvider(Provider):
       return self._builder.install(self.build_dest)
     #############################
     def __str__(self):
-      return self._fetcher.descriptor()
+      if hasattr(self,"descriptor"):
+        return self.descriptor()
+      else:
+        return self._fetcher.descriptor()
     #############################
     def wipe(self):
       os.system("rm -rf %s"%self.source_root)
