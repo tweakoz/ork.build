@@ -169,6 +169,7 @@ def lazyMakeDirs():
     ork.path.builds().mkdir(parents=True,exist_ok=True)
     ork.path.manifests().mkdir(parents=True,exist_ok=True)
     ork.path.gitcache().mkdir(parents=True,exist_ok=True)
+    ork.path.apps().mkdir(parents=True,exist_ok=True)
 ###########################################
 def genBashRc(staging):
     my_log(deco.white("Generating bashrc"))

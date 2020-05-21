@@ -124,12 +124,12 @@ def globber( folderbase, wildcard, subdirlist, excludelist=[] ):
 
 ###############################################################################
 
-def mkdir(p,clean=False):
+def mkdir(p,clean=False,parents=False):
   if clean:
   	if p.exists():
   	  os.system("rm -rf %s"%p)
   if False==p.exists():
-     p.mkdir()
+     p.mkdir(parents=parents)
 
 ###############################################################################
 
