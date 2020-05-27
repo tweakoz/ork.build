@@ -44,11 +44,14 @@ def macho_enumerate_dylibs(mach_o_path):
 ###############################################################################
 def macho_replace_loadpaths(mach_o_path,search,replace):
   assert (host.IsOsx)
+  str_search = str(search)
+  str_replace = str(replace)
   dylib_paths = macho_enumerate_dylibs(mach_o_path)
   for inpitem in dylib_paths:
-    outitem = inpitem.replace(search, replace)
+    outitem = inpitem.replace(str_search, str_replace)
+    print("mach_o_path: " + str(mach_o_path) + " inp: " + inpitem + " search: " + str_search + " replace: " + str_replace)
     if outitem!=inpitem:
-      capture(["install_name_tool","-change",inpitem,outitem,mach_o_path],do_log=False)
+      capture(["install_name_tool","-change",inpitem,outitem,mach_o_path],do_log=True)
 ##############################################################################
 def macho_dump(mach_o_path):
   print(deco.val("/////////////////////////////////////////////////////////"))
