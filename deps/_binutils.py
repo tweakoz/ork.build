@@ -1,7 +1,7 @@
 import ork
 
-VER = "2.30"
-HASH = "ffc476dd46c96f932875d1b2e27e929f"
+VER = "2.34"
+HASH = "664ec3a2df7805ed3464639aaae332d6"
 
 class context:
     def __init__(self,destid):
@@ -17,4 +17,3 @@ class context:
                                                    "xz",
                                                    HASH,
                                                    self.extract_dir)
-
