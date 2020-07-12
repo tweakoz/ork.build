@@ -27,8 +27,8 @@ class igl(dep.StdProvider):
                    embr_path,
                    glfw_path)
     self._builder = dep.CMakeBuilder(name)
-    self._builder.requires(["cgal","lapack","eigen"])
-    self._builder.setCmVar("LIBIGL_WITH_CGAL","TRUE")
+    self._builder.requires(["lapack","eigen"])
+    self._builder.setCmVar("LIBIGL_WITH_CGAL","FALSE")
     self._builder.setCmVar("LIBIGL_USE_STATIC_LIBRARY","OFF")
     self._builder.setCmVar("LIBIGL_USE_STATIC_LIBRARY","OFF")
     #self._builder.setCmVar("CMAKE_MODULE_PATH",module_path)
