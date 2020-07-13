@@ -196,6 +196,7 @@ class StdProvider(Provider):
     #############################
     def __init__(self,name):
       super().__init__()
+      self._name = name
       self._fetcher = None
       self._builder = None
       self._node = None

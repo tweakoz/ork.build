@@ -20,14 +20,10 @@ deco = Deco()
 
 ###############################################################################
 
-class m68k_amiga_binutils(dep.Provider):
+class m68k_amiga_binutils(dep.StdProvider):
 
   def __init__(self): ############################################
-
-    super().__init__()
-
-    self.manifest = path.manifests()/"m68k_amiga_binutils"
-    self.OK = self.manifest.exists()
+    super().__init__("m68k_amiga_binutils")
 
   ########
 
@@ -36,27 +32,24 @@ class m68k_amiga_binutils(dep.Provider):
 
   ########
 
-  def provide(self): ##########################################################
+  def build(self): ##########################################################
 
-    if False==self.OK:
-        bu = _binutils.context("binutils-m68k")
-        bdest = bu.build_dir/".build"
+    bu = _binutils.context(self)
 
-        os.mkdir(bdest)
-        os.chdir(bdest)
+    os.mkdir(self.build_dest)
+    os.chdir(self.build_dest)
 
-        toolchain_dir = path.prefix()/"opt"/"toolchain"/"m68k-amiga"
+    toolchain_dir = path.prefix()/"opt"/"toolchain"/"m68k-amiga"
 
-        Command(['../configure',
-                 '--prefix=%s'%toolchain_dir,
-                 '--target=m68k-elf',
-                 '--program-prefix=m68k-elf-',
-                 '--disable-werror',
-                 '--disable-nls']).exec()
+    ok = Command(['../%s/configure'%bu.name,
+                  '--prefix=%s'%toolchain_dir,
+                  '--target=m68k-elf',
+                  '--program-prefix=m68k-elf-',
+                  '--disable-werror',
+                  '--disable-nls']).exec()==0
 
-        make.exec("all")
-        make.exec("install",parallelism=0.0)
-        self.manifest.touch()
+    return make.exec("all")==0
 
-    self.OK = True
-    return self.OK
+  def install(self): ##########################################################
+    os.chdir(self.build_dest)
+    return make.exec("install",parallelism=0.0)==0

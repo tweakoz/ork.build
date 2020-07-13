@@ -7,11 +7,12 @@
 ###############################################################################
 
 import os, tarfile, sys
-from ork import dep, host, path, git, cmake, make
+from ork import dep, host, path, git, cmake, make, env
 from ork.deco import Deco
 from ork.wget import wget
 import ork.command
 from ork.command import Command
+from ork import log
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
@@ -21,18 +22,28 @@ deco = Deco()
 
 ###############################################################################
 
-class m68k_amiga_gcc(dep.Provider):
+class m68k_amiga_gcc(dep.StdProvider):
 
   def __init__(self): ############################################
-    super().__init__()
+    super().__init__("m68k_amiga_gcc")
+    self.toolchain_dir = path.prefix()/"opt"/"toolchain"/"m68k-amiga"
     pass
 
-  def provide(self): ##########################################################
-    gcc = _gcc.context("m68k-elf")
-    toolchain_dir = path.prefix()/"opt"/"toolchain"/"m68k-amiga"
-    self.OK = gcc.build(prefix=toolchain_dir)
+  ########
 
+  def env_init(self):
+    log.marker("registering AmigaGCC SDK")
+    env.append("PATH",self.toolchain_dir/"bin")
 
-    self.OK = True
+  ########
 
-    return self.OK
+  def build(self): ##########################################################
+    gcc = _gcc.context(self)
+    return gcc.build( target="m68k-elf",
+                      program_prefix="m68k-elf-amiga-",
+                      install_prefix=self.toolchain_dir )==0
+
+  ########
+
+  def install(self): ##########################################################
+    return True
