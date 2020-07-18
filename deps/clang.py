@@ -27,6 +27,5 @@ class clang(dep.StdProvider):
       self.source_root = path.builds()/"llvm"
       self.build_src = self.source_root/"clang"
       self.build_dest = self.source_root/".build"
-  def descriptor(self):
-    assert(false)
+  def __str__(self):
     return "Clang(From LLVM)"
