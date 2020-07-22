@@ -22,29 +22,30 @@ deco = Deco()
 
 ###############################################################################
 
-class m68k_amiga_gcc(dep.StdProvider):
+class arm64_gcc(dep.StdProvider):
 
   def __init__(self): ############################################
-    super().__init__("m68k_amiga_gcc")
-    self.toolchain_dir = path.prefix()/"opt"/"toolchain"/"m68k-amiga"
+    super().__init__("arm64_gcc")
+    self.toolchain_dir = path.prefix()/"opt"/"toolchain"/"aarch64-elf"
     pass
 
   def __str__(self):
-    return "Amiga-68k-Gcc"
+    return "Arm64-Gcc"
 
   ########
 
   def env_init(self):
-    log.marker("registering AmigaGCC SDK")
+    log.marker("registering Arm64-Gcc SDK")
     env.append("PATH",self.toolchain_dir/"bin")
 
   ########
 
   def build(self): ##########################################################
     gcc = _gcc.context(self)
-    return gcc.build( target="m68k-elf",
-                      program_prefix="m68k-elf-amiga-",
-                      install_prefix=self.toolchain_dir )==0
+    return gcc.build( target="aarch64-elf",
+                      variant="newlib",
+                      program_prefix="arm64-linux-",
+                      install_prefix=self.toolchain_dir )
 
   ########
 

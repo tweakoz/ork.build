@@ -7,46 +7,49 @@
 ###############################################################################
 
 import os, tarfile, sys
-from ork import dep, host, path, git, cmake, make, env
+from ork import dep, host, path, git, cmake, make
 from ork.deco import Deco
 from ork.wget import wget
-import ork.command
 from ork.command import Command
-from ork import log
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-import _gcc
+import _binutils
 
 deco = Deco()
 
 ###############################################################################
 
-class m68k_amiga_gcc(dep.StdProvider):
+class arm64_binutils(dep.StdProvider):
 
   def __init__(self): ############################################
-    super().__init__("m68k_amiga_gcc")
-    self.toolchain_dir = path.prefix()/"opt"/"toolchain"/"m68k-amiga"
-    pass
-
-  def __str__(self):
-    return "Amiga-68k-Gcc"
+    super().__init__("arm64_binutils")
 
   ########
 
-  def env_init(self):
-    log.marker("registering AmigaGCC SDK")
-    env.append("PATH",self.toolchain_dir/"bin")
+  def __str__(self):
+    return "Arm64 BinUtils (source)"
 
   ########
 
   def build(self): ##########################################################
-    gcc = _gcc.context(self)
-    return gcc.build( target="m68k-elf",
-                      program_prefix="m68k-elf-amiga-",
-                      install_prefix=self.toolchain_dir )==0
 
-  ########
+    bu = _binutils.context(self)
+
+    os.mkdir(self.build_dest)
+    os.chdir(self.build_dest)
+
+    toolchain_dir = path.prefix()/"opt"/"toolchain"/"aarch64-elf"
+
+    ok = Command(['../%s/configure'%bu.name,
+                  '--prefix=%s'%toolchain_dir,
+                  '--target=aarch64-elf',
+                  '--program-prefix=aarch64-elf-',
+                  '--disable-werror',
+                  '--disable-nls']).exec()==0
+
+    return make.exec("all")==0
 
   def install(self): ##########################################################
-    return True
+    os.chdir(self.build_dest)
+    return make.exec("install",parallelism=0.0)==0
