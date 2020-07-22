@@ -6,7 +6,7 @@
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
 
-import os, inspect, tarfile
+import os, inspect, tarfile, shutil
 from pathlib import Path
 from yarl import URL
 import importlib.util

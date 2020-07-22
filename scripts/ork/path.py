@@ -108,6 +108,12 @@ def litex_env_dir():
 
 ###############################################################################
 
+def temp():
+  staging = Path(os.environ["OBT_STAGE"])
+  return staging/"tempdir"
+
+###############################################################################
+
 def downloads():
   staging = Path(os.environ["OBT_STAGE"])
   return staging/"downloads"
