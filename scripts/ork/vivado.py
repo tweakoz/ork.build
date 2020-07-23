@@ -26,7 +26,7 @@ xauth_cont = "/home/vivado/.Xauthority"
 proj_host = str(HOME/"Xilinx")
 proj_cont = "/home/vivado/project"
 
-def run(dirmaps=[],workingdir=None,args=[]):
+def run(dirmaps={},workingdir=None,args=[]):
   cline =  ["docker","run","-it","--rm"]
   cline += ["-e","DISPLAY=%s"%DISPLAY]
   cline += ["--net=host","--ipc=host"]

@@ -27,9 +27,11 @@ if len(sys.argv)==1:
     sys.exit(1)
 
 if _args["gui"]:
-  vivado.run([])
+  vivado.run(args=[])
 elif _args["batch"]:
   remargs = _args["remainderargs"][1:]
-  vivado.run(dirmaps=[],workingdir=None,args=["-mode","batch","-nojournal","-nolog"]+remargs)
+  vivado.run(dirmaps={},
+             workingdir=None,
+             args=["-mode","batch","-nojournal","-nolog"]+remargs)
 else:
   assert(False)
