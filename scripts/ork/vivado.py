@@ -4,6 +4,9 @@ import ork.command
 import ork.deco
 
 import os, platform
+from string import Template
+
+######################################################################
 
 builddir = ork.path.builds()/"petalinux-docker"
 deco = ork.deco.Deco()
@@ -12,10 +15,14 @@ if not builddir.exists() :
   print(deco.yellow("You must install the eda containers first!"))
   assert(False)
 
+######################################################################
+
 DISPLAY=os.environ["DISPLAY"]
 HOME=ork.path.Path(os.environ["HOME"])
 
 osname = platform.system()
+
+######################################################################
 
 if osname=="Darwin":
  os.system("xhost + 127.0.0.1")
@@ -25,6 +32,8 @@ xauth_host = str(HOME/".Xauthority")
 xauth_cont = "/home/vivado/.Xauthority"
 proj_host = str(HOME/"Xilinx")
 proj_cont = "/home/vivado/project"
+
+######################################################################
 
 def run(dirmaps={},workingdir=None,args=[]):
   cline =  ["docker","run","-it","--rm"]
@@ -66,3 +75,61 @@ def run(dirmaps={},workingdir=None,args=[]):
     else:
       print(deco.white(inp), end='')
   ork.command.run_filtered(cline,on_line=filter_line)
+
+######################################################################
+# IP generation template tcl script
+######################################################################
+
+TCL_GENIP_TEMPLATE = Template("""
+create_project -part $PARTNAME -in_memory -verbose
+
+set outputDir ./.gen
+file mkdir $$outputDir
+
+create_ip -name $IPID -vendor $VENDOR -library $LIBRARY -version $VERSION -module_name $INSTANCENAME -dir $$outputDir
+
+set_property -dict [list $IPPROPERTIES] [get_ips $INSTANCENAME]
+
+generate_target {instantiation_template} [get_files .gen/$INSTANCENAME/$INSTANCENAME.xci]
+
+generate_target all [get_files  .gen/$INSTANCENAME/$INSTANCENAME.xci]
+
+catch { config_ip_cache -export [get_ips -all $INSTANCENAME] }
+
+export_ip_user_files -of_objects [get_files .gen/$INSTANCENAME/$INSTANCENAME.xci] -no_script -sync -force -quiet
+""")
+
+######################################################################
+# generate vivado IP with parameters
+######################################################################
+
+def genIP(dirmaps=None,
+          vivworkingdir=None,
+          tclhostfilename=None,
+          tclcontfilename=None,
+          IPID=None,
+          VENDOR=None,
+          VERSION=None,
+          LIBRARY=None,
+          PARTNAME=None,
+          INSTANCENAME=None,
+          IPPROPERTIES=None):
+  tclstr = TCL_GENIP_TEMPLATE.substitute(IPID=IPID,
+                                         VENDOR=VENDOR,
+                                         VERSION=VERSION,
+                                         LIBRARY=LIBRARY,
+                                         PARTNAME=PARTNAME,
+                                         INSTANCENAME=INSTANCENAME,
+                                         IPPROPERTIES=IPPROPERTIES)
+
+  with open(tclhostfilename,"wt") as f:
+    f.write(tclstr)
+
+  run(dirmaps=dirmaps,
+      workingdir=vivworkingdir,
+      args=["-mode",
+       "batch",
+       "-nojournal",
+       "-nolog",
+       "-source",
+       tclcontfilename])
