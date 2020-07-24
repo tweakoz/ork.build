@@ -114,13 +114,20 @@ def genIP(dirmaps=None,
           PARTNAME=None,
           INSTANCENAME=None,
           IPPROPERTIES=None):
+
+  IPPROPERTIESSTR = ''.join(['%s {%s} ' % (key, str(value)) for (key, value) in IPPROPERTIES.items()])
+  IPPROPERTIESSTR = IPPROPERTIESSTR.replace("True","true")
+  IPPROPERTIESSTR = IPPROPERTIESSTR.replace("False","false")
+  print(IPPROPERTIESSTR)
+
+
   tclstr = TCL_GENIP_TEMPLATE.substitute(IPID=IPID,
                                          VENDOR=VENDOR,
                                          VERSION=VERSION,
                                          LIBRARY=LIBRARY,
                                          PARTNAME=PARTNAME,
                                          INSTANCENAME=INSTANCENAME,
-                                         IPPROPERTIES=IPPROPERTIES)
+                                         IPPROPERTIES=IPPROPERTIESSTR)
 
   with open(tclhostfilename,"wt") as f:
     f.write(tclstr)
