@@ -66,7 +66,6 @@ class Context:
                FPGAPART=None):
     #####################
     assert(hostdir!=None)
-    assert(FPGAPART!=None)
     #####################
     self.fpgapart = FPGAPART
     self.hostdir = ork.path.Path(hostdir)           # directory to map to containerdir
@@ -115,15 +114,16 @@ class Context:
         print(deco.rgbstr(128,128,128,inp), end='')
       else:
         print(deco.white(inp), end='')
-    ork.command.run_filtered(cline,on_line=filter_line)
+    return ork.command.run_filtered(cline,on_line=filter_line)
+  ######################################################################
+  def run_batch(self,args):
+    return self.run(args=["-mode",
+                          "batch",
+                          "-nojournal",
+                          "-nolog"]+args)
   ######################################################################
   def run_tclscript(self,tclscriptname):
-    self.run(args=["-mode",
-                   "batch",
-                   "-nojournal",
-                   "-nolog",
-                   "-source",
-                   tclscriptname])
+    return self.run_batch(args=["-source",tclscriptname])
   ######################################################################
   # generate vivado IP with parameters
   ######################################################################
@@ -137,6 +137,7 @@ class Context:
             INSTANCENAME=None,
             IPPROPERTIES=None):
 
+    assert(self.fpgapart!=None)
     assert(tclname!=None)
     assert(IPID!=None)
     assert(tclname!=None)
@@ -167,6 +168,7 @@ class Context:
     with open(tclhostfilename,"wt") as f:
       f.write(tclstr)
 
-    self.run_tclscript(tclcontfilename)
+    rval = self.run_tclscript(tclcontfilename)
 
     os.system("rm -rf %s"%(self.hostdir/".ip_user_files"))
+    return rval

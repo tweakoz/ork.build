@@ -7,8 +7,9 @@
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
 
-import argparse, sys
-from ork import vivado, deco
+import argparse, sys, os
+from ork import deco, path
+from ork.eda.xilinx import vivado
 
 deco = deco.Deco()
 
@@ -26,12 +27,13 @@ if len(sys.argv)==1:
     print(parser.format_usage())
     sys.exit(1)
 
+cwd = path.Path(os.getcwd())
+vctx = vivado.Context(hostdir=cwd)
+
 if _args["gui"]:
-  vivado.run(args=[])
+  vctx.run(args=[])
 elif _args["batch"]:
   remargs = _args["remainderargs"][1:]
-  vivado.run(dirmaps={},
-             workingdir=None,
-             args=["-mode","batch","-nojournal","-nolog"]+remargs)
+  vctx.run_batch(args=remargs)
 else:
   assert(False)
