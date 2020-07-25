@@ -13,7 +13,6 @@ class OutClock:
 
 ########################################################
 def generate(vivctx,
-             FPGAPART=None,
              INSTANCENAME="systemclocks",
              differential=True,
              INP_FREQ=100.0,# mhz
