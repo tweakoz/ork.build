@@ -19,6 +19,7 @@ parser = argparse.ArgumentParser(description='Launch command in EDA Docker Conta
                                  epilog=epilog)
 parser.add_argument('--gui', action="store_true", help=deco.yellow('Launch Vivado GUI'))
 parser.add_argument('--batch', action="store_true", help=deco.yellow('Launch Vivado in batch mode, seperate vivado arguments using -- arg break'))
+parser.add_argument('--tcl', action="store_true", help=deco.yellow('Launch Vivado in tcl-shell mode'))
 parser.add_argument('remainderargs', nargs=argparse.REMAINDER)
 
 _args = vars(parser.parse_args())
@@ -32,6 +33,8 @@ vctx = vivado.Context(hostdir=cwd)
 
 if _args["gui"]:
   vctx.run(args=[])
+elif _args["tcl"]:
+  vctx.run(interactive=True,args=["-mode","tcl","-nojournal","-nolog"])
 elif _args["batch"]:
   remargs = _args["remainderargs"][1:]
   vctx.run_batch(args=remargs)

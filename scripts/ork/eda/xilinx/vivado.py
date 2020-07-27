@@ -75,6 +75,7 @@ class Context:
     }
   #########################
   def run(self,
+          interactive=False,
           args=[]):
     ork.pathtools.chdir(self.hostdir)
     cline =  ["docker","run","-it","--rm"]
@@ -114,7 +115,10 @@ class Context:
         print(deco.rgbstr(128,128,128,inp), end='')
       else:
         print(deco.white(inp), end='')
-    return ork.command.run_filtered(cline,on_line=filter_line)
+    if interactive:
+      return ork.command.system(cline)
+    else:
+      return ork.command.run_filtered(cline,on_line=filter_line)
   ######################################################################
   def run_batch(self,args):
     return self.run(args=["-mode",

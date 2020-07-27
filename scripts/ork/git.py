@@ -49,7 +49,7 @@ def Clone(url,
         #print("OK2<%d>"%OK)
         if OK:
           if recursive:
-            retc = run(["git","submodule","update"])
+            retc = run(["git","submodule","update","--init","--recursive"])
             OK = (0 == retc)
             #print("OK3<%d>"%OK)
     finally:
@@ -68,8 +68,7 @@ def Clone(url,
                 str(dest_path),
                 "--recursive"])
 
-    if False==_checkoutrevandupdate():
-      return False
+    return _checkoutrevandupdate()
 
   ##############################################################################
   elif cache:
