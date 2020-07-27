@@ -13,7 +13,7 @@ import ork.path, ork.host
 from ork.command import Command, run
 from ork.deco import Deco
 from ork.wget import wget
-from ork import pathtools, cmake, make, path, git, host
+from ork import pathtools, cmake, make, path, git, host, _globals
 from ork._dep_provider import require
 
 deco = Deco()
@@ -117,6 +117,8 @@ class CMakeBuilder(BaseBuilder):
 
     ##################################
     self._parallelism=1.0
+    if "serial" in _globals.options:
+      self._parallelism=0.0
     ##################################
     # implicit dependencies
     ##################################

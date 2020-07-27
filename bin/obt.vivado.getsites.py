@@ -35,12 +35,18 @@ assert(partid!=None)
 
 ###############################################################################
 #set site [get_sites GTHE4_CHANNEL_X0Y22]
-#report_property -all [get_package_pins A7]
+#report_property -all [get_package_pins A8]
 #report_property -all $site
 #get_property CLOCK_REGION $site
+#get_property PIN_FUNC [get_package_pins A7] #MGTHTXN3_227
 #get_site_pins -of $site
-#get_bels -of $site
+#get_bels -of $site # GTHE4_CHANNEL_X0Y22/GTHE4_CHANNEL GTHE4_CHANNEL_X0Y22/IPAD1
+#                     GTHE4_CHANNEL_X0Y22/IPAD2 GTHE4_CHANNEL_X0Y22/OPAD1 GTHE4_CHANNEL_X0Y22/OPAD2
+
+#get_sites [get_package_pins -filter { PIN_FUNC =~ *MGTHTXP3_227* }] # GTHE4_CHANNEL_X0Y19
+
 #get_bel_pins -of $site
+#get_tiles -of_objects $site # GTH_QUAD_RIGHT_X69Y300
 
 topstr = "module top(); endmodule"
 
