@@ -129,6 +129,23 @@ class Context:
   def run_tclscript(self,tclscriptname):
     return self.run_batch(args=["-source",tclscriptname])
   ######################################################################
+  def shell(self):
+    ork.pathtools.chdir(self.hostdir)
+    cline =  ["docker","run","-it","--rm"]
+    cline += ["-e","DISPLAY=%s"%DISPLAY]
+    cline += ["--net=host","--ipc=host"]
+    cline += ["-v","/tmp/.X11-unix:/tmp/.X11-unix"]
+    cline += ["-v","%s:%s"%(xauth_host,xauth_cont)]
+    cline += ["-v","%s:%s"%(proj_host,proj_cont)]
+    for K in self.dirmaps.keys():
+      V = self.dirmaps[K]
+      cline += ["-v","%s:%s"%(str(K),str(V))]
+    cline += ["-w",str(self.containerdir)]
+    cline += ["petalinux:2020.1"]
+    cline += ["/bin/bash"]
+    return ork.command.system(cline)
+
+  ######################################################################
   # generate vivado IP with parameters
   ######################################################################
 

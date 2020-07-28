@@ -34,7 +34,7 @@ partid = _args["partid"]
 assert(partid!=None)
 
 ###############################################################################
-#set site [get_sites GTHE4_CHANNEL_X0Y22]
+#set site [get_sites GTHE4_CHANNEL_X0Y19]
 #report_property -all [get_package_pins A8]
 #report_property -all $site
 #get_property CLOCK_REGION $site
