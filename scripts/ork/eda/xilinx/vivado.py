@@ -1,3 +1,7 @@
+######################################################################
+# Vivado/PetaLinuX/Litex/EDA container operations
+######################################################################
+
 import os
 import ork.path
 import ork.command
@@ -74,24 +78,25 @@ class Context:
       hostdir: containerdir
     }
   #########################
-  def run(self,
-          interactive=False,
-          args=[]):
-    ork.pathtools.chdir(self.hostdir)
+  def _core_commandline(self):
     cline =  ["docker","run","-it","--rm"]
     cline += ["-e","DISPLAY=%s"%DISPLAY]
     cline += ["--net=host","--ipc=host"]
     cline += ["-v","/tmp/.X11-unix:/tmp/.X11-unix"]
     cline += ["-v","%s:%s"%(xauth_host,xauth_cont)]
     cline += ["-v","%s:%s"%(proj_host,proj_cont)]
-
     for K in self.dirmaps.keys():
       V = self.dirmaps[K]
       cline += ["-v","%s:%s"%(str(K),str(V))]
-
     cline += ["-w",str(self.containerdir)]
-
     cline += ["petalinux:2020.1"]
+    return cline
+  #########################
+  def run(self,
+          interactive=False,
+          args=[]):
+    ork.pathtools.chdir(self.hostdir)
+    cline =  self._core_commandline()
     cline += ["/opt/Xilinx/Vivado/2020.1/bin/vivado"]+args
     #cline += ["find","."]
     def filter_line(inp):
@@ -131,19 +136,14 @@ class Context:
   ######################################################################
   def shell(self):
     ork.pathtools.chdir(self.hostdir)
-    cline =  ["docker","run","-it","--rm"]
-    cline += ["-e","DISPLAY=%s"%DISPLAY]
-    cline += ["--net=host","--ipc=host"]
-    cline += ["-v","/tmp/.X11-unix:/tmp/.X11-unix"]
-    cline += ["-v","%s:%s"%(xauth_host,xauth_cont)]
-    cline += ["-v","%s:%s"%(proj_host,proj_cont)]
-    for K in self.dirmaps.keys():
-      V = self.dirmaps[K]
-      cline += ["-v","%s:%s"%(str(K),str(V))]
-    cline += ["-w",str(self.containerdir)]
-    cline += ["petalinux:2020.1"]
+    cline =  self._core_commandline()
     cline += ["/bin/bash"]
     return ork.command.system(cline)
+  ######################################################################
+  def shell_command(self,args=[]):
+    ork.pathtools.chdir(self.hostdir)
+    cline =  self._core_commandline()
+    return ork.command.system(cline+args)
 
   ######################################################################
   # generate vivado IP with parameters

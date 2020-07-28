@@ -13,14 +13,17 @@ from ork.eda.xilinx import vivado
 
 deco = deco.Deco()
 
-epilog = deco.orange("Example (vivado help): %s --batch -- -help"%sys.argv[0])
+epilog =  deco.orange("Example (vivado help): %s --batch -- -help\n"%sys.argv[0])
+epilog += deco.orange("Example (vivado tcl REPL): %s --tcl"%sys.argv[0])
+epilog += deco.orange("Example (user shell command): %s --exec -- lsb_release -a"%sys.argv[0])
 
 parser = argparse.ArgumentParser(description='Launch command in EDA Docker Containers',
                                  epilog=epilog)
 parser.add_argument('--gui', action="store_true", help=deco.yellow('Launch Vivado GUI'))
 parser.add_argument('--batch', action="store_true", help=deco.yellow('Launch Vivado in batch mode, seperate vivado arguments using -- arg break'))
 parser.add_argument('--tcl', action="store_true", help=deco.yellow('Launch Vivado in tcl-shell mode'))
-parser.add_argument('--shell', action="store_true", help=deco.yellow('Launch Vivado in tcl-shell mode'))
+parser.add_argument('--shell', action="store_true", help=deco.yellow('Launch Vivado/LiteX enabled bash'))
+parser.add_argument('--exec', action="store_true", help=deco.yellow('exec command in Vivado/Litex container'))
 parser.add_argument('remainderargs', nargs=argparse.REMAINDER)
 
 _args = vars(parser.parse_args())
@@ -41,5 +44,8 @@ elif _args["batch"]:
   vctx.run_batch(args=remargs)
 elif _args["shell"]:
   vctx.shell()
+elif _args["exec"]:
+  remargs = _args["remainderargs"][1:]
+  vctx.shell_command(args=remargs)
 else:
   assert(False)
