@@ -67,19 +67,22 @@ class Context:
   def __init__(self,
                hostdir=None,
                containerdir="/tmp/build",
-               FPGAPART=None):
+               FPGAPART=None,
+               postremove=True):
     #####################
     assert(hostdir!=None)
     #####################
     self.fpgapart = FPGAPART
     self.hostdir = ork.path.Path(hostdir)           # directory to map to containerdir
     self.containerdir = ork.path.Path(containerdir)
+    self.postremove = postremove
+    self.posttag = None
     self.dirmaps={
       hostdir: containerdir
     }
   #########################
-  def _core_commandline(self):
-    cline =  ["docker","run","-it","--rm"]
+  def _core_commandline(self,dockerargs=[]):
+    cline =  ["docker","run","-it"]
     cline += ["-e","DISPLAY=%s"%DISPLAY]
     cline += ["--net=host","--ipc=host"]
     cline += ["-v","/tmp/.X11-unix:/tmp/.X11-unix"]
@@ -89,15 +92,36 @@ class Context:
       V = self.dirmaps[K]
       cline += ["-v","%s:%s"%(str(K),str(V))]
     cline += ["-w",str(self.containerdir)]
-    cline += ["petalinux:2020.1"]
+    cline += dockerargs
+    cline += ["eda:2020.1"]
     return cline
+  #########################
+  def _posttag_preamble(self,posttag=None):
+    if posttag!=None:
+      ork.command.system(["rm","-f","container.cid"])
+      return ["--cidfile=./container.cid"]
+    else:
+      return []
+  #########################
+  def _posttag_postamble(self,posttag=None):
+    if posttag!=None:
+      with open('container.cid', 'r') as file:
+        cid = file.read()
+        assert(type(posttag)==str)
+        ork.command.system(["docker",
+                            "commit",cid,
+                            posttag])
   #########################
   def run(self,
           interactive=False,
+          posttag=None,
           args=[]):
     ork.pathtools.chdir(self.hostdir)
-    cline =  self._core_commandline()
+    preargs = self._posttag_preamble(posttag=posttag)
+    cline =  self._core_commandline(dockerargs=preargs)
     cline += ["/opt/Xilinx/Vivado/2020.1/bin/vivado"]+args
+    if self.postremove:
+      cline += ["--rm"]
     #cline += ["find","."]
     def filter_line(inp):
       if inp.find("CRITICAL WARNING:")==0:
@@ -120,18 +144,22 @@ class Context:
         print(deco.rgbstr(128,128,128,inp), end='')
       else:
         print(deco.white(inp), end='')
+    rval = None
     if interactive:
-      return ork.command.system(cline)
+      rval = ork.command.system(cline)
     else:
-      return ork.command.run_filtered(cline,on_line=filter_line)
+      rval = ork.command.run_filtered(cline,on_line=filter_line)
+    self._posttag_postamble(posttag=posttag)
+    return rval
   ######################################################################
-  def run_batch(self,args):
-    return self.run(args=["-mode",
+  def run_batch(self,args,posttag=None):
+    return self.run(posttag=posttag,
+                    args=["-mode",
                           "batch",
                           "-nojournal",
                           "-nolog"]+args)
   ######################################################################
-  def run_tclscript(self,tclscriptname):
+  def run_tclscript(self,tclscriptname,posttag=None):
     return self.run_batch(args=["-source",tclscriptname])
   ######################################################################
   def shell(self):
@@ -140,11 +168,17 @@ class Context:
     cline += ["/bin/bash"]
     return ork.command.system(cline)
   ######################################################################
-  def shell_command(self,args=[]):
-    ork.pathtools.chdir(self.hostdir)
-    cline =  self._core_commandline()
-    return ork.command.system(cline+args)
-
+  def shell_command(self,args,posttag=None,working_dir=None):
+    if working_dir==None:
+      working_dir=self.hostdir
+    ork.pathtools.chdir(working_dir)
+    preargs = self._posttag_preamble(posttag=posttag)
+    cline =  self._core_commandline(dockerargs=preargs)
+    cline += ["/bin/bash","-l","-c"]
+    cline += ['"'+" ".join(args)+'"']
+    rval = ork.command.system(cline)
+    self._posttag_postamble(posttag=posttag)
+    return rval
   ######################################################################
   # generate vivado IP with parameters
   ######################################################################

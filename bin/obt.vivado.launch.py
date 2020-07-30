@@ -24,6 +24,7 @@ parser.add_argument('--batch', action="store_true", help=deco.yellow('Launch Viv
 parser.add_argument('--tcl', action="store_true", help=deco.yellow('Launch Vivado in tcl-shell mode'))
 parser.add_argument('--shell', action="store_true", help=deco.yellow('Launch Vivado/LiteX enabled bash'))
 parser.add_argument('--exec', action="store_true", help=deco.yellow('exec command in Vivado/Litex container'))
+parser.add_argument('--posttag', help=deco.yellow('tag container with <name> post execution'))
 parser.add_argument('remainderargs', nargs=argparse.REMAINDER)
 
 _args = vars(parser.parse_args())
@@ -34,18 +35,22 @@ if len(sys.argv)==1:
 
 cwd = path.Path(os.getcwd())
 vctx = vivado.Context(hostdir=cwd)
+tag = None
+
+if _args["posttag"]:
+  tag = path.Path(_args["posttag"])
 
 if _args["gui"]:
-  vctx.run(args=[])
+  vctx.run(args=[],posttag=tag)
 elif _args["tcl"]:
-  vctx.run(interactive=True,args=["-mode","tcl","-nojournal","-nolog"])
+  vctx.run(interactive=True,args=["-mode","tcl","-nojournal","-nolog"],posttag=tag)
 elif _args["batch"]:
   remargs = _args["remainderargs"][1:]
-  vctx.run_batch(args=remargs)
+  vctx.run_batch(args=remargs,posttag=tag)
 elif _args["shell"]:
   vctx.shell()
 elif _args["exec"]:
   remargs = _args["remainderargs"][1:]
-  vctx.shell_command(args=remargs)
+  vctx.shell_command(remargs,posttag=tag)
 else:
   assert(False)
