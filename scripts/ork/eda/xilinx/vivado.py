@@ -13,12 +13,12 @@ from string import Template
 
 ######################################################################
 
-builddir = ork.path.builds()/"petalinux-docker"
+#builddir = ork.path.builds()/"petalinux-docker"
 deco = ork.deco.Deco()
 
-if not builddir.exists() :
-  print(deco.yellow("You must install the eda containers first!"))
-  assert(False)
+#if not builddir.exists() :
+ # print(deco.yellow("You must install the eda containers first!"))
+  #assert(False)
 
 ######################################################################
 
@@ -80,6 +80,7 @@ class Context:
     self.dirmaps={
       hostdir: containerdir
     }
+    self.env={}
   #########################
   def _core_commandline(self,dockerargs=[]):
     cline =  ["docker","run","-it"]
@@ -91,6 +92,9 @@ class Context:
     for K in self.dirmaps.keys():
       V = self.dirmaps[K]
       cline += ["-v","%s:%s"%(str(K),str(V))]
+    for K in self.env.keys():
+      V = self.env[K]
+      cline += ["--env","%s=%s"%(str(K),str(V))]
     cline += ["-w",str(self.containerdir)]
     cline += dockerargs
     cline += ["eda:2020.1"]
@@ -119,9 +123,9 @@ class Context:
     ork.pathtools.chdir(self.hostdir)
     preargs = self._posttag_preamble(posttag=posttag)
     cline =  self._core_commandline(dockerargs=preargs)
+    #if self.postremove:
+    #  cline += ["--rm"]
     cline += ["/opt/Xilinx/Vivado/2020.1/bin/vivado"]+args
-    if self.postremove:
-      cline += ["--rm"]
     #cline += ["find","."]
     def filter_line(inp):
       if inp.find("CRITICAL WARNING:")==0:

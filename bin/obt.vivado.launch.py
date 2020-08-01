@@ -41,6 +41,7 @@ if _args["posttag"]:
   tag = path.Path(_args["posttag"])
 
 if _args["gui"]:
+  vctx.env["_JAVA_OPTIONS"]="-Dawt.useSystemAAFontSettings=on -Dswing.aatext=true -Dswing.defaultlaf=com.sun.java.swing.plaf.gtk.GTKLookAndFeel -Dswing.crossplatformlaf=com.sun.java.swing.plaf.gtk.GTKLookAndFeel"
   vctx.run(args=[],posttag=tag)
 elif _args["tcl"]:
   vctx.run(interactive=True,args=["-mode","tcl","-nojournal","-nolog"],posttag=tag)
