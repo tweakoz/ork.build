@@ -125,7 +125,7 @@ class Context:
     cline =  self._core_commandline(dockerargs=preargs)
     #if self.postremove:
     #  cline += ["--rm"]
-    cline += ["/opt/Xilinx/Vivado/2020.1/bin/vivado"]+args
+    cline += ["/opt/xilinx/Vivado/2020.1/bin/vivado"]+args
     #cline += ["find","."]
     def filter_line(inp):
       if inp.find("CRITICAL WARNING:")==0:
