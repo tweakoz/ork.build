@@ -13,12 +13,12 @@ from string import Template
 
 ######################################################################
 
-builddir = ork.path.builds()/"petalinux-docker"
+#builddir = ork.path.builds()/"petalinux-docker"
 deco = ork.deco.Deco()
 
-if not builddir.exists() :
-  print(deco.yellow("You must install the eda containers first!"))
-  assert(False)
+#if not builddir.exists() :
+ # print(deco.yellow("You must install the eda containers first!"))
+  #assert(False)
 
 ######################################################################
 
@@ -125,7 +125,9 @@ class Context:
     ork.pathtools.chdir(self.hostdir)
     preargs = self._posttag_preamble(posttag=posttag)
     cline =  self._core_commandline(dockerargs=preargs)
-    cline += ["/opt/Xilinx/Vivado/2020.1/bin/vivado"]+args
+    #if self.postremove:
+    #  cline += ["--rm"]
+    cline += ["/opt/xilinx/Vivado/2020.1/bin/vivado"]+args
     #cline += ["find","."]
     def filter_line(inp):
       if inp.find("CRITICAL WARNING:")==0:
