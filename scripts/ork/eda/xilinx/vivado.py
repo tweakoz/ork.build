@@ -36,7 +36,7 @@ if osname=="Darwin":
 xauth_host = str(HOME/".Xauthority")
 xauth_cont = "/home/vivado/.Xauthority"
 proj_host = str(HOME/"Xilinx")
-proj_cont = "/home/vivado/project"
+proj_cont = "/home/eda/project"
 
 ######################################################################
 # IP generation template tcl script
@@ -80,6 +80,7 @@ class Context:
     self.dirmaps={
       hostdir: containerdir
     }
+    self.env={}
   #########################
   def _core_commandline(self,dockerargs=[]):
     cline =  ["docker","run","-it"]
@@ -91,7 +92,12 @@ class Context:
     for K in self.dirmaps.keys():
       V = self.dirmaps[K]
       cline += ["-v","%s:%s"%(str(K),str(V))]
+    for K in self.env.keys():
+      V = self.env[K]
+      cline += ["--env","%s=%s"%(str(K),str(V))]
     cline += ["-w",str(self.containerdir)]
+    if self.postremove:
+      cline += ["--rm"]
     cline += dockerargs
     cline += ["eda:2020.1"]
     return cline
@@ -120,8 +126,6 @@ class Context:
     preargs = self._posttag_preamble(posttag=posttag)
     cline =  self._core_commandline(dockerargs=preargs)
     cline += ["/opt/Xilinx/Vivado/2020.1/bin/vivado"]+args
-    if self.postremove:
-      cline += ["--rm"]
     #cline += ["find","."]
     def filter_line(inp):
       if inp.find("CRITICAL WARNING:")==0:
