@@ -117,7 +117,7 @@ class CMakeBuilder(BaseBuilder):
 
     ##################################
     self._parallelism=1.0
-    if "serial" in _globals.options:
+    if "serial" in _globals.options and _globals.options["serial"]==True:
       self._parallelism=0.0
     ##################################
     # implicit dependencies
