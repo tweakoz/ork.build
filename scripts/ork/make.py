@@ -19,6 +19,7 @@ def exec(target=None,parallelism=1.0):
   parallelism - numjobs normalized to numcores/2 (0.0: numjobs=1, 1.0: numjobs=numcores/2)
   """
   cmd = ["make"]
+  print("make with parallel<%g>"%parallelism)
   if parallelism!=0.0:
     p = ork.math.clamp(parallelism,0.0,1.0)
     numcores = int(ork.host.NumCores*p)

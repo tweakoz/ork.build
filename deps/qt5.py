@@ -31,7 +31,7 @@ class _qt5_from_source(dep.Provider):
     #print(options)
     self.manifest = path.manifests()/"qt5"
     self.OK = self.manifest.exists()
-    self.baseurl = URL("http://mirror.os6.org/qtproject/official_releases/qt")
+    self.baseurl = URL("http://mirrors.ocf.berkeley.edu/qt/official_releases/qt")
     self.fullver = "%s.%s" % (MAJOR_VERSION,MINOR_VERSION)
     self.name = "qt-everywhere-src-%s" % self.fullver
     self.xzname = "%s.tar.xz" % self.name

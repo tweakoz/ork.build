@@ -10,4 +10,5 @@ deplist += ["mpfr","openssl","graphviz","doxygen","swig","tcl-tk"]
 for item in deplist:
     os.system("brew install %s" % item)
 
-os.system("pip3 install yarl")
+os.system("/usr/local/bin/python3 -m pip install --upgrade setuptools")
+os.system("/usr/local/bin/pip3 install yarl")

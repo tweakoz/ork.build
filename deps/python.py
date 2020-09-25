@@ -8,16 +8,16 @@
 ###############################################################################
 
 VERSION_MAJOR = "3.8"
-VERSION_MINOR = "1"
+VERSION_MINOR = "6"
 VERSION = "%s.%s" % (VERSION_MAJOR,VERSION_MINOR)
-HASH = "f215fa2f55a78de739c1787ec56b2bcd"
+HASH = "ea132d6f449766623eee886966c7d41f"
 
 import os, tarfile
 from ork import dep, host, path, cmake, env, pip
 from ork.deco import Deco
 from ork.wget import wget
 from ork.command import Command
-from ork import log
+from ork import log, osx
 
 deco = Deco()
 
@@ -133,26 +133,35 @@ class python(dep.Provider):
         "--prefix",path.prefix(),
         "--with-pydebug",
         "--enable-shared",
-        "--enable-loadable-sqlite-extensions"
+        "--enable-loadable-sqlite-extensions",
+        "--with-ensurepip=install" # atomically build pip
     ]
     if host.IsOsx:
+       sdkdir = path.osx_sdkdir()
+       print(sdkdir)
        options += ["--with-openssl=/usr/local/opt/openssl@1.1"]
+       options += ["--enable-universalsdk=%s"%sdkdir]
+       options += ["--with-universal-archs=intel-64"]
     else:
        options += ["--with-openssl=/usr"]
 
+
     Command(["../configure"]+options).exec()
-    OK = (0==Command(["make","-j",host.NumCores,"install"]).exec())
+    OK = (0==Command(["make",
+                      "-j", host.NumCores,
+                      "install"]).exec())
     ################################
     # install default packages
     ################################
     if OK:
+      os.chdir(str(build_temp))
       Command(["pip3","install","--upgrade","pip"]).exec()
       pip.install(["virtualenv"])
       pip.install(["yarl","pytest",
                    "numpy","scipy",
                    "numba","pyopencl",
                    "matplotlib",
-                   "zmq"])
+                   "zmq","zlib"])
       Command(["pip3","install","--upgrade",
                "Pillow","pysqlite3","jupyter","plotly","trimesh"]).exec()
     ################################

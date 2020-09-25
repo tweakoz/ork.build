@@ -8,6 +8,7 @@
 
 import os, inspect, sys, pathlib
 from pathlib import Path as _Path_, PosixPath as _PosixPath_, WindowsPath  as _WindowsPath_
+from ork.command import capture
 
 ###############################################################################
 
@@ -135,6 +136,14 @@ def builds():
 def project_root():
   root = Path(os.environ["ORKID_WORKSPACE_DIR"])
   return root
+
+###############################################################################
+def osx_sdkdir():
+  result = capture(["xcodebuild",
+                    "-version",
+                    "-sdk", "macosx",
+                    "Path"],do_log=False).splitlines()
+  return result[0]
 
 ###############################################################################
 
