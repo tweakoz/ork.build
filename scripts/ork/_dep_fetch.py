@@ -16,6 +16,7 @@ from ork.deco import Deco
 from ork.wget import wget
 from ork import pathtools, cmake, make, path, git, host
 from ork._dep_impl import downloadAndExtract
+from ork._dep_provider import require 
 
 deco = Deco()
 ###############################################################################
@@ -50,6 +51,7 @@ class GithubFetcher: # github specific git fetcher
                recursive=False,
                cache=False,
                shallow=True):
+    require("gnutar") # because not everyone has tar with --strip-components !
     self._name = name
     # todo : allow user control over protocols
     #  since ssh requires key setup..

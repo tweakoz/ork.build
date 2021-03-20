@@ -153,3 +153,51 @@ class CMakeBuilder(BaseBuilder):
     pathtools.chdir(blddir)
     return (make.exec("install",parallelism=0.0)==0)
   ###########################################
+
+###############################################################################
+
+class AutoConfBuilder(BaseBuilder):
+  ###########################################
+  def __init__(self,name):
+    super().__init__(name)
+    ##################################
+    self._parallelism=1.0
+    if "serial" in _globals.options and _globals.options["serial"]==True:
+      self._parallelism=0.0
+  ###########################################
+  def requires(self,deplist):
+    self._deps += deplist
+  ###########################################
+  def setConfVar(self,key,value):
+    self._confvar[key] = value
+  ###########################################
+  def setConfVars(self,othdict):
+    for k in othdict:
+      self._confvar[k] = othdict[k]
+  ###########################################
+  def build(self,srcdir,blddir,incremental=False):
+    require(self._deps)
+    ok2build = True
+    if incremental:
+      os.chdir(blddir)
+    else:
+      pathtools.mkdir(blddir,clean=True)
+      pathtools.chdir(blddir)
+
+      Command([srcdir/"configure",
+               '--prefix=%s'%path.prefix()
+              ]).exec()
+
+      make.exec("all")
+      make.exec("install",parallelism=0.0)
+
+      #cmake_ctx = cmake.context(root=srcdir,env=self._cmakeenv)
+      #ok2build = cmake_ctx.exec()==0
+    #if ok2build:
+    #  return (make.exec(parallelism=self._parallelism)==0)
+    return False
+  ###########################################
+  def install(self,blddir):
+    pathtools.chdir(blddir)
+    return (make.exec("install",parallelism=0.0)==0)
+  ###########################################

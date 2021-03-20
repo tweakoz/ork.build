@@ -106,7 +106,7 @@ def downloadAndExtract(urls,
         Command(["unzip",arcpath]).exec()
     elif archive_type=="tgz":
         os.chdir(str(build_dest))
-        Command(["tar","xvfz",arcpath]).exec()
+        Command(["tar","xvf",arcpath]).exec()
     else:
         assert(tarfile.is_tarfile(str(arcpath)))
         tf = tarfile.open(str(arcpath),mode='r:%s'%archive_type)

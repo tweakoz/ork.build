@@ -202,9 +202,12 @@ class StdProvider(Provider):
       self._node = None
       self.manifest = path.manifests()/name
       self.OK = self.manifest.exists()
-      self.source_root = path.builds()/name
-      self.build_src = self.source_root
-      self.build_dest = self.source_root/".build"
+      self.setSourceRoot(path.builds()/name)
+    #############################
+    def setSourceRoot(self,srcroot):
+      self.source_root = srcroot
+      self.build_src = srcroot
+      self.build_dest = srcroot/".build"
     #############################
     def postinit(self):
       pass
