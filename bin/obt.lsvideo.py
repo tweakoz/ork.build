@@ -3,4 +3,4 @@
 import os
 
 print("please wait...")
-os.system("lsusbx.py | grep video")
+os.system("obt.lsusbx.py | grep video")

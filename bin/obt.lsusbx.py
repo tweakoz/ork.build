@@ -38,10 +38,12 @@ devices = dict()
 udev = pyudev.Context()
 
 ############################################################
-# gather devoces
+# gather devices
 ############################################################
 
-for d in udev.list_devices(subsystem="usb"):
+all_devices = udev.list_devices(subsystem="usb")
+
+for d in all_devices:
    #print(dict(d))
    DEVTYPE = d.get("DEVTYPE")
    if DEVTYPE=="usb_device": # leaf devices
@@ -69,7 +71,7 @@ for d in udev.list_devices(subsystem="usb"):
 # gather interfaces
 ############################################################
 
-for d in udev.list_devices(subsystem="usb"):
+for d in all_devices:
    DEVTYPE = d.get("DEVTYPE")
    if DEVTYPE=="usb_interface": # endpoints in device
      p = d.parent
@@ -135,12 +137,17 @@ for item in usbitems:
     if len(columns)>5:
      bus = columns[1]
      dev = columns[3][0:3]
-     verbose = getlines("lsusb -s %s:%s -v"%(bus,dev))
      ifclass = ""
-     for l in verbose:
-         if l.find("bInterfaceClass")>=0:
-             col = l.split()
-             ifclass = " ".join(col[2:])
+
+     ##############################
+     # this is the code that is taking too long, optimize it before turning it back on..
+     ##############################
+     #verbose = getlines("lsusb -s %s:%s -v"%(bus,dev))
+     #for l in verbose:
+     #    if l.find("bInterfaceClass")>=0:
+     #        col = l.split()
+     #        ifclass = " ".join(col[2:])
+     ##############################
 
      pos = "%s:%s" % (bus,dev)
      out = "[%s] "%rgbstr(1,1,0,pos)

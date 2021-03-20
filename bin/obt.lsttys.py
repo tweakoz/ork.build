@@ -3,4 +3,4 @@
 import os
 
 print("please wait...")
-os.system("lsusbx.py | grep tty")
+os.system("obt.lsusbx.py | grep tty")
