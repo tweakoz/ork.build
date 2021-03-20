@@ -6,7 +6,7 @@
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
 
-VERSION = "v4.3.4"
+VERSION = "v4.7.1"
 
 import os, tarfile
 from ork import dep, host, path, cmake, git, make, pathtools
@@ -18,33 +18,35 @@ deco = Deco()
 
 ###############################################################################
 
-class zmq(dep.Provider):
+class cppzmq(dep.Provider):
 
   def __init__(self): ############################################
     super().__init__()
     #print(options)
-    build_root = path.builds()/"libzmq"
+    build_root = path.builds()/"cppzmq"
     self.source_root = build_root
     self.build_dest = build_root/".build"
-    self.manifest = path.manifests()/"zmq"
+    self.manifest = path.manifests()/"cppzmq"
     #self.sdk_dir = path.Path("/opt/nvencsdk")
     self.OK = self.manifest.exists()
 
   def __str__(self): ##########################################################
 
-    return "zeromq and bindings (github-%s)" % VERSION
+    return "cppzmq (github-%s)" % VERSION
 
   def wipe(self): #############################################################
     os.system("rm -rf %s"%self.source_root)
 
   def build(self): ##########################################################
 
+    zmq = dep.require("zmq")
+
     #########################################
     # fetch source
     #########################################
 
     if not self.source_root.exists():
-        git.Clone("https://github.com/zeromq/libzmq",self.source_root,VERSION)
+        git.Clone("https://github.com/zeromq/cppzmq",self.source_root,VERSION)
 
     #########################################
     # prep for build
@@ -60,6 +62,7 @@ class zmq(dep.Provider):
 
         cmakeEnv = {
             "CMAKE_BUILD_TYPE": "RELEASE",
+            "CPPZMQ_BUILD_TESTS": "OFF" # CMake Error at tests/CMakeLists.txt:51 (catch_discover_tests):
         }
 
         cmake_ctx = cmake.context("..",env=cmakeEnv)
@@ -73,10 +76,3 @@ class zmq(dep.Provider):
         self.OK = (make.exec("install")==0)
         
     return self.OK
-
-  def linkenv(self): ##########################################################
-    LIBS = ["zmq"]
-    return {
-        "LIBS": LIBS,
-        "LFLAGS": ["-l%s"%item for item in LIBS]
-    }
