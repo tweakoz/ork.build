@@ -81,7 +81,7 @@ class GithubFetcher: # github specific git fetcher
         shutil.rmtree(str(dest))
       run(["mkdir","-p",dest])
       os.chdir(dest)
-      retc = run(["tar","xvf",fetched_path,"--strip","1"])
+      retc = run(["tar","xvf",fetched_path,"--strip-components","1"])
       os.chdir(curdir)
       return retc==0
     ####################################################

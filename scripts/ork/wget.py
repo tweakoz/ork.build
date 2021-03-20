@@ -45,7 +45,7 @@ def wget(urls=[],
       res = Command(["wget",
                      "-O",
                      output_path,
-                     "--show-progress",
+                     #"--show-progress",
                      url]).exec()
 
       if md5val != None:
