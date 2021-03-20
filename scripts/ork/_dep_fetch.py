@@ -51,7 +51,6 @@ class GithubFetcher: # github specific git fetcher
                recursive=False,
                cache=False,
                shallow=True):
-    require("gnutar") # because not everyone has tar with --strip-components !
     self._name = name
     # todo : allow user control over protocols
     #  since ssh requires key setup..
@@ -83,6 +82,7 @@ class GithubFetcher: # github specific git fetcher
         shutil.rmtree(str(dest))
       run(["mkdir","-p",dest])
       os.chdir(dest)
+      require("gnutar") # because not everyone has tar with --strip-components !
       retc = run(["tar","xvf",fetched_path,"--strip-components","1"])
       os.chdir(curdir)
       return retc==0

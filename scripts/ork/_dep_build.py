@@ -178,24 +178,21 @@ class AutoConfBuilder(BaseBuilder):
   def build(self,srcdir,blddir,incremental=False):
     require(self._deps)
     ok2build = True
+    retc = 0
     if incremental:
       os.chdir(blddir)
     else:
       pathtools.mkdir(blddir,clean=True)
       pathtools.chdir(blddir)
 
-      Command([srcdir/"configure",
-               '--prefix=%s'%path.prefix()
-              ]).exec()
-
-      make.exec("all")
-      make.exec("install",parallelism=0.0)
-
-      #cmake_ctx = cmake.context(root=srcdir,env=self._cmakeenv)
-      #ok2build = cmake_ctx.exec()==0
-    #if ok2build:
-    #  return (make.exec(parallelism=self._parallelism)==0)
-    return False
+      retc = Command([srcdir/"configure",
+                      '--prefix=%s'%path.prefix()
+                     ]).exec()
+      if retc==0:
+        make.exec("all")
+        retc = make.exec("install",parallelism=0.0)
+    print("retc<%d>"%int(retc))
+    return retc==0
   ###########################################
   def install(self,blddir):
     pathtools.chdir(blddir)

@@ -240,7 +240,9 @@ class StdProvider(Provider):
       #########################################
       # build
       #########################################
-      self.OK = self._builder.build(self.build_src,self.build_dest,self.should_incremental_build)
+      self.OK = self._builder.build(self.build_src,
+                                    self.build_dest,
+                                    self.should_incremental_build)
       #########################################
       return self.OK
     #########################################
