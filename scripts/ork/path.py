@@ -134,8 +134,7 @@ def builds():
 ###############################################################################
 
 def project_root():
-  root = Path(os.environ["ORKID_WORKSPACE_DIR"])
-  return root
+  return root()/".."
 
 ###############################################################################
 def osx_sdkdir():

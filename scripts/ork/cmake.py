@@ -11,10 +11,11 @@ from ork import path, dep
 
 class context:
 
-  def __init__(self,root="",env=dict()):
+  def __init__(self,root="",env=dict(),trace=False):
     self.root = root
     self.env = env
     self._verbose = False
+    self._trace = trace
 
   def verbose(self,enable):
     self._verbose = enable
@@ -38,6 +39,9 @@ class context:
       else:
         value += "="+str(v)
       cmdlist += [value]
+
+    if self._trace:
+      cmdlist += ["--trace"]
 
     cmdlist += [str(self.root)]
 
