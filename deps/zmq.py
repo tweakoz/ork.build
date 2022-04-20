@@ -21,7 +21,8 @@ deco = Deco()
 class zmq(dep.Provider):
 
   def __init__(self): ############################################
-    super().__init__()
+    super().__init__("zmq")
+    self.declareDep("cmake")
     #print(options)
     build_root = path.builds()/"libzmq"
     self.source_root = build_root
@@ -61,6 +62,9 @@ class zmq(dep.Provider):
         cmakeEnv = {
             "CMAKE_BUILD_TYPE": "RELEASE",
         }
+
+        if host.IsDarwin:
+          cmakeEnv["WITH_TLS"]="OFF"
 
         cmake_ctx = cmake.context("..",env=cmakeEnv)
         ok2build = cmake_ctx.exec()==0

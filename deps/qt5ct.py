@@ -14,6 +14,7 @@ class qt5ct(dep.StdProvider):
   def __init__(self): ############################################
     name = "qt5ct"
     super().__init__(name)
+    self._archlist = ["x86_64"]
     #################################################
     self._fetcher = dep.SvnFetcher(name)
     self._fetcher._url = "svn://svn.code.sf.net/p/qt5ct/code"

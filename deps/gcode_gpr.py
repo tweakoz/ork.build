@@ -19,7 +19,7 @@ deco = Deco()
 class gcode_gpr(dep.Provider):
 
   def __init__(self): ############################################
-    super().__init__()
+    super().__init__("gcode_gpr")
     self.manifest = path.manifests()/"gcode_gpr"
     self.source_root = path.builds()/"gcode_gpr"
     self.build_dest = self.source_root/".build"

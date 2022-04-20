@@ -24,7 +24,7 @@ class pillar(dep.Provider):
   ################################
 
   def __init__(self):
-    super().__init__()
+    super().__init__("pillar")
     self.source_root = path.builds()/"pillar-python-sdk"
     self.url = "https://github.com/armadillica/pillar"
     self.manifest = path.manifests()/"pillar-python-sdk"

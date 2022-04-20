@@ -20,7 +20,7 @@ VERSION = "4.1.0"
 class opencv(dep.Provider):
 
   def __init__(self): ############################################
-    super().__init__()
+    super().__init__("opencv")
     self.manifest = path.manifests()/"opencv"
     self.OK = self.manifest.exists()
     self.cv_source_root = path.builds()/"opencv"
@@ -42,10 +42,14 @@ class opencv(dep.Provider):
 
   def provide(self): ##########################################################
 
-    dep.require(["pkgconfig","qt5","pybind11"])
+    misc_deps = dep.require(["pkgconfig","qt5","pybind11"])
+    if misc_deps == None:
+      return False
 
     python_dep = dep.require("python")
-
+    if python_dep == None:
+      return False 
+      
     if not self.cv_source_root.exists():
       git.Clone("https://github.com/opencv/opencv.git",
                 self.cv_source_root,

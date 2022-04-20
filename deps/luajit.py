@@ -6,7 +6,7 @@
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
 
-VERSION = "master"
+VERSION = "v2.1"
 
 import os, tarfile
 from yarl import URL
@@ -24,12 +24,13 @@ deco = Deco()
 class luajit(dep.Provider):
 
   def __init__(self): ############################################
-    super().__init__()
+    super().__init__("luajit")
     #print(options)
     self.source_root = path.builds()/"luajit"
     self.build_dest = self.source_root
     self.manifest = path.manifests()/"luajit"
     self.OK = self.manifest.exists()
+    self._archlist = ["x86_64"]
 
   ########
 
@@ -40,7 +41,7 @@ class luajit(dep.Provider):
 
   def download_and_extract(self): #############################################
 
-    os.system("rm -rf %s"%self.source_root)
+    Command(["rm","-rf",self.source_root]).exec()
 
     git.Clone("https://github.com/LuaJIT/LuaJIT",
               self.source_root,
@@ -56,7 +57,6 @@ class luajit(dep.Provider):
   def build(self): ############################################################
 
     self.download_and_extract()
-    os.chdir(str(self.source_root))
 
     cmd = ["make","-j",host.NumCores]
 
@@ -64,4 +64,10 @@ class luajit(dep.Provider):
         cmd += ["MACOSX_DEPLOYMENT_TARGET=10.14"]
 
     cmd += ["install"]
-    return 0 == Command(cmd).exec()
+    return 0 == Command(cmd,working_dir=self.source_root).exec()
+
+  def areRequiredSourceFilesPresent(self):
+    return (self.source_root/"README").exists()
+
+  def areRequiredBinaryFilesPresent(self):
+    return (path.includes()/"luajit-2.1").exists()

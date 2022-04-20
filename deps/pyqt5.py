@@ -13,6 +13,7 @@ class pyqt5(dep.StdProvider):
   def __init__(self):
     name = "pyqt5"
     super().__init__(name)
+    self._archlist = ["x86_64"]
     #################################################
     self._fetcher = dep.NopFetcher(name)
     #################################################

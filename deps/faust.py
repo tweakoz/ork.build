@@ -19,11 +19,12 @@ VERSION = "2.20.2"
 class faust(dep.Provider):
 
   def __init__(self): ############################################
-    super().__init__()
+    super().__init__("faust")
     self.manifest = path.manifests()/"faust"
     self.OK = self.manifest.exists()
     self.source_root = path.builds()/"faust"
     self.build_dest = self.source_root/".build"
+    self._archlist = ["x86_64"]
 
   ########
 

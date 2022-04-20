@@ -15,5 +15,5 @@ class lemongraph(dep.StdProvider):
                                       repospec="tweakoz/lemon-mirror",
                                       revision="master",
                                       recursive=True)
-    self._builder = dep.CMakeBuilder(name)
+    self._builder = self.createBuilder(dep.CMakeBuilder)
     #self._builder.requires(["eigen"])

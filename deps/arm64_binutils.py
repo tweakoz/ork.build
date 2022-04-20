@@ -24,6 +24,7 @@ class arm64_binutils(dep.StdProvider):
 
   def __init__(self): ############################################
     super().__init__("arm64_binutils")
+    self._archlist = ["x86_64"]
 
   ########
 

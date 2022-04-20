@@ -11,9 +11,13 @@ class igl(dep.StdProvider):
   def __init__(self):
     name = "igl"
     super().__init__(name)
+    #self._archlist = ["x86_64"]
+    self.declareDep("cmake")
+    #self.declareDep("lapack")
+    self.declareDep("eigen")
     self._fetcher = dep.GithubFetcher(name=name,
                                       repospec="tweakoz/libigl",
-                                      revision="toz-obt",
+                                      revision="master",
                                       shallow=False,
                                       recursive=False,
                                       )
@@ -26,12 +30,19 @@ class igl(dep.StdProvider):
                    eig3_path,
                    embr_path,
                    glfw_path)
-    self._builder = dep.CMakeBuilder(name)
-    self._builder.requires(["lapack","eigen"])
+    self._builder = self.createBuilder(dep.CMakeBuilder)
+    self._builder.requires(["eigen"])
     self._builder.setCmVar("LIBIGL_WITH_CGAL","FALSE")
     self._builder.setCmVar("LIBIGL_USE_STATIC_LIBRARY","OFF")
-    self._builder.setCmVar("LIBIGL_USE_STATIC_LIBRARY","OFF")
     #self._builder.setCmVar("CMAKE_MODULE_PATH",module_path)
-    if host.IsOsx: # sadly mac igl-embree support is broken..
+    if host.IsOsx or host.IsAARCH64: # sadly mac igl-embree support is broken..
       # https://github.com/libigl/libigl/issues/1302
       self._builder.setCmVar("LIBIGL_WITH_EMBREE","OFF")
+
+    self._builder._parallelism = 0.5 # prevent out of memory..
+
+  def areRequiredSourceFilesPresent(self):
+    return (self.source_root/"README.md").exists()
+
+  def areRequiredBinaryFilesPresent(self):
+    return (path.includes()/"igl"/"igl_inline.h").exists()

@@ -14,7 +14,7 @@ class _cgal_from_source(dep.StdProvider):
                                       repospec="CGAL/cgal",
                                       revision="releases/CGAL-5.0.2",
                                       recursive=False)
-    self._builder = dep.CMakeBuilder(name)
+    self._builder = self.createBuilder(dep.CMakeBuilder)
     self._builder.requires(["lapack"])
 ###############################################################################
 class _cgal_from_homebrew(dep.HomebrewProvider):

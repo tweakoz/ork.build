@@ -23,7 +23,7 @@ deco = Deco()
 class lua(dep.Provider):
 
   def __init__(self): ############################################
-    super().__init__()
+    super().__init__("lua")
     #print(options)
     self.source_root = path.builds()/"lua"
     self.build_dest = self.source_root
@@ -73,13 +73,25 @@ class lua(dep.Provider):
     if ork.host.IsOsx:
         cmd += ["MACOSX_DEPLOYMENT_TARGET=10.14"]
 
-    ok = (0 == Command(cmd).exec())
-    if ok:
-      cmd = ["cp",self.source_root/"liblua.a",path.prefix()/"lib"/"liblua.a"]
-      ok = (0 == Command(cmd).exec())
-      if ok:
-        pathtools.mkdir(self.header_dest,clean=True)
-        cmd = ["cp", self.source_root/"*.h",str(self.header_dest)+"/"]
-        ok = (0 == command.system(cmd))
+    self.ok = (0 == Command(cmd).exec())
 
-    return ok
+    return self.install()
+
+  def install(self):
+    if self.ok:
+      cmd = ["cp",self.source_root/"lua",path.bin()/"lua"]
+      self.ok = (0 == Command(cmd).exec())
+      if self.ok:
+        cmd = ["cp",self.source_root/"liblua.a",path.prefix()/"lib"/"liblua.a"]
+        self.ok = (0 == Command(cmd).exec())
+        if self.ok:
+          pathtools.mkdir(self.header_dest,clean=True)
+          cmd = ["cp", self.source_root/"*.h",str(self.header_dest)+"/"]
+          self.ok = (0 == command.system(cmd))
+    return self.ok 
+
+  def areRequiredSourceFilesPresent(self):
+    return (self.source_root/"makefile").exists()
+
+  def areRequiredBinaryFilesPresent(self):
+    return (path.bin()/"lua").exists()

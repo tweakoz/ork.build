@@ -14,12 +14,14 @@ class ispctexc(dep.StdProvider):
   def __init__(self):
     name = "ispctexc"
     super().__init__(name)
+    self.declareDep("ispc")
     self._fetcher = dep.GithubFetcher(name=name,
                                       repospec="tweakoz/ISPCTextureCompressor",
                                       revision="master",
                                       recursive=False)
     self._fetcher._cache=False,
     self.build_dest = self.source_root/"build"
+    self._archlist = ["x86_64"]
 
   def build(self):
 
@@ -54,3 +56,11 @@ class ispctexc(dep.StdProvider):
       pathtools.copyfile(self.build_dest/sonam,path.stage()/"lib"/sonam)
       pathtools.copyfile(self.source_root/"ispc_texcomp"/hdrnam,path.stage()/"include"/hdrnam)
     return self.OK
+
+  def areRequiredSourceFilesPresent(self):
+    return (self.source_root/"Makefile.linux").exists()
+
+  def areRequiredBinaryFilesPresent(self):
+    return (path.libs()/"libispc_texcomp.so").exists()
+
+ 

@@ -6,7 +6,7 @@
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
 
-VERSION = "v1.0.41"
+VERSION = "master"
 
 import os, tarfile
 from ork import dep, host, path, cmake, git, make, command
@@ -21,12 +21,14 @@ deco = Deco()
 class moltenvk(dep.Provider):
 
   def __init__(self): ############################################
-    super().__init__()
+    super().__init__("moltenvk")
     #print(options)
     self.source_root = path.builds()/"moltenvk"
     self.build_dest = path.builds()/"moltenvk"/".build"
     self.manifest = path.manifests()/"moltenvk"
     self.OK = self.manifest.exists()
+    self._archlist = ["x86_64"]
+    self._oslist = ["Darwin"]
 
   def __str__(self): ##########################################################
 

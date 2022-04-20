@@ -21,7 +21,7 @@ deco = Deco()
 class cppzmq(dep.Provider):
 
   def __init__(self): ############################################
-    super().__init__()
+    super().__init__("cppzmq")
     #print(options)
     build_root = path.builds()/"cppzmq"
     self.source_root = build_root
@@ -40,6 +40,8 @@ class cppzmq(dep.Provider):
   def build(self): ##########################################################
 
     zmq = dep.require("zmq")
+    if zmq == None:
+      return False 
 
     #########################################
     # fetch source

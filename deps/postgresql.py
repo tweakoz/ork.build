@@ -24,13 +24,14 @@ deco = Deco()
 class postgresql(dep.Provider):
 
   def __init__(self): ############################################
-    super().__init__()
+    super().__init__("postgresql")
     #print(options)
     build_dest = path.builds()/"postgresql"
     self.build_dest = build_dest
     self.manifest = path.manifests()/"postgresql"
     self.OK = self.manifest.exists()
     self.fname = "postgresql-%s.tar.bz2"%VERSION
+    self._archlist = ["x86_64"]
 
   ########
 

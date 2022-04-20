@@ -23,13 +23,14 @@ deco = Deco()
 class wt4(dep.Provider):
 
   def __init__(self): ############################################
-    super().__init__()
+    super().__init__("wt4")
     #print(options)
     build_dest = path.builds()/"wt4"
     self.build_dest = build_dest
     self.manifest = path.manifests()/"wt4"
     self.OK = self.manifest.exists()
     self.fname = "wt-%s.tar.gz"%VERSION
+    self._archlist = ["x86_64"]
 
   ########
 

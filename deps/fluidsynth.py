@@ -19,11 +19,12 @@ VERSION = "v2.1.0"
 class fluidsynth(dep.Provider):
 
   def __init__(self): ############################################
-    super().__init__()
+    super().__init__("fluidsynth")
     self.manifest = path.manifests()/"fluidsynth"
     self.OK = self.manifest.exists()
     self.source_root = path.builds()/"fluidsynth"
     self.build_dest = self.source_root/".build"
+    self._archlist = ["x86_64"]
 
   ########
 

@@ -15,6 +15,23 @@ from ork.command import run
 deco = Deco()
 
 ###############################################################################
+# Checkout and/or update to a specific branch
+#  TODO - handle local changes and other exceptions correctly
+###############################################################################
+
+def checkout_update(dest_path,rev,origin="origin"):
+    cwd = os.getcwd()
+    OK = False
+    try:
+      os.chdir(dest_path)
+      retc = run(["git","checkout",rev],do_log=True)
+      retc = run(["git","pull",origin, rev],do_log=True)
+      OK = (0 == retc)
+    finally:
+      os.chdir(cwd)
+    return OK
+
+###############################################################################
 
 def Clone(url,
           dest,
@@ -44,12 +61,12 @@ def Clone(url,
     try:
       os.chdir(dest_path)
       if OK:
-        retc = run(["git","checkout",rev])
+        retc = run(["git","checkout",rev],do_log=True)
         OK = (0 == retc)
         #print("OK2<%d>"%OK)
         if OK:
           if recursive:
-            retc = run(["git","submodule","update","--init","--recursive"])
+            retc = run(["git","submodule","update","--init","--recursive"],do_log=True)
             OK = (0 == retc)
             #print("OK3<%d>"%OK)
     finally:
@@ -100,6 +117,7 @@ def Clone(url,
   ##############################################################################
 
     print("Cloning3 URL<%s> to dest<%s>"%(deco.path(url),deco.path(dest_path)))
+    print("shallow<%d>"%shallow)
     if shallow:
       # shallow clone of speciific rev
       if dest_path.exists():
@@ -107,15 +125,36 @@ def Clone(url,
       run(["mkdir","-p",dest_path])
       curdir = os.getcwd()
       os.chdir(dest_path)
-      run(["git","init"])
-      run(["git","remote","add","origin",url])
-      run(["git","fetch","--depth","1","origin",rev])
-      retc = run(["git","checkout","FETCH_HEAD"])
-      os.chdir(curdir)
+      ####################
+      retc = run(["git","init"],do_log=True)
+      ####################
+      if retc==0:
+        retc = run(["git","remote","add","origin",url],do_log=True)
+      ####################
+      if retc==0:
+        retc = run(["git","fetch","--depth","1","origin",rev],do_log=True)
+      ####################
+      if retc==0:
+        retc = run(["git","checkout","FETCH_HEAD"],do_log=True)
+      ####################
+      if retc==0:
+        munged_branch_name = rev
+        if munged_branch_name.find("obt-")==-1:
+           munged_branch_name = "obt-%s"%rev
+        retc = run(["git","checkout","-b",munged_branch_name],do_log=True)
+      ####################
+      if retc==0:
+        os.chdir(curdir)
+      ####################
+      if retc==0 and recursive:
+         retc = run(["git","submodule","update","--init","--recursive"],do_log=True)
+      ####################
+      print(retc)
+      return (0 == retc)
     else:
-        retc = run(["git","clone",url,dest_path])
-    if 0 == retc:
-      return _checkoutrevandupdate()
+        retc = run(["git","clone",url,dest_path],do_log=True)
+        if 0 == retc:
+          return _checkoutrevandupdate()
 
   ##############################################################################
   return False

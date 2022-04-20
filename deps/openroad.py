@@ -11,13 +11,15 @@ class openroad(dep.StdProvider):
   def __init__(self):
     name = "openroad"
     super().__init__(name)
+    self.declareDep("cmake")
+    self._archlist = ["x86_64"]
     self._fetcher = dep.GitFetcher(name)
     self._fetcher._git_url = "https://github.com/tweakoz/OpenROAD"
     self._fetcher._cache=False
     self._fetcher._recursive=True
     self._fetcher._revision = "toztest"
 
-    self._builder = dep.CMakeBuilder(name)
+    self._builder = self.createBuilder(dep.CMakeBuilder)
     self._builder.requires(["eigen","lemongraph"])
     if host.IsOsx:
       self._builder.setCmVar("TCL_LIBRARY",path.osx_brewopt()/"tcl-tk"/"lib"/"libtcl8.6.dylib")

@@ -16,7 +16,7 @@ class opendb(dep.StdProvider):
     self._fetcher._cache=False
     self._fetcher._recursive=True
     self._fetcher._revision = "develop"
-    self._builder = dep.CMakeBuilder(name)
+    self._builder = self.createBuilder(dep.CMakeBuilder)
     if host.IsOsx:
       self._builder.setCmVar("TCL_LIBRARY",path.osx_brewopt()/"tcl-tk"/"lib"/"libtcl8.6.dylib")
       self._builder.setCmVar("TK_LIBRARY",path.osx_brewopt()/"tcl-tk"/"lib"/"libk8.6.dylib")

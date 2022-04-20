@@ -15,7 +15,8 @@ class _audiofile_from_source(dep.StdProvider):
                                       repospec="wtay/audiofile",
                                       revision=self.VERSION,
                                       recursive=False)
-    self._builder = dep.CMakeBuilder(name)
+    self._builder = self.createBuilder(dep.AutoConfBuilder)
+    self._builder._needsautogendotsh = True
 ###############################################################################
 class _audiofile_from_homebrew(dep.HomebrewProvider):
   def __init__(self,name):

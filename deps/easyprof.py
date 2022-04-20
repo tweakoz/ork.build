@@ -24,9 +24,15 @@ class easyprof(dep.StdProvider):
   def __init__(self):
     name = "easyprof"
     super().__init__(name)
+    self.declareDep("cmake")
     self._fetcher = dep.GithubFetcher(name=name,
                                       repospec="yse/easy_profiler",
                                       revision=VERSION,
                                       recursive=False)
-    self._builder = dep.CMakeBuilder(name)
+    self._builder = self.createBuilder(dep.CMakeBuilder)
   #############################################
+  def areRequiredSourceFilesPresent(self):
+    return (self.source_root/"CMakeLists.txt").exists()
+
+  def areRequiredBinaryFilesPresent(self):
+    return (path.libs()/"libeasy_profiler.so").exists()

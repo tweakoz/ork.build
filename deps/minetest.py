@@ -22,13 +22,14 @@ deco = Deco()
 class minetest(dep.Provider):
 
   def __init__(self): ############################################
-    super().__init__()
+    super().__init__("minetest")
     #print(options)
     build_dest = path.builds()/"minetest"
     self.build_dest = build_dest
     self.manifest = path.manifests()/"minetest"
     self.OK = self.manifest.exists()
     self.fname = "minetest-%s.zip" % VERSION
+    self._archlist = ["x86_64"]
 
   ########
 

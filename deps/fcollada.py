@@ -22,7 +22,7 @@ deco = Deco()
 class fcollada(dep.Provider):
 
   def __init__(self): ############################################
-    super().__init__()
+    super().__init__("fcollada")
 
     self.source_root = path.builds()/"fcollada"
     self.build_dest = path.builds()/"fcollada"/".build"
@@ -32,7 +32,7 @@ class fcollada(dep.Provider):
 
   def __str__(self): ##########################################################
 
-    return "Assimp (homebrew)"
+    return "fcollada"
 
   def build(self): ##########################################################
 

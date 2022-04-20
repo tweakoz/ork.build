@@ -13,8 +13,9 @@ class qt5forpython(dep.StdProvider):
   def __init__(self): ############################################
     name = "qt5forpython"
     super().__init__(name)
+    self._archlist = ["x86_64"]
     #################################################
-    self.major_version = "5.14" # todo get from qt
+    self.major_version = "5.12" # todo get from qt
     self.minor_version = ""
     self.version = "%s%s" % (self.major_version,self.minor_version)
     #################################################
@@ -69,11 +70,11 @@ class qt5forpython(dep.StdProvider):
   @property
   def pyside_library(self):
     if host.IsOsx:
-      return self.pyside_library_dir/("libpyside2.%s.5.14.%s"%(\
+      return self.pyside_library_dir/("libpyside2.%s.5.12.%s"%(\
                                       self.platform_lib_deco,\
                                       self.shlib_extension))
     else:
-      return self.pyside_library_dir/("libpyside2.%s.so.5.14"%self.platform_lib_deco)
+      return self.pyside_library_dir/("libpyside2.%s.so.5.12"%self.platform_lib_deco)
   ##############################################################################
   def pyside_qtlibrary(self,name):
     if host.IsOsx:

@@ -19,7 +19,7 @@ deco = Deco()
 class irrlicht(dep.Provider):
 
   def __init__(self): ############################################
-    super().__init__()
+    super().__init__("irrlicht")
     self.manifest = path.manifests()/"irrlicht"
     self.OK = self.manifest.exists()
 

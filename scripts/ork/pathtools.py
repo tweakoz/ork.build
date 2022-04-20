@@ -8,6 +8,7 @@
 
 import os, sys, pathlib
 import fnmatch
+from ork import buildtrace
 
 ###############################################################################
 
@@ -88,13 +89,19 @@ def recursive_glob(path):
 ###############################################################################
 
 def recursive_glob_get_dirs(path):
-	d=[]
-	try:
-		for i in os.listdir(path):
-			if os.path.isdir(path+i):
-				d.append(os.path.basename(i))
-	except:pass
-	return d
+    d=[]
+    try:
+        x = os.listdir(path)
+        print(x)
+        for i in x:
+          y = path+i
+          print(i,y)
+          if os.path.isdir(y):
+            d.append(os.path.basename(i))
+    except:
+        print("error")
+        pass
+    return d
 
 ###############################################################################
 
@@ -125,6 +132,7 @@ def globber( folderbase, wildcard, subdirlist, excludelist=[] ):
 ###############################################################################
 
 def mkdir(p,clean=False,parents=False):
+  buildtrace.buildTrace({"op":"mkdir(%s)"%str(p),"clean":clean,"parents":parents})
   if clean:
   	if p.exists():
   	  os.system("rm -rf %s"%p)
@@ -134,15 +142,18 @@ def mkdir(p,clean=False,parents=False):
 ###############################################################################
 
 def ensureDirectoryExists(p):
+  buildtrace.buildTrace({"op":"ensureDirExists(%s)"%str(p)})
   if False==p.exists():
      p.mkdir()
 
 ###############################################################################
 
 def chdir(p):
+  buildtrace.buildTrace({"op":"chdir(%s)"%str(p)})
   os.chdir(str(p))
 
 ###############################################################################
 
 def copyfile(file_from,file_dest):
+  buildtrace.buildTrace({"op":"copyfile", "from": str(file_from), "dest": str(file_dest)})
   os.system("cp \"%s\" \"%s\"" % (str(file_from), str(file_dest)))

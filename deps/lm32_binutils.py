@@ -23,7 +23,8 @@ deco = Deco()
 class lm32_binutils(dep.Provider):
 
   def __init__(self): ############################################
-    super().__init__()
+    super().__init__("lm32_binutils")
+    self._archlist = ["x86_64"]
     pass
 
 

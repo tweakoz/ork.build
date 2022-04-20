@@ -1,5 +1,8 @@
 import os
 from ork.deco import Deco
+
+global deco
+
 deco = Deco()
 
 def output(x):
@@ -11,4 +14,4 @@ def rgb(r,g,b,string):
       print(deco.rgbstr(r,g,b,string))
 
 def marker(string):
-  output(deco.white(string))
+  output(deco.bright(string))

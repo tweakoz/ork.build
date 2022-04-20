@@ -21,13 +21,14 @@ deco = Deco()
 class librealsense2(dep.Provider):
 
   def __init__(self): ############################################
-    super().__init__()
+    super().__init__("librealsense2")
     #print(options)
     build_root = path.builds()/"librealsense2"
     self.source_root = build_root
     self.build_dest = build_root/".build"
     self.manifest = path.manifests()/"librealsense2"
     self.OK = self.manifest.exists()
+    self.declareDep("cmake")
 
   def __str__(self): ##########################################################
 
@@ -35,6 +36,12 @@ class librealsense2(dep.Provider):
 
   def wipe(self): #############################################################
     os.system("rm -rf %s"%self.source_root)
+
+  ########################################################################
+  def areRequiredSourceFilesPresent(self):
+    return (self.source_root/"CMakeLists.txt").exists()
+  def areRequiredBinaryFilesPresent(self):
+    return (path.libs()/"librealsense2.so").exists()
 
   def build(self): ##########################################################
 

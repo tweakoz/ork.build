@@ -17,4 +17,4 @@ class gnutar(dep.StdProvider):
     self._fetcher._fname = filename
     self._fetcher._arctype = "tgz"
     self._fetcher._md5 = "9a08d29a9ac4727130b5708347c0f5cf"
-    self._builder = dep.AutoConfBuilder(name)
+    self._builder = self.createBuilder(dep.AutoConfBuilder)

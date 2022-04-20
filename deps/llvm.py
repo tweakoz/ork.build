@@ -16,11 +16,12 @@ class _llvm_from_source(dep.StdProvider):
 
   def __init__(self,name):
     super().__init__(name)
+    self._archlist = ["x86_64"]
     self._fetcher = dep.GithubFetcher(name=name,
                                       repospec="llvm/llvm-project",
-                                      revision="llvmorg-9.0.1",
+                                      revision="llvmorg-12.0.1",
                                       recursive=False)
-    self._builder = dep.CMakeBuilder(name)
+    self._builder = self.createBuilder(dep.CMakeBuilder)
     ##########################################
     # llvm cmake file is 1 subdir deeper than usual
     ##########################################
@@ -36,6 +37,12 @@ class _llvm_from_source(dep.StdProvider):
     })
   def install_dir(self):
     return path.stage()
+
+  def areRequiredSourceFilesPresent(self):
+    return (self.source_root/"README.md").exists()
+
+  def areRequiredBinaryFilesPresent(self):
+    return (path.stage()/"bin"/"llvm-cov").exists()
 
 ###############################################################################
 

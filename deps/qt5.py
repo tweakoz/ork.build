@@ -6,51 +6,63 @@
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
 
-MAJOR_VERSION = "5.14"
-MINOR_VERSION = "1"
-HASH = "781c3179410aff7ef84607214e1e91b4"
-
 import os, tarfile
-from ork import dep, host, path, git, make, pathtools, env
+from ork import dep, host, path, git, make, pathtools, env, command
 from ork.deco import Deco
 from ork.wget import wget
-from ork.command import Command
 from ork.cmake import context as cmake_context
 from ork import log
 from yarl import URL
 from pathlib import Path
 
 deco = Deco()
+cmd = command.Command 
 
 ###############################################################################
 
 class _qt5_from_source(dep.Provider):
 
+
   def __init__(self): ############################################
-    super().__init__()
+    super().__init__("qt5")
     #print(options)
+    self.MAJOR_VERSION = "5.15"
+    self.MINOR_VERSION = "2"
+    self.HASH = "e1447db4f06c841d8947f0a6ce83a7b5"
     self.manifest = path.manifests()/"qt5"
     self.OK = self.manifest.exists()
-    self.baseurl = URL("http://mirrors.ocf.berkeley.edu/qt/official_releases/qt")
-    self.fullver = "%s.%s" % (MAJOR_VERSION,MINOR_VERSION)
+    self.baseurl = URL("https://mirrors.ukfast.co.uk/sites/qt.io/official_releases/qt")
+    self.fullver = "%s.%s" % (self.MAJOR_VERSION,self.MINOR_VERSION)
     self.name = "qt-everywhere-src-%s" % self.fullver
     self.xzname = "%s.tar.xz" % self.name
-    self.url = self.baseurl/MAJOR_VERSION/self.fullver/"single"/self.xzname
+    self.url = self.baseurl/self.MAJOR_VERSION/self.fullver/"single"/self.xzname
     self.source_base = path.builds()/"qt5"
     self.source_root = self.source_base/self.name
     self.build_dest = path.builds()/"qt5"/"qt5-build"
+    self._archlist = ["x86_64"]
+    self.declareDep("assimp")
   ########
   def env_goto(self):
     return {
       "qt5-src": self.source_root,
       "qt5-build": self.build_dest
     }
+  ########################################################################
+  def areRequiredSourceFilesPresent(self):
+    return (self.source_root/"README").exists()
+  def areRequiredBinaryFilesPresent(self):
+    return (path.qt5dir()/"bin"/"qmlscene").exists()
+  ########
+  def on_build_shell(self):
+    return command.subshell( directory=self.build_dest,
+                             prompt = "QT5",
+                             environment = dict() )
   ########
   def download_and_extract(self): #############################################
     self.arcpath = dep.downloadAndExtract([self.url],
                                            self.xzname,
                                            "xz",
-                                           HASH,
+                                           self.HASH,
                                            self.source_base)
   ########
   def wipe(self):
@@ -58,6 +70,8 @@ class _qt5_from_source(dep.Provider):
     os.system("rm -rf %s"%self.build_dest)
   ########
   def build(self): ############################################################
+    if dep.require(["assimp"])==None:
+      return False
     self.OK = True
     #########################################
     # fetch source
@@ -89,19 +103,20 @@ class _qt5_from_source(dep.Provider):
           #options += ["-no-feature-location"]
         else:
           options += ["-system-zlib"]
-          options += ["-qt-xcb"]
-
+          options += ["-xcb"]
+        options += ["-skip","qtwebengine"]
+        options += ["-system-assimp"]
         #options += ["-no-rpath"]
         #options += ["-pkg-config"]
         #options += ["-proprietary-codecs"]
 
-        b = Command(["sh", self.source_root/"configure"]+options)
+        b = cmd(["sh", self.source_root/"configure"]+options)
         self.OK = (b.exec()==0)
     #########################################
     # build
     #########################################
     if self.OK:
-      self.OK == (make.exec(parallelism=self.default_parallelism)==0)
+      self.OK = (make.exec(parallelism=self.default_parallelism)==0)
     if self.OK:
       self.OK = (make.exec(parallelism=self.default_parallelism)==0)
     # uhhuh - https://bugreports.qt.io/browse/QTBUG-60496
@@ -114,7 +129,7 @@ class _qt5_from_source(dep.Provider):
 class _qt5_from_homebrew(dep.HomebrewProvider):
   def __init__(self):
     super().__init__("qt5","qt5")
-    self.fullver = "5.14.2"
+    self.fullver = "5.15.1"
   def install_dir(self):
     return path.Path("/usr/local/opt/qt5")
 
@@ -139,14 +154,12 @@ class qt5(BASE):
       qtdir = Path("/")/"usr"/"local"/"opt"/"qt5"
     else:
       qtdir = path.stage()/"qt5"
-    if qtdir.exists():
-      env.set("QTDIR",qtdir)
-      env.prepend("PATH",qtdir/"bin")
-      QTVERCMD = Command(["qtpaths","--qt-version"])
-      QTVER = QTVERCMD.capture().replace("\n","")
-      env.set("QTVER",QTVER)
-      env.prepend("LD_LIBRARY_PATH",qtdir/"lib")
-      env.prepend("PKG_CONFIG_PATH",qtdir/"lib"/"pkgconfig")
+    env.set("QTDIR",qtdir)
+    env.prepend("PATH",qtdir/"bin")
+    env.prepend("LD_LIBRARY_PATH",qtdir/"lib")
+    #env.append("PKG_CONFIG_PATH",qtdir/"lib"/"pkgconfig")
+    env.prepend("PKG_CONFIG_PATH",qtdir/"lib"/"pkgconfig")
+    env.set("QTVER",self.fullver)
   ########
   @property
   def include_dir(self):

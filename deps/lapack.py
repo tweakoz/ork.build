@@ -15,8 +15,9 @@ class lapack(dep.StdProvider):
   def __init__(self):
     name = "lapack"
     super().__init__(name)
+    self.declareDep("cmake")
     self._fetcher = dep.GithubFetcher(name=name,
                                       repospec="Reference-LAPACK/lapack",
                                       revision="v3.9.0",
                                       recursive=False)
-    self._builder = dep.CMakeBuilder(name)
+    self._builder = self.createBuilder(dep.CMakeBuilder)

@@ -10,7 +10,9 @@ import os,io,sys, platform, subprocess, threading
 import shlex, errno, pty, select, signal, time
 
 from ork.deco import Deco
-from ork import log
+from ork import log, pathtools, buildtrace
+
+import ork.path 
 deco = Deco()
 
 ###############################################################################
@@ -34,35 +36,69 @@ class Command:
 
     ###########################################################################
 
-    def __init__(self, command_list, environment=dict(),do_log=True):
+    def __init__(self, 
+                 command_list, 
+                 environment=dict(),
+                 do_log=True,
+                 working_dir=None,
+                 use_shell=False):
 
         self.env = os.environ
+        self.working_dir = working_dir
         for k in environment.keys():
             self.env[k]=str(environment[k])
         self.command_list = procargs(command_list)
-        if do_log:
-          log.output(deco.white(self.command_list))
+        self._do_log = do_log
+        self._use_shell = use_shell
 
     ###########################################################################
 
     def exec(self,use_shell=False):
 
+        cur_dir = ork.path.Path(os.getcwd())
+        if self.working_dir!=None:
+          print("goto<%s>"%self.working_dir)
+          pathtools.chdir(self.working_dir)
+
+        if self._do_log:
+          log.output("cmdexec: %s"%deco.bright(self.command_list))
+
+        buildtrace.buildTrace({  
+         "op": "command(cmd.exec)",
+         "curwd": os.getcwd(),
+         "arglist": self.command_list, 
+         "os_env": dict(self.env), 
+         "use_shell": use_shell or self._use_shell })
+
         child_process = subprocess.Popen( self.command_list,
                                           universal_newlines=True,
                                           env=self.env,
-                                          shell=use_shell )
+                                          shell=use_shell or self._use_shell )
         child_process.communicate()
         child_process.wait()
+
+        if self.working_dir!=None:
+          pathtools.chdir(cur_dir)
 
         return child_process.returncode
 
 
     def exec_filtered(self,use_shell=False,on_line=None):
         assert(on_line!=None)
+
+        buildtrace.buildTrace({  
+         "op": "command(cmd.exec_filtered)",
+         "curwd": os.getcwd(),
+         "arglist": self.command_list, 
+         "os_env": dict(self.env), 
+         "use_shell": use_shell or self._use_shell })
+
         def output_reader(child_process):
           for line in iter(child_process.stdout.readline, b''):
             on_line(format(line.decode('utf-8')))
 
+        if self._do_log:
+          log.output("cmdexecf %s"%deco.bright(self.command_list))
 
         child_process = subprocess.Popen(self.command_list,
                                          universal_newlines=False,
@@ -94,6 +130,13 @@ class Command:
 
     def capture(self):
 
+        buildtrace.buildTrace({  
+         "op": "command(cmd.capture)",
+         "curwd": os.getcwd(),
+         "arglist": self.command_list, 
+         "os_env": dict(self.env), 
+         "use_shell": False })
+
         return subprocess.check_output(self.command_list,
                                        universal_newlines=True,
                                        env=self.env )
@@ -111,13 +154,17 @@ def run(command_list, environment=dict(),do_log=False):
   return Command(command_list,environment,do_log=do_log).exec()
 def run_filtered(command_list, environment=dict(),on_line=None,do_log=False):
   return Command(command_list,environment,do_log=do_log).exec_filtered(on_line=on_line)
-
 def capture(command_list,environment=dict(),do_log=True):
   return Command(command_list,environment,do_log=do_log).capture()
 
 ###############################################################################
 
 def system(command_list):
+  buildtrace.buildTrace({  
+   "op": "command(system)",
+   "curwd": os.getcwd(),
+   "arglist": command_list, 
+   "os_env": dict(os.environ) })
   args = procargs(command_list)
   joined = " ".join(args)
   print("cmd<%s>"%deco.key(joined))
@@ -125,4 +172,23 @@ def system(command_list):
 
 ###############################################################################
 
-__all__ =   [ "Command" ]
+def subshell(directory=None,prompt=None,environment=dict()):
+    cur_dir = os.getcwd()
+    os.chdir(str(directory))
+    curprompt = os.environ["PS1"]
+    bdeco = Deco(bash=True)
+    PROMPT = bdeco.promptL('[ <<Dep.Build ]')
+    PROMPT += bdeco.promptC("\\w")
+    PROMPT += bdeco.promptR("[ %s ]"%prompt)
+    PROMPT += bdeco.bright("> ")
+    os.environ["PS1"] = PROMPT
+    retc = Command(["bash","--norc"]).exec()
+    os.chdir(cur_dir)
+    os.environ["PS1"] = curprompt
+    return retc
+
+###############################################################################
+
+cmd = Command 
+
+__all__ =   [ "Command", "cmd" ]

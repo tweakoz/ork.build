@@ -6,7 +6,7 @@
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
 
-import os, inspect, tarfile
+import os, inspect, tarfile, sys
 from pathlib import Path
 import importlib.util
 import ork.path, ork.host
@@ -14,18 +14,102 @@ from ork.command import Command, run
 from ork.deco import Deco
 from ork.wget import wget
 from ork import pathtools, cmake, make, path, git, host
-from ork import _dep_impl, _globals
+from ork import _dep_impl, _dep_x, _globals, log, buildtrace
 
 deco = Deco()
-###############################################################################
 
+root_dep_list = ["root", "python", "pydefaults"]
+
+###############################################################################
 class Provider(object):
     """base class for all dependency providers"""
-    def __init__(self):
-      self._miscoptions = _globals.options
+    def __init__(self,name):
+      self._name = name
+      self._miscoptions = _globals.getOptions()
       self._node = None
       self._deps = {}
+      self._archlist = None 
+      self._oslist = None 
+      self._src_required_files = []
+      self._bin_required_files = []
+      self._required_deps = {}
+      self._topoindex = -1
+      self.manifest = path.manifests()/name
+      self.OK = self.manifest.exists()
+      self.setSourceRoot(path.builds()/name)
+      self._debug = False
+      self._must_build_in_tree = False
+      if name not in root_dep_list:
+        self.declareDep("root")
+    #############################
+    def declareDep(self, named):
+      inst = _dep_x.instance(named)
+      #print(named,type(inst))
+      self._required_deps[named] = inst
+      return inst
+    #############################
+    def createBuilder(self,clazz):
+      self._builder = clazz(self._name)
+      if len(self._required_deps):
+        self._builder.requires(self._required_deps)
+      return self._builder
+    #############################
+    def setSourceRoot(self,srcroot):
+      self.source_root = srcroot
+      self.build_src = srcroot
+      self.build_dest = srcroot/".build"
+    #############################
+    def mustBuildInTree(self):
+      self.build_dest = self.build_src
+      self._must_build_in_tree = True
+    #########################################
+    def areRequiredSourceFilesPresent(self):
+      return None
+    #########################################
+    def areRequiredBinaryFilesPresent(self):
+      return None
+    #############################
+    ## wipe build ?
+    #############################
 
+    @property
+    def supports_host(self):
+      """predicate determining if dependency supports the host architecture and OS"""
+      supports = False 
+      #####################################
+      def check_os():
+        check = False
+        if self._oslist==None:
+          check = True
+        elif host.IsDarwin and ("Darwin" in self._oslist):
+          check = True
+        elif host.IsLinux and ("Linux" in self._oslist):
+          check = True
+        elif host.IsIrix and ("IRIX64" in self._oslist):
+          check = True
+        return check
+      #####################################
+      def check_arch():
+        check = False
+        if self._archlist==None:
+          check = True
+        elif host.IsX86_64 and ("x86_64" in self._archlist):
+          check = True
+        elif host.IsAARCH64 and ("aarch64" in self._archlist):
+          check = True
+        return check
+      #####################################
+      return check_os() and check_arch()
+
+    #############################
+    ## Is this the primary dep provvider?
+    #############################
+    @property
+    def is_primary_dep(self):
+      if "depname" in self._miscoptions:
+        if self._name == self._miscoptions["depname"]:
+          return True 
+      return False  
     #############################
     ## wipe build ?
     #############################
@@ -36,7 +120,7 @@ class Provider(object):
       wipe = False
       if "wipe" in self._miscoptions:
         wipe = self._miscoptions["wipe"]==True
-      return wipe
+      return wipe and self.is_primary_dep
 
     #############################
     ## serial build ?
@@ -66,7 +150,7 @@ class Provider(object):
         force = False
         if "force" in self._miscoptions:
           force = self._miscoptions["force"]==True
-        return force
+        return force and self.is_primary_dep
 
     #############################
     ## force build ?
@@ -77,15 +161,13 @@ class Provider(object):
         incremental = False
         if "incremental" in self._miscoptions:
           incremental = self._miscoptions["incremental"]==True
-        return incremental
+        return incremental and self.is_primary_dep
 
     #############################
 
     @property
     def should_build(self):
-        return (False==self.manifest.exists()) or \
-               self.should_force_build or \
-               self.should_incremental_build
+        return (not self.manifest.exists()) or self.should_force_build or self.should_incremental_build
 
     #############################
 
@@ -123,14 +205,31 @@ class Provider(object):
     #############################
 
     def provide(self):
+      if not self.supports_host:
+        print(deco.red("Dependency does not support this host"))
+        return False
       if self.should_wipe:
         self.wipe()
       if self.should_build:
-        self.OK = self.build()
-      if self.OK:
-        self.manifest.touch()
+        with buildtrace.NestedBuildTrace({ "op": "Provider.provide(%s)"%self._name }) as nested:
+          self.OK = self.build()
+          if self.OK:
+            self.OK = self.onPostBuild()
+            if self.OK:
+              gfnkdsgnjf=self.areRequiredBinaryFilesPresent()
+              if gfnkdsgnjf != None:
+                self.OK = gfnkdsgnjf
+              else:
+                self.OK = True
+              if self.OK:
+                self.manifest.touch()
       return self.OK
 
+
+    #############################
+
+    def onPostBuild(self):
+      return True
 
     #############################
 
@@ -171,7 +270,7 @@ class Provider(object):
 
 class HomebrewProvider(Provider):
   def __init__(self,name,pkgname):
-    super().__init__()
+    super().__init__(pkgname)
     self.manifest = path.manifests()/name
     self.OK = self.manifest.exists()
     self.pkgname = pkgname
@@ -195,19 +294,9 @@ class HomebrewProvider(Provider):
 class StdProvider(Provider):
     #############################
     def __init__(self,name):
-      super().__init__()
-      self._name = name
+      super().__init__(name)
       self._fetcher = None
       self._builder = None
-      self._node = None
-      self.manifest = path.manifests()/name
-      self.OK = self.manifest.exists()
-      self.setSourceRoot(path.builds()/name)
-    #############################
-    def setSourceRoot(self,srcroot):
-      self.source_root = srcroot
-      self.build_src = srcroot
-      self.build_dest = srcroot/".build"
     #############################
     def postinit(self):
       pass
@@ -227,73 +316,95 @@ class StdProvider(Provider):
     def wipe(self):
       os.system("rm -rf %s"%self.source_root)
     #############################
-    def build(self):
-      #########################################
-      # fetch source
-      #########################################
-      if not self.source_root.exists():
+    def updateSource(self):
+        return self._fetcher.update(self.source_root)
+    #############################
+    def _fetch(self):
+      source_exists = self.areRequiredSourceFilesPresent()
+      #print(deco.bright("STDPROVIDER<%s> source_exists<%s>"%(self._name,source_exists)))
+      fetchOK = False
+      if not source_exists:
+        print(deco.bright("Fetching<%s>"%(self._name)))
         fetchOK = self._fetcher.fetch(self.source_root)
-        assert(fetchOK==True or fetchOK==False)
+        #assert(fetchOK==True or fetchOK==False)
         if False==fetchOK:
-          self.OK = False
-          return False
+          print(deco.err("Fetch <%s> failed!"%self._name))
+          fetchOK = False
+      return fetchOK 
+    #############################
+    def build(self):
+      if self.areRequiredSourceFilesPresent() == False:
+        print(deco.red("Cannot build <%s> missing files[%s]"%(self._name,self._src_required_files)))
+        return False
       #########################################
       # build
       #########################################
+      print(deco.bright("Building<%s>"%(self._name)))
       self.OK = self._builder.build(self.build_src,
                                     self.build_dest,
                                     self.should_incremental_build)
       #########################################
+      if not self.OK:
+        print(deco.err("Build <%s> failed!"%self._name))
       return self.OK
     #########################################
+    def install(self):
+      return self._builder.install(self.build_dest)
+    #########################################
     def provide(self):
-      self.postinit()
-      if self.should_wipe:
-        self.wipe()
-      if self.should_build:
+      with buildtrace.NestedBuildTrace({ "op": "StdProvider.provide(%s)"%self._name }) as nested:
+       #print("self.should_wipe<%d>"%self.should_wipe)
+       #print("self.should_build<%d>"%self.should_build)
+       self.postinit()
+
+       #########################################
+       # WIPE
+       #########################################
+
+       if self.should_wipe:
+         self.wipe()
+
+       #########################################
+       # FETCH
+       #########################################
+
+       src_present = self.areRequiredSourceFilesPresent()
+      
+       if not src_present:
+         fetch_ok = self._fetch()
+         if False==fetch_ok:
+          print(deco.err("Fetch <%s> failed!"%self._name))
+          self.OK = False
+          return False
+
+       #########################################
+       # BUILD
+       #########################################
+
+       if self.should_build:
         self.OK = self.build()
+
         if self.OK:
-          self.OK = self.install()
-      if self.OK:
+          self.OK = self.onPostBuild()
+
+          #########################################
+          # INSTALL
+          #########################################
+
+          if self.OK:
+            self.OK = self.install()
+          else:
+            return False
+
+       #########################################
+       # MANIFEST
+       #########################################
+
+       if self.OK:
         self.manifest.touch()
-      return self.OK
+      
+       assert(self.OK)
+      
+       return self.OK
+    #########################################
 
-###############################################################################
-
-def require(name_or_list):
-  if (isinstance(name_or_list,list)):
-    rval = []
-    for item in name_or_list:
-      inst = _dep_impl._get_instance(item)
-      inst.provide()
-      rval += [inst]
-  else:
-    inst = _dep_impl.instance(name_or_list)
-    ok = inst.provide()
-    if ok:
-      rval = inst
-    else:
-      rval = None
-  return rval
-
-###############################################################################
-
-def require_opts(name_or_list,opts):
-  if (isinstance(name_or_list,list)):
-    rval = []
-    _globals.options = opts
-    for item in name_or_list:
-      inst = instance(item)
-      inst.provide()
-      rval += [inst]
-    _globals.options = []
-  else:
-    _globals.options = opts
-    inst = _dep_impl.instance(name_or_list)
-    _globals.options = []
-    ok = inst.provide()
-    if ok:
-      rval = inst
-    else:
-      rval = None
-  return rval

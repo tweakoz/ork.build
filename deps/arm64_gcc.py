@@ -27,6 +27,7 @@ class arm64_gcc(dep.StdProvider):
   def __init__(self): ############################################
     super().__init__("arm64_gcc")
     self.toolchain_dir = path.prefix()/"opt"/"toolchain"/"aarch64-elf"
+    self._archlist = ["x86_64"]
     pass
 
   def __str__(self):

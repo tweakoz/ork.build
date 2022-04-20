@@ -206,6 +206,7 @@ class context:
 	def gitget( self, url, dir, rev=None ):
 		os.chdir(self.dl_dir)
 		if self.opt_force:
+			assert(False)
 			os.system( "rm -rf %s" % dir )
 		exists = os.path.exists(dir)
 		if exists:

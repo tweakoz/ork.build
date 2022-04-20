@@ -9,7 +9,8 @@
 
 import os, sys, string
 import ork.path
-from ork.path import Path
+import ork.dep
+from ork.path import *
 import ork.deco
 deco = ork.deco.Deco()
 
@@ -78,7 +79,7 @@ if "OBT_SEARCH_PATH" in os.environ:
 
 #################################################################################
 
-print(pthspec)
+#print(pthspec)
 default_pathlist = []
 for p in pthspec:
   default_pathlist += [Path(p)]
@@ -98,11 +99,31 @@ def execute(word,path_list = default_pathlist):
       pathstr = str(item.path)
       pathstr = pathstr.replace(str(root),"")
       deco_path = "%-*s"%(72,deco.path(pathstr))
-      deco_lino = "%s %s"%(deco.magenta("Line"),deco.yellow(item.lineno))
+      deco_lino = "%s %s"%(deco.bright("Line"),deco.yellow(item.lineno))
       deco_lino = "%-*s"%(37,deco_lino)
       deco_text = deco.val(item.text.strip())
       print("%s%s %s" % (deco_path, deco_lino, deco_text))
 
+#################################################################################
+
+def execute_at(word_list,path_list):
+  for path in path_list:
+   print("/////////////////////////////////////////////////////////////")
+   print("// searching path : %s" % path)
+   print("/////////")
+   for word in word_list:
+     results = search_at_root(word,str(path))
+     have_results = len(results)!=0
+     if have_results:
+       root = str(ork.path.project_root())+"/"
+       for item in results:
+         pathstr = str(item.path)
+         pathstr = pathstr.replace(str(root),"")
+         deco_path = "%-*s"%(72,deco.path(pathstr))
+         deco_lino = "%s %s"%(deco.magenta("Line"),deco.yellow(item.lineno))
+         deco_lino = "%-*s"%(37,deco_lino)
+         deco_text = deco.val(item.text.strip())
+         print("%s%s %s" % (deco_path, deco_lino, deco_text))
 
 
 #################################################################################
@@ -111,6 +132,7 @@ def visit(word,visitor, path_list = default_pathlist):
   for path in path_list:
    results = search_at_root(word,str(path))
    have_results = len(results)!=0
+   print(have_results)
    if have_results:
      visitor.onPath(path)
      for item in results:

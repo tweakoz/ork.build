@@ -15,11 +15,12 @@ class clang(dep.StdProvider):
   def __init__(self):
     name = "clang"
     super().__init__(name=name)
+    #self._archlist = ["x86_64"]
     self.llvm = dep.instance("llvm")
     if hasattr(self.llvm,"_fetcher"):
       self._fetcher = dep.NopFetcher(name)
       self._fetcher._revision = self.llvm._fetcher._revision
-      self._builder = dep.CMakeBuilder(name)
+      self._builder = self.createBuilder(dep.CMakeBuilder)
       self._builder.requires([self.llvm])
       ##########################################
       # llvm cmake file is 1 subdir deeper than usual
@@ -27,5 +28,32 @@ class clang(dep.StdProvider):
       self.source_root = path.builds()/"llvm"
       self.build_src = self.source_root/"clang"
       self.build_dest = self.source_root/".build"
+  ##########################################
   def __str__(self):
     return "Clang(From LLVM)"
+  ##########################################
+  @property
+  def linux_bindir(self):
+    if host.IsLinux:
+      if host.IsGentoo:
+        return path.Path("/usr/lib/llvm/11/bin")
+      elif host.IsDebian:
+        return path.Path("/usr/bin")
+    return path.Path("")
+  ##########################################
+  @property
+  def bin_clangpp(self):
+    if host.IsLinux and host.IsX86_64:
+      return self.linux_bindir/"clang++"
+    elif host.IsLinux and host.IsAARCH64:
+      return self.linux_bindir/"clang++-10"
+    return path.Path("clang++")
+  ##########################################
+  @property
+  def bin_clang(self):
+    if host.IsLinux and host.IsX86_64:
+      return self.linux_bindir/"clang"
+    elif host.IsLinux and host.IsAARCH64:
+      return self.linux_bindir/"clang-10"
+    return path.Path("clang")
+  ##########################################

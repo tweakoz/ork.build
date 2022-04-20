@@ -14,6 +14,9 @@ class nvtt(dep.StdProvider):
   def __init__(self):
     name = "nvtt"
     super().__init__(name)
+    self.declareDep("cmake")
+    self.declareDep("cuda")
+    self.declareDep("openexr")
     self._fetcher = dep.GithubFetcher(name=name,
                                       repospec="tweakoz/nvidia-texture-tools",
                                       revision="toz_orkdotbuild",
@@ -53,10 +56,17 @@ class nvtt(dep.StdProvider):
     # because, cuda 10 requires it - todo - make dynamic
     ############################################
     if host.IsLinux:
+        CUDA = dep.instance("cuda")
         self._builder.setCmVars({
-          "CMAKE_CXX_COMPILER": "g++-8",
-          "CMAKE_C_COMPILER": "gcc-8" })
+          "CMAKE_CXX_COMPILER": CUDA.cxx_compiler,
+          "CMAKE_C_COMPILER": CUDA.c_compiler })
     elif host.IsOsx:
         self._builder.setCmVars({
           "CMAKE_INSTALL_NAME_DIR": "@executable_path/../lib/",
           "CMAKE_BUILD_WITH_INSTALL_RPATH": "ON"})
+
+  def areRequiredSourceFilesPresent(self):
+    return (self.source_root/"CMakeLists.txt").exists()
+
+  def areRequiredBinaryFilesPresent(self):
+    return (path.libs()/"libnvimage.so").exists()

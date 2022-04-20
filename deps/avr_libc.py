@@ -28,7 +28,7 @@ HASH = "2360981cd5d94e1d7a70dfc6983bdf15"
 class avr_libc(dep.Provider):
 
   def __init__(self): ############################################
-    super().__init__()
+    super().__init__("avr_libc")
 
     self.manifest = path.manifests()/"avr_binutils"
     self.OK = self.manifest.exists()
@@ -37,6 +37,7 @@ class avr_libc(dep.Provider):
     self.extract_dir = path.builds()/"avr-libc"
     self.source_dir = self.extract_dir/self.name
     self.build_dir = self.source_dir/".build"
+    self._archlist = ["x86_64"]
 
   ########
 

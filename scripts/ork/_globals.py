@@ -7,6 +7,38 @@
 ###############################################################################
 
 global yo
+global _options
+
 yo = "yo"
-global options
-options =[]
+_options = dict()
+_nodes = dict()
+
+def setOption(key,value):
+  _options[key] = value
+
+def setOptions(opts):
+  _options = opts
+
+def getOptions():
+  return _options
+
+def getOption(named):
+  if named in _options:
+    return _options[named]
+  else:
+   return None 
+
+def setNode(named,value):
+  _nodes[named] = value
+
+def getNode(named):
+  if named in _nodes:
+    return _nodes[named]
+  else:
+   return None 
+
+def enableBuildTracing():
+  _options["BUILDTRACE"] = True
+
+def isBuildTraceEnabled():
+  return "BUILDTRACE" in _options

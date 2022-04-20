@@ -17,7 +17,7 @@ deco = ork.deco.Deco()
 
 def set(key,val):
 
-  #log.output(deco.orange("set")+" var<" + deco.key(str(key))+"> to <" + deco.path(val) + ">")
+  log.output(deco.orange("set")+" var<" + deco.key(str(key))+"> to <" + deco.path(val) + ">")
   os.environ[str(key)] = str(val)
 
 ###########################################
@@ -32,6 +32,7 @@ def prepend(key,val):
 ###########################################
 
 def append(key,val):
+  val = os.path.normpath(str(val))
   if False==(str(key) in os.environ):
     set(key,val)
   else:

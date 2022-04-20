@@ -10,9 +10,9 @@ HASH = "f6e931e319531b736fadc017f470e68a"
 class pkgconfig(dep.Provider):
 
   def __init__(self): ############################################
-    super().__init__()
+    super().__init__("pkgconfig")
 
-    self.manifest = path.manifests()/"yarl"
+    self.manifest = path.manifests()/"pkgconfig"
     self.extract_dir = path.builds()/"pkgconfig"
     self.source_dir = self.extract_dir/("pkg-config-%s" % VER)
     self.build_dir = self.source_dir/".build"
@@ -21,7 +21,6 @@ class pkgconfig(dep.Provider):
     self.OK = self.manifest.exists()
 
   def build(self): ##########################################################
-
     self.arcpath = dep.downloadAndExtract([self.url],
                                           "pkg-config-%s" % VER,
                                           "gz",
@@ -29,19 +28,35 @@ class pkgconfig(dep.Provider):
                                           self.extract_dir)
 
 
-    os.mkdir(self.build_dir)
-    os.chdir(self.build_dir)
+    self.build_dir.mkdir()
+    self.build_dir.chdir()
 
-    Command([ "../configure",
-              "--prefix=%s"%path.prefix(),
-              "--with-internal-glib"
-             ]).exec()
+    conf_cmd = [
+      "../configure",
+      "--prefix=%s"%path.prefix(),
+      "--with-internal-glib"
+    ]
+    if host.IsLinux and host.IsAARCH64:
+      conf_cmd += ["--build=aarch64-linux-gnu"]
+
+    self.OK = (Command(conf_cmd).exec()==0)
 
     #assert(False)
 
-    if host.IsLinux:
-        f2r = path.stage()/"bin"/"x86_64-unknown-linux-gnu-pkg-config"
-        os.system( "rm -f %s" % f2r)
+    if host.IsLinux and host.IsX86_64:
+      f2r = path.stage()/"bin"/"x86_64-unknown-linux-gnu-pkg-config"
+      os.system( "rm -f %s" % f2r)
+    elif host.IsLinux and host.IsAARCH64:
+      f2r = path.stage()/"bin"/"x86_64-unknown-linux-gnu-pkg-config"
+      os.system( "rm -f %s" % f2r)
 
-    self.OK = (make.exec( "install" )==0)
+    if self.OK:
+      self.OK = (make.exec( "install" )==0)
+
     return self.OK
+  ########################################################################
+  def areRequiredSourceFilesPresent(self):
+    return (self.source_dir/"config.guess").exists()
+  ########################################################################
+  def areRequiredBinaryFilesPresent(self):
+    return (path.bin()/"pkg-config").exists()

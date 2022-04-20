@@ -24,9 +24,8 @@ class parsertl14(dep.StdProvider):
     class Builder(dep.BaseBuilder):
       def __init__(self,name):
         super().__init__(name)
-      def build(self,srcdir,blddir,incremental=False):
-        dep.require(self._deps)
-        return True
+      def build(self,srcdir,blddir,incremental):
+        return dep.require(self._deps)
       def install(self,blddir):
         return command.run([ "cp",
                              "-r",
@@ -35,3 +34,9 @@ class parsertl14(dep.StdProvider):
                              ])==0
     #################################################
     self._builder = Builder(name)
+  #############################################
+  def areRequiredSourceFilesPresent(self):
+    return (self.source_root/"README.md").exists()
+
+  def areRequiredBinaryFilesPresent(self):
+    return (path.includes()/"parsertl"/"parse.hpp").exists()

@@ -22,3 +22,16 @@ def template_file(inppath, replacements, outpath=None):
         print(replacements)
         outstr = t.substitute(replacements)
         outfile.write(outstr)
+
+def template_string(inpstring, replacements, outpath):
+
+    print("Applying template to %s"%deco.path(outpath))
+
+    with open(str(outpath),"w") as outfile:
+        t = OrkTemplate(inpstring)
+        print(inpstring)
+        print(t)
+        print(replacements)
+        outstr = t.substitute(replacements)
+        outfile.write(outstr)
+        print(outstr)

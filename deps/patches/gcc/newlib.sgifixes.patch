@@ -1,0 +1,21 @@
+--- newlib-3.3.0/newlib/libc/include/ieeefp.h
++++ newlib-3.3.0/newlib/libc/include/ieeefp.h
+@@ -184,0 +184,5 @@
++#elif LDBL_MANT_DIG == 106
++#define EXT_EXPBITS     11
++#define EXT_FRACHBITS   53
++#define EXT_FRACLBITS   53
++#define __ieee_ext_field_type unsigned long long
+
+--- newlib-3.3.0/newlib/libc/include/sys/reent.h
++++ newlib-3.3.0/newlib/libc/include/sys/reent.h
+@@ -820,1 +820,1 @@
+-extern struct _reent *const _global_impure_ptr __ATTRIBUTE_IMPURE_PTR__;
++extern struct _reent *_global_impure_ptr __ATTRIBUTE_IMPURE_PTR__;
+
+--- newlib-3.3.0/newlib/libc/reent/impure.c
++++ newlib-3.3.0/newlib/libc/reent/impure.c
+@@ -28,1 +28,1 @@
+-struct _reent *const __ATTRIBUTE_IMPURE_PTR__ _global_impure_ptr = &impure_data;
++struct _reent *__ATTRIBUTE_IMPURE_PTR__ _global_impure_ptr = &impure_data;
+

@@ -18,7 +18,7 @@ class libfive(dep.StdProvider):
                                       repospec="tweakoz/libfive",
                                       revision="master",
                                       recursive=False)
-    self._builder = dep.CMakeBuilder(name)
+    self._builder = self.createBuilder(dep.CMakeBuilder)
     self._builder.build_dest = self.build_dest
     ###########################################
     self._builder.requires(["eigen"])

@@ -23,9 +23,10 @@ deco = Deco()
 class avr_gcc(dep.Provider):
 
   def __init__(self): ############################################
-    super().__init__()
+    super().__init__("avr_gcc")
     self.manifest = path.manifests()/"avr_gcc"
     self.OK = self.manifest.exists()
+    self._archlist = ["x86_64"]
 
 
   ########

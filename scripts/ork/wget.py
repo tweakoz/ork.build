@@ -39,8 +39,11 @@ def wget(urls=[],
   hash_ok = False
   if md5val!=None:
     hash_ok = check_hash(output_path,md5val)
+    if hash_ok:
+      return output_path
 
   if False==hash_ok:
+    dl_succeeded = False
     for url in urls:
       res = Command(["wget",
                      "-O",
@@ -48,12 +51,15 @@ def wget(urls=[],
                      #"--show-progress",
                      url]).exec()
 
-      if md5val != None:
-        hash_ok = check_hash(output_path,md5val)
-        if False==hash_ok:
-          return None
+      if res==0:
+        dl_succeeded = True 
+        if md5val != None:
+          hash_ok = check_hash(output_path,md5val)
+          if False==hash_ok:
+            return None
+        return output_path
 
-  return output_path
+  return None
 
 ################################################################################
 # batch downloads

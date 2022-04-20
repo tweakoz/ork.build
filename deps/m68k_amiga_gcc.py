@@ -27,6 +27,7 @@ class m68k_amiga_gcc(dep.StdProvider):
   def __init__(self): ############################################
     super().__init__("m68k_amiga_gcc")
     self.toolchain_dir = path.prefix()/"opt"/"toolchain"/"m68k-amiga"
+    self._archlist = ["x86_64"]
     pass
 
   def __str__(self):

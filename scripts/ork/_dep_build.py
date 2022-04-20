@@ -13,8 +13,8 @@ import ork.path, ork.host
 from ork.command import Command, run
 from ork.deco import Deco
 from ork.wget import wget
-from ork import pathtools, cmake, make, path, git, host, _globals
-from ork._dep_provider import require
+from ork import pathtools, cmake, make, path, git, host, _globals, log
+from ork._dep_node import require
 
 deco = Deco()
 
@@ -27,6 +27,9 @@ class BaseBuilder(object):
     super().__init__()
     self._name = name
     self._deps = []
+    self._debug = False
+    self._onPostBuild = None
+    self._onPostInstall = None
   def requires(self,deplist):
     """declare that this dep module depends on others"""
     self._deps += deplist
@@ -45,7 +48,8 @@ class NopBuilder(BaseBuilder):
   """Do nothing builder (but still installs child dependencies)"""
   def __init__(self,name):
     super().__init__(name)
-
+  def build(self,srcdir,blddir,incremental=False):
+    return True
 ###############################################################################
 # BinInstaller : install binaries from downloaded package
 ###############################################################################
@@ -68,7 +72,9 @@ class BinInstaller(BaseBuilder):
     self._items += [BinInstaller.InstallerItem(source,destination)]
   ###########################################
   def build(self,srcdir,blddir,incremental=False):
-    require(self._deps)
+    ok2build = require(self._deps)
+    if not ok2build:
+      return False
     for item in self._items:
       exists = item._src.exists()
       #print(item,item._src,exists)
@@ -117,7 +123,7 @@ class CMakeBuilder(BaseBuilder):
 
     ##################################
     self._parallelism=1.0
-    if "serial" in _globals.options and _globals.options["serial"]==True:
+    if "serial" in _globals.getOptions() and _globals.getOptions()["serial"]==True:
       self._parallelism=0.0
     ##################################
     # implicit dependencies
@@ -136,22 +142,33 @@ class CMakeBuilder(BaseBuilder):
       self._cmakeenv[k] = othdict[k]
   ###########################################
   def build(self,srcdir,blddir,incremental=False):
-    require(self._deps)
-    ok2build = True
+    ok2build = require(self._deps)
+    if not ok2build:
+      return False
     if incremental:
-      os.chdir(blddir)
+      pathtools.chdir(blddir)
+      cmake_ctx = cmake.context(root=srcdir,env=self._cmakeenv)
+      ok2build = cmake_ctx.exec()==0
     else:
       pathtools.mkdir(blddir,clean=True)
       pathtools.chdir(blddir)
       cmake_ctx = cmake.context(root=srcdir,env=self._cmakeenv)
       ok2build = cmake_ctx.exec()==0
+
     if ok2build:
-      return (make.exec(parallelism=self._parallelism)==0)
+      OK = (make.exec(parallelism=self._parallelism)==0)
+      if OK and self._onPostBuild!=None:
+        self._onPostBuild()
+      return OK
     return False
   ###########################################
   def install(self,blddir):
     pathtools.chdir(blddir)
-    return (make.exec("install",parallelism=0.0)==0)
+    OK = (make.exec("install",parallelism=0.0)==0)
+    if OK and self._onPostInstall!=None:
+       self._onPostInstall()
+    return OK
+
   ###########################################
 
 ###############################################################################
@@ -161,8 +178,10 @@ class AutoConfBuilder(BaseBuilder):
   def __init__(self,name):
     super().__init__(name)
     ##################################
+    self._needaclocal = False
+    self._needsautogendotsh = False
     self._parallelism=1.0
-    if "serial" in _globals.options and _globals.options["serial"]==True:
+    if "serial" in _globals.getOptions() and _globals.getOptions()["serial"]==True:
       self._parallelism=0.0
   ###########################################
   def requires(self,deplist):
@@ -176,12 +195,29 @@ class AutoConfBuilder(BaseBuilder):
       self._confvar[k] = othdict[k]
   ###########################################
   def build(self,srcdir,blddir,incremental=False):
-    require(self._deps)
-    ok2build = True
+    ok2build = require(self._deps)
+    if not ok2build:
+      return False
     retc = 0
     if incremental:
       os.chdir(blddir)
     else:
+
+      if self._needaclocal:
+        pathtools.chdir(srcdir)
+        retc = Command(["aclocal"]).exec()
+        if retc!=0:
+          print(deco.red("Error running aclocal<%d>"%retc))
+          return False
+      if self._needsautogendotsh:
+        pathtools.chdir(srcdir)
+        retc = Command(["./autogen.sh"]).exec()
+        if retc == 0:
+           make.exec("distclean")
+        else:
+          print(deco.red("Error running autogen.sh<%d>"%retc))
+          return False
+
       pathtools.mkdir(blddir,clean=True)
       pathtools.chdir(blddir)
 
@@ -197,4 +233,79 @@ class AutoConfBuilder(BaseBuilder):
   def install(self,blddir):
     pathtools.chdir(blddir)
     return (make.exec("install",parallelism=0.0)==0)
+  ###########################################
+
+###############################################################################
+
+class CustomStep:
+  def __init__(self,name,funktor):
+    super().__init__()
+    self._name = name
+    self._funktor = funktor 
+
+###############################################################################
+
+class CustomBuilder(BaseBuilder):
+  ###########################################
+  def __init__(self,name):
+    super().__init__(name)
+    ##################################
+    self._envvars = dict()
+    self._parallelism=1.0
+    self._cleanbuildcommands = list()
+    self._incrbuildcommands = list()
+    self._installcommands = list()
+    self._builddir = path.builds()/name
+
+    if "serial" in _globals.getOptions() and _globals.getOptions()["serial"]==True:
+      self._parallelism=0.0
+  ###########################################
+  def requires(self,deplist):
+    self._deps += deplist
+  ###########################################
+  def setEnvVar(self,key,value):
+    self._envvars[key] = value
+  ###########################################
+  def setEnvVars(self,othdict):
+    for k in othdict:
+      self._envvars[k] = othdict[k]
+  ###########################################
+  def _run_commands(self,cmdlist):
+    if len(cmdlist)>0:
+      for cmd in cmdlist:
+        #print(cmd)
+        if isinstance(cmd,Command):
+          retc = cmd.exec()
+          if retc!=0:
+            return False
+        elif isinstance(cmd,CustomStep):
+          retc = cmd._funktor()
+          if retc==False:
+            return False
+    return True
+  ###########################################
+  def build(self,srcdir,blddir,incremental=False):
+    print("srcdir<%s>"%srcdir)
+    print("blddir<%s>"%blddir)
+    print("incremental<%s>"%incremental)
+    print("deps<%s>"%self._deps)
+    ok2build = require(self._deps)
+    if not ok2build:
+      return False
+    ###################################
+    if incremental:
+    ###################################
+      pathtools.mkdir(self._builddir,clean=False)
+      pathtools.chdir(self._builddir)
+      return self._run_commands(self._incrbuildcommands)
+    ###################################
+    else: # clean build
+    ###################################
+      pathtools.mkdir(self._builddir,clean=False)
+      pathtools.chdir(self._builddir)
+      return self._run_commands(self._cleanbuildcommands)
+  ###########################################
+  def install(self,blddir):
+    pathtools.chdir(self._builddir)
+    return self._run_commands(self._installcommands)
   ###########################################

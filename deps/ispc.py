@@ -18,13 +18,14 @@ deco = Deco()
 class _ispc_from_source(dep.StdProvider):
   def __init__(self,name):
     super().__init__(name)
+    self._archlist = ["x86_64"]
     self.llvm = dep.instance("llvm")
     self._fetcher = dep.GitFetcher(name)
     self._fetcher._git_url = "https://github.com/ispc/ispc"
     self._fetcher._cache=False,
     self._fetcher._recursive=False
     self._fetcher._revision = "v1.13.0"
-    self._builder = dep.CMakeBuilder(name)
+    self._builder = self.createBuilder(dep.CMakeBuilder)
     self._builder.requires([self.llvm])
     if host.IsOsx:
       self._builder.setCmVar("BISON_EXECUTABLE",path.osx_brewopt()/"bison"/"bin"/"bison")
@@ -34,6 +35,7 @@ class _ispc_from_source(dep.StdProvider):
 class _ispc_from_homebrew(dep.HomebrewProvider):
   def __init__(self,name):
     super().__init__(name,name)
+    self._archlist = ["x86_64"]
   def env_init(self):
     binary = self.brew_prefix()/"bin"/"ispc"
     version = ""
@@ -45,6 +47,7 @@ class _ispc_from_homebrew(dep.HomebrewProvider):
 class _ispc_from_wget(dep.StdProvider):
   def __init__(self,name):
     super().__init__(name)
+    self._archlist = ["x86_64"]
     self._version = "v1.13.0"
     self._fetcher = dep.WgetFetcher(name)
     baseurl = URL("https://github.com/ispc/ispc/releases/download")
@@ -55,13 +58,22 @@ class _ispc_from_wget(dep.StdProvider):
     self._fetcher._arctype = "tgz"
     self._fetcher._md5 = "98fe4a03ef0f39f5ebbae77a03c48e71"
     self._builder = dep.BinInstaller(name)
-    src_dir = path.builds()/"ispc"/basename
+    self.src_dir = path.builds()/"ispc"/basename
     dst_dir = path.stage()
-    self._builder.install_item(source=src_dir/"bin"/"ispc", \
+    self._builder.install_item(source=self.src_dir/"bin"/"ispc", \
                                destination=dst_dir/"bin"/"ispc")
   def env_init(self):
     log.marker("registering ispc(%s) SDK"%self._version)
     env.set("ISPC",path.stage()/"bin"/"ispc")
+
+  def install(self):
+    return self._builder.install(None)
+
+  def areRequiredSourceFilesPresent(self):
+    return (self.src_dir/"LICENSE.txt").exists()
+
+  def areRequiredBinaryFilesPresent(self):
+    return (path.bin()/"ispc").exists()
 
 ###############################################################################
 

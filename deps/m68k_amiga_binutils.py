@@ -24,6 +24,7 @@ class m68k_amiga_binutils(dep.StdProvider):
 
   def __init__(self): ############################################
     super().__init__("m68k_amiga_binutils")
+    self._archlist = ["x86_64"]
 
   ########
 

@@ -1,121 +1,120 @@
 ###############################################################################
 # Orkid Build System
-# Copyright 2010-2018, Michael T. Mayers
+# Copyright 2010-2020, Michael T. Mayers
 # email: michael@tweakoz.com
 # The Orkid Build System is published under the GPL 2.0 license
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
+from ork import dep, log, path, template
 
-VERSION = "1_67_0"
-HASH = "ced776cb19428ab8488774e1415535ab"
+VERSION = "1.77.0"
 
-import os,tarfile
-from ork import path,host,dep
-from ork.wget import wget
-from ork.deco import Deco
-from ork.command import Command
-from pathlib import Path
-from yarl import URL
+boost_libs = list()
+boost_libs += ["boost_container-mt"]
+boost_libs += ["boost_log_setup "]
+boost_libs += ["boost_math_tr1l "]
+boost_libs += ["boost_graph-mt "]
+boost_libs += ["boost_wserialization-mt "]
+boost_libs += ["boost_log-mt "]
+boost_libs += ["boost_math_c99f "]
+boost_libs += ["boost_type_erasure "]
+boost_libs += ["boost_signals-mt "]
+boost_libs += ["boost_test_exec_monitor "]
+boost_libs += ["boost_filesystem "]
+boost_libs += ["boost_thread-mt "]
+boost_libs += ["boost_math_tr1f-mt "]
+boost_libs += ["boost_date_time "]
+boost_libs += ["boost_timer "]
+boost_libs += ["boost_math_tr1f "]
+boost_libs += ["boost_test_exec_monitor-mt "]
+boost_libs += ["boost_container "]
+boost_libs += ["boost_math_tr1 "]
+boost_libs += ["boost_type_erasure-mt "]
+boost_libs += ["boost_program_options-mt "]
+boost_libs += ["boost_graph "]
+boost_libs += ["boost_log_setup-mt "]
+boost_libs += ["boost_random "]
+boost_libs += ["boost_system "]
+boost_libs += ["boost_system-mt "]
+boost_libs += ["boost_locale-mt "]
+boost_libs += ["boost_wserialization "]
+boost_libs += ["boost_regex "]
+boost_libs += ["boost_exception "]
+boost_libs += ["boost_timer-mt "]
+boost_libs += ["boost_signals "]
+boost_libs += ["boost_filesystem-mt "]
+boost_libs += ["boost_math_c99-mt "]
+boost_libs += ["boost_math_tr1-mt "]
+boost_libs += ["boost_serialization-mt "]
+boost_libs += ["boost_serialization "]
+boost_libs += ["boost_prg_exec_monitor "]
+boost_libs += ["boost_exception-mt "]
+boost_libs += ["boost_coroutine "]
+boost_libs += ["boost_math_c99 "]
+boost_libs += ["boost_iostreams-mt "]
+boost_libs += ["boost_random-mt "]
+boost_libs += ["boost_program_options "]
+boost_libs += ["boost_atomic-mt "]
+boost_libs += ["boost_date_time-mt "]
+boost_libs += ["boost_math_c99l "]
+boost_libs += ["boost_math_tr1l-mt "]
+boost_libs += ["boost_context-mt "]
+boost_libs += ["boost_regex-mt "]
+boost_libs += ["boost_coroutine-mt "]
+boost_libs += ["boost_log "]
+boost_libs += ["boost_chrono-mt "]
+boost_libs += ["boost_wave-mt "]
+boost_libs += ["boost_iostreams "]
+boost_libs += ["boost_chrono"]
 
-deco = Deco()
+PKGCONF = """
+# Package Information for pkg-config
+prefix=$$$STAGING
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir_old=${prefix}/include/boost
+includedir_new=${prefix}/include
 
-###########################################
+Name: Boost
+Description: Boost (OBT)
+Version: $$$VERSION
+Libs: -L${exec_prefix}/lib $$$LIBS
+Cflags: -I${includedir_old} -I${includedir_new}
+"""
 
-class boost(dep.Provider):
-
-  ########
-
+###############################################################################
+class boost(dep.StdProvider):
   def __init__(self):
-    super().__init__()
-    self.version = VERSION
-    self.versiond = self.version.replace("_",".")
-    self.baseurl = URL("https://dl.bintray.com/boostorg/release")
-    self.fname = "boost_%s.tar.bz2"%self.version
-    build_dest = path.builds()/"boost"
-    self.build_dest = build_dest
-    self.manifest = path.manifests()/"boost"
-    self.compiler = "clang++" if host.IsOsx else "g++"
-    self.OK = self.manifest.exists()
-    if self.option("force")==True:
-      self.OK = False
+    name = "boost"
+    super().__init__(name)
+    self.declareDep("python")
+    self.declareDep("llvm")
+    self._fetcher = dep.GithubFetcher(name=name,
+                                      repospec="boostorg/boost",
+                                      revision="boost-1.77.0",
+                                      recursive=True)
+    self._builder = self.createBuilder(dep.CMakeBuilder)
+    self._builder._cmakeenv = {
+      "CMAKE_CXX_STANDARD": "17",
+      "BOOST_ENABLE_PYTHON": "ON",
+      #"CMAKE_CXX_FLAGS": "-fPIC",
+      "BUILD_SHARED_LIBS": "ON"
+    }
 
-  ########
+  def onPostBuild(self):
+    print("GENERATING PKFCONFIG FILE")
+    replacements = dict()
+    replacements["STAGING"] = path.stage()
+    replacements["VERSION"] = VERSION
+    replacements["LIBS"] = " ".join(["-l"+x+" " for x in boost_libs])
+    template.template_string(PKGCONF,replacements,path.pkgconfigdir()/"boost.pc")
+    return True
 
-  def __str__(self):
-    return "Boost ver:%s" % VERSION
+  def areRequiredSourceFilesPresent(self):
+    return (self.source_root/"CMakeLists.txt").exists()
 
-  ########
-
-  def download_and_extract(self):
-
-    self.arcpath = dep.downloadAndExtract([self.baseurl/self.versiond/"source"/self.fname],
-                                          self.fname,
-                                          "bz2",
-                                          HASH,
-                                          self.build_dest)
-
-  ########
-
-  def build(self):
-
-    prefix = path.prefix()
-    toolset = "darwin" if host.IsOsx \
-         else "gcc"
-
-    os.chdir(str(self.build_dest/("boost_"+self.version)))
-
-    a = Command(["./bootstrap.sh",
-                 "link=shared",
-                 "runtime-link=shared",
-                 "--prefix=%s"%prefix,
-                 "toolset=%s" % toolset ]).exec()
-
-    self.OK = (a==0)
-    assert(self.OK)
-
-    b = Command(["./b2",
-                 "--prefix=%s"%prefix,
-                 "toolset=%s" % toolset,
-                 "link=shared",
-                 "runtime-link=shared",
-                 "headers"]).exec()
-
-    self.OK = (b==0)
-    assert(self.OK)
-
-    cxxflags = ["-std=c++11","-fPIC"]
-
-    linkflags = ['-rpath',str(path.prefix()/"lib")] if host.IsOsx \
-           else ['-Wl,-rpath',str(path.prefix()/"lib")]
-
-    if host.IsOsx:
-      linkflags += ["-stdlib=libc++"]
+  def areRequiredBinaryFilesPresent(self):
+    return (path.libs()/"libboost_atomic.a").exists()
+###############################################################################
 
 
-    c = Command(["./b2",
-                 "--prefix=%s"%prefix,
-                 "-d2",
-                 "-j%d"%host.NumCores,
-                 "-sNO_LZMA=1",
-                 "--layout=tagged",
-                 "toolset=%s" % toolset,
-                 "threading=multi",
-                 "address-model=64",
-                 'cxxflags=%s' % " ".join(cxxflags),
-                 'linkflags=%s' % " ".join(linkflags),
-                 "link=shared",
-                 "runtime-link=shared",
-                 "install"]).exec()
-
-    #self.OK = (c==0)
-    #assert(self.OK)
-
-    if self.OK:
-      self.manifest.touch()
-
-  def provide(self):
-    assert(False)
-    if False==self.OK:
-      self.download_and_extract()
-      self.build()
-    return self.OK

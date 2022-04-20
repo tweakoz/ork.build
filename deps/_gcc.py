@@ -1,5 +1,4 @@
-import ork, os
-from ork.command import Command
+import ork, os, sys
 
 VER = "10.1.0"
 HASH = "7d48e00245330c48b670ec9a2c518291"
@@ -8,13 +7,13 @@ NEWLIB_VER = "3.3.0"
 NEWLIB_HASH = "af1c64d25eb3f71dec5ad7ec79877d7f"
 
 class context:
-    def __init__(self,provider):
+    def __init__(self,provider,gccpatches=[],newlibpatches=[]):
         self.version = VER
         self.name = "gcc-%s" % VER
         self.xzname = "%s.tar.xz" % self.name
         self.archive_file = ork.path.downloads()/self.xzname
         self.url = "https://ftp.gnu.org/gnu/gcc/gcc-%s/%s"%(VER,self.xzname)
-        self.extract_dir = ork.path.builds()/("gcc-%s"%provider._name)
+        self.extract_dir = ork.path.builds()/("gcc-%s"%provider)
         self.build_dir = self.extract_dir/self.name
         self.arcpath = ork.dep.downloadAndExtract([self.url],
                                                    self.xzname,
@@ -24,7 +23,7 @@ class context:
 
 
         self.newlib_xzname = "newlib-%s.tar.gz" % NEWLIB_VER
-        self.newlib_extract_dir = ork.path.builds()/("newlib-%s" % provider._name)
+        self.newlib_extract_dir = ork.path.builds()/("newlib-%s" % provider)
 
         self.newlib_arc = ork.dep.downloadAndExtract(["ftp://sourceware.org/pub/newlib/%s"%self.newlib_xzname],
                                                       self.newlib_xzname,
@@ -32,6 +31,25 @@ class context:
                                                       NEWLIB_HASH,
                                                       self.newlib_extract_dir)
 
+        ###################################3
+        # patch gcc
+        ###################################3
+        os.chdir(self.extract_dir)
+        os.system("dir")
+        for item in gccpatches:
+          print("apply patch<%s>"%item)
+          cmd = ["patch","-p0","-i",item]
+          ork.command.run(cmd)
+
+        ###################################3
+        # patch newlib
+        ###################################3
+        os.chdir(self.newlib_extract_dir)
+        os.system("dir")
+        for item in newlibpatches:
+            print("apply patch<%s>"%item)
+            cmd = ["patch","-p0","-i",item]
+            ork.command.run(cmd)
 
     #############################################
 
@@ -42,7 +60,11 @@ class context:
               enable_set=set(),
               disable_set=set(),
               install_prefix=ork.path.prefix(),
-              program_prefix=None
+              program_prefix=None,
+              with_ld=None,
+              with_as=None,
+              with_build_sysroot=None,
+              with_dwarf2=False
               ):
 
         assert(target!=None)
@@ -69,6 +91,23 @@ class context:
         base_build_opts += ['--enable-languages=c,c++']
         base_build_opts += ['--prefix=/']
 
+        ######################################
+
+        build_sysroot_opts = []
+
+        if with_build_sysroot!=None:
+            build_sysroot_opts += ['--with-build-sysroot=%s'%with_build_sysroot]
+
+        if with_ld!=None:
+            base_build_opts += ['--with-ld=%s'%with_ld]
+        if with_as!=None:
+            base_build_opts += ['--with-as=%s'%with_as]
+        if with_build_sysroot!=None:
+            base_build_opts += ['--with-build-sysroot=%s'%with_build_sysroot]
+        if with_dwarf2:
+            base_build_opts += ['--with-dwarf2']
+
+        base_build_opts += build_sysroot_opts
         ######################################
         # variant - newlib, default(stdc++, etc)
         ######################################
@@ -127,7 +166,7 @@ class context:
                                   "--target=%s"%target,
                                   "--prefix=/",
                                   "--disable-newlib-supplied-syscalls",
-                                  "--enable-multilib"],environment=env)!=0:
+                                  "--enable-multilib"] + build_sysroot_opts,environment=env)!=0:
                 return False
               if ork.command.run(["make"])!=0:
                 return False
@@ -145,9 +184,14 @@ class context:
             if do_gcc:
                 stg2_opts = ['--program-prefix=%s'%program_prefix]
                 stg2_opts += ["--enable-libgcc"]
+                stg2_opts += ["--with-newlib"]
+                stg2_opts += ["--with-local-prefix=%s"%install_prefix] # gcc search path prefix
+                stg2_opts += ["--with-native-system-header-dir=%s"%(with_build_sysroot/"usr"/"include")] # gcc headers search path
+                stg2_opts += ["--with-sysroot=%s"%(with_build_sysroot)] # gcc headers search path
                 os.environ["NEWLIB"] = str(self.newlib_extract_dir)
                 os.chdir(self.extract_dir)
                 build_dest = self.build_dir/".build-stage2"
+                #os.environ["PATH"] = os.environ["PATH"]+":"+str(install_prefix/"bin")
                 if not self._build( base_build_opts + stg2_opts, build_dest, install_prefix ):
                    return False
 

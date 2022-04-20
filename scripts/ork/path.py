@@ -8,7 +8,8 @@
 
 import os, inspect, sys, pathlib
 from pathlib import Path as _Path_, PosixPath as _PosixPath_, WindowsPath  as _WindowsPath_
-from ork.command import capture
+import ork.command
+from ork import buildtrace
 
 ###############################################################################
 
@@ -21,6 +22,7 @@ class WindowsPath(_WindowsPath_, Path) :
 
 class PosixPath(_PosixPath_, Path) :
  def chdir(self):
+   buildtrace.buildTrace({"op":"path.chdir(%s)"%str(self)})
    os.chdir(str(self))
  pass
 
@@ -47,6 +49,16 @@ def deps():
 
 ###############################################################################
 
+def buildlogs():
+  return stage()/"buildlogs"
+
+###############################################################################
+
+def dockers():
+  return root()/"dockers"
+
+###############################################################################
+
 def apps():
     return stage()/"apps"
 
@@ -57,8 +69,18 @@ def patches():
 
 ###############################################################################
 
+def scripts():
+  return root()/"scripts"
+
+###############################################################################
+
+def obt_bin():
+  return root()/"bin"
+
+###############################################################################
+
 def pysite():
-  return root()/"scripts"/"ork"
+  return scripts()/"ork"
 
 ###############################################################################
 
@@ -98,6 +120,11 @@ def libs():
 
 ###############################################################################
 
+def pkgconfigdir():
+  return libs()/"pkgconfig"
+
+###############################################################################
+
 def manifests():
   staging = Path(os.environ["OBT_STAGE"])
   return staging/"manifests"
@@ -131,6 +158,11 @@ def builds():
   staging = Path(os.environ["OBT_STAGE"])
   return staging/"builds"
 
+
+def orkid():
+  orkroot = Path(os.environ["ORKID_WORKSPACE_DIR"])
+  return orkroot
+
 ###############################################################################
 
 def project_root():
@@ -138,7 +170,8 @@ def project_root():
 
 ###############################################################################
 def osx_sdkdir():
-  result = capture(["xcodebuild",
+  result = ork.command.capture([
+                    "xcodebuild",
                     "-version",
                     "-sdk", "macosx",
                     "Path"],do_log=False).splitlines()
@@ -163,4 +196,9 @@ def osx_brewcellar():
 ###############################################################################
 
 def vivado_base():
-  return Path("/opt/Xilinx/Vivado/2019.1")
+  return Path("/opt/Xilinx/Vivado")
+
+###############################################################################
+
+def decorate_obt_lib(named):
+  return libs()/("lib%s.so"%named)

@@ -24,7 +24,8 @@ deco = Deco()
 class lm32_gcc(dep.Provider):
 
   def __init__(self): ############################################
-    super().__init__()
+    super().__init__("lm32_gcc")
+    self._archlist = ["x86_64"]
     pass
 
   def provide(self): ##########################################################

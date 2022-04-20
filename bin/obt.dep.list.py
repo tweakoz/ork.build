@@ -9,7 +9,7 @@ import ork._globals
 # build dep dict
 ##########################################
 
-depnodes = ork.dep.enumerate()
+depnodes = ork.dep.DepNode.ALL()
 
 ##########################################
 
