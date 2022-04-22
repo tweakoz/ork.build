@@ -36,7 +36,6 @@ def cleanseString(the_string):
   stage_as_str = stage_dir()
   home_as_str = str(os.environ["HOME"])
   user_as_str = str(os.environ["USER"])
-  owsr_as_str = str(os.environ["ORKID_WORKSPACE_DIR"])
   uid = os.getuid()
   usrrundir_as_str = "/run/user/%d"%uid
   ########################
@@ -48,9 +47,11 @@ def cleanseString(the_string):
   if found >= 0:
     the_string = the_string.replace(home_as_str,"${HOME}")
   ########################
-  found = the_string.find(owsr_as_str)
-  if found >= 0:
-    the_string = the_string.replace(owsr_as_str,"${OWSDIR}")
+  if( "ORKID_WORKSPACE_DIR" in os.environ.keys() ):
+    owsr_as_str = str(os.environ["ORKID_WORKSPACE_DIR"])
+    found = the_string.find(owsr_as_str)
+    if found >= 0:
+      the_string = the_string.replace(owsr_as_str,"${OWSDIR}")
   ########################
   found = the_string.find(usrrundir_as_str)
   if found >= 0:
