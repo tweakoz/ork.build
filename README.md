@@ -1,10 +1,10 @@
 # ORK.BUILD TOOLS (OBT)  
 
-### BuildStatus
+### [BuildStatus](https://www.orkid-engine.dev:4431)
 
-* Ubuntu 19.10 [![CISTATUS](http://tweakoz.com:16999/orkdotbuild-ix-ub1910/master/status.svg)](http://tweakoz.com:16999/)
-* Ubuntu 20.04 [![CISTATUS](http://tweakoz.com:16999/orkdotbuild-ix-ub2004/master/status.svg)](http://tweakoz.com:16999/)
-* Osx Catalina [![CISTATUS](http://tweakoz.com:16999/orkdotbuild-osx-catalina/master/status.svg)](http://tweakoz.com:16999/)
+* Ubuntu 19.10 [![CISTATUS](https://www.orkid-engine.dev:4431/orkdotbuild-ix-ub1910/master/status.svg)](https://www.orkid-engine.dev:4431)
+* Ubuntu 20.04 [![CISTATUS](https://www.orkid-engine.dev:4431/orkdotbuild-ix-ub2004/master/status.svg)](https://www.orkid-engine.dev:4431)
+* Osx Catalina [![CISTATUS](https://www.orkid-engine.dev:4431/orkdotbuild-osx-catalina/master/status.svg)](https://www.orkid-engine.dev:4431)
 
 ### DESCRIPTION  
 
