@@ -13,6 +13,7 @@ class openvdb(dep.StdProvider):
     super().__init__(name)
     self.declareDep("cmake")
     self.declareDep("blosc")
+    self.declareDep("boost")
     self._fetcher = dep.GithubFetcher(name=name,
                                       repospec="AcademySoftwareFoundation/openvdb",
                                       revision="v9.0.0",
