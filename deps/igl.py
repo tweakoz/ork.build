@@ -5,7 +5,7 @@
 # The Orkid Build System is published under the GPL 2.0 license
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
-from ork import dep, host, path
+from ork import dep, host, path, pathtools
 ###############################################################################
 class igl(dep.StdProvider):
   def __init__(self):
@@ -40,6 +40,20 @@ class igl(dep.StdProvider):
       self._builder.setCmVar("LIBIGL_WITH_EMBREE","OFF")
 
     self._builder._parallelism = 0.5 # prevent out of memory..
+
+    #####################################
+    # install triangle
+    #####################################
+
+    def post_install():
+      print("post installing IGL!!")
+      igl_builddir = path.builds()/"igl"/".build"
+      pathtools.copyfile(igl_builddir/"lib"/"libtriangle.a",path.libs()/"libtriangle.a")
+      pathtools.copyfile(igl_builddir/"_deps"/"triangle-src"/"triangle.h",path.includes()/"triangle.h")
+
+    self._builder._onPostInstall = post_install
+
+    #####################################
 
   def areRequiredSourceFilesPresent(self):
     return (self.source_root/"README.md").exists()
