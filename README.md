@@ -2,9 +2,9 @@
 
 ### [BuildStatus](https://www.orkid-engine.dev:4431)
 
-* Ubuntu 19.10 [![CISTATUS](https://www.orkid-engine.dev:4431/orkdotbuild-ix-ub1910/master/status.svg)](https://www.orkid-engine.dev:4431)
-* Ubuntu 20.04 [![CISTATUS](https://www.orkid-engine.dev:4431/orkdotbuild-ix-ub2004/master/status.svg)](https://www.orkid-engine.dev:4431)
-* Osx Catalina [![CISTATUS](https://www.orkid-engine.dev:4431/orkdotbuild-osx-catalina/master/status.svg)](https://www.orkid-engine.dev:4431)
+* Ubuntu 22.04 [![CISTATUS](https://www.orkid-engine.dev:4431/orkdotbuild-ix-ub2204/develop/status.svg)](https://www.orkid-engine.dev:4431)
+* Ubuntu 20.04 [![CISTATUS](https://www.orkid-engine.dev:4431/orkdotbuild-ix-ub2004/develop/status.svg)](https://www.orkid-engine.dev:4431)
+* Osx Catalina [![CISTATUS](https://www.orkid-engine.dev:4431/orkdotbuild-osx-catalina/develop/status.svg)](https://www.orkid-engine.dev:4431)
 
 ### DESCRIPTION  
 
