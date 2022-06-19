@@ -6,10 +6,16 @@ import sys
 deco = Deco()
 
 ###############################################################################
-def instance(named):
-  n = ork._dep_node.DepNode.nodeForName(named)
+def instance(named,with_overrides=True):
+  n = ork._dep_node.DepNode.nodeForName(named,with_overrides)
   if n and hasattr(n,"instance") and n.instance.supports_host:
     return n.instance
+  return None
+###############################################################################
+def module_class(named,with_overrides=True):
+  n = ork._dep_node.DepNode.nodeForName(named,with_overrides)
+  if n and hasattr(n,"module_class") and n.instance.supports_host:
+    return n.module_class
   return None
 ###############################################################################
 class Chain:
@@ -21,7 +27,6 @@ class Chain:
     index = 0
     indexed = dict()
     def visit_provider(provider):
-      #print(provider,dir(provider))
       assert(hasattr(provider,"_name"))
       #print(provider._name)
       nonlocal self, index
@@ -38,7 +43,8 @@ class Chain:
       ############################
       for name in provider._required_deps.keys():
         inst = provider._required_deps[name]
-        visit_provider(inst)
+        if inst != None:
+          visit_provider(inst)
     ##########################
     def perform_on_node(named):
       ##########################
@@ -53,7 +59,8 @@ class Chain:
         print(deco.err("DepNode<%s> does not have instance - check that the provider/class is named correctly!"%named))
         sys.exit(-1)
       ##########################
-      visit_provider(root.instance)
+      if root.instance!=None:
+        visit_provider(root.instance)
     ##########################
     # start recursion at root
     if isinstance(named_or_list,str):
@@ -72,8 +79,8 @@ class Chain:
       deps = p._required_deps
       for d in deps.keys():
         inst = deps[d]
-        #print(inst._name,inst._topoindex)
-        topo_unsorted[index].add(inst._topoindex)
+        if inst != None:
+          topo_unsorted[index].add(inst._topoindex)
     #print(topo_unsorted)
     ##########################
     # topological sorted

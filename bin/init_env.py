@@ -18,6 +18,7 @@ curwd = Path(os.getcwd())
 
 parser = argparse.ArgumentParser(description='ork.build environment launcher')
 parser.add_argument('--launch', metavar="launchdir", help='launch from pre-existing folder' )
+parser.add_argument('--prjdir', metavar="prjdir", help='override project directory' )
 parser.add_argument('--chdir', metavar="chdir", help='working directory of command' )
 parser.add_argument('--stack', metavar="stackdir", help='stack env' )
 parser.add_argument('--prompt', metavar="prompt", help='prompt suffix' )
@@ -44,6 +45,9 @@ if IsQuiet:
 #else:
 #    os.environ["OBT_QUIET"]=IsQuiet
 
+if args["prompt"]!=None:
+  os.environ["OBT_USE_PROMPT_PREFIX"] = args["prompt"]
+
 ###########################################
 
 file_path = os.path.realpath(__file__)
@@ -56,6 +60,12 @@ par5_dir = os.path.dirname(par4_dir)
 root_dir = Path(par2_dir)
 scripts_dir = root_dir/"scripts"
 sys.path.append(str(scripts_dir))
+
+###########################################
+
+project_dir = root_dir
+if args["prjdir"]!=None:
+  project_dir = Path(args["prjdir"])
 
 ###########################################
 
@@ -81,11 +91,16 @@ if try_staging!=None:
 
 ###########################################
 
+os.environ["OBT_SEARCH_EXTLIST"] = ".cpp:.c:.cc:.h:.hpp:.inl:.qml:.m:.mm:.py:.txt:.glfx"
+
+###########################################
+
 import ork.deco
 import ork.env
 import ork.path
 import ork.host
 import ork.dep
+import ork.sdk
 import ork._globals as _glob
 from ork.command import Command
 
@@ -97,6 +112,7 @@ bin_dir = root_dir/"bin"
 import _envutils 
 envsetup = _envutils.EnvSetup(stagedir=OBT_STAGE,
                               rootdir=root_dir,
+                              projectdir=project_dir,
                               bindir=bin_dir,
                               scriptsdir=scripts_dir,
                               disable_syspypath=True,
@@ -114,10 +130,27 @@ if args["compose"] != None:
 ###########################################
 
 def dynamicInit():
+  ####################################
+  hostinfo = ork.host.description()
+  if hasattr(hostinfo,"env_init"):
+    hostinfo.env_init()
+  ####################################
+  sdkitems = ork.sdk.enumerate()
+  print(sdkitems)
+  for sdk_module_key in sdkitems.keys():
+    sdk_module_item = sdkitems[sdk_module_key]
+    print(sdk_module_item)
+    sdk_module = sdk_module_item._module
+    print(sdk_module)
+    sdkinfo = sdk_module.sdkinfo()
+    if hasattr(sdkinfo,"env_init"):
+      sdkinfo.env_init()
+  ####################################
   depitems = ork.dep.DepNode.FindWithMethod("env_init")
   for depitemk in depitems:
     depitem = depitems[depitemk]
     depitem.env_init()
+  ####################################
 
 ###########################################
 if args["launch"]!=None:

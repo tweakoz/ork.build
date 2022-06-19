@@ -15,15 +15,26 @@ from ork.deco import Deco
 from ork.wget import wget
 from ork import pathtools, cmake, make, path, git, host
 from ork import _dep_impl, _dep_x, _globals, log, buildtrace
+from enum import Enum
 
 deco = Deco()
 
 root_dep_list = ["root", "python", "pydefaults"]
 
+class ProviderScope(Enum):
+  CONTAINER = 1 # dependency is scoped to the container
+  INIT = 2  # dependency is scoped to the container and rendered upon creation of container (always present)
+  HOST = 3 # dependency is sourced from the host (apt install, brew install, etc...)
+
 ###############################################################################
 class Provider(object):
     """base class for all dependency providers"""
-    def __init__(self,name):
+    def __init__(self,name,target=None):
+      self.scope = ProviderScope.CONTAINER
+      if target ==None:
+        self._target = host.description().target
+      else:
+        self._target = target
       self._name = name
       self._miscoptions = _globals.getOptions()
       self._node = None
@@ -69,9 +80,12 @@ class Provider(object):
     def areRequiredBinaryFilesPresent(self):
       return None
     #############################
+    @property
+    def scopestr(self):
+      return str(self.scope).split('.')[1]
+    #############################
     ## wipe build ?
     #############################
-
     @property
     def supports_host(self):
       """predicate determining if dependency supports the host architecture and OS"""
@@ -283,7 +297,11 @@ class HomebrewProvider(Provider):
     return Path("/")/"usr"/"local"
   ###########################################
   def build(self):
-    require(self._deps)
+    for item in self._deps:
+      n = _dep_x.instance(item)
+      print(item,n)
+      assert(n!=None)
+      n.provide()
     retc = Command(["brew","install",self.pkgname]).exec()
     if 0 == retc:
       self.manifest.touch()
@@ -295,8 +313,14 @@ class StdProvider(Provider):
     #############################
     def __init__(self,name):
       super().__init__(name)
-      self._fetcher = None
       self._builder = None
+
+    ########
+
+    @property
+    def _fetcher(self):
+      return None
+
     #############################
     def postinit(self):
       pass

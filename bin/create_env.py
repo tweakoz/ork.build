@@ -25,6 +25,8 @@ parser.add_argument("--quiet", action="store_true", help="no output")
 parser.add_argument('--novars', action="store_true", help='do not set env vars' )
 parser.add_argument('--compose',action='append',help='compose obt project into container')
 parser.add_argument('--obttrace',action="store_true",help='enable OBT buildtrace logging')
+parser.add_argument('--sshkey',metavar="sshkey",help='ssh key to use with OBT/GIT')
+parser.add_argument('--projectdir',metavar="projectdir",help='sidechain project directory(with obt manifest)')
 
 args = vars(parser.parse_args())
 
@@ -58,10 +60,33 @@ par5_dir = os.path.dirname(par4_dir)
 root_dir = Path(par2_dir)
 scripts_dir = root_dir/"scripts"
 sys.path.append(str(scripts_dir))
+project_dir = root_dir
 
 ###########################################
+# are we standalone or attached to a project ?
+###########################################
 
-os.environ["OBT_SEARCH_EXTLIST"] = ".cpp:.c:.cc:.h:.hpp:.inl:.qml:.m:.mm:.py:.txt:.glfx"
+explicitprojectdir = None
+if args["projectdir"]!=None:
+  explicitprojectdir = Path(args["projectdir"])
+
+####################
+# first try implicit projectdir (curwd)
+####################
+
+try_project_manifest = curwd/"obt.project"/"obt.manifest"
+if try_project_manifest.exists():
+  project_dir = curwd
+else:
+
+  project_dir = root_dir/".." # default is parent of OBT 
+
+  if (explicitprojectdir!=None) and explicitprojectdir.exists(): # explicit passed in...
+    try_project_manifest = explicitprojectdir/"obt.project"/"obt.manifest"
+    if try_project_manifest.exists():
+      project_dir = explicitprojectdir
+    else:
+      assert(False) # explicit does not exist
 
 ###########################################
 
@@ -87,8 +112,14 @@ if args["numcores"]!=None:
 if "OBT_NUM_CORES" not in os.environ:
   os.environ["OBT_NUM_CORES"]=str(NumCores)
 
+if args["prompt"]!=None:
+  os.environ["OBT_USE_PROMPT_PREFIX"] = args["prompt"]
 if try_staging!=None:
   OBT_STAGE = try_staging
+
+GIT_SSH_COMMAND = None
+if args["sshkey"]!=None:
+  GIT_SSH_COMMAND="ssh -i %s" % args["sshkey"]
 
 ###########################################
 
@@ -111,6 +142,7 @@ if args["obttrace"]==True:
 import _envutils 
 
 envsetup = _envutils.EnvSetup(stagedir=OBT_STAGE,
+                              projectdir=project_dir,
                               rootdir=root_dir,
                               bindir=bin_dir,
                               scriptsdir=scripts_dir,
@@ -131,10 +163,22 @@ ork.path.prefix().mkdir(parents=True,exist_ok=False)
 envsetup.lazyMakeDirs()
 envsetup.genBashRc(try_staging/".bashrc")
 #############
-LAUNCHENV = "%s/bin/init_env.py --numcores %d --launch %s" % (root_dir,NumCores,try_staging)
+# Create LaunchEnv script
+#############
+
+LAUNCHENV = ""
+
+if GIT_SSH_COMMAND!=None:
+  LAUNCHENV += 'export GIT_SSH_COMMAND="%s"\n'%GIT_SSH_COMMAND
+
+LAUNCHENV += "%s/bin/init_env.py --numcores %d --launch %s --prjdir %s" % (root_dir,NumCores,try_staging,project_dir)
 if args["compose"]!=None:
   for item in args["compose"]:
     LAUNCHENV += " --compose %s" % item
+
+if args["prompt"]!=None:
+  LAUNCHENV += " --prompt %s" % args["prompt"]
+
 LAUNCHENV += ";\n"
 try_staging_sh = try_staging/".launch_env"
 f = open(str(try_staging_sh), 'w')

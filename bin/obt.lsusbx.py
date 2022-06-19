@@ -128,7 +128,7 @@ def reset():
     return deco.reset()
 ###############################
 def rgbstr(r,g,b,string):
-    return deco.rgb256(r*255,g*255,b*255)+str(string)+deco.reset()
+    return deco.rgbstr(r*255,g*255,b*255, str(string) )
 ###############################
 
 byloc = dict()

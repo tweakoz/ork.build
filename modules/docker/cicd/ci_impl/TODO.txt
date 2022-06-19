@@ -1,0 +1,9 @@
+0. /projects/jinjatest is in title of log tab
+1. disable image caching for github
+   try adding item to header "Cache-Control: no-cache "
+   and setting the etag.
+2. clean up old build folders
+3. package artifacts
+4. build on new commits
+5. multiple repos per jinja instance
+6. build log (record successes)

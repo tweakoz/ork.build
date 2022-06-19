@@ -15,6 +15,7 @@ from ork.deco import Deco
 from ork.wget import wget
 from ork import pathtools, cmake, make, path, git, host, _globals, log
 from ork._dep_node import require
+from collections.abc import Callable
 
 deco = Deco()
 
@@ -110,9 +111,14 @@ class CMakeBuilder(BaseBuilder):
     if ork.host.IsOsx:
       sysroot_cmd = Command(["xcrun","--show-sdk-path"],do_log=False)
       sysroot = sysroot_cmd.capture().replace("\n","")
+
+      if ork.host.IsAARCH64:
+        self._cmakeenv.update({"CMAKE_HOST_SYSTEM_PROCESSOR":"arm64"})
+      else:
+        self._cmakeenv.update({"CMAKE_HOST_SYSTEM_PROCESSOR":"x86_64"})
+
       self._cmakeenv.update({
-        "CMAKE_OSX_ARCHITECTURES:STRING":"x86_64",
-        "CMAKE_OSX_DEPLOYMENT_TARGET:STRING":"10.14",
+        "CMAKE_OSX_DEPLOYMENT_TARGET:STRING":"11",
         "CMAKE_OSX_SYSROOT:STRING":sysroot,
         "CMAKE_MACOSX_RPATH": "1",
         "CMAKE_INSTALL_RPATH": path.libs(),
@@ -273,7 +279,6 @@ class CustomBuilder(BaseBuilder):
   def _run_commands(self,cmdlist):
     if len(cmdlist)>0:
       for cmd in cmdlist:
-        #print(cmd)
         if isinstance(cmd,Command):
           retc = cmd.exec()
           if retc!=0:
@@ -281,6 +286,9 @@ class CustomBuilder(BaseBuilder):
         elif isinstance(cmd,CustomStep):
           retc = cmd._funktor()
           if retc==False:
+            return False
+        elif isinstance(cmd,Callable):
+          if cmd()==False:
             return False
     return True
   ###########################################

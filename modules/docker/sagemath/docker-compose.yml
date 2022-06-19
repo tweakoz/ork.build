@@ -1,0 +1,13 @@
+version: '3.9'
+services:
+  sagemath:
+    image: obt/sagemath-jupyter
+    user: sage
+    command: "/usr/local/bin/sage-entrypoint.sh"
+    ports:
+      - '0.0.0.0:16666:8888'
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - ./entrypoint.sh:/usr/local/bin/sage-entrypoint.sh:ro
+    restart: always

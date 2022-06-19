@@ -36,7 +36,8 @@ def downloadAndExtract(urls,
         os.chdir(str(build_dest))
         Command(["tar","xvf",arcpath]).exec()
     else:
-        assert(tarfile.is_tarfile(str(arcpath)))
+        print(arcpath)
+        #assert(tarfile.is_tarfile(str(arcpath)))
         tf = tarfile.open(str(arcpath),mode='r:%s'%archive_type)
         tf.extractall(path=str(build_dest))
 

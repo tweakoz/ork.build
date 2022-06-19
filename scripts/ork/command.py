@@ -150,12 +150,34 @@ class Command:
 
 ###############################################################################
 
-def run(command_list, environment=dict(),do_log=False):
-  return Command(command_list,environment,do_log=do_log).exec()
+def run(command_list, 
+        environment=dict(),
+        working_dir=None,
+        do_log=False):
+  return Command(command_list,environment,do_log=do_log,working_dir=working_dir).exec()
 def run_filtered(command_list, environment=dict(),on_line=None,do_log=False):
   return Command(command_list,environment,do_log=do_log).exec_filtered(on_line=on_line)
 def capture(command_list,environment=dict(),do_log=True):
   return Command(command_list,environment,do_log=do_log).capture()
+
+###############################################################################
+# Command Chain
+#  often you need a list of commands to be executed with exit codes tested
+#  if any command in the chain fails (returns non zero exit code)
+#   then the chain is terminated (subsequent commands will not be executed)
+#  Use a command chain when you dont want to look at a bunch of nested conditional
+#   command.run blocks
+###############################################################################
+
+class chain:
+  def __init__(self):
+    self._rval = 0
+  def run(self,cmdlist): # conditional run (if all previous succeeded, then run next)
+    if self._rval == 0:
+      self._rval = run(cmdlist)
+    return self._rval
+  def ok(self): # have all commands run succeeded so far ?
+    return self._rval==0
 
 ###############################################################################
 

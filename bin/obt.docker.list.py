@@ -9,17 +9,19 @@ import ork._globals
 # build dep dict
 ##########################################
 
-dockernodes = ork.docker.DockerNode.ALL()
+dockermodules = docker.enumerate()
 
 ##########################################
 
 import ork.deco
 deco = ork.deco.Deco()
 
+#print(dockermodules)
+
 line_index = 0
-for key in sorted(dockernodes):
+for key in dockermodules:
 	odd = line_index&1
-	val = str(dockernodes[key])
+	val = str(dockermodules[key]._module.info())
 	if val!="???":
 	  col_k = deco.rgbstr(255,255,0,key) if odd else deco.rgbstr(192,192,0,key)
 	  col_v = deco.rgbstr(255,255,255,val) if odd else deco.rgbstr(192,192,192,val)

@@ -1,0 +1,41 @@
+{
+  "master_name": "ObtBuilders",
+  "master_bind_addr": "0.0.0.0",
+  "master_bind_port": 9999,
+  "http_bind_addr": "0.0.0.0",
+  "http_bind_port": 16666,
+  "workers": {
+    "worker-ub2204": {
+    },
+    "worker-ub2004": {
+    }
+  },
+  "repos": {
+    "ork.build": {
+      "giturl": "http://github.com/tweakoz/ork.build",
+      "subdir": "ork.build",
+      "skipLFS": true,
+      "workingdir": "$REPODIR",
+      "commandlist": [
+        "./bin/create_env.py --stagedir $STAGE --numcores 6",
+        "./bin/init_env.py --launch $STAGE --numcores 6 --command \"obt.dep.build.py luajit\""
+      ]
+    }
+  },
+  "variants":{
+    "orkdotbuild-ix-ub2204": {
+      "platform": "ubuntu.22.04",
+      "repo": "ork.build",
+      "branches": ["develop"],
+      "workers": ["worker-ub2204"],
+      "schedule": ["01:00:00","13:00:00"]
+    },
+    "orkdotbuild-ix-ub2004": {
+      "platform": "ubuntu.20.04",
+      "repo": "ork.build",
+      "branches": ["develop"],
+      "workers": ["worker-ub2004"],
+      "schedule": ["01:00:00","13:00:00"]
+    }
+  }
+}

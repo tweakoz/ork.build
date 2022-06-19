@@ -1,0 +1,9 @@
+{
+  "name": "worker-ub2004",
+  "master_ssh_host": "ci-master",
+  "master_ssh_user": "builder",
+  "master_ssh_port": 16988,
+  "master_zmq_host": "ci-master",
+  "master_zmq_port": 9999,
+  "sleeptime": 5
+}

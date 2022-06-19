@@ -3,7 +3,8 @@ import ork.host
 import ork.path
 import ork.dep
 import ork.deco
-import os 
+import ork.command
+import os, sys, re
 
 deco = ork.deco.Deco()
 
@@ -12,6 +13,7 @@ deco = ork.deco.Deco()
 class EnvSetup:
   def __init__(self,stagedir=None,
                     rootdir=None,
+                    projectdir=None,
                     bindir=None,
                     scriptsdir=None,
                     disable_syspypath=False,
@@ -19,6 +21,7 @@ class EnvSetup:
                     project_name="NONE"):
     self.OBT_STAGE = stagedir 
     self.ROOT_DIR = rootdir 
+    self.PROJECT_DIR = projectdir 
     self.BIN_DIR = bindir 
     self.SCRIPTS_DIR = scriptsdir 
     self.DISABLE_SYSPYPATH=disable_syspypath
@@ -30,12 +33,24 @@ class EnvSetup:
     ork.env.set("OBT_STAGE",self.OBT_STAGE)
     ork.env.set("OBT_BUILDS",self.OBT_STAGE/"builds")
     ork.env.set("OBT_ROOT",self.ROOT_DIR)
+    ork.env.set("OBT_PROJECT_DIR",self.PROJECT_DIR)
+    ork.env.set("OBT_SUBSPACE","host")
+    ork.env.set("OBT_SUBSPACE_DIR",self.OBT_STAGE)
     ork.env.prepend("PATH",self.BIN_DIR )
     ork.env.prepend("PATH",self.OBT_STAGE/"bin")
     ork.env.prepend("LD_LIBRARY_PATH",self.OBT_STAGE/"lib")
     ork.env.prepend("LD_LIBRARY_PATH",self.OBT_STAGE/"lib64")
-    ork.env.append("OBT_DEP_PATH",ork.path.root()/"deps")
-    self.importProject(self.ROOT_DIR/".."/"obt.project")
+
+    ork.env.append("OBT_MODULES_PATH",ork.path.root()/"modules")
+    ork.env.append("OBT_DEP_PATH",ork.path.root()/"modules"/"dep")
+
+    obt_prj_extensions = self.PROJECT_DIR/"obt.project"
+    if obt_prj_extensions.exists():
+      self.importProject(obt_prj_extensions)
+
+
+
+
     if ork.host.IsLinux:
 
       if ork.host.IsDebian:
@@ -90,6 +105,11 @@ class EnvSetup:
       print(modulename)
       modulename.setup()
       #modul.setup()
+    modules_dir = prjdir/"modules"
+    print(modules_dir,modules_dir.exists())
+    if modules_dir.exists():
+      ork.env.prepend("OBT_MODULES_PATH",modules_dir)
+
   ###########################################
   def log(self,x):
     if not self.IS_QUIET:
@@ -100,6 +120,8 @@ class EnvSetup:
     (ork.path.prefix()/"lib").mkdir(parents=True,exist_ok=True)
     (ork.path.prefix()/"bin").mkdir(parents=True,exist_ok=True)
     (ork.path.prefix()/"include").mkdir(parents=True,exist_ok=True)
+    (ork.path.prefix()/"sdks").mkdir(parents=True,exist_ok=True)
+    (ork.path.prefix()/"tempdir").mkdir(parents=True,exist_ok=True)
     ork.path.downloads().mkdir(parents=True,exist_ok=True)
     ork.path.builds().mkdir(parents=True,exist_ok=True)
     ork.path.manifests().mkdir(parents=True,exist_ok=True)
@@ -122,7 +144,17 @@ class EnvSetup:
     if "OBT_STACK" in os.environ:
       stackindic = os.environ["OBT_STACK"]
       stacked = True
-    PROMPT = bdeco.promptL('[ %s %s ]'%(stackindic,self.PROJECT_NAME))
+
+    SYSPROM = ""
+    if ork.host.IsOsx:    
+      SYSPROM = "🍎"
+    elif ork.host.IsLinux:    
+      SYSPROM = "🐧"
+
+    if "OBT_USE_PROMPT_PREFIX" in os.environ:
+      SYSPROM = os.environ["OBT_USE_PROMPT_PREFIX"]
+
+    PROMPT = bdeco.promptL('%s[ %s %s-${OBT_SUBSPACE} ]'%(SYSPROM,stackindic,self.PROJECT_NAME))
     PROMPT += bdeco.promptC("\\w")
     PROMPT += bdeco.promptR("[$(parse_git_branch) ]")
     PROMPT += bdeco.bright("> ")
@@ -133,11 +165,14 @@ class EnvSetup:
     #  on the other hand this can perturb the build environment in other unexpected ways..
     ################################################
 
-    BASHRC += 'source $HOME/.bashrc;\n' # source users's bash setup
+    if (os.path.exists("~/.bashrc")):
+      BASHRC += 'source $HOME/.bashrc;\n' # source users's bash setup
 
     ################################################
 
     BASHRC += 'parse_git_branch() { git branch 2> /dev/null | grep "*" | sed -e "s/*//";};\n'
+
+    BASHRC += 'export -f parse_git_branch\n'
 
     BASHRC += "\nexport PS1='%s';\n" % PROMPT
     BASHRC += "alias ls='ls -G';\n"
@@ -149,7 +184,9 @@ class EnvSetup:
 
     dirs = {
         "root": "${OBT_ROOT}",
-        "deps": "${OBT_ROOT}/deps",
+        "project": "${OBT_PROJECT_DIR}",
+        "deps": "${OBT_ROOT}/modules/dep",
+        "subspace": "${OBT_STAGE}/subspaces/${OBT_SUBSPACE}",
         "stage": "${OBT_STAGE}",
         "builds": "${OBT_STAGE}/builds",
         "litex": "${OBT_STAGE}/builds/litex_env", # todo convert obt.litex.env.py to litex dep

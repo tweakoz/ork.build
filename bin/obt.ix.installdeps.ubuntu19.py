@@ -14,7 +14,7 @@ deplist += ["libpng-dev","clang-format","python-dev"]
 deplist += ["iverilog","nvidia-cg-dev","nvidia-cuda-dev", "nvidia-cuda-toolkit"]
 deplist += ["libopenblas-dev"]
 deplist += ["librtmidi-dev"]
-deplist += ["texinfo"]
+deplist += ["texinfo","xmlto"]
 deplist += ["libgtkmm-3.0-dev"]
 deplist += ["libfltk1.3-dev","freeglut3-dev"]
 deplist += ["libfontconfig1-dev"]
@@ -70,3 +70,5 @@ deplist += ["libdrm-dev","libaudiofile-dev","libsndfile1-dev"]
 
 merged = " ".join(deplist)
 os.system("sudo apt -y install %s" % merged)
+
+os.system("pip3 install os_release")

@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<style type="text/css">
+body {
+  background: #606060;
+  color:black;
+  font-size: 12px;
+}
+
+table {
+    border-collapse:separate;
+    border-style:solid;border-width: 1px 1px 1px 1px;border-color: #606060;
+}
+
+td, th {
+    border-left:solid #606060 1px;
+    border-top:solid #606060 1px;
+}
+
+th {
+    background-color: #505050;
+    border-top: none;
+}
+
+td:first-child, th:first-child {
+     border-left: none;
+}
+
+.even {
+  background: #787878;
+  color: black;
+}
+.odd {
+  background: #707070;
+  color:black;
+}
+.even2 {
+  background: #787878;
+  color: white;
+}
+.odd2 {
+  background: #707070;
+  color:white;
+}
+.even3 {
+  background: #787878;
+  color: black;
+}
+.odd3 {
+  background: #707070;
+  color:black;
+}
+.pass {
+  background: #404040;
+  color: #00ff00;
+  border-style:solid;border-width: 1px 1px 1px 1px;border-color: #606060;
+}
+.building {
+  background: #404040;
+  color: #ffff00;
+  border-style:solid;border-width: 1px 1px 1px 1px;border-color: #606060;
+}
+.fail {
+  background: #404040;
+  color:#ff0000;
+  border-style:solid;border-width: 1px 1px 1px 1px;border-color: #606060;
+}
+.aligncenter {
+    text-align: center;
+}
+</style>
+</head>
+<body>
+<p class="aligncenter"><img src="OrkidLogo.png"/></p>
+<p class="aligncenter"><h1 align="center">GitUrl: {{GITURL}}</h1></p>
+
+<!-- BRANCHES -->
+<table align="center"><tbody>
+<tr>
+<th style="width: 128px;">branch-name</th>
+<th style="width: 256px;">last-sha</th>
+<th style="width: 192px;">last-author</th>
+<th style="width: 128px;">last-date</th>
+<th style="width: 64px;">status</th>
+<th style="width: 64px;">buildtime</th>
+<th style="width: 64px;">log</th>
+</tr>
+{% for branch in branches%}
+<tr class="{{ loop.cycle('odd', 'even') }}">
+<td align="center" class="{{ loop.cycle('odd2', 'even2') }}"><a href="{{branch.branchpage}}">{{branch.name}}</a></td>
+<td align="center" class="{{ loop.cycle('odd', 'even') }}"><a href="{{branch.commitpage}}">{{branch.lastsha}}</a></td>
+<td align="center" class="{{ loop.cycle('odd', 'even') }}">{{branch.lastauthor}}</td>
+<td align="center" class="{{ loop.cycle('odd', 'even') }}">{{branch.lastdate}}</td>
+<td align="center" class="{{ loop.cycle('odd', 'even') }}"><img align="center" src="builds/{{branch.lastsha}}/status.svg"/></td>
+<td align="center" class="{{ loop.cycle('odd', 'even') }}">{{branch.buildtime}}</td>
+<td align="center" class="{{ loop.cycle('odd', 'even') }}"><a href="builds/{{branch.lastsha}}/stdout.html">download</a></td>
+</tr>
+{% endfor %}
+<tbody>
+</table>
+<br/>
+
+<!-- COMMITS -->
+
+<table align="center"><tbody>
+<tr>
+<th style="width: 256px;">commit</th>
+<th style="width: 192px;">author</th>
+<th style="width: 192px;">date</th>
+</tr>
+{% for commit in commits%}
+<tr class="{{ loop.cycle('odd', 'even') }}">
+<td align="center" class="{{ loop.cycle('odd2', 'even2') }}"><a href="{{commit.commitpage}}">{{commit.sha}}</a></td>
+<td align="center" class="{{ loop.cycle('odd', 'even') }}">{{commit.author}}</td>
+<td align="center" class="{{ loop.cycle('odd3', 'even3') }}">{{commit.date}}</td>
+</tr>
+{% endfor %}
+<tbody>
+</table>
+</body>
+</html>
+<br/>

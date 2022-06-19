@@ -154,6 +154,8 @@ def chdir(p):
 
 ###############################################################################
 
-def copyfile(file_from,file_dest):
-  buildtrace.buildTrace({"op":"copyfile", "from": str(file_from), "dest": str(file_dest)})
+def copyfile(file_from,file_dest,modeset=""):
+  buildtrace.buildTrace({"op":"copyfile", "from": str(file_from), "dest": str(file_dest), "modeset": modeset})
   os.system("cp \"%s\" \"%s\"" % (str(file_from), str(file_dest)))
+  if modeset!="":
+    os.system("chmod %s %s"%(modeset,str(file_dest)))

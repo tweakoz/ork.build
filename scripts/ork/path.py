@@ -6,7 +6,7 @@
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
 
-import os, inspect, sys, pathlib
+import os, inspect, sys, pathlib, tempfile
 from pathlib import Path as _Path_, PosixPath as _PosixPath_, WindowsPath  as _WindowsPath_
 import ork.command
 from ork import buildtrace
@@ -44,18 +44,8 @@ def zephyr_base():
 
 ###############################################################################
 
-def deps():
-  return root()/"deps"
-
-###############################################################################
-
 def buildlogs():
   return stage()/"buildlogs"
-
-###############################################################################
-
-def dockers():
-  return root()/"dockers"
 
 ###############################################################################
 
@@ -64,8 +54,69 @@ def apps():
 
 ###############################################################################
 
-def patches():
-  return root()/"deps"/"patches"
+def sdks():
+    return stage()/"sdks"
+
+###############################################################################
+
+def subspace_root():
+    return stage()/"subspaces"
+
+###############################################################################
+
+def subspace():
+  subspace = "host"
+  if "OBT_SUBSPACE" in os.environ:
+    subspace = os.environ["OBT_SUBSPACE"]
+  return subspace
+
+###############################################################################
+
+def subspace_dir():
+  subs = subspace()
+  subdir = stage()
+  if subs != "host":
+    subdir = subspace_root()/subs
+
+###############################################################################
+
+def modules(provider=None):
+  if provider==None:
+    return root()/"modules"
+  else:
+    depnode = provider._node
+    name = provider._name
+    return depnode.modules_base
+
+###############################################################################
+
+#def dockers():
+ # return modules()/"docker"
+
+###############################################################################
+
+def deps(provider=None):
+ return modules(provider)/"dep"
+
+###############################################################################
+
+#def hosts():
+#    return modules()/"host"
+
+###############################################################################
+
+#def targets():
+#    return modules()/"target"
+
+###############################################################################
+
+#def sdk_modules():
+#    return modules()/"sdk"
+
+###############################################################################
+
+def patches(provider=None):
+  return deps(provider)/"patches"
 
 ###############################################################################
 
@@ -120,6 +171,11 @@ def libs():
 
 ###############################################################################
 
+def share():
+  return prefix()/"share"
+
+###############################################################################
+
 def pkgconfigdir():
   return libs()/"pkgconfig"
 
@@ -166,7 +222,7 @@ def orkid():
 ###############################################################################
 
 def project_root():
-  return root()/".."
+  return Path(os.environ["OBT_PROJECT_DIR"])
 
 ###############################################################################
 def osx_sdkdir():
@@ -180,8 +236,10 @@ def osx_sdkdir():
 ###############################################################################
 
 def osx_brewdir():
-  return Path("/usr/local")
-
+  result = "/usr/local"
+  if "HOMEBREW_PREFIX" in os.environ:
+    result = os.environ["HOMEBREW_PREFIX"]
+  return Path(result)
 
 ###############################################################################
 

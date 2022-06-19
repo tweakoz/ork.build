@@ -1,0 +1,41 @@
+version: '2'
+services:
+  ci-nginx-ssl:
+    image: nginx:latest
+    restart: always
+    ports:
+      - '0.0.0.0:4431:443'
+    volumes:
+      - ./conf/nginx_ssl.conf:/etc/nginx/nginx.conf
+      - ./ssl/fromnamedotcom/:/etc/ssl/
+  ci-master:
+    image: tweakoz/orkci_master_focal2 
+    user: cimaster
+    command: "./start-master.sh"
+    ports:
+      - '127.0.0.1:16666:16666'
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    restart: always
+  ci-worker-ub20:
+    image: tweakoz/orkci_worker_focal2 
+    user: workerub20
+    command: "./start-worker.sh"
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - ../ci_secrets/buildkey.rsa:/home/workerub20/.ssh/id_rsa:ro
+      - ../ci_secrets/buildkey.rsa.pub:/home/workerub20/.ssh/id_rsa.pub:ro
+    restart: always
+  ci-worker-ub22:
+    image: tweakoz/orkci_worker_jammy1 
+    user: workerub22
+    command: "./start-worker.sh"
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - ../ci_secrets/buildkey.rsa:/home/workerub22/.ssh/id_rsa:ro
+      - ../ci_secrets/buildkey.rsa.pub:/home/workerub22/.ssh/id_rsa.pub:ro
+    restart: always
+

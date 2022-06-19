@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<style type="text/css">
+
+body {
+  background: #606060;
+  color:black;
+  font-size: 10px;
+  border-radius: 3px;
+}
+th {
+    background-color: #202040;
+    color: #ffffff;
+    border-radius: 3px;
+}
+td {
+  border-radius: 3px;
+}
+td.odd {
+    background-color: #787878;
+    color: black;
+}
+td.even {
+    background-color: #707080;
+    color: black;
+}
+.aligncenter {
+    text-align: center;
+}
+</style>
+</head>
+<body>
+<p class="aligncenter"><img src="OrkidLogo.png"/></p>
+<p class="aligncenter"><h1 align="center">{{MASTERNAME}}</h1></p>
+
+<!-- VARIANTS -->
+<table align="center"><tbody>
+<tr>
+<th style="width: 192px;">Repository</th>
+<th style="width: 112px;">Branch</th>
+<th style="width: 96px;">Platform</th>
+<th style="width: 128px;">HeadSha</th>
+<th style="width: 96px;">Log</th>
+<th style="width: 96px;">BuildTime</th>
+<th style="width: 192px;">Status</th>
+</tr>
+{% for variant in VARIANT_LIST%}
+<tr class="{{ loop.cycle('odd', 'even') }}">
+<td align="center" class="{{ loop.cycle('odd', 'even') }}"><a href="{{variant.repourl}}">{{variant.repourl}}</a></td>
+<td align="center" class="{{ loop.cycle('odd', 'even') }}"><a href="{{variant.branchurl}}">{{variant.branchname}}</a></td>
+<td align="center" class="{{ loop.cycle('odd', 'even') }}">{{variant.platform}}</td>
+<td align="center" class="{{ loop.cycle('odd', 'even') }}"><a href="{{variant.shaurl}}">{{variant.head_sha}}</a></td>
+<td align="center" class="{{ loop.cycle('odd', 'even') }}"><a href="{{variant.log_html}}">download-html</a></td>
+<td align="center" class="{{ loop.cycle('odd', 'even') }}">{{variant.buildtime}}</td>
+<td align="center" class="{{ loop.cycle('odd', 'even') }}"><img align="center" src="{{variant.status_svg}}"/></td>
+</tr>
+{% endfor %}
+<tbody>
+</table>
+<br/>

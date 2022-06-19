@@ -1,13 +1,14 @@
 ###############################################################################
 # Orkid Build System
-# Copyright 2010-2018, Michael T. Mayers
+# Copyright 2010-2022, Michael T. Mayers
 # email: michael@tweakoz.com
 # The Orkid Build System is published under the GPL 2.0 license
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
 
-import platform, os
+import platform, os, pathlib,sys
 import multiprocessing
+
 SYSTEM = platform.system()
 IsOsx = (SYSTEM=="Darwin")
 IsDarwin = (SYSTEM=="Darwin")
@@ -15,8 +16,50 @@ IsIrix = (SYSTEM=="IRIX64")
 IsLinux = (SYSTEM=="Linux")
 IsIx = IsLinux or IsOsx or IsIrix
 IsX86_64 = platform.machine()=="x86_64"
-IsAARCH64 = platform.machine()=="aarch64"
+IsAARCH64 = (platform.machine()=="aarch64") or (platform.machine()=="arm64")
 IsX86_32 = platform.machine()=="i686"
+
+file_path = os.path.realpath(__file__)
+this_dir = pathlib.Path(os.path.dirname(file_path))
+
+###############################################################################
+
+def description():
+  import ork.module
+  hostinfo_dir = this_dir/".."/".."/"modules"/"host"
+  the_module = None
+  if IsOsx:
+    machine = platform.machine()
+    if machine == "arm64":
+       machine = "aarch64"
+    identifier = machine+"-"+"macos"
+    hi_name = hostinfo_dir/("%s.py"%identifier)
+    the_module = ork.module.instance(identifier,hi_name)
+  elif IsLinux:
+    identifier = platform.machine()+"-"+"linux"
+    hi_name = hostinfo_dir/("%s.py"%identifier)
+    the_module = ork.module.instance(identifier,hi_name)
+  if the_module != None:
+    return the_module.hostinfo()
+
+###############################################################################
+
+class enuminterface:
+  def __init__(self):
+    self.subdir = "host"
+  def tryAsModule(self,item,pth):
+    identifier = item.replace(".py","")
+    m = ork.module.instance(identifier,pth)
+    if hasattr(m,"hostinfo"):
+      return m
+    else:
+      return None
+
+###############################################################################
+
+def enumerate():
+  iface = enuminterface()
+  return ork.module.enumerate_simple(iface)
 
 ###############################################################################
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from ork import osx, path
+from ork import macos, path
 binpath = path.bin()/"ork.tool.release"
-osx.macho_replace_loadpaths(binpath, "@rpath/", "@yopath/")
-osx.macho_dump(binpath)
+macos.macho_replace_loadpaths(binpath, "@rpath/", "@yopath/")
+macos.macho_dump(binpath)
