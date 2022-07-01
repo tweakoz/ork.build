@@ -17,7 +17,7 @@ class oneapimkl(dep.StdProvider):
   ########################################################################
   @property
   def _fetcher(self):
-    return dep.GithubFetcher(name=_realsense_from_source.name,
+    return dep.GithubFetcher(name=oneapimkl.NAME,
                              repospec="oneapi-src/oneMKL",
                              revision=oneapimkl.VERSION,
                              recursive=False)

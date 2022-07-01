@@ -1,0 +1,39 @@
+###############################################################################
+# Orkid Build System
+# Copyright 2010-2020, Michael T. Mayers
+# email: michael@tweakoz.com
+# The Orkid Build System is published under the GPL 2.0 license
+# see http://www.gnu.org/licenses/gpl-2.0.html
+###############################################################################
+
+from ork import dep, host, command, path
+
+###############################################################################
+
+class ffmpeg(dep.StdProvider):
+  name = "ffmpeg"
+  def __init__(self):
+    super().__init__(ffmpeg.name)
+    #self._deps = ["pkgconfig"]
+    src_root = self.source_root
+    #################################################
+    self._builder = self.createBuilder(dep.AutoConfBuilder)
+    self._builder.setOption("--disable-vaapi")
+    self._builder.setOption("--disable-vdpau")
+    self._builder.setOption("--disable-static")
+    self._builder.setOption("--enable-shared")
+    #################################################
+    self.declareDep("pkgconfig")
+  ########################################################################
+  @property
+  def _fetcher(self):
+    return dep.GithubFetcher(name=ffmpeg.name,
+                             repospec="FFmpeg/FFmpeg",
+                             revision="n5.0.1",
+                             recursive=False)
+  ########################################################################
+  def areRequiredSourceFilesPresent(self):
+    return (self.source_root/"configure").exists()
+
+  def areRequiredBinaryFilesPresent(self):
+    return (path.libs()/"libffmpeg.so").exists()

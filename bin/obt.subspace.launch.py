@@ -35,6 +35,9 @@ ork._globals.setOption("subspacemodulename",subspacemodulename)
 
 subspacemodule = ork.subspace.descriptor(subspacemodulename)
 
-subspacemodule.launch(unknownargs)
+if len(unknownargs)==0:
+    subspacemodule.shell()
+else:
+    subspacemodule.launch(launch_args=unknownargs)
 
 sys.exit(0)

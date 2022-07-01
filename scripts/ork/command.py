@@ -204,7 +204,7 @@ def subshell(directory=None,prompt=None,environment=dict()):
     PROMPT += bdeco.promptR("[ %s ]"%prompt)
     PROMPT += bdeco.bright("> ")
     os.environ["PS1"] = PROMPT
-    retc = Command(["bash","--norc"]).exec()
+    retc = Command(["bash","--norc"],environment=environment).exec()
     os.chdir(cur_dir)
     os.environ["PS1"] = curprompt
     return retc

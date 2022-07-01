@@ -1,4 +1,4 @@
-from ork import host, dep, path
+from ork import host, dep, path, osrelease
 
 ###############################################################################
 
@@ -19,12 +19,20 @@ class cuda(dep.Provider):
   @property
   def cxx_compiler(self):
     if host.IsDebian:
-      return "g++-8"
+      desc = osrelease.descriptor()
+      if desc.codename=="jammy":
+        return "g++-9"
+      else:
+        return "g++-8"
     return "g++"
   @property
   def c_compiler(self):
     if host.IsDebian:
-      return "gcc-8"
+      desc = osrelease.descriptor()
+      if desc.codename=="jammy":
+        return "gcc-9"
+      else:
+        return "gcc-8"
     return "gcc"
 
   ########

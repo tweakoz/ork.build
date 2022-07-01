@@ -9,17 +9,40 @@
 from ork.command import Command
 from ork import path, dep, buildtrace
 import os 
+
 class context:
 
-  def __init__(self,root="",env=dict(),trace=False,builddir=None):
+  ###############################################
+
+  def __init__(self,
+               root="",
+               env=dict(),
+               osenv=dict(),
+               trace=False,
+               sourcedir=None,
+               builddir=None,
+               workdir=None):
+
     self.root = root
     self.env = env
+    self.osenv = osenv
     self._verbose = False
     self._trace = trace
     self._builddir = builddir 
+    self._workdir = workdir
+    self._sourcedir = sourcedir
+
+    if builddir!=None:
+      self._sourcedir = builddir/".."
+    if sourcedir!=None:
+      self._sourcedir = sourcedir
+
+  ###############################################
 
   def verbose(self,enable):
     self._verbose = enable
+
+  ###############################################
 
   def exec(self):
 
@@ -27,6 +50,8 @@ class context:
 
     if self._builddir!=None:
       cmdlist += [ "-B", self._builddir ]
+
+    cmdlist += [ "-S", self._sourcedir ]
 
     if self._verbose:
       cmdlist += ["--verbose"]
@@ -55,9 +80,12 @@ class context:
     if self._trace:
       cmdlist += ["--trace"]
 
-    cmdlist += [str(self.root)]
+    if self._builddir==None:
+      cmdlist += [str(self.root)]
 
     the_env = dict(os.environ)
+    for k in self.osenv.keys():
+      the_env[k] = str(self.osenv[k])
     #the_env["XXX"] = "xxx"
 
     with buildtrace.NestedBuildTrace({  
@@ -68,4 +96,4 @@ class context:
      "module_path": path.libs()/"cmake",
      "cmake_env": proc_env,
      "os_env": the_env }) as nested:
-       return Command(cmdlist,environment=the_env).exec()
+       return Command(cmdlist,environment=the_env,working_dir=self._workdir).exec()

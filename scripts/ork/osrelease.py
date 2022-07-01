@@ -7,7 +7,7 @@
 ###############################################################################
 
 import os, multiprocessing 
-from ork import target
+from ork import target, host
 
 class OsDescriptor:
   def __init__(self):
@@ -34,7 +34,7 @@ def descriptor():
       osd.version_codename = INFO["CODENAME"]
       return osd
     except ModuleNotFoundError:
-      print("module 'lsb_release' is not installed")
+      print("python module 'lsb_release' or 'os_release' is not installed")
       return {}
     
   print("UHOH")

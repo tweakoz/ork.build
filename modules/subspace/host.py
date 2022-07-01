@@ -33,6 +33,7 @@ class subspaceinfo:
     def info(self):
       return {
         "name": "host",
+        "prefix": path.stage(),
       }
     ###############################################
 

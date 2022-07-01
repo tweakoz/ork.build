@@ -1,11 +1,12 @@
 ###############################################################################
 # Orkid Build System
-# Copyright 2010-2020, Michael T. Mayers
+# Copyright 2010-2022, Michael T. Mayers
 # email: michael@tweakoz.com
 # The Orkid Build System is published under the GPL 2.0 license
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
-from ork import dep, path, log, env, command, host
+from ork import dep, path, pathtools, log, env, command, host
+import os
 ###############################################################################
 class orkid(dep.StdProvider):
   name = "orkid"
@@ -14,6 +15,23 @@ class orkid(dep.StdProvider):
     super().__init__(orkid.name)
     self._oslist = ["Linux","Darwin"]
     self._archlist = ["x86_64","aarch64"]
+
+    ################################
+    # default orkid_src_dir is in builds/orkid (from dep fetcher)
+    ################################
+
+    self.orkid_src_dir = path.builds()/"orkid"
+
+    ################################
+    # if ORKID_IS_MAIN_PROJECT set,
+    #  use that as orkid_src_dir
+    ################################
+
+    self._userworkingcopy = ("ORKID_IS_MAIN_PROJECT" in os.environ)
+    if self._userworkingcopy:
+      self.orkid_src_dir = path.Path(os.environ["ORKID_WORKSPACE_DIR"])
+      self.source_root = path.Path(os.environ["ORKID_WORKSPACE_DIR"])
+
     ################################
 
     for item in self.deplist:
@@ -23,8 +41,7 @@ class orkid(dep.StdProvider):
 
     self._builder = dep.CustomBuilder(orkid.name)
 
-    self.orkdir = path.builds()/"orkid"
-    self.builddir = self.orkdir/".build"
+    self.builddir = path.builds()/"orkid"/".build"
     self._builder._builddir = self.builddir
 
     ###########################################################
@@ -40,11 +57,15 @@ class orkid(dep.StdProvider):
 
   @property
   def _fetcher(self):
-    return dep.GithubFetcher(name=orkid.name,
-                             repospec="tweakoz/orkid",
-                             revision=self.revision,
-                             recursive=True,
-                             shallow=False)
+    if self._userworkingcopy:
+      pathtools.mkdir(self.builddir,parents=True)
+      return dep.NopFetcher(name=orkid.name)
+    else:
+      return dep.GithubFetcher(name=orkid.name,
+                               repospec="tweakoz/orkid",
+                               revision=self.revision,
+                               recursive=True,
+                               shallow=False)
 
   ########
 
@@ -132,7 +153,7 @@ class orkid(dep.StdProvider):
   ########
   def env_init(self):
     log.marker("registering Orkid(%s) SDK"%self.revision)
-    env.set("ORKID_WORKSPACE_DIR",self.orkdir)
+    env.set("ORKID_WORKSPACE_DIR",self.orkid_src_dir)
   ########
   def find_paths(self):
     return [self.source_root/"ork.core",self.source_root/"ork.lev2"]

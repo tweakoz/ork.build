@@ -34,7 +34,7 @@ class BaseBuilder(object):
   def requires(self,deplist):
     """declare that this dep module depends on others"""
     self._deps += deplist
-  def build(self,srcdir,blddir,incremental=False):
+  def build(self,srcdir,blddir,wrkdir,incremental=False):
     """execute build phase"""
     require(self._deps)
   def install(self,blddir):
@@ -49,7 +49,7 @@ class NopBuilder(BaseBuilder):
   """Do nothing builder (but still installs child dependencies)"""
   def __init__(self,name):
     super().__init__(name)
-  def build(self,srcdir,blddir,incremental=False):
+  def build(self,srcdir,blddir,wrkdir,incremental=False):
     return True
 ###############################################################################
 # BinInstaller : install binaries from downloaded package
@@ -72,7 +72,7 @@ class BinInstaller(BaseBuilder):
   def install_item(self,source=None,destination=None):
     self._items += [BinInstaller.InstallerItem(source,destination)]
   ###########################################
-  def build(self,srcdir,blddir,incremental=False):
+  def build(self,srcdir,blddir,wrkdir,incremental=False):
     ok2build = require(self._deps)
     if not ok2build:
       return False
@@ -105,6 +105,8 @@ class CMakeBuilder(BaseBuilder):
       "CMAKE_BUILD_TYPE": "Release",
       "BUILD_SHARED_LIBS": "ON",
     }
+    self._osenv = {
+    }
     ##################################
     # default OSX stuff
     ##################################
@@ -128,9 +130,7 @@ class CMakeBuilder(BaseBuilder):
       })
 
     ##################################
-    self._parallelism=1.0
-    if "serial" in _globals.getOptions() and _globals.getOptions()["serial"]==True:
-      self._parallelism=0.0
+    self._parallelism = 0.0 if _globals.tryBoolOption("serial") else 1.0
     ##################################
     # implicit dependencies
     ##################################
@@ -147,18 +147,40 @@ class CMakeBuilder(BaseBuilder):
     for k in othdict:
       self._cmakeenv[k] = othdict[k]
   ###########################################
-  def build(self,srcdir,blddir,incremental=False):
+  @property 
+  def cmakeEnvAsString(self):
+    return " ".join(self.cmakeEnvAsStringList)
+  ###########################################
+  @property 
+  def cmakeEnvAsStringList(self):
+    args = []
+    for k in self._cmakeenv:
+      v = self._cmakeenv[k]
+      args += ["-D%s=%s"%(k,v)]
+    return args
+  ###########################################
+  def build(self,srcdir,blddir,wrkdir,incremental=False):
+    print("srcdir<%s>"%srcdir)
+    print("blddir<%s>"%blddir)
+    print("wrkdir<%s>"%wrkdir)
+
     ok2build = require(self._deps)
     if not ok2build:
       return False
     if incremental:
-      pathtools.chdir(blddir)
-      cmake_ctx = cmake.context(root=srcdir,env=self._cmakeenv)
+      pathtools.chdir(wrkdir)
+      cmake_ctx = cmake.context(root=srcdir,
+                                env=self._cmakeenv,
+                                osenv=self._osenv,
+                                builddir=blddir,
+                                workdir=wrkdir)
       ok2build = cmake_ctx.exec()==0
     else:
       pathtools.mkdir(blddir,clean=True)
-      pathtools.chdir(blddir)
-      cmake_ctx = cmake.context(root=srcdir,env=self._cmakeenv)
+      pathtools.chdir(wrkdir)
+      cmake_ctx = cmake.context(root=srcdir,
+                                env=self._cmakeenv,
+                                osenv=self._osenv)
       ok2build = cmake_ctx.exec()==0
 
     if ok2build:
@@ -187,7 +209,8 @@ class AutoConfBuilder(BaseBuilder):
     self._needaclocal = False
     self._needsautogendotsh = False
     self._parallelism=1.0
-    if "serial" in _globals.getOptions() and _globals.getOptions()["serial"]==True:
+    self._options = list()
+    if _globals.tryBoolOption("serial"):
       self._parallelism=0.0
   ###########################################
   def requires(self,deplist):
@@ -196,15 +219,19 @@ class AutoConfBuilder(BaseBuilder):
   def setConfVar(self,key,value):
     self._confvar[key] = value
   ###########################################
+  def setOption(self,opt):
+    self._options += [opt]
+  ###########################################
   def setConfVars(self,othdict):
     for k in othdict:
       self._confvar[k] = othdict[k]
   ###########################################
-  def build(self,srcdir,blddir,incremental=False):
+  def build(self,srcdir,blddir,wrkdir,incremental=False):
     ok2build = require(self._deps)
     if not ok2build:
       return False
     retc = 0
+    pathtools.mkdir(blddir)
     if incremental:
       os.chdir(blddir)
     else:
@@ -229,7 +256,7 @@ class AutoConfBuilder(BaseBuilder):
 
       retc = Command([srcdir/"configure",
                       '--prefix=%s'%path.prefix()
-                     ]).exec()
+                     ]+self._options).exec()
       if retc==0:
         make.exec("all")
         retc = make.exec("install",parallelism=0.0)
@@ -263,7 +290,7 @@ class CustomBuilder(BaseBuilder):
     self._installcommands = list()
     self._builddir = path.builds()/name
 
-    if "serial" in _globals.getOptions() and _globals.getOptions()["serial"]==True:
+    if _globals.tryBoolOption("serial"):
       self._parallelism=0.0
   ###########################################
   def requires(self,deplist):
@@ -292,7 +319,7 @@ class CustomBuilder(BaseBuilder):
             return False
     return True
   ###########################################
-  def build(self,srcdir,blddir,incremental=False):
+  def build(self,srcdir,blddir,wrkdir,incremental=False):
     print("srcdir<%s>"%srcdir)
     print("blddir<%s>"%blddir)
     print("incremental<%s>"%incremental)

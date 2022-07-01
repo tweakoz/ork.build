@@ -27,6 +27,12 @@ class subspaceinfo:
       super().__init__()
       self._name = "conda"
       self._prefix = path.subspace_root()/"conda"
+
+    ###############################################
+    @property 
+    def conda_executable(self):
+      return self._prefix/"bin"/"conda"
+
     ###############################################
     # build conda subspace
     ###############################################
@@ -41,7 +47,7 @@ class subspaceinfo:
           MD5SUM = "5319de6536212892dd2da8b70d602ee1"
         elif host.IsAARCH64:
           url = "https://repo.anaconda.com/archive/Anaconda3-2022.05-MacOSX-arm64.sh"
-          MD5SUM = "c35c8bdbeeda5e5ffa5b79d1f5ee8082"
+          MD5SUM = "24d985d2d380c51364d4793eb1840d29"
       ########################################
 
       _archive_path = wget.wget(urls=[url],
@@ -50,65 +56,111 @@ class subspaceinfo:
 
       print(_archive_path)
 
-      if _archive_path!=None:
+      if _archive_path==None:
+        assert(False)
+      else:
         command.run(["chmod","ugo+x",_archive_path])
         command.run([_archive_path,"-b","-p",self._prefix])
 
-      self.launch([
-        "conda", "config", "--system",
-        "--set", "env_prompt", '"({default_env})|"'
-      ])
-        #
+        self.launch(conda_cmd="config",
+                    launch_args=["--system","--set", "env_prompt", '"({default_env})|"'
+        ])
 
     ###############################################
-    # launch docker container
-    #  print out connection info
+    # launch subprocess in conda subspace
     ###############################################
-    def launch(self,launch_args):
+    def launch(self,working_dir=None,
+                    environment=None,
+                    conda_cmd="run",
+                    do_log=False,
+                    launch_args=[]):
+      conda_cmdlist = [self.conda_executable,conda_cmd]
+      if do_log:
+        conda_cmdlist += ["--no-capture-output"]
 
-
+      if environment!=None:
+        conda_cmdlist += ["--name",environment]
       if len(launch_args)==0:
-        decostr = deco.yellow('Entering Conda Subspace')
-        decostr += deco.white(' (type exit to pop to parent OBT shell)')
-      else:
-        decostr = deco.yellow('Running Command %s In Conda Subspace'%deco.white(launch_args))
+        assert(False)
+      environ = {
+        "CONDA_PREFIX": self._prefix,
+      }        
+      conda_cmdlist += launch_args
+      print(conda_cmdlist)
+      command.run(conda_cmdlist,working_dir=working_dir,environment=environ)
 
-      conda = self._prefix/"bin"/"conda"
-      conda_cmd = "$(command %s 'shell.bash' 'hook' 2> /dev/null)" % conda
+    ###############################################
+    def env(self,args=[],
+                 working_dir=None,
+                 environment=None,
+                 do_log=False):
+      self.launch(conda_cmd="env",
+                  launch_args=args,
+                  working_dir=working_dir,
+                  environment=environment,
+                  do_log=do_log)
+    ###############################################
+    def run(self,args=[],
+                 working_dir=None,
+                 environment=None,
+                 do_log=False):
+      self.launch(conda_cmd="run",
+                  launch_args=args,
+                  working_dir=working_dir,
+                  environment=environment,
+                  do_log=do_log)
+    ###############################################
+    # launch conda subspace shell
+    ###############################################
+    def shell(self,working_dir=None,environment=None):
 
-      BASHRC = ""
+      TEMP_PATH = path.temp()
+
+      conda_cmdlist = [self.conda_executable,"run","--no-capture-output"]
+
+      if environment!=None:
+        conda_cmdlist += ["--name",environment]
+
+      conda_cmdlist += ["bash"]
+      
+      print(conda_cmdlist)
+
+      import _envutils 
+      sub_name = os.environ["OBT_PROJECT_NAME"]+"/conda"
+      sub_env = _envutils.EnvSetup(project_name=sub_name)
+
+      BASHRC = sub_env.genBashRc()
       BASHRC += (path.stage()/".bashrc").read_text()
       BASHRC += "\n\n"
-      BASHRC += 'eval "%s"\n' % conda_cmd
-      #BASHRC += "%s --stack\n"%(self._prefix/"bin"/"activate")
-      BASHRC += "echo '%s'\n"%decostr
+      BASHRC += "%s --stack\n"%(self._prefix/"bin"/"activate")
 
       fname = None
       with tempfile.NamedTemporaryFile(dir=path.temp(),mode="w",delete=False) as tempf:
         fname = tempf.name
         tempf.write(BASHRC)
         tempf.close()
+        print(fname)
 
-      #command.run(["chmod","u+x",fname])
+        conda_cmdlist += ["--rcfile",fname, "-i"]
 
-      if len(launch_args)>0:
-        largs = " ".join(command.procargs(launch_args))
-        cmdlist = ["bash", "--rcfile", fname, "-ci", largs]
-      else:
-        cmdlist = ["bash", "--rcfile", fname,"-i"]
+        environ = {
+          "CONDA_PREFIX": self._prefix,
+          "OBT_SUBSPACE": "conda" if (environment==None) else environment
+        }        
 
+        command.run(conda_cmdlist,working_dir=working_dir,environment=environ)
 
-      command.run(cmdlist)
-
+      print(fname)
     ###############################################
-    def command(self,args):
-      self.launch(["conda"]+args)
+    def _command(self,args,conda_cmd="run"):
+      self.launch(args,conda_cmd=conda_cmd)
     ###############################################
     # information dictionary
     ###############################################
     def info(self):
       return {
         "name": "conda",
+        "prefix": self._prefix,
       }
     ###############################################
 

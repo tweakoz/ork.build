@@ -18,7 +18,21 @@ class EnvSetup:
                     scriptsdir=None,
                     disable_syspypath=False,
                     is_quiet=False,
-                    project_name="NONE"):
+                    project_name=None):
+
+    if stagedir==None:
+      stagedir = ork.path.Path(os.environ["OBT_STAGE"])
+    if rootdir==None:
+      rootdir = ork.path.Path(os.environ["OBT_ROOT"])
+    if projectdir==None:
+      projectdir = ork.path.Path(os.environ["OBT_PROJECT_DIR"])
+    if bindir==None:
+      bindir = rootdir/"bin"
+    if scriptsdir==None:
+      scriptsdir = rootdir/"scripts"
+    if project_name==None:
+      project_name = os.environ["OBT_PROJECT_NAME"]
+
     self.OBT_STAGE = stagedir 
     self.ROOT_DIR = rootdir 
     self.PROJECT_DIR = projectdir 
@@ -27,6 +41,7 @@ class EnvSetup:
     self.DISABLE_SYSPYPATH=disable_syspypath
     self.IS_QUIET = is_quiet
     self.PROJECT_NAME = project_name
+
   ##########################################
   def install(self):
     ork.env.set("color_prompt","yes")
@@ -36,6 +51,7 @@ class EnvSetup:
     ork.env.set("OBT_PROJECT_DIR",self.PROJECT_DIR)
     ork.env.set("OBT_SUBSPACE","host")
     ork.env.set("OBT_SUBSPACE_DIR",self.OBT_STAGE)
+    ork.env.set("OBT_PROJECT_NAME",self.PROJECT_NAME)
     ork.env.prepend("PATH",self.BIN_DIR )
     ork.env.prepend("PATH",self.OBT_STAGE/"bin")
     ork.env.prepend("LD_LIBRARY_PATH",self.OBT_STAGE/"lib")
@@ -129,7 +145,7 @@ class EnvSetup:
     ork.path.apps().mkdir(parents=True,exist_ok=True)
     ork.path.buildlogs().mkdir(parents=True,exist_ok=True)
   ###########################################
-  def genBashRc(self,out_path):
+  def genBashRc(self,out_path=None):
     self.log(deco.bright("Generating bashrc"))
     bdeco = ork.deco.Deco(bash=True)
 
@@ -210,6 +226,9 @@ class EnvSetup:
         BASHRC += "obt.goto.%s() { cd %s; };" % (k,v)
         BASHRC += "obt.push.%s() { pushd %s; };" % (k,v)
 
-    f = open(str(out_path), 'w')
-    f.write(BASHRC)
-    f.close()
+    if out_path!=None:
+      f = open(str(out_path), 'w')
+      f.write(BASHRC)
+      f.close()
+
+    return BASHRC

@@ -8,22 +8,28 @@
 from ork import dep, log
 ###############################################################################
 class _audiofile_from_source(dep.StdProvider):
-  def __init__(self,name):
-    super().__init__(name)
+  name = "audiofile"
+  def __init__(self):
+    super().__init__(_audiofile_from_source.name)
     self.VERSION = "master"
-    self._fetcher = dep.GithubFetcher(name=name,
-                                      repospec="wtay/audiofile",
-                                      revision=self.VERSION,
-                                      recursive=False)
     self._builder = self.createBuilder(dep.AutoConfBuilder)
     self._builder._needsautogendotsh = True
+  ########################################################################
+  @property
+  def _fetcher(self):
+    return dep.GithubFetcher(name=_audiofile_from_source.name,
+                             repospec="wtay/audiofile",
+                             revision=self.VERSION,
+                             recursive=False)
+  ########################################################################
 ###############################################################################
 class _audiofile_from_homebrew(dep.HomebrewProvider):
-  def __init__(self,name):
-    super().__init__(name,name)
+  name = "audiofile"
+  def __init__(self):
+    super().__init__(_audiofile_from_homebrew.name,_audiofile_from_homebrew.name)
     self.VERSION = "audiofile"
 ###############################################################################
 class audiofile(dep.switch(linux=_audiofile_from_source, \
-                        macos=_audiofile_from_homebrew)):
+                           macos=_audiofile_from_homebrew)):
   def __init__(self):
-    super().__init__("audiofile")
+    super().__init__()

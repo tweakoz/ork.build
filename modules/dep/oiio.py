@@ -6,7 +6,7 @@
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
 
-from ork import dep, host, path
+from ork import dep, host, path, command
 
 ###############################################################################
 
@@ -19,12 +19,12 @@ class oiio(dep.StdProvider):
     self.declareDep("jpegturbo")
     self.declareDep("openexr")
     self.declareDep("giflib")
-    #self.declareDep("pybind11")
+    self.declareDep("ffmpeg")
     BOOST = self.declareDep("boost")
     self.createBuilder(dep.CMakeBuilder)
 
     CMAKE_VARS = {
-      "CMAKE_CXX_FLAGS": "-Wno-error=deprecated",
+      "CMAKE_CXX_FLAGS": "-Wno-error=deprecated -Wno-error=ignored-attributes",
       "USE_NUKE": "OFF",
       "USE_PYTHON": "OFF",
       #"OIIO_PYTHON_VERSION": "3.8.1",
@@ -39,6 +39,8 @@ class oiio(dep.StdProvider):
     #  self._builder.setCmVar("CMAKE_CXX_COMPILER","g++")
     #  self._builder.setCmVar("CMAKE_C_COMPILER","gcc")
 
+
+
     CMAKE_VARS.update(BOOST.cmake_additional_flags())
 
     self._builder.setCmVars(CMAKE_VARS)
@@ -47,9 +49,18 @@ class oiio(dep.StdProvider):
   def _fetcher(self):
     return dep.GithubFetcher(name=oiio.name,
                              repospec="OpenImageIO/oiio",
-                             revision="v2.3.16.0",
+                             revision="RB-2.4.1",
                              recursive=False)
 
+  #######################################################################
+  def on_build_shell(self):
+    env = {
+      "CMAKE_ENVFLAGS" : self._builder.cmakeEnvAsString
+    }
+    print("use cmake $(echo $CMAKE_ENVFLAGS) -B . -S ..")
+    return command.subshell( directory=self.build_dest,
+                             prompt = "OIIO",
+                             environment = env )
   #######################################################################
   def areRequiredSourceFilesPresent(self):
     return (self.source_root/"CMakeLists.txt").exists()

@@ -24,8 +24,8 @@ if _args["dep"]!=None:
   depname = _args["dep"]
   path_list = [ork.path.builds()/depname]
   ########################
-  depnode = ork.dep.DepNode.FIND(depname)
-  depinst = depnode.instance
+  depinst = ork.dep.DepNode.FIND(depname)
+  #depinst = depnode.instance
   #print(depnode,depinst)
   ########################
   # allow dep module to override default search path

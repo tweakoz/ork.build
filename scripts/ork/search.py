@@ -18,13 +18,14 @@ deco = ork.deco.Deco()
 
 def find(word):
  def _find(path):
-  with open(path, "rb") as fp:
-   for n, line in enumerate(fp):
-    try:
-      line_as_str = line.decode("utf-8")
-      if word in line_as_str:
-        yield n+1, line_as_str
-    except Exception:
+  if os.path.exists(str(path)):
+    with open(path, "rb") as fp:
+     for n, line in enumerate(fp):
+      try:
+        line_as_str = line.decode("utf-8")
+        if word in line_as_str:
+          yield n+1, line_as_str
+      except Exception:
         pass
  return _find
 
@@ -59,7 +60,7 @@ def search_at_root(word, root,ignore_set = ignore_folder_keys):
        if (spl[0].find(item)!=-1):
            ignore = True
    if not ignore:
-    if ext in ext_set:
+    if (finder!=None) and ext in ext_set:
      for line_number, line in finder(path):
       line = line.replace("\n","")
       res = result(path,line_number,line)

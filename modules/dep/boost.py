@@ -6,8 +6,8 @@
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
 
-VERSION = ["1","70","0"]
-HASH = "242ecc63507711d6706b9b0c0d0c7d4f"
+VERSION = ["1","74","0"]
+HASH = "da07ca30dd1c0d1fdedbd487efee01bd"
 
 import os,tarfile
 from ork import path,host,dep, gen_pkgconfig, patch
@@ -268,7 +268,7 @@ class boost(dep.Provider):
         if self._target.architecture == "aarch64":
           l2 = "libboost_%s-mt-%s.dylib" % (l,self.architecture_suffix)
         else:
-          l2 = "libboost_%s-mt.dylib" % (l)
+          l2 = "libboost_%s-mt-x64.dylib" % (l)
         print(l,l2)
         macos.macho_change_id(path.libs()/l2,"@rpath/%s"%l2)
 

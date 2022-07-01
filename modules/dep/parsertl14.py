@@ -20,7 +20,7 @@ class parsertl14(dep.StdProvider):
     class Builder(dep.BaseBuilder):
       def __init__(self,name):
         super().__init__(name)
-      def build(self,srcdir,blddir,incremental):
+      def build(self,srcdir,blddir,wrkdir,incremental):
         return dep.require(self._deps)
       def install(self,blddir):
         return command.run([ "cp",

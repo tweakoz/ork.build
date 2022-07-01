@@ -25,6 +25,10 @@ class ue5(dep.StdProvider):
       buildcmd = Command(["xcodebuild","-workspace","UE5.xcworkspace","-scheme","UE5"],
                           working_dir=bdir,
                           do_log=False)
+    elif host.IsLinux:
+      buildcmd = Command(["make"],
+                          working_dir=bdir,
+                          do_log=False)
 
     self._builder._cleanbuildcommands += [setupcmd,genprjcmd,buildcmd]
     self._builder._incrbuildcommands = [buildcmd]
@@ -42,6 +46,26 @@ class ue5(dep.StdProvider):
                                 shallow=False)
     return fetcher
   ########################################################################
+  @property
+  def root_dir(self):
+    return self.source_root
+  ########################################################################
+  @property
+  def engine_dir(self):
+    return self.source_root/"Engine"
+  ########################################################################
+  @property
+  def extras_dir(self):
+    return self.engine_dir/"Extras"
+  ########################################################################
+  @property
+  def host_sdk_dir(self):
+    return self.extras_dir/"ThirdPartyNotUE"/"SDKs"/"HostLinux"/"Linux_x64"
+  ########################################################################
+  @property
+  def compiler_dir(self):
+    return self.host_sdk_dir/"v20_clang-13.0.1-centos7"/"x86_64-unknown-linux-gnu"
+  ########################################################################
 
   def find_paths(self):
     return [self.source_root/"Engine"/"Plugins"] + \
@@ -56,3 +80,5 @@ class ue5(dep.StdProvider):
 
   def areRequiredBinaryFilesPresent(self):
     return (self.source_root/"Engine"/"Binaries"/"Linux"/"UE4Editor-Linux-Debug").exists()
+
+#${OBT_BUILDS}/ue5/Engine/Binaries/Linux/UnrealEditor -enablehighdpi

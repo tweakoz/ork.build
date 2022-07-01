@@ -13,14 +13,10 @@ from ork.deco import Deco
 deco = Deco()
 
 class _llvm_from_source(dep.StdProvider):
-
+  name = "llvm"
   def __init__(self,name):
-    super().__init__(name)
+    super().__init__(_llvm_from_source.name)
     self._archlist = ["x86_64"]
-    self._fetcher = dep.GithubFetcher(name=name,
-                                      repospec="llvm/llvm-project",
-                                      revision="llvmorg-12.0.1",
-                                      recursive=False)
     self._builder = self.createBuilder(dep.CMakeBuilder)
     ##########################################
     # llvm cmake file is 1 subdir deeper than usual
@@ -35,6 +31,17 @@ class _llvm_from_source(dep.StdProvider):
         "LLVM_ENABLE_DUMP": "ON",
         "LLVM_ENABLE_PROJECTS": "clang;libcxx;libcxxabi"
     })
+
+  ########################################################################
+  @property
+  def _fetcher(self):
+    fetcher = dep.GithubFetcher(name=_llvm_from_source.name,
+                                repospec="llvm/llvm-project",
+                                revision="llvmorg-12.0.1",
+                                recursive=False)
+    return fetcher
+  ########################################################################
+
   def install_dir(self):
     return path.stage()
 

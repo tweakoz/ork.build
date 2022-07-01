@@ -13,11 +13,18 @@
 
 * Staging Folder - The container which consists of a top level folder in which all build products go and a set of environment variables
 * Module - a python script in OBT or OBT_SEARCH_PATH that describes and implements a subspace, dependency, target and SDK
-* Subspace - a subdivision of a staging folder containing build products for a specific target
+* Subspace - a subdivision of a staging folder containing build products for a specific target, or products for a foreign environment such as conda.
 * Dependency - a recipe for building a package into a subspace, for a target, using an SDK.
 * Host - the OS instance that is executing OBT in a shell.
 * Target - the OS that code is being generated for (via an SDK)
 * SDK - recipes for how to build products for a given target
+
+### SUPPORTED HOSTS
+
+* Linux x86-64 (tested with ubuntu 20.04 and 22.04)
+* Linux arm64 (tested with ubuntu 18.04 and 20.04)
+* MacOs x86-64 (tested with monterey and big sur)
+* MacOs arm64 (tested with monterey)
 
 ### USAGE  
 
@@ -242,6 +249,67 @@ Dependency(RevTopoOrder)   Supported      Manifest    SrcPresent    BinPresent  
 8. pydefaults                   True          True          True          True                      ${OBT_BUILDS}/pydefaults
 9. python                       True          True          True          True                          ${OBT_BUILDS}/python
 ```
+
+**To list available subspaces**
+
+```obt.subspace.list.py``` 
+
+which should return something like..
+
+```
+      host.py : {'name': 'host'}
+     conda.py : {'name': 'conda'}
+```
+
+**To build a subspace**
+
+```obt.subspace.build.py conda``` 
+
+**To launch a subspace child shell**
+
+```obt.subspace.launch.py conda``` 
+
+**Python: To invoke a conda command in subprocess (without polluting parent process)**
+
+```
+from ork import subspace
+subspace.descriptor("conda").command(["list"])
+```
+returns.. 
+```
+Running Command [conda, list] In Conda Subspace
+#
+# Name                    Version                   Build  Channel
+_ipyw_jlab_nb_ext_conf    0.1.0            py39hecd8cb5_1  
+aiohttp                   3.8.1            py39hca72f7f_1  
+aiosignal                 1.2.0              pyhd3eb1b0_0  
+alabaster                 0.7.12             pyhd3eb1b0_0  
+<snipped>
+```
+
+**To list available docker modules**
+
+```obt.docker.list.py``` 
+
+which should return something like..
+
+```
+     sagemath : {'container_name': 'obt-sagemath', 'image_name': 'obt/sagemath-jupyter', 'version': '9.6'}
+   androiddev : {'image_name': 'obt-androiddev:latest'}
+     ub-focal : {'image_name': 'obt-focal:latest'}
+         cicd : {}
+       ps1dev : {'image_name': 'obt-ps1dev:latest'}
+```
+
+**To launch a docker module**
+
+```obt.docker.build.py ps1dev``` 
+
+If you have problems building modules, try doing a ```docker system prune --all```
+
+**To launch a docker module**
+
+```obt.docker.launch.py ps1dev``` 
 
 ### HISTORY
 

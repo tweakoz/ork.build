@@ -69,6 +69,7 @@ class Provider(object):
       self.source_root = srcroot
       self.build_src = srcroot
       self.build_dest = srcroot/".build"
+      self.build_working_dir = self.build_dest
     #############################
     def mustBuildInTree(self):
       self.build_dest = self.build_src
@@ -366,6 +367,7 @@ class StdProvider(Provider):
       print(deco.bright("Building<%s>"%(self._name)))
       self.OK = self._builder.build(self.build_src,
                                     self.build_dest,
+                                    self.build_working_dir,
                                     self.should_incremental_build)
       #########################################
       if not self.OK:

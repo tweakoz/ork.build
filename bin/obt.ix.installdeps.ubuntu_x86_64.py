@@ -1,16 +1,23 @@
 #!/usr/bin/env python3
 
-import os
+import os, distro
+
+UBUNTU_VERSION = int(float(distro.version())*100.0)
 
 os.system("sudo update-alternatives --install /usr/bin/python python /usr/bin/python3 1")
 
-deplist =  ["libboost-dev","gcc-8","gcc-9","g++-8","g++-9","gcc-10","g++-10"]
+deplist = []
+
+if UBUNTU_VERSION <= 2004:
+  deplist =  ["gcc-8","g++-8","python-dev"] # not avail in ub22
+
+deplist += ["libboost-dev","gcc-9","g++-9","gcc-10","g++-10"]
 deplist += ["libboost-filesystem-dev","libboost-system-dev","libboost-thread-dev"]
 deplist += ["libboost-program-options-dev","libftdi-dev"]
 deplist += ["libglfw3-dev","libflac++-dev","scons","git"]
 deplist += ["rapidjson-dev","graphviz","doxygen","clang","libtiff-dev"]
 deplist += ["portaudio19-dev", "pybind11-dev"]
-deplist += ["libpng-dev","clang-format","python-dev"]
+deplist += ["libpng-dev","clang-format"]
 deplist += ["iverilog","nvidia-cg-dev","nvidia-cuda-dev", "nvidia-cuda-toolkit"]
 deplist += ["libopenblas-dev"]
 deplist += ["librtmidi-dev"]

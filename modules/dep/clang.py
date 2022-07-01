@@ -18,8 +18,6 @@ class clang(dep.StdProvider):
     #self._archlist = ["x86_64"]
     self.llvm = dep.instance("llvm")
     if hasattr(self.llvm,"_fetcher"):
-      self._fetcher = dep.NopFetcher(name)
-      self._fetcher._revision = self.llvm._fetcher._revision
       self._builder = self.createBuilder(dep.CMakeBuilder)
       self._builder.requires([self.llvm])
       ##########################################
@@ -31,6 +29,12 @@ class clang(dep.StdProvider):
   ##########################################
   def __str__(self):
     return "Clang(From LLVM)"
+  ##########################################
+  @property
+  def _fetcher(self):
+    fetcher = dep.NopFetcher(clang.name)
+    fetcher._revision = self.llvm._fetcher._revision
+    return fetcher
   ##########################################
   @property
   def linux_bindir(self):

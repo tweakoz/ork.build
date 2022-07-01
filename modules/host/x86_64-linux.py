@@ -6,14 +6,14 @@
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
 
-import os_release, os, multiprocessing 
-from ork import target
+import os, multiprocessing 
+from ork import target, osrelease
 
 class hostinfo:
   def __init__(self):
     self.architecture = "x86_64"
     self.os = "linux"
-    descriptor = os_release.current_release()
+    descriptor = osrelease.descriptor()
     self.distribution = descriptor.id
     self.revision = descriptor.version_id
     self.codename = descriptor.version_codename

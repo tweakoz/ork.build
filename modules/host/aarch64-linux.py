@@ -26,7 +26,6 @@ class hostinfo:
     ###################################
 
   @property
-  @property
   def is_debian(self):
     apt_exists = os.path.exists("/etc/apt")
     return apt_exists

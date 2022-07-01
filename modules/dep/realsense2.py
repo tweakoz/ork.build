@@ -6,7 +6,7 @@
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
 
-VERSION = "v2.50.0"
+VERSION = "v2.50.0-obt"
 
 import os
 from ork import dep, host, path, cmake, git, make, pathtools, log
@@ -26,22 +26,27 @@ class _realsense_from_source(dep.StdProvider):
 
     CMAKE_VARS = {
       "CMAKE_CXX_FLAGS": "-Wno-error=deprecated",
-      #"TBB_ROOT": "/opt/homebrew/Cellar/tbb/2021.5.0_1/",
-      #"CMAKE_THREAD_LIBS_INIT": "-lpthread",
-      #"CMAKE_HAVE_THREADS_LIBRARY": "1",
-      #"CMAKE_USE_WIN32_THREADS_INIT": "0",
-      #"CMAKE_USE_PTHREADS_INIT": "1",
-      #"THREADS_PREFER_PTHREAD_FLAG": "ON"
     }
+
+    if self._target.identifier=="aarch64-macos":
+      _vars = {
+        "TBB_ROOT": "/opt/homebrew/Cellar/tbb/2021.5.0_1/",
+        "CMAKE_THREAD_LIBS_INIT": "-lpthread",
+        "CMAKE_HAVE_THREADS_LIBRARY": "1",
+        "CMAKE_USE_WIN32_THREADS_INIT": "0",
+        "CMAKE_USE_PTHREADS_INIT": "1",
+        "THREADS_PREFER_PTHREAD_FLAG": "ON"
+      }
+      CMAKE_VARS.update(_vars)
 
     self._builder.setCmVars(CMAKE_VARS)
   ########################################################################
   @property
   def _fetcher(self):
     return dep.GithubFetcher(name=_realsense_from_source.name,
-                             repospec="IntelRealSense/librealsense",
+                             repospec="tweakoz/librealsense",
                              revision=VERSION,
-                             recursive=False)
+                             recursive=True)
 
   #######################################################################
   def linkenv(self): 

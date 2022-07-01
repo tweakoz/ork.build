@@ -13,14 +13,22 @@ yo = "yo"
 _options = dict()
 _nodes = dict()
 
+###############################################################################
+
 def setOption(key,value):
   _options[key] = value
+
+###############################################################################
 
 def setOptions(opts):
   _options = opts
 
+###############################################################################
+
 def getOptions():
   return _options
+
+###############################################################################
 
 def getOption(named):
   if named in _options:
@@ -28,8 +36,28 @@ def getOption(named):
   else:
    return None 
 
+###############################################################################
+
+def hasOption(named):
+  if named in _options:
+    return True
+  else:
+   return False
+
+###############################################################################
+
+def tryBoolOption(named):
+  if named in _options:
+    return _options[named]
+  else:
+    return False
+
+###############################################################################
+
 def setNode(named,value):
   _nodes[named] = value
+
+###############################################################################
 
 def getNode(named):
   if named in _nodes:
@@ -37,8 +65,12 @@ def getNode(named):
   else:
    return None 
 
+###############################################################################
+
 def enableBuildTracing():
   _options["BUILDTRACE"] = True
+
+###############################################################################
 
 def isBuildTraceEnabled():
   return "BUILDTRACE" in _options
