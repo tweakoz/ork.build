@@ -17,11 +17,15 @@ class ffmpeg(dep.StdProvider):
     #self._deps = ["pkgconfig"]
     src_root = self.source_root
     #################################################
+    tgt_desc = self._target
     self._builder = self.createBuilder(dep.AutoConfBuilder)
     self._builder.setOption("--disable-vaapi")
     self._builder.setOption("--disable-vdpau")
     self._builder.setOption("--disable-static")
     self._builder.setOption("--enable-shared")
+    if tgt_desc.identifier == "x86_64-macos":
+      self._builder.setOption("--disable-x86asm")
+
     #################################################
     self.declareDep("pkgconfig")
   ########################################################################

@@ -19,7 +19,7 @@ class cuda(dep.Provider):
   @property
   def cxx_compiler(self):
     if host.IsDebian:
-      desc = osrelease.descriptor()
+      desc = host.descriptor()
       if desc.codename=="jammy":
         return "g++-9"
       else:
@@ -28,7 +28,7 @@ class cuda(dep.Provider):
   @property
   def c_compiler(self):
     if host.IsDebian:
-      desc = osrelease.descriptor()
+      desc = host.descriptor()
       if desc.codename=="jammy":
         return "gcc-9"
       else:
