@@ -30,8 +30,8 @@ class EnvSetup:
       bindir = rootdir/"bin"
     if scriptsdir==None:
       scriptsdir = rootdir/"scripts"
-    if project_name==None:
-      project_name = os.environ["OBT_PROJECT_NAME"]
+    if project_name==None and "OBT_PROJECT_NAME" in os.environ:
+      project_name = os.environ["OBT_PROJECT_NAME"] 
 
     self.OBT_STAGE = stagedir 
     self.ROOT_DIR = rootdir 
