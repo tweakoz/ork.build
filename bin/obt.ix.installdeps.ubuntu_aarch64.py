@@ -1,14 +1,27 @@
 #!/usr/bin/env python3
 
-import os
+import os, distro
+
+UBUNTU_VERSION = int(float(distro.version())*100.0)
 
 os.system("sudo update-alternatives --install /usr/bin/python python /usr/bin/python3 1")
 
-deplist =  ["libboost-dev","gcc-8","g++-8"]
+deplist = []
+
+if UBUNTU_VERSION <= 2004:
+  deplist =  ["gcc-8","g++-8","python-dev"] # not avail in ub22
+if UBUNTU_VERSION >= 2204:
+  deplist += ["clang-11"]
+else:
+  deplist += ["clang-10"]
+
+os.system("sudo update-alternatives --install /usr/bin/python python /usr/bin/python3 1")
+
+deplist =  ["libboost-dev"]
 deplist += ["libboost-filesystem-dev","libboost-system-dev","libboost-thread-dev"]
 deplist += ["libboost-program-options-dev"]
 deplist += ["libglfw3-dev","libflac++-dev","scons","git"]
-deplist += ["rapidjson-dev","graphviz","doxygen","clang-10","libtiff-dev"]
+deplist += ["rapidjson-dev","graphviz","doxygen","libtiff-dev"]
 deplist += ["portaudio19-dev", "pybind11-dev"]
 deplist += ["libpng-dev","clang-format"]
 deplist += ["libopenblas-dev","libncurses-dev"]

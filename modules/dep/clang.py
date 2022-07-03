@@ -17,6 +17,7 @@ class clang(dep.StdProvider):
     super().__init__(name=name)
     #self._archlist = ["x86_64"]
     self.llvm = dep.instance("llvm")
+    self.hostdesc = host.description()
     if hasattr(self.llvm,"_fetcher"):
       self._builder = self.createBuilder(dep.CMakeBuilder)
       self._builder.requires([self.llvm])
@@ -47,17 +48,23 @@ class clang(dep.StdProvider):
   ##########################################
   @property
   def bin_clangpp(self):
-    if host.IsLinux and host.IsX86_64:
-      return self.linux_bindir/"clang++"
-    elif host.IsLinux and host.IsAARCH64:
-      return self.linux_bindir/"clang++-10"
-    return path.Path("clang++")
+   ub_release = {
+      "bionic": "clang++-10",
+      "focal": "clang++-10",
+      "jammy": "clang++-11"
+   }
+   if host.IsLinux:
+      return self.linux_bindir/ub_release[self.hostdesc.codename]
+   return path.Path("clang++")
   ##########################################
   @property
   def bin_clang(self):
-    if host.IsLinux and host.IsX86_64:
-      return self.linux_bindir/"clang"
-    elif host.IsLinux and host.IsAARCH64:
-      return self.linux_bindir/"clang-10"
-    return path.Path("clang")
+   ub_release = {
+      "bionic": "clang-10",
+      "focal": "clang-10",
+      "jammy": "clang-11"
+   }   
+   if host.IsLinux:
+     return self.linux_bindir/ub_release[self.hostdesc.codename]
+   return path.Path("clang")
   ##########################################
