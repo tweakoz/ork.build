@@ -139,6 +139,10 @@ def mkdir(p,clean=False,parents=False):
   if False==p.exists():
      p.mkdir(parents=parents)
 
+def rmdir(p):
+  buildtrace.buildTrace({"op":"rmdir(%s)"%str(p)})
+  os.system("rm -rf %s"%p)
+
 ###############################################################################
 
 def ensureDirectoryExists(p):
@@ -161,3 +165,14 @@ def copyfile(file_from,file_dest,modeset=""):
   os.system("cp \"%s\" \"%s\"" % (str(file_from), str(file_dest)))
   if modeset!="":
     os.system("chmod %s %s"%(modeset,str(file_dest)))
+
+def copydir(src_dir,dest_dir):
+  rmdir(dest_dir)
+  buildtrace.buildTrace({"op":"copydir", "from": str(src_dir), "dest": str(dest_dir)})
+  os.system("cp -r %s %s"%(str(src_dir),str(dest_dir)))
+
+def copyfiles(file_from,dest_dir,modeset=""):
+  buildtrace.buildTrace({"op":"copyfiles", "from": str(file_from), "dest_dir": str(dest_dir), "modeset": modeset})
+  os.system("cp -r \"%s\" \"%s/\"" % (str(file_from), str(dest_dir)))
+  if modeset!="":
+    os.system("chmod %s %s/*"%(modeset,str(dest_dir)))
