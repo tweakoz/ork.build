@@ -26,7 +26,7 @@ command.run(["unzip","-o",path.downloads()/zipname])
 
 command.run(["fs-uae",
              "--hard_drive_0=.",
-             "--floppy-drive-0=AmigaDOS CLI rev 27.5 (1985)(Commodore)[m].adf",
+             "--floppy-drive-0=%s"%str(builddir/"img.adf"),
              "--amiga-model=a4000 ",
              "--kickstart_file=./Kickstart-v3.1-rev40.70-1994-Commodore-A4000.rom",
              "--floppy_drive_volume=0"])

@@ -29,6 +29,8 @@ int main(int argc, char **argv )
         Write(outputstr, (void*) s.c_str(), s.length());
     };
 
+    printf("DOSBase<%p>\n", (void*) DOSBase );
+
     if (DOSBase) {
         writestr("Hello World\n");
         writestr("wtf1\n");
