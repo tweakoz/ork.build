@@ -1,6 +1,6 @@
 #!/usr/bin/env sh 
 
-cd test1
+cd ~/test1
 make
 
 cd ~/test1-build 

@@ -42,4 +42,5 @@ RUN cp vobjdump /usr/bin
 RUN pip3 install amitools
 
 WORKDIR /home/amigadev
-USER amigadev
+ENV HOME=/home/amigadev
+#USER amigadev
