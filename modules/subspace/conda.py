@@ -39,8 +39,12 @@ class subspaceinfo:
     def build(self,build_args):
       ########################################
       if host.IsLinux:
-        url = "https://repo.anaconda.com/archive/Anaconda3-2022.05-Linux-x86_64.sh"
-        MD5SUM = "a01150aff48fcb6fcd6472381652de04"
+        if host.IsX86_64:
+          url = "https://repo.anaconda.com/archive/Anaconda3-2022.05-MacOSX-x86_64.sh"
+          MD5SUM = "5319de6536212892dd2da8b70d602ee1"
+        elif host.IsAARCH64:
+          url = "https://repo.anaconda.com/archive/Anaconda3-2022.05-Linux-aarch64.sh"
+          MD5SUM = "7e822f5622fa306c0aa42430ba884454"
       elif host.IsOsx:
         if host.IsX86_64:
           url = "https://repo.anaconda.com/archive/Anaconda3-2022.05-MacOSX-x86_64.sh"

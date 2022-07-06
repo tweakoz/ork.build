@@ -51,7 +51,7 @@ class clang(dep.StdProvider):
    ub_release = {
       "bionic": "clang++-10",
       "focal": "clang++-10",
-      "jammy": "clang++-11"
+      "jammy": "clang++-12"
    }
    if host.IsLinux:
       return self.linux_bindir/ub_release[self.hostdesc.codename]
@@ -62,7 +62,7 @@ class clang(dep.StdProvider):
    ub_release = {
       "bionic": "clang-10",
       "focal": "clang-10",
-      "jammy": "clang-11"
+      "jammy": "clang-12"
    }   
    if host.IsLinux:
      return self.linux_bindir/ub_release[self.hostdesc.codename]
