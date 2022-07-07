@@ -11,7 +11,7 @@ deplist = []
 if UBUNTU_VERSION <= 2004:
   deplist =  ["gcc-8","g++-8","python-dev"] # not avail in ub22
 if UBUNTU_VERSION >= 2204:
-  deplist += ["clang-11"]
+  deplist += ["clang-12"]
 else:
   deplist += ["clang-10"]
 
