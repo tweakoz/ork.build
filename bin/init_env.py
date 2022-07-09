@@ -100,6 +100,7 @@ import ork.env
 import ork.path
 import ork.host
 import ork.dep
+import ork.subspace
 import ork.sdk
 import ork._globals as _glob
 from ork.command import Command
@@ -150,6 +151,11 @@ def dynamicInit():
   for depitemk in depitems:
     depitem = depitems[depitemk]
     depitem.env_init()
+  ####################################
+  subspaceitems = ork.subspace.findWithMethod("env_init")
+  for subitemk in subspaceitems:
+    subitem = subspaceitems[subitemk]
+    subitem._module.env_init()
   ####################################
 
 ###########################################

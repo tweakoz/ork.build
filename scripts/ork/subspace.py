@@ -82,3 +82,13 @@ def enumerate():
             e = EnumItem(item,module_test_path,module)
             module_dict[item] = e
   return module_dict
+
+def findWithMethod(named):
+  e = enumerate()
+  rval = {}
+  for k in e.keys():
+    item = e[k]
+    module = item._module
+    if module and hasattr(module,named):
+      rval[k] = item
+  return rval
