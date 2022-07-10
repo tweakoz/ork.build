@@ -21,7 +21,8 @@ class context:
                trace=False,
                sourcedir=None,
                builddir=None,
-               workdir=None):
+               workdir=None,
+               xcode=False):
 
     self.root = root
     self.env = env
@@ -31,6 +32,7 @@ class context:
     self._builddir = builddir 
     self._workdir = workdir
     self._sourcedir = sourcedir
+    self._xcode = xcode
 
     if builddir!=None:
       self._sourcedir = builddir/".."
@@ -82,6 +84,9 @@ class context:
 
     if self._builddir==None:
       cmdlist += [str(self.root)]
+
+    if self._xcode:
+      cmdlist += ["-G","Xcode"]
 
     the_env = dict(os.environ)
     for k in self.osenv.keys():
