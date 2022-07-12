@@ -70,6 +70,9 @@ class Command:
          "os_env": dict(self.env), 
          "use_shell": use_shell or self._use_shell })
 
+        if self.working_dir!=None:
+          pathtools.chdir(cur_dir)
+
         child_process = subprocess.Popen( self.command_list,
                                           universal_newlines=True,
                                           env=self.env,
@@ -77,8 +80,6 @@ class Command:
         child_process.communicate()
         child_process.wait()
 
-        if self.working_dir!=None:
-          pathtools.chdir(cur_dir)
 
         return child_process.returncode
 
@@ -181,7 +182,7 @@ class chain:
 
 ###############################################################################
 
-def system(command_list):
+def system(command_list,working_dir=None):
   buildtrace.buildTrace({  
    "op": "command(system)",
    "curwd": os.getcwd(),
@@ -190,6 +191,8 @@ def system(command_list):
   args = procargs(command_list)
   joined = " ".join(args)
   print("cmd<%s>"%deco.key(joined))
+  if working_dir!=None:
+    os.chdir(str(working_dir))
   return os.system(joined)
 
 ###############################################################################

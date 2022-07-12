@@ -59,8 +59,12 @@ class Provider(object):
       self._required_deps[named] = inst
       return inst
     #############################
-    def createBuilder(self,clazz):
-      self._builder = clazz(self._name)
+    def createBuilder(self,clazz, **kwargs):
+
+      if len(kwargs)>0:
+        self._builder = clazz(self._name,kwargs)
+      else:
+        self._builder = clazz(self._name)
       if len(self._required_deps):
         self._builder.requires(self._required_deps)
       return self._builder

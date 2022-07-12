@@ -35,6 +35,10 @@ def downloadAndExtract(urls,
     elif archive_type=="tgz":
         os.chdir(str(build_dest))
         Command(["tar","xvf",arcpath]).exec()
+    elif archive_type=="none":
+        os.chdir(str(build_dest))
+        run(["cp",arcpath,build_dest/outname],do_log=True)
+        pass
     else:
         print(arcpath)
         #assert(tarfile.is_tarfile(str(arcpath)))

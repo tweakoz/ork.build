@@ -33,7 +33,7 @@ class context:
     self._workdir = workdir
     self._sourcedir = sourcedir
     self._xcode = xcode
-
+    
     if builddir!=None:
       self._sourcedir = builddir/".."
     if sourcedir!=None:
