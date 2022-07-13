@@ -25,7 +25,7 @@ def rmdir(p,force=False):
       print({"rmdir":"path(%s)"%str(p)})
       pathtools.rmdir(p,force=force)
   #####################################
-  return _X()
+  return [_X()]
 
 ###############################################################################
 
@@ -42,7 +42,7 @@ def mkdir(p,
                       clean=clean,
                       parents=parents)
   #####################################
-  return _X()
+  return [_X()]
 
 ###############################################################################
 
@@ -77,7 +77,7 @@ def install_files(src_dir=None,
           dest_path = os.path.split(dest_path)
           #print("copy %s to %s"%(src_item,dest_path))
           _install_over(orig_src,path.Path(dest_path[0]),mode)
-  return _X(patterns)
+  return [_X(patterns)]
 
 ###############################################################################
 
@@ -126,4 +126,4 @@ def r_install_files(src_dir=None,
             print( "  dst: '%s'" % str(dest_path) )
             print( "} " )
           _install_over(orig_src,path.Path(dest_path[0]),mode)
-  return _X(patterns)
+  return [_X(patterns)]

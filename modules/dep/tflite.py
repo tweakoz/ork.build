@@ -63,18 +63,18 @@ class tflite(dep.StdProvider):
 
     install_commands = []
 
-    install_commands += [executors.rmdir(TENSORFLOW_INST_ROOT,force=True)]
-    install_commands += [executors.mkdir(TENSORFLOW_INST_LIB,parents=True,clean=True)]
-    install_commands += [executors.mkdir(TENSORFLOW_INST_INC,parents=True,clean=True)]
+    install_commands += executors.rmdir(TENSORFLOW_INST_ROOT,force=True)
+    install_commands += executors.mkdir(TENSORFLOW_INST_LIB,parents=True,clean=True)
+    install_commands += executors.mkdir(TENSORFLOW_INST_INC,parents=True,clean=True)
 
     #########################
     # install libraries
     #########################
     
-    install_commands += [executors.install_files( src_dir=LITE_BUILD_DIR,
+    install_commands += executors.install_files( src_dir=LITE_BUILD_DIR,
                                                   patterns=["*.dylib","*.a"],
                                                   dst_dir=TENSORFLOW_INST_LIB,
-                                                  mode="0777")]
+                                                  mode="0777")
 
 
     #########################
@@ -83,11 +83,11 @@ class tflite(dep.StdProvider):
 
     def r_install_files(spec):
       nonlocal install_commands
-      install_commands += [executors.r_install_files( src_dir=spec[0],
-                                                      recursive_src_strip=spec[1], 
-                                                      patterns=spec[2],
-                                                      dst_dir=spec[3],
-                                                      mode=spec[4])]
+      install_commands += executors.r_install_files( src_dir=spec[0],
+                                                     recursive_src_strip=spec[1], 
+                                                     patterns=spec[2],
+                                                     dst_dir=spec[3],
+                                                     mode=spec[4])
 
 
     tfhdrdir = LITE_BUILD_DIR
