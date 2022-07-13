@@ -55,51 +55,65 @@ class tflite(dep.StdProvider):
 
     TENSORFLOW_INST_ROOT = path.stage()/"tensorflow-bin"
     TENSORFLOW_INST_LIB = TENSORFLOW_INST_ROOT/"lib"
-    TENSORFLOW_INST_INC = TENSORFLOW_INST_ROOT/"include"/"tensorflow"
+    BASE_INST_INC = TENSORFLOW_INST_ROOT/"include"
+    TENSORFLOW_INST_INC = BASE_INST_INC/"tensorflow"
+    THIRDPARTY_INST_INC = BASE_INST_INC/"third-party"
     LITE_BUILD_DIR = self.source_root/"bazel-bin"/"tensorflow"/"lite"
+    EXT_BUILD_DIR = self.source_root/"bazel-bin"/"external"
 
     install_commands = []
-
-    def add_cmdlist(cmdlist):
-      nonlocal install_commands
-      cmd = Command(cmdlist,
-                    use_shell=True,      
-                    working_dir=self.source_root,
-                    environment=env)
-      install_commands += [cmd]
-
-    def add_systemcmd(cmdlist):
-      nonlocal install_commands
-      install_commands += [lambda: system(cmdlist,working_dir=self.source_root)==0]
-
 
     install_commands += [executors.rmdir(TENSORFLOW_INST_ROOT,force=True)]
     install_commands += [executors.mkdir(TENSORFLOW_INST_LIB,parents=True,clean=True)]
     install_commands += [executors.mkdir(TENSORFLOW_INST_INC,parents=True,clean=True)]
 
-    #add_systemcmd(["cp","-f","bazel-bin/tensorflow/lite/*.a",TENSORFLOW_INST_LIB])
-    #add_systemcmd(["cp","-f","bazel-bin/tensorflow/lite/*.dylib",TENSORFLOW_INST_LIB])
+    #########################
+    # install libraries
+    #########################
+    
+    install_commands += [executors.install_files( src_dir=LITE_BUILD_DIR,
+                                                  patterns=["*.dylib","*.a"],
+                                                  dst_dir=TENSORFLOW_INST_LIB,
+                                                  mode="0777")]
 
-    install_commands += [executors.copy_files( src_dir=LITE_BUILD_DIR,
-                                               pattern="*.dylib",
-                                               dst_dir=TENSORFLOW_INST_LIB,
-                                               modeset="c")]
 
-    install_commands += [executors.copy_files( src_dir=LITE_BUILD_DIR,
-                                               pattern="*.a",
-                                               dst_dir=TENSORFLOW_INST_LIB,
-                                               modeset="c")]
+    #########################
+    # install tflite headers
+    #########################
 
-    def rsync(src=None,dst=None,incs=[],excs=[]):
+    def r_install_files(spec):
       nonlocal install_commands
-      cmd = ["rsync","-avzh"]
-      for item in incs:
-        cmd += ["--include",item]
-      for item in excs:
-        cmd += ["--exclude",item]
-      cmd += [src,dst]
-      add_systemcmd(cmd)
+      install_commands += [executors.r_install_files( src_dir=spec[0],
+                                                      recursive_src_strip=spec[1], 
+                                                      patterns=spec[2],
+                                                      dst_dir=spec[3],
+                                                      mode=spec[4])]
 
+
+    tfhdrdir = LITE_BUILD_DIR
+
+    r_install_files( [ tfhdrdir, tfhdrdir, 
+                       "*.h", 
+                       TENSORFLOW_INST_INC, "0644" ] )
+
+    r_install_files( [ self.source_root/"tensorflow", self.source_root/"tensorflow",
+                       "*.inc",
+                       TENSORFLOW_INST_INC, "0644" ] )
+
+    r_install_files( [ self.source_root/"third_party", self.source_root/"third_party",
+                       "*.h*",
+                       THIRDPARTY_INST_INC, "0644" ] )
+
+
+    #########################
+    # install external headers
+    #########################
+
+    fbufdir = EXT_BUILD_DIR/"flatbuffers"
+
+    r_install_files( [ fbufdir, fbufdir/"src"/"_virtual_includes",
+                     ["*.h","*.inc"],
+                     THIRDPARTY_INST_INC, "0644" ] )
 
     #rsync( --exclude '_virtual_includes/' --include '*/' --include '*.h' --include '*.inc' --exclude '*' bazel-bin/ $tensorflow_root/include/
     #rsync( src="tensorflow/cc", dst=TENSORFLOW_INST_INC, incs=['*/','*.h','*.inc'], excs=['*'] )
@@ -113,10 +127,7 @@ class tflite(dep.StdProvider):
     self._builder._cleanbuildcommands += [configure_command,build_cmd]
     self._builder._incrbuildcommands += [build_cmd]+install_commands
 
-    #for item in install_commands:
-    #  print(item.command_list)
 
-    #cmake ../tensorflow/lite -DTFLITE_KERNEL_TEST=on -DTFLITE_ENABLE_GPU=ON
   ########################################################################
   @property
   def _fetcher(self):

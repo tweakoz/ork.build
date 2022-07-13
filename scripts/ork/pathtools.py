@@ -64,6 +64,12 @@ def recursive_patglob(path,pattern):
 
 ###############################################################################
 
+def patglob_switch(path,pathglob,recursive=False):
+  method = recursive_patglob if recursive else patglob
+  return method(path,pattern)
+
+###############################################################################
+
 def recursive_glob(path):
     l=[]
     if path[-1]!='/':
@@ -92,10 +98,10 @@ def recursive_glob_get_dirs(path):
     d=[]
     try:
         x = os.listdir(path)
-        print(x)
+        #print(x)
         for i in x:
           y = path+i
-          print(i,y)
+          #print(i,y)
           if os.path.isdir(y):
             d.append(os.path.basename(i))
     except:
@@ -139,10 +145,10 @@ def mkdir(p,
   if clean:
     if p.exists():
       cmd_str = "chmod -R u+w %s"%str(p)
-      print(cmd_str)
+      #print(cmd_str)
       os.system(cmd_str)
-      cmd_str = "rm -rf %s"%str(p)
-      print(cmd_str)
+      #cmd_str = "rm -rf %s"%str(p)
+      #print(cmd_str)
       os.system(cmd_str)
   if False==p.exists():
      p.mkdir(parents=parents)
@@ -164,8 +170,8 @@ def ensureDirectoryExists(p):
 ###############################################################################
 
 def chdir(p):
-  print(p)
-  print(str(p))
+  #print(p)
+  #print(str(p))
   buildtrace.buildTrace({"op":"chdir(%s)"%str(p)})
   os.chdir(str(p))
 
