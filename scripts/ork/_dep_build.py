@@ -196,7 +196,7 @@ class CMakeBuilder(BaseBuilder):
                                 osenv=self._osenv,
                                 builddir=blddir,
                                 workdir=wrkdir,
-                                install_prefix=self._install_prefix)
+                                install_prefix=self.install_prefix)
       ok2build = cmake_ctx.exec()==0
     else:
       pathtools.mkdir(blddir,clean=True)

@@ -105,7 +105,7 @@ class context:
      "op": "cmake",
      "source_dir": self.root, 
      "build_dir": self._builddir,
-     "prefix": self._install_prefix, 
+     "prefix": self.install_prefix, 
      "module_path": self.install_prefix/"lib"/"cmake",
      "cmake_env": proc_env,
      "os_env": the_env }) as nested:

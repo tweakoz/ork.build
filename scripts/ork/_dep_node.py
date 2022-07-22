@@ -171,7 +171,8 @@ def require(name_or_list):
     #######################
     ## dep was found, is it provided ?
     #######################
-    return inst.provide()
+    OK = inst.provide()
+    return inst.instance if OK else None
    #######################
    # technically, this should never hit..
    #######################

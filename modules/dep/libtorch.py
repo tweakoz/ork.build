@@ -6,8 +6,10 @@
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
 
-from ork import dep, path
+from ork import dep, path, host
 
+###############################################################################
+# libtorch is quarantined for now..
 ###############################################################################
 
 class libtorch(dep.StdProvider):
@@ -19,16 +21,18 @@ class libtorch(dep.StdProvider):
     self.declareDep("ffmpeg")
     PYTHON = dep.instance("python")
 
-    self._quarantine_path = path.quarantine()/"libtorch"
-
-    self._builder = self.createBuilder(dep.CMakeBuilder,install_prefix=self._quarantine_path)
+    self._builder = self.createBuilder(dep.CMakeBuilder,install_prefix=self.prefix)
     self._builder.setCmVar("PYTHON_EXECUTABLE",PYTHON.executable)
     self._builder.setCmVar("USE_NCCL","OFF") # NVIDIA Collective Communication Library (causes errors, atm....)
     self._builder.setCmVar("USE_CUDA","OFF") # (causes errors, atm....)
     self._builder.setCmVar("USE_ZMQ","ON") #
     self._builder.setCmVar("USE_FFMPEG","ON") #
-    self._builder.setCmVar("BUILD_CAFFE2","ON") #
-    self._builder.setCmVar("USE_METAL", "OFF") # try on mac or ios ?
+
+    if host.IsOsx:
+      self._builder.setCmVar("USE_METAL", "ON")
+      self._builder.setCmVar("CMAKE_CXX_FLAGS", "-Wno-unknown-warning-option")
+    else:
+      self._builder.setCmVar("BUILD_CAFFE2","ON") #
 
   ########################################################################
   @property
@@ -37,12 +41,15 @@ class libtorch(dep.StdProvider):
                              repospec="pytorch/pytorch",
                              revision="v1.12.0",
                              recursive=True)
-
+  ########################################################################
+  @property
+  def prefix(self):
+    return path.quarantine()/"libtorch"
   ########################################################################
   def areRequiredSourceFilesPresent(self):
     return (self.source_root/"CMakeLists.txt").exists()
   def areRequiredBinaryFilesPresent(self):
-    return (self._quarantine_path/"lib"/"liblibtorchx.so").exists()
+    return (self.prefix/"lib"/"liblibtorchx.so").exists()
 
 
 

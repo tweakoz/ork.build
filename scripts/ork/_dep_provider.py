@@ -62,7 +62,7 @@ class Provider(object):
     def createBuilder(self,clazz, **kwargs):
 
       if len(kwargs)>0:
-        self._builder = clazz(self._name,kwargs)
+        self._builder = clazz(self._name,**kwargs)
       else:
         self._builder = clazz(self._name)
       if len(self._required_deps):
