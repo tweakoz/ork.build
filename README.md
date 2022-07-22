@@ -250,6 +250,7 @@ Dependency(RevTopoOrder)   Supported      Manifest    SrcPresent    BinPresent  
 9. python                       True          True          True          True                          ${OBT_BUILDS}/python
 ```
 
+
 **To list available subspaces**
 
 ```obt.subspace.list.py``` 

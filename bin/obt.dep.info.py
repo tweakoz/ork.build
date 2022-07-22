@@ -10,6 +10,8 @@
 
 import os, sys, pathlib, argparse, string
 
+assert(os.environ["OBT_SUBSPACE"]=="host")
+
 parser = argparse.ArgumentParser(description='ork.build dep information')
 parser.add_argument('dependency', metavar='D', type=str, help='a dependency you want information on')
 

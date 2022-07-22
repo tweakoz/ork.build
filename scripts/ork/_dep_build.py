@@ -59,9 +59,10 @@ class BinInstaller(BaseBuilder):
   """Install binaries from downloaded package"""
   ###########################
   class InstallerItem:
-    def __init__(self,src,dst):
+    def __init__(self,src,dst,flags):
       self._src = src
       self._dst = dst
+      self._flags = flags
   ###########################
   def __init__(self,name):
     super().__init__(name)
@@ -69,8 +70,11 @@ class BinInstaller(BaseBuilder):
     self._OK = True
   ###########################################
   """declare an install item given a source-path and dest-path"""
-  def install_item(self,source=None,destination=None):
-    self._items += [BinInstaller.InstallerItem(source,destination)]
+  def install_item(self,
+                   source=None,
+                   destination=None,
+                   flags=None):
+    self._items += [BinInstaller.InstallerItem(source,destination,flags)]
   ###########################################
   def build(self,srcdir,blddir,wrkdir,incremental=False):
     ok2build = require(self._deps)
@@ -87,30 +91,44 @@ class BinInstaller(BaseBuilder):
   def install(self,blddir):
     for item in self._items:
       cmd = [
-        "cp", str(item._src), str(item._dst)
+        "cp", item._src, item._dst
       ]
       Command(cmd).exec()
+      if item._flags != None:
+        cmd = [
+          "chmod",item._flags, item._dst
+        ]
+        Command(cmd).exec()
     return self._OK
 
 ###############################################################################
 
 class CMakeBuilder(BaseBuilder):
   ###########################################
-  def __init__(self,name):
+  def __init__(self,
+               name,
+               static_libs=False,
+               macos_defaults=True,
+               install_prefix=None):
     super().__init__(name)
+    self._minimal = False 
+    self._install_prefix = install_prefix
     ##################################
     # ensure environment cmake present
     ##################################
     self._cmakeenv = {
       "CMAKE_BUILD_TYPE": "Release",
-      "BUILD_SHARED_LIBS": "ON",
     }
     self._osenv = {
     }
+
+    if not static_libs:
+      self._cmakeenv["BUILD_SHARED_LIBS"]="ON"
+
     ##################################
     # default OSX stuff
     ##################################
-    if ork.host.IsOsx:
+    if ork.host.IsOsx and macos_defaults:
       sysroot_cmd = Command(["xcrun","--show-sdk-path"],do_log=False)
       sysroot = sysroot_cmd.capture().replace("\n","")
 
@@ -136,6 +154,10 @@ class CMakeBuilder(BaseBuilder):
     ##################################
     if name!="cmake":
       self._deps += ["cmake"]
+  ###############################################
+  @property 
+  def install_prefix(self):
+    return path.prefix() if (self._install_prefix==None) else self._install_prefix
   ###########################################
   def requires(self,deplist):
     self._deps += deplist
@@ -173,7 +195,8 @@ class CMakeBuilder(BaseBuilder):
                                 env=self._cmakeenv,
                                 osenv=self._osenv,
                                 builddir=blddir,
-                                workdir=wrkdir)
+                                workdir=wrkdir,
+                                install_prefix=self._install_prefix)
       ok2build = cmake_ctx.exec()==0
     else:
       pathtools.mkdir(blddir,clean=True)

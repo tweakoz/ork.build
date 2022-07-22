@@ -39,8 +39,9 @@ subspacemodulename = _args["subspacemodulename"]
 
 ork._globals.setOption("subspacemodulename",subspacemodulename)
 
+do_wipe = False
 for item in "force wipe".split(" "):
-  ork._globals.setOption(item,_args[item]==True)
+  do_wipe=True
 
 print(subspacemodulename)
 
@@ -48,6 +49,6 @@ subspacemodule = ork.subspace.descriptor(subspacemodulename)
 
 print(subspacemodule)
 
-subspacemodule.build(_args["buildargs"])
+subspacemodule.build(_args["buildargs"],do_wipe=do_wipe)
 
 sys.exit(0)

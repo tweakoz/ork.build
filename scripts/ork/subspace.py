@@ -49,10 +49,9 @@ def descriptor(subname):
 
 def requires(subname,build_opts=[]):
   sub = descriptor(subname)
-  manifest = ork.path.manifests()/subname
-  if not manifest.exists():
+  if not sub._manifest_path.exists():
     sub.build(build_opts) # todo skip if manifest present
-    manifest.touch()
+    sub._manifest_path.touch()
   return sub 
 
 ###############################################################################

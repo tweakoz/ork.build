@@ -64,6 +64,11 @@ def subspace_root():
 
 ###############################################################################
 
+def quarantine():
+  return subspace_root()/"quarantine"
+
+###############################################################################
+
 def subspace():
   subspace = "host"
   if "OBT_SUBSPACE" in os.environ:

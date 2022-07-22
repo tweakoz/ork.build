@@ -22,7 +22,8 @@ class context:
                sourcedir=None,
                builddir=None,
                workdir=None,
-               xcode=False):
+               xcode=False,
+               install_prefix=None):
 
     self.root = root
     self.env = env
@@ -33,11 +34,18 @@ class context:
     self._workdir = workdir
     self._sourcedir = sourcedir
     self._xcode = xcode
+    self._install_prefix = install_prefix
 
     if builddir!=None:
       self._sourcedir = builddir/".."
     if sourcedir!=None:
       self._sourcedir = sourcedir
+
+  ###############################################
+
+  @property 
+  def install_prefix(self):
+    return path.prefix() if (self._install_prefix==None) else self._install_prefix
 
   ###############################################
 
@@ -58,8 +66,8 @@ class context:
     if self._verbose:
       cmdlist += ["--verbose"]
 
-    cmdlist += ["-DCMAKE_INSTALL_PREFIX=%s"%path.prefix()]
-    cmdlist += ["-DCMAKE_MODULE_PATH=%s"%(path.libs()/"cmake")]
+    cmdlist += ["-DCMAKE_INSTALL_PREFIX=%s"%self.install_prefix]
+    cmdlist += ["-DCMAKE_MODULE_PATH=%s"%(self.install_prefix/"lib"/"cmake")]
 
     proc_env = dict()
 
@@ -97,8 +105,8 @@ class context:
      "op": "cmake",
      "source_dir": self.root, 
      "build_dir": self._builddir,
-     "prefix": path.prefix(), 
-     "module_path": path.libs()/"cmake",
+     "prefix": self._install_prefix, 
+     "module_path": self.install_prefix/"lib"/"cmake",
      "cmake_env": proc_env,
      "os_env": the_env }) as nested:
        return Command(cmdlist,environment=the_env,working_dir=self._workdir).exec()

@@ -13,7 +13,7 @@ from ork import buildtrace
 ###############################################################################
 
 def posixpath(path):
-	return '/'.join(os.path.normpath(path).split(os.sep))
+    return '/'.join(os.path.normpath(path).split(os.sep))
 
 ###############################################################################
 
@@ -65,26 +65,26 @@ def recursive_patglob(path,pattern):
 ###############################################################################
 
 def recursive_glob(path):
-	l=[]
-	if path[-1]!='/':
-		path=path+'/'
-	for i in recursive_glob_get_dirs(path):
-		#print path+i
-		l=l+recursive_glob(path+i)
-	try:
-		dirlist = os.listdir(path)
-		for i in dirlist:
-			ii=i
-			i=path+i
-			if os.path.isfile(i):
-				#print i
-				#if fnmatch.fnmatch(ii,pattern):
-				#print "Matched %s" % (i)
-				l.append(i)
-	except:
-		pass
+    l=[]
+    if path[-1]!='/':
+        path=path+'/'
+    for i in recursive_glob_get_dirs(path):
+        #print path+i
+        l=l+recursive_glob(path+i)
+    try:
+        dirlist = os.listdir(path)
+        for i in dirlist:
+            ii=i
+            i=path+i
+            if os.path.isfile(i):
+                #print i
+                #if fnmatch.fnmatch(ii,pattern):
+                #print "Matched %s" % (i)
+                l.append(i)
+    except:
+        pass
 
-	return l
+    return l
 
 ###############################################################################
 
@@ -106,41 +106,52 @@ def recursive_glob_get_dirs(path):
 ###############################################################################
 
 def globber( folderbase, wildcard, subdirlist, excludelist=[] ):
-	globs = []
-	filtered_globs = []
-	for s in subdirlist:
-		str_glob = folderbase
-		if s!=".":
-			 str_glob += s + '/'
-		str_glob += wildcard
-		these_globs = glob.glob( str_glob )
-		globs += these_globs
-		#print "globbing %s" % ( str_glob )
-	for s in globs:
-		incfil = int(1)
-		for t in excludelist:
-			regex = re.compile( t )
-			matchobj = re.search( t, s )
-			if( matchobj ):
-				#print "excluding " + s + " : (matches " + t + " )"
-				incfil = int(0)
-		if incfil == 1:
-			filtered_globs += [ posixpath(s) ]
-	#print filtered_globs
-	return filtered_globs
+    globs = []
+    filtered_globs = []
+    for s in subdirlist:
+        str_glob = folderbase
+        if s!=".":
+             str_glob += s + '/'
+        str_glob += wildcard
+        these_globs = glob.glob( str_glob )
+        globs += these_globs
+        #print "globbing %s" % ( str_glob )
+    for s in globs:
+        incfil = int(1)
+        for t in excludelist:
+            regex = re.compile( t )
+            matchobj = re.search( t, s )
+            if( matchobj ):
+                #print "excluding " + s + " : (matches " + t + " )"
+                incfil = int(0)
+        if incfil == 1:
+            filtered_globs += [ posixpath(s) ]
+    #print filtered_globs
+    return filtered_globs
 
 ###############################################################################
 
-def mkdir(p,clean=False,parents=False):
+def mkdir(p,
+          clean=False,
+          parents=False):
   buildtrace.buildTrace({"op":"mkdir(%s)"%str(p),"clean":clean,"parents":parents})
+
   if clean:
-  	if p.exists():
-  	  os.system("rm -rf %s"%p)
+    if p.exists():
+      cmd_str = "chmod -R u+w %s"%str(p)
+      print(cmd_str)
+      os.system(cmd_str)
+      cmd_str = "rm -rf %s"%str(p)
+      print(cmd_str)
+      os.system(cmd_str)
   if False==p.exists():
      p.mkdir(parents=parents)
 
-def rmdir(p):
+###############################################################################
+def rmdir(p,force=False):
   buildtrace.buildTrace({"op":"rmdir(%s)"%str(p)})
+  if force:
+    os.system("chmod -R u+wx %s"%p)
   os.system("rm -rf %s"%p)
 
 ###############################################################################

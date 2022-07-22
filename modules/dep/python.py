@@ -229,6 +229,7 @@ class python(dep.Provider):
       Command([venv_python,"-m","pip","install","toposort"]).exec()
       Command([venv_python,"-m","pip","install","pytest"]).exec()
       Command([venv_python,"-m","pip","install","os_release"]).exec()
+      Command([venv_python,"-m","pip","install","pyyaml"]).exec()
     ################################
     return OK
 

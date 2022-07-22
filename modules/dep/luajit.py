@@ -21,49 +21,43 @@ deco = Deco()
 
 ###############################################################################
 
-class luajit(dep.Provider):
-
+class luajit(dep.StdProvider):
+  name = "luajit"
   def __init__(self): ############################################
-    super().__init__("luajit")
-    #print(options)
-    self.source_root = path.builds()/"luajit"
-    self.build_dest = self.source_root
-    self.manifest = path.manifests()/"luajit"
-    self.OK = self.manifest.exists()
+    super().__init__(luajit.name)
+    self._builder = dep.CustomBuilder(luajit.name)
+    bdir = self.source_root
+
+    cmdlist = ["make","-j",host.NumCores]
+
+    if ork.host.IsOsx:
+        cmdlist += ["MACOSX_DEPLOYMENT_TARGET=10.15"]
+
+    clean_cmd = Command(cmdlist+["clean"],working_dir=bdir)
+    install_cmd = Command(cmdlist+["install"],working_dir=bdir)
+
+    self._builder._cleanbuildcommands += [clean_cmd,install_cmd]
+    self._builder._incrbuildcommands = [install_cmd]
+    self._builder._builddir = bdir
 
   ########
 
   def __str__(self):
     return "LuaJit (luajit.org-source-%s)" % VERSION
 
+  ########################################################################
+  @property
+  def _fetcher(self):
+    makefile_items = dict()
+    makefile_items["export PREFIX= /usr/local"]="export PREFIX=%s"%path.prefix()
+    patch_dict = { self.source_root/"Makefile": makefile_items }
+    return dep.GithubFetcher(name=luajit.name,
+                             repospec="LuaJIT/LuaJIT",
+                             revision=VERSION,
+                             recursive=False,
+                             patchdict=patch_dict)
+
   ########
-
-  def download_and_extract(self): #############################################
-
-    Command(["rm","-rf",self.source_root]).exec()
-
-    git.Clone("https://github.com/LuaJIT/LuaJIT",
-              self.source_root,
-              rev=VERSION)
-
-    #pathtools.mkdir(self.build_dest,clean=True)
-    #pathtools.chdir(self.build_dest)
-
-    patch_items = dict()
-    patch_items["export PREFIX= /usr/local"]="export PREFIX=%s"%path.prefix()
-    patch.patch_with_dict(self.source_root/"Makefile",patch_items)
-
-  def build(self): ############################################################
-
-    self.download_and_extract()
-
-    cmd = ["make","-j",host.NumCores]
-
-    if ork.host.IsOsx:
-        cmd += ["MACOSX_DEPLOYMENT_TARGET=10.15"]
-
-    cmd += ["install"]
-    return 0 == Command(cmd,working_dir=self.source_root).exec()
 
   def areRequiredSourceFilesPresent(self):
     return (self.source_root/"README").exists()

@@ -11,6 +11,7 @@ from pathlib import Path
 from yarl import URL
 import importlib.util
 import ork.path, ork.host
+from ork import patch
 from ork.command import Command, run
 from ork.deco import Deco
 from ork.wget import wget
@@ -23,7 +24,12 @@ deco = Deco()
 class Fetcher:
   def __init__(self,name):
     self._name = name
-    self._debug = False 
+    self._debug = False
+    self._patchdict = dict()
+  def patch(self):
+    for filepath in self._patchdict:
+      item_dict = self._patchdict[filepath]
+      patch.patch_with_dict(filepath,item_dict)
 ###############################################################################
 
 class GitFetcher(Fetcher):
@@ -65,7 +71,8 @@ class GithubFetcher(Fetcher): # github specific git fetcher
                cache=False,
                md5val=None,
                shallow=True,
-               disable_tarball=False):
+               disable_tarball=False,
+               patchdict=dict()):
     super().__init__(name)
     # todo : allow user control over protocols
     #  since ssh requires key setup..
@@ -81,7 +88,7 @@ class GithubFetcher(Fetcher): # github specific git fetcher
     self._disable_tarball = not (self._shallow and (not self._recursive) and (not self._force_clone))
     if disable_tarball:
       self._disable_tarball = True
-
+    self._patchdict = patchdict
     #print(self._git_url)
   ###########################################
   def descriptor(self):

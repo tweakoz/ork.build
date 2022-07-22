@@ -5,6 +5,8 @@ from ork import dep, host, path
 import ork.pathtools
 import ork._globals
 
+assert(os.environ["OBT_SUBSPACE"]=="host")
+
 ##########################################
 # build dep dict
 ##########################################

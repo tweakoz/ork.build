@@ -44,14 +44,40 @@ class EnvSetup:
 
   ##########################################
   def install(self):
+    orig_path = ""
+    orig_ld_library_path = ""
+    orig_ps1 = ""
+    orig_pkg_config = ""
+    orig_pkg_config_path = ""
+    orig_python_path = ""
+    if "PATH" in os.environ:
+      orig_path = os.environ["PATH"]
+    if "PS1" in os.environ:
+      orig_ps1 = os.environ["PS1"]
+    if "LD_LIBRARY_PATH" in os.environ:
+      orig_ld_library_path = os.environ["LD_LIBRARY_PATH"]
+    if "PKG_CONFIG" in os.environ:
+      orig_pkg_config = os.environ["PKG_CONFIG"]
+    if "PKG_CONFIG_PATH" in os.environ:
+      orig_pkg_config_path = os.environ["PKG_CONFIG_PATH"]
+    if "PYTHONPATH" in os.environ:
+      orig_python_path = os.environ["PYTHONPATH"]
+
     ork.env.set("color_prompt","yes")
     ork.env.set("OBT_STAGE",self.OBT_STAGE)
     ork.env.set("OBT_BUILDS",self.OBT_STAGE/"builds")
     ork.env.set("OBT_ROOT",self.ROOT_DIR)
     ork.env.set("OBT_PROJECT_DIR",self.PROJECT_DIR)
     ork.env.set("OBT_SUBSPACE","host")
+    ork.env.set("OBT_SUBSPACE_PROMPT","host")
     ork.env.set("OBT_SUBSPACE_DIR",self.OBT_STAGE)
     ork.env.set("OBT_PROJECT_NAME",self.PROJECT_NAME)
+    ork.env.set("OBT_ORIGINAL_PATH",orig_path )
+    ork.env.set("OBT_ORIGINAL_LD_LIBRARY_PATH",orig_ld_library_path )
+    ork.env.set("OBT_ORIGINAL_PS1",orig_ps1 )
+    ork.env.set("OBT_ORIGINAL_PKG_CONFIG",orig_pkg_config )
+    ork.env.set("OBT_ORIGINAL_PKG_CONFIG_PATH",orig_pkg_config_path )
+    ork.env.set("OBT_ORIGINAL_PYTHONPATH",orig_python_path )
     ork.env.prepend("PATH",self.BIN_DIR )
     ork.env.prepend("PATH",self.OBT_STAGE/"bin")
     ork.env.prepend("LD_LIBRARY_PATH",self.OBT_STAGE/"lib")
@@ -63,9 +89,6 @@ class EnvSetup:
     obt_prj_extensions = self.PROJECT_DIR/"obt.project"
     if obt_prj_extensions.exists():
       self.importProject(obt_prj_extensions)
-
-
-
 
     if ork.host.IsLinux:
 
@@ -96,9 +119,6 @@ class EnvSetup:
     
     if not ork.host.IsAARCH64:
       PYTHON = ork.dep.instance("python")
-      #print(PYTHON)
-      #if self.DISABLE_SYSPYPATH:
-      #   ork.env.set("PYTHONHOME",PYTHON.home_dir)
     
     #####################################
     # Late init
@@ -138,6 +158,8 @@ class EnvSetup:
     (ork.path.prefix()/"include").mkdir(parents=True,exist_ok=True)
     (ork.path.prefix()/"sdks").mkdir(parents=True,exist_ok=True)
     (ork.path.prefix()/"tempdir").mkdir(parents=True,exist_ok=True)
+    (ork.path.subspace_root()).mkdir(parents=True,exist_ok=True)
+    (ork.path.quarantine()).mkdir(parents=True,exist_ok=True)
     ork.path.downloads().mkdir(parents=True,exist_ok=True)
     ork.path.builds().mkdir(parents=True,exist_ok=True)
     ork.path.manifests().mkdir(parents=True,exist_ok=True)
@@ -145,8 +167,8 @@ class EnvSetup:
     ork.path.apps().mkdir(parents=True,exist_ok=True)
     ork.path.buildlogs().mkdir(parents=True,exist_ok=True)
   ###########################################
-  def genBashRc(self,out_path=None):
-    self.log(deco.bright("Generating bashrc"))
+  def genBashRc(self,out_path=None,override_sysprompt=None):
+    self.log(deco.bright("Generating bashrc override_sysprompt<%s>"%override_sysprompt))
     bdeco = ork.deco.Deco(bash=True)
 
     BASHRC = ""
@@ -161,6 +183,9 @@ class EnvSetup:
       stackindic = os.environ["OBT_STACK"]
       stacked = True
 
+    ####################
+    # system prompt (leftmost icon in prompt)
+
     SYSPROM = ""
     if ork.host.IsOsx:    
       SYSPROM = "🍎"
@@ -170,7 +195,10 @@ class EnvSetup:
     if "OBT_USE_PROMPT_PREFIX" in os.environ:
       SYSPROM = os.environ["OBT_USE_PROMPT_PREFIX"]
 
-    PROMPT = bdeco.promptL('%s[ %s %s-${OBT_SUBSPACE} ]'%(SYSPROM,stackindic,self.PROJECT_NAME))
+    if override_sysprompt!=None:
+      SYSPROM = override_sysprompt
+
+    PROMPT = bdeco.promptL('%s[ %s %s-${OBT_SUBSPACE_PROMPT} ]'%(SYSPROM,stackindic,self.PROJECT_NAME))
     PROMPT += bdeco.promptC("\\w")
     PROMPT += bdeco.promptR("[$(parse_git_branch) ]")
     PROMPT += bdeco.bright("> ")

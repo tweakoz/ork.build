@@ -24,6 +24,8 @@ depname = _args["dependency"]
 
 ork._globals.setOption("depname",depname)
 
+assert(os.environ["OBT_SUBSPACE"]=="host")
+
 for item in "force wipe incremental nofetch serial usegitclone verbose debug".split(" "):
   ork._globals.setOption(item,_args[item]==True)
 
