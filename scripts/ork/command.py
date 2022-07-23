@@ -59,19 +59,18 @@ class Command:
         if self.working_dir!=None:
           print("goto<%s>"%self.working_dir)
           pathtools.chdir(self.working_dir)
+        else:
+          self.working_dir = cur_dir
 
         if self._do_log:
           log.output("cmdexec: %s"%deco.bright(self.command_list))
 
         buildtrace.buildTrace({  
          "op": "command(cmd.exec)",
-         "curwd": os.getcwd(),
+         "working_dir": self.working_dir,
          "arglist": self.command_list, 
          "os_env": dict(self.env), 
          "use_shell": use_shell or self._use_shell })
-
-        if self.working_dir!=None:
-          pathtools.chdir(cur_dir)
 
         child_process = subprocess.Popen( self.command_list,
                                           universal_newlines=True,
