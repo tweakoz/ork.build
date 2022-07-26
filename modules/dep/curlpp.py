@@ -18,6 +18,11 @@ class curlpp(dep.StdProvider):
     src_root = self.source_root
     #################################################
     self._builder = self.createBuilder(dep.CMakeBuilder)
+    #if host.IsOsx:
+    #  import ork.macos_homebrew
+    #  sslroot = ork.macos_homebrew.prefix_for_package("openssl")
+    #  print(sslroot)
+    #  self._builder.setCmVar("OPENSSL_ROOT_DIR",sslroot)
     #################################################
     self.declareDep("pkgconfig")
     self.declareDep("cmake")

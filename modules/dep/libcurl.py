@@ -17,6 +17,12 @@ class libcurl(dep.StdProvider):
     src_root = self.source_root
     #################################################
     self._builder = self.createBuilder(dep.CMakeBuilder)
+    if host.IsOsx:
+      import ork.macos_homebrew
+      sslroot = ork.macos_homebrew.prefix_for_package("openssl")
+      print(sslroot)
+      self._builder.setCmVar("OPENSSL_ROOT_DIR",sslroot)
+      self._builder.setCmVar("USE_ZLIB","ON")
     #################################################
     self.declareDep("pkgconfig")
     self.declareDep("cmake")
@@ -24,8 +30,8 @@ class libcurl(dep.StdProvider):
   @property
   def _fetcher(self):
     return dep.GithubFetcher(name=libcurl.name,
-                             repospec="curl/curl",
-                             revision="curl-7_84_0",
+                             repospec="tweakoz/curl",
+                             revision="obt-7.84",
                              recursive=False)
   ########################################################################
   def areRequiredSourceFilesPresent(self):
