@@ -10,28 +10,26 @@ from ork import dep, host, command, path
 
 ###############################################################################
 
-class curlpp(dep.StdProvider):
-  name = "curlpp"
+class libcurl(dep.StdProvider):
+  name = "libcurl"
   def __init__(self):
-    super().__init__(curlpp.name)
-    #self._deps = ["pkgconfig"]
+    super().__init__(libcurl.name)
     src_root = self.source_root
     #################################################
     self._builder = self.createBuilder(dep.CMakeBuilder)
     #################################################
     self.declareDep("pkgconfig")
     self.declareDep("cmake")
-    self.declareDep("libcurl")
   ########################################################################
   @property
   def _fetcher(self):
-    return dep.GithubFetcher(name=curlpp.name,
-                             repospec="tweakoz/curlpp",
-                             revision="v0.8.1",
+    return dep.GithubFetcher(name=libcurl.name,
+                             repospec="curl/curl",
+                             revision="curl-7_84_0",
                              recursive=False)
   ########################################################################
   def areRequiredSourceFilesPresent(self):
     return (self.source_root/"CMakeLists.txt").exists()
 
   def areRequiredBinaryFilesPresent(self):
-    return (path.libs()/"libcurlpp.so").exists()
+    return (path.libs()/"libcurl.so").exists()
