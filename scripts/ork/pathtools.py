@@ -164,8 +164,6 @@ def ensureDirectoryExists(p):
 ###############################################################################
 
 def chdir(p):
-  print(p)
-  print(str(p))
   buildtrace.buildTrace({"op":"chdir(%s)"%str(p)})
   os.chdir(str(p))
 

@@ -43,6 +43,7 @@ class Command:
                  working_dir=None,
                  use_shell=False):
 
+        assert(type(command_list)==list)
         self.env = os.environ
         self.working_dir = working_dir
         for k in environment.keys():
@@ -56,8 +57,8 @@ class Command:
     def exec(self,use_shell=False):
 
         cur_dir = ork.path.Path(os.getcwd())
+        
         if self.working_dir!=None:
-          print("goto<%s>"%self.working_dir)
           pathtools.chdir(self.working_dir)
         else:
           self.working_dir = cur_dir
@@ -79,6 +80,8 @@ class Command:
         child_process.communicate()
         child_process.wait()
 
+        if self.working_dir!=None:
+          pathtools.chdir(cur_dir)
 
         return child_process.returncode
 
@@ -154,9 +157,27 @@ def run(command_list,
         environment=dict(),
         working_dir=None,
         do_log=False):
+  assert(type(command_list)==list)
   return Command(command_list,environment,do_log=do_log,working_dir=working_dir).exec()
+
+###############################################################################
+
+def deferredRun(command_list, 
+                environment=dict(),
+                working_dir=None,
+                do_log=False):
+  assert(type(command_list)==list)
+  return lambda: run(command_list,
+                     environment=environment,
+                     working_dir=working_dir,
+                     do_log=do_log)
+
+###############################################################################
+
 def run_filtered(command_list, environment=dict(),on_line=None,do_log=False):
   return Command(command_list,environment,do_log=do_log).exec_filtered(on_line=on_line)
+###############################################################################
+
 def capture(command_list,environment=dict(),do_log=True):
   return Command(command_list,environment,do_log=do_log).capture()
 
@@ -179,6 +200,29 @@ class chain:
   def ok(self): # have all commands run succeeded so far ?
     return self._rval==0
 
+
+class chain2:
+  def __init__(self,do_log=False):
+    self._rval = 0
+    self._list = list()
+    self._do_log = do_log
+  def add(self,cmd_or_list,working_dir=None): 
+    if(callable(cmd_or_list)):
+      self._list += [cmd_or_list]
+    else:
+      assert(type(cmd_or_list)==list)
+      defcmd = deferredRun(cmd_or_list,working_dir=working_dir,do_log=self._do_log)
+      self._list += [defcmd]
+  def execute(self): 
+    for item in self._list:
+      assert(callable(item))
+      self._rval = item()
+      if self._rval!=0:
+        return self._rval 
+    return 0
+  def ok(self): # have all commands run succeeded so far ?
+    return self._rval==0
+
 ###############################################################################
 
 def system(command_list,working_dir=None):
@@ -189,7 +233,6 @@ def system(command_list,working_dir=None):
    "os_env": dict(os.environ) })
   args = procargs(command_list)
   joined = " ".join(args)
-  print("cmd<%s>"%deco.key(joined))
   if working_dir!=None:
     os.chdir(str(working_dir))
   return os.system(joined)

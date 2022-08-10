@@ -6,7 +6,7 @@
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
 
-import os 
+import os, string
 
 ###############################################################################
 
@@ -24,6 +24,9 @@ class Theme:
     if self.bash:
       rval = "\\[" + rval + "\\]"
     return rval
+  ###############################
+  def blink(self):
+    return "\033[5m"
   ###############################
   def vrgb256(self,r,g,b):
     return self.rgb256(r,g,b)
@@ -59,8 +62,9 @@ class Theme:
     return self.vrgb256(0,255,255)+str(string)+self.reset()
   def white(self,string):
     return self.vrgb256(255,255,255)+str(string)+self.reset()
-  def orange(self,string):
-    return self.vrgb256(255,128,0)+str(string)+self.reset()
+  def orange(self,string,blink=False):
+    bl = self.blink() if blink else ""
+    return self.vrgb256(255,128,0)+bl+str(string)+self.reset()
   def yellow(self,string):
     return self.vrgb256(255,255,0)+str(string)+self.reset()
   def red(self,string):
@@ -181,8 +185,8 @@ class Deco:
     return self._theme.cyan(string)
   def white(self,string):
     return self._theme.white(string)
-  def orange(self,string):
-    return self._theme.orange(string)
+  def orange(self,string,blink=False):
+    return self._theme.orange(string,blink=blink)
   def yellow(self,string):
     return self._theme.yellow(string)
   def red(self,string):
@@ -212,6 +216,18 @@ class Deco:
   ###############################
   def promptR(self,string):
     return self._theme.promptR(string)
+
+###############################################################################
+
+class DecoFormatter(string.Formatter):
+  def __init__(self):
+    self.deco = Deco()    
+  def format_field(self, value, format_spec):
+    if isinstance(value, str):
+      if format_spec.endswith('red'):
+        value = self.deco.red(value)
+        format_spec = format_spec[:-3]
+    return super(DecoFormatter, self).format(value, format_spec)
 
 ###############################################################################
 

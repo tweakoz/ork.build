@@ -203,15 +203,23 @@ def temp():
 
 ###############################################################################
 
-def downloads():
-  staging = Path(os.environ["OBT_STAGE"])
-  return staging/"downloads"
+def home():
+  return Path(os.environ["HOME"])
+
+###############################################################################
+
+def user_global():
+  return home()/".obt-global"
 
 ###############################################################################
 
 def gitcache():
-  staging = Path(os.environ["OBT_STAGE"])
-  return staging/"gitcache"
+  return user_global()/"gitcache"
+
+###############################################################################
+
+def downloads():
+  return user_global()/"downloads"
 
 ###############################################################################
 
