@@ -66,16 +66,17 @@ class opencv(dep.Provider):
       "INSTALL_PYTHON_EXAMPLES": "ON",
       "ENABLE_PRECOMPILED_HEADERS": "OFF",
       "WITH_TBB": "OFF",
-      "WITH_QT": "ON",
+      "WITH_QT": "OFF",
       "WITH_OPENGL": "OFF",
+      "WITH_CAROTENE": "OFF",
       "OPENCV_EXTRA_MODULES_PATH": "../../opencv_contrib/modules",
-      "PYTHON_DEFAULT_EXECUTABLE": python_dep.executable(),
+      "PYTHON_DEFAULT_EXECUTABLE": python_dep.executable,
       # todo get internal python3 working
       # todo get internal openexr working
-      "PYTHON3_EXECUTABLE": python_dep.executable(),
-      "PYTHON3_LIBRARY": python_dep.lib(),
-      "PYTHON_INCLUDE_DIR": python_dep.include_dir(),
-      "PYTHON3_PACKAGES_PATH": python_dep.site_packages_dir(),
+      "PYTHON3_EXECUTABLE": python_dep.executable,
+      "PYTHON3_LIBRARY": python_dep.library_file,
+      "PYTHON_INCLUDE_DIR": python_dep.include_dir,
+      "PYTHON3_PACKAGES_PATH": python_dep.site_packages_dir,
       "BUILD_EXAMPLES": "ON"
     }
     if host.IsLinux:
