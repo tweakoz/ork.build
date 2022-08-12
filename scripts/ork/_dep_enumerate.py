@@ -24,10 +24,10 @@ def _enumerate():
       self._fullpath = fullpath
   #######################################
   deps = dict()
-  dep_search_list = os.environ["OBT_DEP_PATH"].split(":")
+  dep_search_list = os.environ["OBT_MODULES_PATH"].split(":")
   #print(dep_search_list)
-  for dep_repo in dep_search_list:
-    #print(dep_repo)
+  for modules_repo in dep_search_list:
+    dep_repo = ork.path.Path(modules_repo)/"dep"
     dep_list = ork.pathtools.patglob(dep_repo,"*.py")
     for item in dep_list:
       d = os.path.basename(item)
