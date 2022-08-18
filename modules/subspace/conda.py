@@ -83,7 +83,7 @@ class subspaceinfo:
     # launch subprocess in conda subspace
     ###############################################
     def launch(self,working_dir=None,
-                    environment=None,
+                    container=None,
                     conda_cmd="run",
                     do_log=False,
                     launch_args=[]):
@@ -91,8 +91,8 @@ class subspaceinfo:
       if do_log:
         conda_cmdlist += ["--no-capture-output"]
 
-      if environment!=None:
-        conda_cmdlist += ["--name",environment]
+      if container!=None:
+        conda_cmdlist += ["--name",container]
       if len(launch_args)==0:
         assert(False)
       environ = {
@@ -106,22 +106,22 @@ class subspaceinfo:
     ###############################################
     def env(self,args=[],
                  working_dir=None,
-                 environment=None,
+                 container=None,
                  do_log=False):
       self.launch(conda_cmd="env",
                   launch_args=args,
                   working_dir=working_dir,
-                  environment=environment,
+                  container=container,
                   do_log=do_log)
     ###############################################
-    def run(self,args=[],
+    def run(self,launch_args=[],
                  working_dir=None,
-                 environment=None,
+                 container=None,
                  do_log=False):
       self.launch(conda_cmd="run",
-                  launch_args=args,
+                  launch_args=launch_args,
                   working_dir=working_dir,
-                  environment=environment,
+                  container=container,
                   do_log=do_log)
     ###############################################
     # launch conda subspace shell
