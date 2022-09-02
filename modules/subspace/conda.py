@@ -132,8 +132,10 @@ class subspaceinfo:
 
       conda_cmdlist = [self.conda_executable,"run","--no-capture-output"]
 
+      PYTHON_HOME = self._prefix
       if container!=None:
         conda_cmdlist += ["--name",container]
+        PYTHON_HOME = self._prefix/"envs"/container
 
       conda_cmdlist += ["bash"]
       
@@ -152,7 +154,6 @@ class subspaceinfo:
 
       fname = None
 
-      PYTHON_HOME = self._prefix/"envs"/container
       SITE_PKG = PYTHON_HOME/"lib"/"python3"/"site-packages"
 
       pypath = os.environ["OBT_SCRIPTS_DIR"]
