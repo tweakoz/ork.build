@@ -126,14 +126,14 @@ class subspaceinfo:
     ###############################################
     # launch conda subspace shell
     ###############################################
-    def shell(self,working_dir=None,environment=None):
+    def shell(self,working_dir=None,container=None):
 
       TEMP_PATH = path.temp()
 
       conda_cmdlist = [self.conda_executable,"run","--no-capture-output"]
 
-      if environment!=None:
-        conda_cmdlist += ["--name",environment]
+      if container!=None:
+        conda_cmdlist += ["--name",container]
 
       conda_cmdlist += ["bash"]
       
@@ -143,7 +143,7 @@ class subspaceinfo:
       sub_name = os.environ["OBT_PROJECT_NAME"]
       sub_env = _envutils.EnvSetup(project_name=sub_name)
 
-      override_sysprompt = "🐍-conda" if (environment==None) else "🐍-%s"%environment
+      override_sysprompt = "🐍-conda" if (container==None) else "🐍-%s"%container
 
       BASHRC = sub_env.genBashRc()
       #BASHRC += (path.stage()/".bashrc").read_text()
@@ -151,6 +151,19 @@ class subspaceinfo:
       BASHRC += "%s --stack\n"%(self._prefix/"bin"/"activate")
 
       fname = None
+
+      PYTHON_HOME = self._prefix/"envs"/container
+      SITE_PKG = PYTHON_HOME/"lib"/"python3"/"site-packages"
+
+      pypath = os.environ["OBT_SCRIPTS_DIR"]
+      pypath += ":"+str(SITE_PKG)
+      pypath += ":"+os.environ["OBT_ORIGINAL_PYTHONPATH"]
+
+      ldlibpath = str(PYTHON_HOME/"lib")
+      ldlibpath += ":"+os.environ["LD_LIBRARY_PATH"]
+
+      PYTHON_DEP = dep.instance("python")
+
       with tempfile.NamedTemporaryFile(dir=path.temp(),mode="w",delete=False) as tempf:
         fname = tempf.name
         tempf.write(BASHRC)
@@ -160,10 +173,16 @@ class subspaceinfo:
         conda_cmdlist += ["--rcfile",fname, "-i"]
 
         environ = {
-          #"LD_LIBRARY_PATH": "",
+          "LD_LIBRARY_PATH": ldlibpath,
+          "OBT_PYTHON_SUBSPACE_BUILD_DIR": PYTHON_HOME/"builds",
+          "OBT_SUBSPACE_LIB_DIR": PYTHON_HOME/"libs",
+          "OBT_SUBSPACE_BIN_DIR": PYTHON_HOME/"bin",
           #"PATH": os.environ["OBT_ORIGINAL_PATH"],
+          "PYTHONPATH": pypath,
+          "OBT_PYTHONHOME": PYTHON_HOME,
+          "OBT_PYPKG": SITE_PKG,
           "CONDA_PREFIX": self._prefix,
-          "OBT_SUBSPACE": "conda" if (environment==None) else environment,
+          "OBT_SUBSPACE": "conda" if (container==None) else container,
           "OBT_SUBSPACE_PROMPT": override_sysprompt
         }        
 

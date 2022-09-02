@@ -78,6 +78,10 @@ class EnvSetup:
     ork.env.set("OBT_ORIGINAL_PKG_CONFIG",orig_pkg_config )
     ork.env.set("OBT_ORIGINAL_PKG_CONFIG_PATH",orig_pkg_config_path )
     ork.env.set("OBT_ORIGINAL_PYTHONPATH",orig_python_path )
+    ork.env.set("OBT_SCRIPTS_DIR",self.SCRIPTS_DIR )
+    ork.env.set("OBT_PYTHONHOME",self.OBT_STAGE/"pyvenv")
+    ork.env.set("OBT_SUBSPACE_LIB_DIR",ork.path.libs())
+    ork.env.set("OBT_SUBSPACE_BIN_DIR",ork.path.bin())
     ork.env.prepend("PATH",self.BIN_DIR )
     ork.env.prepend("PATH",self.OBT_STAGE/"bin")
     ork.env.prepend("LD_LIBRARY_PATH",self.OBT_STAGE/"lib")
@@ -130,19 +134,22 @@ class EnvSetup:
     ork.env.prepend("PKG_CONFIG_PATH",self.OBT_STAGE/"lib"/"pkgconfig")
     ork.env.prepend("PKG_CONFIG_PATH",self.OBT_STAGE/"lib64"/"pkgconfig")
     ork.env.append("PYTHONPATH",self.OBT_STAGE/"lib"/"python")
+    ork.env.append("LD_LIBRARY_PATH",self.OBT_STAGE/"python-3.9.13"/"lib")
+
+    
   ###########################################
 
   def importProject(self,prjdir):
     init_script = prjdir/"scripts"/"init_env.py"
-    print(init_script)
+    #print(init_script)
     if init_script.exists():
       import importlib
       modulename = importlib.machinery.SourceFileLoader('modulename',str(init_script)).load_module()
-      print(modulename)
+      #print(modulename)
       modulename.setup()
       #modul.setup()
     modules_dir = prjdir/"modules"
-    print(modules_dir,modules_dir.exists())
+    #print(modules_dir,modules_dir.exists())
     if modules_dir.exists():
       ork.env.prepend("OBT_MODULES_PATH",modules_dir)
 

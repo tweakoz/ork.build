@@ -51,7 +51,7 @@ class Chain:
       # check node comformity
       ##########################
       root = ork._dep_node.DepNode.nodeForName(named)
-      print(root)
+      #print(root)
       if (root==None):
         print(deco.err("DepNode<%s> does not have instance - check that the provider/class is named correctly!"%named))
         sys.exit(-1)

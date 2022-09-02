@@ -353,7 +353,7 @@ class CustomBuilder(BaseBuilder):
     ###################################
     if incremental:
     ###################################
-      pathtools.mkdir(self._builddir,clean=False)
+      pathtools.mkdir(self._builddir,clean=False,parents=True)
       pathtools.chdir(self._builddir)
       return self._run_commands(self._incrbuildcommands)
     ###################################

@@ -82,6 +82,7 @@ def subspace_dir():
   subdir = stage()
   if subs != "host":
     subdir = subspace_root()/subs
+  return subdir
 
 ###############################################################################
 
@@ -273,3 +274,27 @@ def vivado_base():
 
 def decorate_obt_lib(named):
   return libs()/("lib%s.so"%named)
+
+###############################################################################
+# module properties
+###############################################################################
+
+def __getattr__(name):
+  if name == "subspace_python_build_dir":
+    build_dir = builds()
+    if "OBT_PYTHON_SUBSPACE_BUILD_DIR" in os.environ:
+      build_dir = Path(os.environ["OBT_PYTHON_SUBSPACE_BUILD_DIR"])
+    return build_dir
+  if name == "subspace_lib_dir":
+    lib_dir = libs()
+    if "OBT_SUBSPACE_LIB_DIR" in os.environ:
+      lib_dir = Path(os.environ["OBT_SUBSPACE_LIB_DIR"])
+    return lib_dir
+  if name == "subspace_bin_dir":
+    bin_dir = bin()
+    if "OBT_SUBSPACE_BIN_DIR" in os.environ:
+      bin_dir = Path(os.environ["OBT_SUBSPACE_BIN_DIR"])
+    return bin_dir
+  else:
+    raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
+  return None

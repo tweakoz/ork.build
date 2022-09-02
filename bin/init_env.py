@@ -137,12 +137,12 @@ def dynamicInit():
     hostinfo.env_init()
   ####################################
   sdkitems = ork.sdk.enumerate()
-  print(sdkitems)
+  #print(sdkitems)
   for sdk_module_key in sdkitems.keys():
     sdk_module_item = sdkitems[sdk_module_key]
-    print(sdk_module_item)
+   # print(sdk_module_item)
     sdk_module = sdk_module_item._module
-    print(sdk_module)
+    #print(sdk_module)
     sdkinfo = sdk_module.sdkinfo()
     if hasattr(sdkinfo,"env_init"):
       sdkinfo.env_init()

@@ -24,7 +24,7 @@ deco = Deco()
 
 ###############################################################################
 
-class python(dep.Provider):
+class python_from_source(dep.Provider):
 
   def __init__(self,target=None): ############################################
     super().__init__("python")
@@ -56,6 +56,7 @@ class python(dep.Provider):
 
   def env_init(self):
     log.marker("registering Python(%s) SDK"%VERSION)
+    env.set("OBT_PYTHON_SUBSPACE_BUILD_DIR",path.builds())
     env.set("OBT_PYLIB",self.library_dir)
     env.set("OBT_PYPKG",self.site_packages_dir)
     env.set("OBT_PYTHON_HEADER_PATH",self.include_dir)
@@ -65,8 +66,9 @@ class python(dep.Provider):
     env.set("OBT_PYTHON_LIB_NAME",self.library_name)
     env.set("OBT_PYTHON_DECO_NAME",self._deconame)
     env.set("OBT_PYTHON_DECOD_NAME",self._deconame_d)
+    env.set("OBT_PYTHONHOME",self.virtualenv_dir)
     env.prepend("PATH",self.virtualenv_dir/"bin" )
-    env.set("VIRTUAL_ENV",self.virtualenv_dir)
+    #env.set("VIRTUAL_ENV",self.virtualenv_dir)
     env.prepend("LD_LIBRARY_PATH",self.home_dir/"lib")
     env.prepend("PKG_CONFIG_PATH",self.library_dir/"pkgconfig")
     
@@ -90,19 +92,24 @@ class python(dep.Provider):
 
   @property
   def version(self):
-    return VERSION
+    va = sys.version_info.major
+    vb = sys.version_info.minor
+    vc = sys.version_info.micro
+    return "%s.%s.%s" % (va,vb,vc)
   ########
   @property
   def version_major(self):
-    return VERSION_MAJOR
+    va = sys.version_info.major
+    vb = sys.version_info.minor
+    return "%s.%s" % (va,vb)
   ########
   @property
   def _deconame(self):
-    return "python%s"%VERSION_MAJOR
+    return "python%s"%sys.version_info.major
   ########
   @property
   def _deconame_d(self):
-    a = "python%s"%VERSION_MAJOR
+    a = "python%s"%sys.version_info.major
     if self._debug_build:
       a+= "d"
     return a
@@ -139,11 +146,11 @@ class python(dep.Provider):
   ########
   @property
   def virtualenv_dir(self):
-    return path.stage()/"pyvenv"
+    return self.home_dir
   ########
   @property
   def home_dir(self):
-    return path.stage()/("python-%s"%VERSION)
+    return path.Path(os.environ["OBT_PYTHONHOME"])
   ########
   @property
   def include_dir(self):
@@ -238,3 +245,7 @@ class python(dep.Provider):
 
   def areRequiredBinaryFilesPresent(self):
     return (self.executable).exists()
+
+
+python = python_from_source
+

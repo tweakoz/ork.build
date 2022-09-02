@@ -41,7 +41,7 @@ class orkid(dep.StdProvider):
 
     self._builder = dep.CustomBuilder(orkid.name)
 
-    self.builddir = path.builds()/"orkid"/".build"
+    self.builddir = path.subspace_python_build_dir/"orkid"/".build"
     self._builder._builddir = self.builddir
 
     ###########################################################
@@ -73,6 +73,7 @@ class orkid(dep.StdProvider):
   def _envinitcommands(self):
     return [path.obt_bin()/"init_env.py",
       "--stack", path.stage(),
+      "--novars", # use parent environment variables
       "--compose", path.builds()/"orkid",
     ]
 

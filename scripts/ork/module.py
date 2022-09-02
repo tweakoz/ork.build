@@ -47,7 +47,7 @@ def enumerate_simple(enuminterface):
       for item in path_list:
         if item != "__pycache__":
           module_test_path = module_dir_2/item
-          print(item, module_test_path)
+          #print(item, module_test_path)
           if module_test_path.exists():
             module = enuminterface.tryAsModule(hostident,item,module_test_path)
             if module != None:

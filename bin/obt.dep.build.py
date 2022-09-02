@@ -13,6 +13,7 @@ parser.add_argument('--serial', action="store_true", help='serial build' )
 parser.add_argument('--usegitclone', action="store_true", help='do not use github wget, use github clone for fetching' )
 parser.add_argument('--verbose', action="store_true", help='verbose build' )
 parser.add_argument('--debug', action="store_true", help='debug build' )
+parser.add_argument('--allowsubspace', action="store_true", help='allow building for another subspace than "host"' )
 
 _args = vars(parser.parse_args())
 
@@ -24,7 +25,8 @@ depname = _args["dependency"]
 
 ork._globals.setOption("depname",depname)
 
-assert(os.environ["OBT_SUBSPACE"]=="host")
+if _args["allowsubspace"]==False:
+  assert(os.environ["OBT_SUBSPACE"]=="host")
 
 for item in "force wipe incremental nofetch serial usegitclone verbose debug".split(" "):
   ork._globals.setOption(item,_args[item]==True)
@@ -38,7 +40,7 @@ chain = dep.Chain(depname)
 for item in reversed(chain._list):
   name = deco.key("%s"%(item._name))
   should = item.supports_host and item.should_build
-  print("dep<%s> ShouldBuild<%s>"%(name,deco.val("%s"%should)))
+  #print("dep<%s> ShouldBuild<%s>"%(name,deco.val("%s"%should)))
   ret = True
   if should:
     ret = item.provide()
