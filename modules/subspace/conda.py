@@ -176,7 +176,7 @@ class subspaceinfo:
         environ = {
           "LD_LIBRARY_PATH": ldlibpath,
           "OBT_PYTHON_SUBSPACE_BUILD_DIR": PYTHON_HOME/"builds",
-          "OBT_SUBSPACE_LIB_DIR": PYTHON_HOME/"libs",
+          "OBT_SUBSPACE_LIB_DIR": PYTHON_HOME/"lib",
           "OBT_SUBSPACE_BIN_DIR": PYTHON_HOME/"bin",
           #"PATH": os.environ["OBT_ORIGINAL_PATH"],
           "PYTHONPATH": pypath,
