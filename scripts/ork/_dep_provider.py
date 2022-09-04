@@ -31,6 +31,7 @@ class Provider(object):
     """base class for all dependency providers"""
     def __init__(self,name,target=None):
       self.scope = ProviderScope.CONTAINER
+      self._allow_build_in_subspaces = False 
       if target ==None:
         self._target = host.description().target
       else:
