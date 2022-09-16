@@ -158,7 +158,7 @@ class subspaceinfo:
 
       pypath = os.environ["OBT_SCRIPTS_DIR"]
       pypath += ":"+str(SITE_PKG)
-      pypath += ":"+os.environ["OBT_ORIGINAL_PYTHONPATH"]
+      pypath += ":"+os.environ["PYTHONPATH"]
 
       ldlibpath = str(PYTHON_HOME/"lib")
       ldlibpath += ":"+os.environ["LD_LIBRARY_PATH"]

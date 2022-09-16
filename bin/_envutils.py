@@ -128,7 +128,7 @@ class EnvSetup:
     # Late init
     #####################################
     ork.env.set("PYTHONNOUSERSITE","TRUE")
-    ork.env.set("PYTHONPATH",self.SCRIPTS_DIR)
+    ork.env.append("PYTHONPATH",self.SCRIPTS_DIR)
     ork.env.prepend("PKG_CONFIG",self.OBT_STAGE/"bin"/"pkg-config")
     #ork.env.prepend("PKG_CONFIG_PREFIX",self.OBT_STAGE)
     ork.env.prepend("PKG_CONFIG_PATH",self.OBT_STAGE/"lib"/"pkgconfig")
