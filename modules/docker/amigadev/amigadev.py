@@ -40,17 +40,30 @@ class dockerinfo:
     # launch docker container
     ###############################################
     def launch(self,launch_args):
+        CWD = os.getcwd()
         builddir = path.builds()/"amigadev-test1"
         sourcedir = this_dir/"test1"
         pathtools.mkdir(builddir,clean=True)
-        command.run([
-            "docker", "run",
-            "-it",
+        cmd = [
+          "docker", "run",
             "--mount","type=bind,source=%s,target=/home/amigadev/test1,readonly"%sourcedir,
             "--mount","type=bind,source=%s,target=/home/amigadev/test1-build"%builddir,
+            "--mount","type=bind,source=%s,target=/home/amigadev/.cwd"%CWD,
+        ]
+        if launch_args==None:
+          cmd += [
+            "-it",
             self.imagename,
             "/bin/bash"
-        ])
+          ]
+        else:
+          cmd += [
+            "-it",
+            self.imagename,
+          ]
+          cmd += launch_args[0].split()
+        ####################
+        command.run(cmd,do_log=True)
     ###############################################
     # information dictionary
     ###############################################
