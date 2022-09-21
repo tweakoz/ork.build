@@ -23,6 +23,7 @@ class devinfo:
         self._ttyname = ""
         self._drivers = set()
         self._serial = ""
+        self._speed = 0
     def vendorShort(self):
         lv = len(self._vendor)
         lvdb = len(self._vendordb)
@@ -50,6 +51,7 @@ for d in all_devices:
      busnum = d.attributes.get("busnum")
      devnum = d.attributes.get("devnum")
      devpath = d.attributes.get("devpath")
+     speed = d.attributes.get("speed")
      pos = "%03d:%03d"%(int(busnum),int(devnum))
      #print(d.sys_name,busnum,devnum,devpath )
      devi = devinfo(pos,pos)
@@ -65,6 +67,7 @@ for d in all_devices:
        devi._modelenc=bytes(MODELENC, "utf-8").decode("unicode_escape")
      if SERIAL!=None:
        devi._serial=bytes(SERIAL, "utf-8").decode("unicode_escape")
+     devi.speed = speed
      devices[pos]=devi
 
 ############################################################
@@ -173,6 +176,8 @@ for item in usbitems:
             out += "%s  " % rgbstr(1,.5,0,ifclass)
         else:
             out += "%s  " % rgbstr(.7,.8,.7,ifclass)
+
+     out += "spd<%s> "%device.speed.decode('utf-8')
 
      if len(device._drivers)>0:
       out += "drv<"

@@ -26,6 +26,7 @@ class _realsense_from_source(dep.StdProvider):
 
     CMAKE_VARS = {
       "CMAKE_CXX_FLAGS": "-Wno-error=deprecated",
+      "FORCE_RSUSB_BACKEND": "true"
     }
 
     if self._target.identifier=="aarch64-macos":
