@@ -119,6 +119,8 @@ class orkid(dep.StdProvider):
     deplist += ["glm"]
     deplist += ["bullet"]
     deplist += ["rtmidi"]
+    deplist += ["zmq"]
+    deplist += ["cppzmq"]
 
     if host.IsX86_64:
       deplist += ["ispctexc"]
