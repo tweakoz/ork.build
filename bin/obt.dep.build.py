@@ -13,7 +13,6 @@ parser.add_argument('--serial', action="store_true", help='serial build' )
 parser.add_argument('--usegitclone', action="store_true", help='do not use github wget, use github clone for fetching' )
 parser.add_argument('--verbose', action="store_true", help='verbose build' )
 parser.add_argument('--debug', action="store_true", help='debug build' )
-parser.add_argument('--allowsubspace', action="store_true", help='allow building for another subspace than "host"' )
 
 _args = vars(parser.parse_args())
 
@@ -25,9 +24,6 @@ depname = _args["dependency"]
 
 ork._globals.setOption("depname",depname)
 
-if _args["allowsubspace"]==False:
-  assert(os.environ["OBT_SUBSPACE"]=="host")
-
 for item in "force wipe incremental nofetch serial usegitclone verbose debug".split(" "):
   ork._globals.setOption(item,_args[item]==True)
 
@@ -35,7 +31,14 @@ from ork import dep
 from ork.deco import Deco
 deco = Deco()
 
+if os.environ["OBT_SUBSPACE"]!="host":
+  node = dep.instance(depname)
+  if not node._allow_build_in_subspaces:
+    print( "Dependency %s not allowed to be built in subspaces other than host"%depname)
+    sys.exit(-1)
+
 chain = dep.Chain(depname)
+
 #print(chain)
 for item in reversed(chain._list):
   name = deco.key("%s"%(item._name))

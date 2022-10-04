@@ -105,7 +105,7 @@ class python_from_source(dep.Provider):
   ########
   @property
   def _deconame(self):
-    return "python%s"%sys.version_info.major
+    return "python%s.%s"%(sys.version_info.major,sys.version_info.minor)
   ########
   @property
   def _deconame_d(self):

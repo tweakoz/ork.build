@@ -15,7 +15,7 @@ class orkid(dep.StdProvider):
     super().__init__(orkid.name)
     self._oslist = ["Linux","Darwin"]
     self._archlist = ["x86_64","aarch64"]
-
+    self._allow_build_in_subspaces = True 
     ################################
     # default orkid_src_dir is in builds/orkid (from dep fetcher)
     ################################
