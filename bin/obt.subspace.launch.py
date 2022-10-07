@@ -39,6 +39,6 @@ print("unknownargs: %s"%unknownargs)
 if len(unknownargs)==0:
     subspacemodule.shell()
 else:
-    subspacemodule.run(unknownargs)
+    subspacemodule.launch(unknownargs)
 
 sys.exit(0)

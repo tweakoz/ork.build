@@ -87,6 +87,7 @@ class subspaceinfo:
                     conda_cmd="run",
                     do_log=False,
                     launch_args=[]):
+
       conda_cmdlist = [self.conda_executable,conda_cmd]
       if do_log:
         conda_cmdlist += ["--no-capture-output"]
@@ -95,64 +96,23 @@ class subspaceinfo:
         conda_cmdlist += ["--name",container]
       if len(launch_args)==0:
         assert(False)
-      environ = {
-        "CONDA_PREFIX": self._prefix,
-      }        
+
+      environ = self._gen_environment(container)
+
       conda_cmdlist += launch_args
       print(conda_cmdlist)
       os.environ["LD_LIBRARY_PATH"]=""
       return command.run(conda_cmdlist,working_dir=working_dir,environment=environ)
 
     ###############################################
-    def env(self,args=[],
-                 working_dir=None,
-                 container=None,
-                 do_log=False):
-      self.launch(conda_cmd="env",
-                  launch_args=args,
-                  working_dir=working_dir,
-                  container=container,
-                  do_log=do_log)
+    def _gen_sysprompt(self,container=None):
+      return "🐍-conda" if (container==None) else "🐍-%s"%container
     ###############################################
-    def run(self,launch_args=[],
-                 working_dir=None,
-                 container=None,
-                 do_log=False):
-      self.launch(conda_cmd="run",
-                  launch_args=launch_args,
-                  working_dir=working_dir,
-                  container=container,
-                  do_log=do_log)
-    ###############################################
-    # launch conda subspace shell
-    ###############################################
-    def shell(self,working_dir=None,container=None):
-
+    def _gen_environment(self,container=None):
       TEMP_PATH = path.temp()
-
-      conda_cmdlist = [self.conda_executable,"run","--no-capture-output"]
-
       PYTHON_HOME = self._prefix
       if container!=None:
-        conda_cmdlist += ["--name",container]
         PYTHON_HOME = self._prefix/"envs"/container
-
-      conda_cmdlist += ["bash"]
-      
-      print(conda_cmdlist)
-
-      import _envutils 
-      sub_name = os.environ["OBT_PROJECT_NAME"]
-      sub_env = _envutils.EnvSetup(project_name=sub_name)
-
-      override_sysprompt = "🐍-conda" if (container==None) else "🐍-%s"%container
-
-      BASHRC = sub_env.genBashRc()
-      #BASHRC += (path.stage()/".bashrc").read_text()
-      BASHRC += "\n\n"
-      BASHRC += "%s --stack\n"%(self._prefix/"bin"/"activate")
-
-      fname = None
 
       SITE_PKG = PYTHON_HOME/"lib"/"python3"/"site-packages"
 
@@ -164,6 +124,71 @@ class subspaceinfo:
       ldlibpath += ":"+os.environ["LD_LIBRARY_PATH"]
 
       PYTHON_DEP = dep.instance("python")
+      the_environ = {
+        "LD_LIBRARY_PATH": ldlibpath,
+        "OBT_PYTHON_SUBSPACE_BUILD_DIR": PYTHON_HOME/"builds",
+        "OBT_SUBSPACE_LIB_DIR": PYTHON_HOME/"lib",
+        "OBT_SUBSPACE_BIN_DIR": PYTHON_HOME/"bin",
+        "PYTHONPATH": pypath,
+        "OBT_PYTHONHOME": PYTHON_HOME,
+        "OBT_PYPKG": SITE_PKG,
+        "CONDA_PREFIX": self._prefix,
+        "OBT_SUBSPACE": "conda" if (container==None) else container,
+        "OBT_SUBSPACE_PROMPT": self._gen_sysprompt(container=container)
+      }        
+      return the_environ
+    ###############################################
+    def env(self,args=[],
+                 working_dir=None,
+                 container=None,
+                 do_log=False):
+      return self.launch(conda_cmd="env",
+                         launch_args=args,
+                         working_dir=working_dir,
+                         container=container,
+                         do_log=do_log)
+    ###############################################
+    def run(self,launch_args=[],
+                 working_dir=None,
+                 container=None,
+                 do_log=False):
+      return self.launch(conda_cmd="run",
+                         launch_args=launch_args,
+                         working_dir=working_dir,
+                         container=container,
+                         do_log=do_log)
+    ###############################################
+    # launch conda subspace shell
+    ###############################################
+    def shell(self,working_dir=None,container=None):
+
+      conda_cmdlist = [self.conda_executable,"run","--no-capture-output"]
+
+      TEMP_PATH = path.temp()
+      PYTHON_HOME = self._prefix
+      if container!=None:
+        conda_cmdlist += ["--name",container]
+        PYTHON_HOME = self._prefix/"envs"/container
+
+      conda_cmdlist += ["bash"]
+      
+      print(conda_cmdlist)
+
+      import ork._envutils 
+      sub_name = os.environ["OBT_PROJECT_NAME"]
+      sub_env = ork._envutils.EnvSetup(project_name=sub_name)
+
+      override_sysprompt = "🐍-conda" if (container==None) else "🐍-%s"%container
+
+      BASHRC = sub_env.genBashRc()
+      BASHRC += "\n\n"
+      BASHRC += "%s --stack\n"%(self._prefix/"bin"/"activate")
+
+      fname = None
+
+      rval = 0
+
+      environ = self._gen_environment(container)
 
       with tempfile.NamedTemporaryFile(dir=path.temp(),mode="w",delete=False) as tempf:
         fname = tempf.name
@@ -173,26 +198,15 @@ class subspaceinfo:
 
         conda_cmdlist += ["--rcfile",fname, "-i"]
 
-        environ = {
-          "LD_LIBRARY_PATH": ldlibpath,
-          "OBT_PYTHON_SUBSPACE_BUILD_DIR": PYTHON_HOME/"builds",
-          "OBT_SUBSPACE_LIB_DIR": PYTHON_HOME/"lib",
-          "OBT_SUBSPACE_BIN_DIR": PYTHON_HOME/"bin",
-          #"PATH": os.environ["OBT_ORIGINAL_PATH"],
-          "PYTHONPATH": pypath,
-          "OBT_PYTHONHOME": PYTHON_HOME,
-          "OBT_PYPKG": SITE_PKG,
-          "CONDA_PREFIX": self._prefix,
-          "OBT_SUBSPACE": "conda" if (container==None) else container,
-          "OBT_SUBSPACE_PROMPT": override_sysprompt
-        }        
 
-        command.run(conda_cmdlist,working_dir=working_dir,environment=environ,do_log=True)
 
-      print(fname)
+        rval = command.run(conda_cmdlist,working_dir=working_dir,environment=environ,do_log=True)
+
+      return rval
+
     ###############################################
     def _command(self,args,conda_cmd="run"):
-      self.launch(args,conda_cmd=conda_cmd)
+      return self.launch(args,conda_cmd=conda_cmd)
     ###############################################
     def _wipe(self):
       print( deco.yellow("Wiping Conda subspace") )

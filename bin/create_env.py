@@ -139,14 +139,16 @@ if args["obttrace"]==True:
 
 ##########################################
 
-import _envutils 
+import ork._envutils 
 
-envsetup = _envutils.EnvSetup(stagedir=OBT_STAGE,
-                              projectdir=project_dir,
-                              rootdir=root_dir,
-                              bindir=bin_dir,
-                              scriptsdir=scripts_dir,
-                              is_quiet=IsQuiet)
+envsetup = ork._envutils.EnvSetup(stagedir=OBT_STAGE,
+                                  projectdir=project_dir,
+                                  rootdir=root_dir,
+                                  bindir=bin_dir,
+                                  scriptsdir=scripts_dir,
+                                  is_quiet=IsQuiet,
+                                  git_ssh_command = GIT_SSH_COMMAND)
+
 ###########################################
 
 if args["compose"] != None:
@@ -160,34 +162,12 @@ if args["novars"]==False:
 ###########################################
 ork.path.prefix().mkdir(parents=True,exist_ok=False)
 #############
+# Create base scripts
+#############
 envsetup.lazyMakeDirs()
 envsetup.genBashRc(try_staging/".bashrc")
+envsetup.genLaunchScript(out_path=try_staging/".launch_env")
 #############
-# Create LaunchEnv script
-#############
-
-LAUNCHENV = ""
-
-if GIT_SSH_COMMAND!=None:
-  LAUNCHENV += 'export GIT_SSH_COMMAND="%s"\n'%GIT_SSH_COMMAND
-
-LAUNCHENV += "%s/bin/init_env.py --numcores %d --launch %s --prjdir %s" % (root_dir,NumCores,try_staging,project_dir)
-if args["compose"]!=None:
-  for item in args["compose"]:
-    LAUNCHENV += " --compose %s" % item
-
-if args["prompt"]!=None:
-  LAUNCHENV += " --prompt %s" % args["prompt"]
-
-LAUNCHENV += ";\n"
-try_staging_sh = try_staging/".launch_env"
-f = open(str(try_staging_sh), 'w')
-f.write(LAUNCHENV)
-f.close()
-#############
-os.system("chmod ugo+x %s"%str(try_staging/'.launch_env'))
-
-os.system("export")
 
 #if not ork.host.IsAARCH64:
 PYTHON = ork.dep.instance("python")

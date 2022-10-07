@@ -18,7 +18,7 @@ class pydefaults(dep.Provider):
                    "numpy","scipy",
                    "numba","pyopencl",
                    "matplotlib",
-                   "pyzmq"])#,"backports.lzma"])
+                   "pyzmq", "pyudev"])#,"backports.lzma"])
       ret = Command([self.python.executable,"-m","pip","install","--upgrade",
                      "Pillow","pysqlite3","jupyter","plotly","trimesh"]).exec()
       print("pydefaults build ret<%d>"%int(ret))

@@ -18,7 +18,8 @@ class EnvSetup:
                     scriptsdir=None,
                     disable_syspypath=False,
                     is_quiet=False,
-                    project_name=None):
+                    project_name=None,
+                    git_ssh_command=None):
 
     if stagedir==None:
       stagedir = ork.path.Path(os.environ["OBT_STAGE"])
@@ -32,6 +33,8 @@ class EnvSetup:
       scriptsdir = rootdir/"scripts"
     if project_name==None and "OBT_PROJECT_NAME" in os.environ:
       project_name = os.environ["OBT_PROJECT_NAME"] 
+    if git_ssh_command==None and "OBT_GIT_SSH_COMMAND" in os.environ:
+      git_ssh_command = os.environ["OBT_GIT_SSH_COMMAND"] 
 
     self.OBT_STAGE = stagedir 
     self.ROOT_DIR = rootdir 
@@ -41,6 +44,7 @@ class EnvSetup:
     self.DISABLE_SYSPYPATH=disable_syspypath
     self.IS_QUIET = is_quiet
     self.PROJECT_NAME = project_name
+    self.GIT_SSH_COMMAND = git_ssh_command
 
   ##########################################
   def install(self):
@@ -89,6 +93,7 @@ class EnvSetup:
 
     ork.env.append("OBT_MODULES_PATH",ork.path.root()/"modules")
     ork.env.append("OBT_DEP_PATH",ork.path.root()/"modules"/"dep")
+    ork.env.set("OBT_GIT_SSH_COMMAND",self.GIT_SSH_COMMAND)
 
     obt_prj_extensions = self.PROJECT_DIR/"obt.project"
     if obt_prj_extensions.exists():
@@ -173,6 +178,28 @@ class EnvSetup:
     ork.path.gitcache().mkdir(parents=True,exist_ok=True)
     ork.path.apps().mkdir(parents=True,exist_ok=True)
     ork.path.buildlogs().mkdir(parents=True,exist_ok=True)
+  ###########################################
+  def genLaunchScript(self,out_path=None,subspace=None):
+    numcores = int(os.environ["OBT_NUM_CORES"])
+
+    LAUNCHENV = []
+    if self.GIT_SSH_COMMAND!=None:
+      LAUNCHENV += ['export GIT_SSH_COMMAND="%s";'%self.GIT_SSH_COMMAND]
+    LAUNCHENV += ["%s/bin/init_env.py" % self.ROOT_DIR]
+    LAUNCHENV += ["--numcores", numcores]
+    LAUNCHENV += ["--launch", self.OBT_STAGE]
+    LAUNCHENV += ["--prjdir", self.PROJECT_DIR]
+
+    if subspace!= None:
+      LAUNCHENV += ["--subspace", subspace]
+
+    LAUNCHENV += [";\n"]
+
+    f = open(str(out_path), 'w')
+    f.write(" ".join(ork.command.procargs(LAUNCHENV)))
+    f.close()
+    os.system("chmod ugo+x %s"%str(out_path))
+
   ###########################################
   def genBashRc(self,out_path=None,override_sysprompt=None):
     self.log(deco.bright("Generating bashrc override_sysprompt<%s>"%override_sysprompt))
