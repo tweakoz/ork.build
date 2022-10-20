@@ -71,7 +71,7 @@ deplist += ["libxcb-cursor-dev"]
 deplist += ["libxcb-util-dev"]
 deplist += ["libmad0-dev","libsdl2-dev","libassimp-dev"]
 deplist += ["device-tree-compiler"]
-deplist += ["imagemagick"]
+deplist += ["imagemagick","curl"]
 
 deplist += ["libdrm-dev","libaudiofile-dev","libsndfile1-dev"]
 

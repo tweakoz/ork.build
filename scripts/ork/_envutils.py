@@ -93,7 +93,9 @@ class EnvSetup:
 
     ork.env.append("OBT_MODULES_PATH",ork.path.root()/"modules")
     ork.env.append("OBT_DEP_PATH",ork.path.root()/"modules"/"dep")
-    ork.env.set("OBT_GIT_SSH_COMMAND",self.GIT_SSH_COMMAND)
+
+    if self.GIT_SSH_COMMAND!=None:
+      ork.env.set("OBT_GIT_SSH_COMMAND",self.GIT_SSH_COMMAND)
 
     obt_prj_extensions = self.PROJECT_DIR/"obt.project"
     if obt_prj_extensions.exists():
