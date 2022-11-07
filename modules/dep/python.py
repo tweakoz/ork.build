@@ -232,11 +232,11 @@ class python_from_source(dep.Provider):
       Command([obt_python,"-m","pip","install","virtualenv"]).exec()
       Command([obt_python,"-m","venv", self.virtualenv_dir]).exec()
       Command([venv_python,"-m","pip","install","--upgrade","pip"]).exec()
-      Command([venv_python,"-m","pip","install","yarl"]).exec()
-      Command([venv_python,"-m","pip","install","toposort"]).exec()
-      Command([venv_python,"-m","pip","install","pytest"]).exec()
-      Command([venv_python,"-m","pip","install","os_release"]).exec()
-      Command([venv_python,"-m","pip","install","pyyaml"]).exec()
+
+      modules =  ["yarl","toposort","pytest","os_release","pyyaml"]
+
+      Command([venv_python,"-m","pip","install"]+modules).exec()
+
     ################################
     return OK
 

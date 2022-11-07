@@ -71,7 +71,10 @@ deplist += ["libxcb-cursor-dev"]
 deplist += ["libxcb-util-dev"]
 deplist += ["libmad0-dev","libsdl2-dev","libassimp-dev"]
 deplist += ["device-tree-compiler"]
-deplist += ["imagemagick","curl"]
+deplist += ["imagemagick","curl","tk-dev"]
+deplist += ["libgeos-dev","libpng-dev","libspatialindex-dev"]
+deplist += ["qt5-style-plugins","qt5ct","python3-gdal","python3-pyqt5","python3-pyqt5.qtopengl"]
+deplist += ["python3-simplejson","python3-tk"]
 
 deplist += ["libdrm-dev","libaudiofile-dev","libsndfile1-dev"]
 
