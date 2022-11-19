@@ -123,6 +123,7 @@ class orkid(dep.StdProvider):
     deplist += ["rtmidi"]
     deplist += ["zmq"]
     deplist += ["cppzmq"]
+    deplist += ["cpppeglib"]
 
     if host.IsX86_64:
       deplist += ["ispctexc"]
