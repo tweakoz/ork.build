@@ -12,6 +12,7 @@ if UBUNTU_VERSION <= 2004:
   deplist =  ["gcc-8","g++-8","python-dev"] # not avail in ub22
 
 deplist += ["libboost-dev","gcc-9","g++-9","gcc-10","g++-10","clang-12","clang","clang-format"]
+deplist += ["g++-12"] # https://askubuntu.com/questions/1441844/todays-ubuntu-22-04-updates-seem-to-break-clang-compiler
 deplist += ["libboost-filesystem-dev","libboost-system-dev","libboost-thread-dev"]
 deplist += ["libboost-program-options-dev","libftdi-dev"]
 deplist += ["libglfw3-dev","libflac++-dev","scons","git"]
