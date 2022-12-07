@@ -9,7 +9,7 @@ from ork import dep, command, pathtools, path
 ###############################################################################
 class assimp(dep.StdProvider):
   name = "assimp"
-  VERSION ="obt-v5.0.1"
+  VERSION ="obt-v5.2.5"
   def __init__(self):
     super().__init__(assimp.name)
     self.declareDep("cmake")    
