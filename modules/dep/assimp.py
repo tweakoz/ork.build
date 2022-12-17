@@ -14,6 +14,8 @@ class assimp(dep.StdProvider):
     super().__init__(assimp.name)
     self.declareDep("cmake")    
     self._builder = dep.CMakeBuilder(assimp.name)
+    self._builder.setCmVar("ASSIMP_BUILD_ASSIMP_TOOLS","TRUE")
+    self._builder.setCmVar("ASSIMP_BUILD_ASSIMP_VIEW","TRUE")
   ########################################################################
   @property
   def _fetcher(self):
