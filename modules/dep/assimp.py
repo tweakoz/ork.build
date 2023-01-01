@@ -16,6 +16,7 @@ class assimp(dep.StdProvider):
     self._builder = dep.CMakeBuilder(assimp.name)
     self._builder.setCmVar("ASSIMP_BUILD_ASSIMP_TOOLS","TRUE")
     self._builder.setCmVar("ASSIMP_BUILD_ASSIMP_VIEW","TRUE")
+    self._builder.setCmVar("CMAKE_CXX_FLAGS","-Wno-maybe-uninitialized")
   ########################################################################
   @property
   def _fetcher(self):
