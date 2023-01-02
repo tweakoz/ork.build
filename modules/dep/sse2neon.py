@@ -10,33 +10,26 @@ from ork import dep, host, command, path
 
 ###############################################################################
 
-class klein(dep.StdProvider):
-  name = "klein"
+class sse2neon(dep.StdProvider):
+  name = "sse2neon"
   def __init__(self):
-    super().__init__(klein.name)
+    super().__init__(sse2neon.name)
     #self._deps = ["pkgconfig"]
     src_root = self.source_root
     #################################################
     tgt_desc = self._target
-    self._builder = self.createBuilder(dep.CMakeBuilder)
-    self._builder.setCmVar("KLEIN_ENABLE_PERF","OFF")
-    if host.IsAARCH64:
-      self._builder.setCmVar("KLEIN_ARCHITECTURE_ARM","1")
-      self._builder.setCmVar("KLEIN_BUILD_SYM","OFF")
-      self._builder.setCmVar("KLEIN_SSE2NEON_DIR", path.builds()/"sse2neon")
-    else:
-      self._builder.setCmVar("KLEIN_ENABLE_TESTS","ON")
+    self._builder = self.createBuilder(dep.NopBuilder)
 
   ########################################################################
   @property
   def _fetcher(self):
-    return dep.GithubFetcher(name=klein.name,
-                             repospec="tweakoz/klein",
+    return dep.GithubFetcher(name=sse2neon.name,
+                             repospec="tweakoz/sse2neon",
                              revision="master",
                              recursive=True)
   ########################################################################
   def areRequiredSourceFilesPresent(self):
-    return (self.source_root/"CMakeLists.txt").exists()
+    return (self.source_root/"Makefile").exists()
 
   def areRequiredBinaryFilesPresent(self):
-    return (path.libs()/"libklein.so").exists()
+    return (self.source_root/"Makefile").exists()
