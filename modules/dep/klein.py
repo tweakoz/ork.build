@@ -27,9 +27,9 @@ class klein(dep.StdProvider):
   @property
   def _fetcher(self):
     return dep.GithubFetcher(name=klein.name,
-                             repospec="jeremyong/klein",
+                             repospec="tweakoz/klein",
                              revision="master",
-                             recursive=False)
+                             recursive=true)
   ########################################################################
   def areRequiredSourceFilesPresent(self):
     return (self.source_root/"CMakeLists.txt").exists()

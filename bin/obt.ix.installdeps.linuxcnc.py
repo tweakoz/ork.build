@@ -8,8 +8,8 @@ os.system("sudo update-alternatives --install /usr/bin/python python /usr/bin/py
 
 deplist = []
 
-if UBUNTU_VERSION <= 2004:
-  deplist =  ["gcc-8","g++-8","python-dev"] # not avail in ub22
+deplist =  ["gcc-8","g++-8","python-dev"]
+deplist =  ["clang-11"] # not avail in ub22
 
 deplist += ["libboost-dev","clang","clang-format"]
 deplist += ["libboost-filesystem-dev","libboost-system-dev","libboost-thread-dev"]
@@ -18,6 +18,7 @@ deplist += ["libglfw3-dev","libflac++-dev","scons","git"]
 deplist += ["rapidjson-dev","graphviz","doxygen","libtiff-dev"]
 deplist += ["portaudio19-dev", "pybind11-dev"]
 deplist += ["libpng-dev"]
+deplist += ["libjemalloc-dev"]
 deplist += ["iverilog"]
 deplist += ["libopenblas-dev"]
 deplist += ["librtmidi-dev"]

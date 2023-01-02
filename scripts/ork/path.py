@@ -285,6 +285,9 @@ def __getattr__(name):
     if "OBT_PYTHON_SUBSPACE_BUILD_DIR" in os.environ:
       build_dir = Path(os.environ["OBT_PYTHON_SUBSPACE_BUILD_DIR"])
     return build_dir
+  if name == "subspace_build_dir":
+    subs_dir = Path(os.environ["OBT_SUBSPACE_DIR"])
+    return subs_dir/"builds"
   if name == "subspace_lib_dir":
     lib_dir = libs()
     if "OBT_SUBSPACE_LIB_DIR" in os.environ:

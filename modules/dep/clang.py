@@ -50,6 +50,7 @@ class clang(dep.StdProvider):
   def bin_clangpp(self):
    ub_release = {
       "bionic": "clang++-10",
+      "buster": "clang++-13",
       "focal": "clang++-10",
       "jammy": "clang++-12"
    }
@@ -61,6 +62,7 @@ class clang(dep.StdProvider):
   def bin_clang(self):
    ub_release = {
       "bionic": "clang-10",
+      "buster": "clang-11",
       "focal": "clang-10",
       "jammy": "clang-12"
    }   
