@@ -14,7 +14,8 @@ class klein(dep.StdProvider):
   name = "klein"
   def __init__(self):
     super().__init__(klein.name)
-    #self._deps = ["pkgconfig"]
+    if host.IsAARCH64:
+      self.declareDep("sse2neon")
     src_root = self.source_root
     #################################################
     tgt_desc = self._target

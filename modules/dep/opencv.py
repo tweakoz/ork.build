@@ -14,7 +14,7 @@ from ork.command import Command
 
 deco = Deco()
 
-VERSION = "4.1.0"
+VERSION = "4.4.0"
 ###############################################################################
 
 class opencv(dep.Provider):
@@ -42,7 +42,7 @@ class opencv(dep.Provider):
 
   def provide(self): ##########################################################
 
-    misc_deps = dep.require(["pkgconfig","qt5","pybind11"])
+    misc_deps = dep.require(["pkgconfig","pybind11"])
     if misc_deps == None:
       return False
 
