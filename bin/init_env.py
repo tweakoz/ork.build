@@ -100,7 +100,6 @@ import ork.deco
 import ork.env
 import ork.path
 import ork.host
-import ork.dep
 import ork.subspace
 import ork.sdk
 import ork._globals as _glob
@@ -122,11 +121,19 @@ envsetup = ork._envutils.EnvSetup(stagedir=OBT_STAGE,
                                   is_quiet=IsQuiet,
                                   project_name = ORK_PROJECT_NAME)
 
+os.environ["OBT_STAGE"] = str(OBT_STAGE)
+
 ###########################################
 
 if args["compose"] != None:
   for item in args["compose"]:
     envsetup.importProject(Path(item))
+
+###########################################
+# later init...
+###########################################
+
+import ork.dep
 
 ###########################################
 # per dep dynamic env init
@@ -159,6 +166,8 @@ def dynamicInit():
     subitem = subspaceitems[subitemk]
     subitem._module.env_init(envsetup)
   ####################################
+
+
 
 ###########################################
 if args["launch"]!=None:

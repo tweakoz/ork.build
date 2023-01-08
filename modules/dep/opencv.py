@@ -14,51 +14,21 @@ from ork.command import Command
 
 deco = Deco()
 
-VERSION = "4.4.0"
+VERSION = "4.7.0"
 ###############################################################################
 
-class opencv(dep.Provider):
-
+class opencv(dep.StdProvider):
+  name = "opencv"
   def __init__(self): ############################################
-    super().__init__("opencv")
-    self.manifest = path.manifests()/"opencv"
-    self.OK = self.manifest.exists()
-    self.cv_source_root = path.builds()/"opencv"
-    self.cv_build_dest = self.cv_source_root/".build"
-    self.cvcontrib_source_root = path.builds()/"opencv_contrib"
+    super().__init__(opencv.name)
+    self.python_dep = dep.require(["pkgconfig","pybind11","opencv_contrib"])
+    self.EXR = self.declareDep("openexr")
+    self.python_dep = dep.require("python")
 
-  ########
-
-  def __str__(self):
-    return "OpenCV (github-%s)" % VERSION
-
-  ########
-
-  def wipe(self): #############################################################
-    os.system("rm -rf %s"%self.cv_source_root)
-    os.system("rm -rf %s"%self.cvcontrib_source_root)
-
-  ########
-
-  def provide(self): ##########################################################
-
-    misc_deps = dep.require(["pkgconfig","pybind11"])
-    if misc_deps == None:
-      return False
-
-    python_dep = dep.require("python")
-    if python_dep == None:
+    if self.python_dep == None:
       return False 
-      
-    if not self.cv_source_root.exists():
-      git.Clone("https://github.com/opencv/opencv.git",
-                self.cv_source_root,
-                VERSION)
 
-    if not self.cvcontrib_source_root.exists():
-      git.Clone("https://github.com/opencv/opencv_contrib.git",
-                self.cvcontrib_source_root,
-                VERSION)
+    self._builder = self.createBuilder(dep.CMakeBuilder)
 
     cmakeEnv = {
       "CMAKE_BUILD_TYPE": "RELEASE",
@@ -66,21 +36,43 @@ class opencv(dep.Provider):
       "INSTALL_PYTHON_EXAMPLES": "ON",
       "ENABLE_PRECOMPILED_HEADERS": "OFF",
       "WITH_TBB": "OFF",
+      "WITH_GDAL": "OFF",
       "WITH_QT": "OFF",
       "WITH_OPENGL": "OFF",
       "WITH_CAROTENE": "OFF",
+      "WITH_FFMPEG": "OFF",
+      "WITH_GSTREAMER": "OFF",
       "OPENCV_EXTRA_MODULES_PATH": "../../opencv_contrib/modules",
-      "PYTHON_DEFAULT_EXECUTABLE": python_dep.executable,
+      "WITH_OPENEXR": "OFF",
+      "BUILD_opencv_gapi":"OFF", # fails to build on ub22-aarch64
+      "BUILD_opencv_python2":"OFF", # fails to build on ub22-aarch64
+      "BUILD_EXAMPLES": "OFF",
+      #"OPENEXR_ROOT": path.stage(),
       # todo get internal python3 working
       # todo get internal openexr working
-      "PYTHON3_EXECUTABLE": python_dep.executable,
-      "PYTHON3_LIBRARY": python_dep.library_file,
-      "PYTHON_INCLUDE_DIR": python_dep.include_dir,
-      "PYTHON3_PACKAGES_PATH": python_dep.site_packages_dir,
-      "BUILD_EXAMPLES": "ON"
+      "PYTHON_DEFAULT_EXECUTABLE": self.python_dep.executable,
+      "PYTHON3_EXECUTABLE": self.python_dep.executable,
+      "PYTHON3_LIBRARY": self.python_dep.library_file,
+      "PYTHON3_INCLUDE_PATH": self.python_dep.include_dir,
+      "PYTHON3_PACKAGES_PATH": self.python_dep.site_packages_dir,
     }
     if host.IsLinux:
       cmakeEnv["WITH_V4L"]="ON"
+    self._builder.setCmVars(cmakeEnv)
 
-    self.OK = self._std_cmake_build(self.cv_source_root,self.cv_build_dest,cmakeEnv)
-    return self.OK
+  ########################################################################
+
+  @property
+  def _fetcher(self):
+    return dep.GithubFetcher(name=opencv.name,
+                             repospec="tweakoz/opencv",
+                             revision=VERSION,
+                             recursive=False)
+
+  ########################################################################
+
+  def areRequiredSourceFilesPresent(self):
+    return (self.source_root/"CMakeLists.txt").exists()
+
+  def areRequiredBinaryFilesPresent(self):
+    return (path.includes()/"opencv4"/"opencv2"/"core.hpp").exists()

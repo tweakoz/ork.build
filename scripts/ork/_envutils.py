@@ -1,7 +1,6 @@
 import ork.env
 import ork.host
 import ork.path
-import ork.dep
 import ork.deco
 import ork.command
 import os, sys, re

@@ -17,10 +17,10 @@ class pydefaults(dep.Provider):
       pip.install(["pytest",
                    "numpy","scipy",
                    "numba","pyopencl",
-                   "matplotlib",
+                   "matplotlib", "asciidoc",
                    "pyzmq", "pyudev"])#,"backports.lzma"])
       ret = Command([self.python.executable,"-m","pip","install","--upgrade",
-                     "Pillow","pysqlite3","jupyter","plotly","trimesh"]).exec()
+                     "Pillow","jupyter","plotly","trimesh"]).exec()
       print("pydefaults build ret<%d>"%int(ret))
       return (ret==0)
 

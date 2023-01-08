@@ -4,7 +4,7 @@ import os
 
 deplist =  ["cmake","wget","curl","libtiff","libpng"]
 deplist += ["portaudio","audiofile","m4","bison","flex","xz"]
-deplist += ["scons","ffmpeg","qt5","zlib","tbb"]
+deplist += ["scons","ffmpeg","qt5","zlib","tbb", "glew"]
 deplist += ["mpfr","openssl","graphviz","doxygen","swig","tcl-tk"]
 
 for item in deplist:

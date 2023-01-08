@@ -17,10 +17,12 @@ from ork.deco import Deco
 from ork.wget import wget
 from ork import pathtools, cmake, make, path, git, host, _globals, buildtrace
 from ork._dep_dl import downloadAndExtract
-from ork._dep_node import require 
+from ork._dep_impl import require 
 
 deco = Deco()
+
 ###############################################################################
+
 class Fetcher:
   def __init__(self,name):
     self._name = name
@@ -30,6 +32,19 @@ class Fetcher:
     for filepath in self._patchdict:
       item_dict = self._patchdict[filepath]
       patch.patch_with_dict(filepath,item_dict)
+
+###############################################################################
+
+class MultiFetcher(Fetcher):
+  def __init__(self,name):
+    super().__init__(name)
+  ###########################################
+  def addSubFetcher(self,name):
+    pass
+  ###########################################
+  def fetch(self,dest):
+    pass
+
 ###############################################################################
 
 class GitFetcher(Fetcher):

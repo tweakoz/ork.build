@@ -7,9 +7,10 @@
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
 
-VERSION_MAJOR = "3.9"
-VERSION_MINOR = "13"
-VERSION = "%s.%s" % (VERSION_MAJOR,VERSION_MINOR)
+VERSION_MAJOR = "3"
+VERSION_MINOR = "9"
+VERSION_MICRO = "13"
+VERSION = "%s.%s.%s" % (VERSION_MAJOR,VERSION_MINOR,VERSION_MICRO)
 HASH = "eafda83543bad127cadef4d288fdab87"
 
 import os, tarfile, sys
@@ -92,24 +93,24 @@ class python_from_source(dep.Provider):
 
   @property
   def version(self):
-    va = sys.version_info.major
-    vb = sys.version_info.minor
-    vc = sys.version_info.micro
+    va = VERSION_MAJOR
+    vb = VERSION_MINOR
+    vc = VERSION_MICRO
     return "%s.%s.%s" % (va,vb,vc)
   ########
   @property
   def version_major(self):
-    va = sys.version_info.major
-    vb = sys.version_info.minor
+    va = VERSION_MAJOR
+    vb = VERSION_MINOR
     return "%s.%s" % (va,vb)
   ########
   @property
   def _deconame(self):
-    return "python%s.%s"%(sys.version_info.major,sys.version_info.minor)
+    return "python%s"%(self.version_major)
   ########
   @property
   def _deconame_d(self):
-    a = "python%s"%sys.version_info.major
+    a = self._deconame
     if self._debug_build:
       a+= "d"
     return a

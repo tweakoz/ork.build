@@ -8,54 +8,66 @@
 from ork import dep, log, path, host, env
 from ork.command import Command
 ###############################################################################
+SRC_VERSION = "v2021.8.0"
+NAME = "tbb"
 class _tbb_from_source(dep.StdProvider):
-  name = "tbb"
-  VERSION = "v2020.3"
   def __init__(self):
-    super().__init__(_tbb_from_source.name)
-    self._builder = self.createBuilder(dep.CustomBuilder)
+    super().__init__(NAME)
 
-    build_dir = path.subspace_build_dir/"tbb"
-
-    env = {
-      "PREFIX": path.stage()
+    self._builder = self.createBuilder(dep.CMakeBuilder)
+    self._builder._cmakeenv = {
+      "BUILD_SHARED_LIBS": "ON"
     }
 
-    make_clean_command = Command([
-      "make",
-      "-j",host.NumCores
-      ],
-      working_dir=build_dir,
-      environment=env)
+    #self._builder = self.createBuilder(dep.CustomBuilder)
+    #build_dir = path.subspace_build_dir/"tbb"
+    #env = {
+     # "PREFIX": path.stage()
+    #}
 
-    make_incr_command = Command([
-      "make",
-      "-j",host.NumCores],
-      working_dir=build_dir,
-      environment=env)
+    #make_clean_command = Command([
+    #  "make",
+    #  "-j",host.NumCores
+    #  ],
+    #  working_dir=build_dir,
+    #  environment=env)
 
-    self._builder._cleanbuildcommands += [make_clean_command]
-    self._builder._incrbuildcommands += [make_incr_command]
-    self._tbb_dir = build_dir
+    #make_incr_command = Command([
+    #  "make",
+    #  "-j",host.NumCores],
+    #  working_dir=build_dir,
+    #  environment=env)
+
+    #self._builder._cleanbuildcommands += [make_clean_command]
+    #self._builder._incrbuildcommands += [make_incr_command]
+    #self._tbb_dir = build_dir
 
   def env_init(self):
-    log.marker("registering TBB(%s) SDK"%_tbb_from_source.VERSION)
-    env.set("TBB_ROOT",self._tbb_dir)
-    env.set("TBB_INCLUDE",self._tbb_dir/"include")
+    log.marker("registering TBB(%s) SDK"%SRC_VERSION)
+    #env.set("TBB_ROOT",self._tbb_dir)
+    #env.set("TBB_INCLUDE",self._tbb_dir/"include")
     #env.set("TBB_LIBRARY_RELEASE" = $TBB_INSTALL_DIR/build/RELEASE_FOLDER
     #env.set("TBB_LIBRARY_DEBUG" = $TBB_INSTALL_DIR/build/DEBUG_FOLDER
 
   ########################################################################
   @property
   def _fetcher(self):
-    return dep.GithubFetcher(name=_tbb_from_source.name,
+    return dep.GithubFetcher(name=NAME,
                              repospec="oneapi-src/oneTBB",
-                             revision="v2020.3",
-                             recursive=False)
+                             revision=SRC_VERSION,
+                             recursive=True)
+###############################################################################
+  def areRequiredSourceFilesPresent(self):
+    return (self.source_root/"CMakeLists.txt").exists()
+
+  def areRequiredBinaryFilesPresent(self):
+    return path.decorate_obt_lib("openvdb").exists()
 ###############################################################################
 class _tbb_from_homebrew(dep.HomebrewProvider):
   def __init__(self):
     super().__init__("tbb","tbb")
+  def env_init(self):
+    log.marker("registering TBB(homebrew) SDK")
 ###############################################################################
 source = dep.switch(linux=_tbb_from_source,macos=_tbb_from_homebrew)
 ###############################################################################

@@ -5,7 +5,7 @@
 # The Orkid Build System is published under the GPL 2.0 license
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
-from ork import dep, command, pathtools, path
+from ork import dep, command, pathtools, path, host
 ###############################################################################
 class rapidjson(dep.StdProvider):
   VERSION ="master"
@@ -16,15 +16,25 @@ class rapidjson(dep.StdProvider):
     self._builder = dep.CMakeBuilder(rapidjson.NAME)
     self._builder.setCmVars({
         "CMAKE_BUILD_TYPE": "RELEASE",
-        "BUILD_EXAMPLES": "ON"
     })
+    if host.IsDarwin:
+      self._builder.setCmVars({
+        "CMAKE_CXX_FLAGS": "-Wno-deprecated-declarations -Wno-deprecated-copy-with-user-provided-copy",
+        "RAPIDJSON_BUILD_THIRDPARTY_GTEST": "OFF",
+        "RAPIDJSON_BUILD_TESTS": "OFF",
+      })
+    else:
+      self._builder.setCmVars({
+        "CMAKE_CXX_FLAGS": "-Wno-stringop-overflow -Wno-array-bounds",
+        "BUILD_EXAMPLES": "ON",
+      })
   ########################################################################
   @property
   def _fetcher(self):
     return dep.GithubFetcher(name=rapidjson.NAME,
                              repospec="tweakoz/rapidjson",
                              revision=rapidjson.VERSION,
-                             recursive=False)
+                             recursive=True)
 
   ########################################################################
   def areRequiredSourceFilesPresent(self):

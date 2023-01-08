@@ -78,7 +78,7 @@ deplist += ["qt5-style-plugins","qt5ct","python3-gdal","python3-pyqt5","python3-
 deplist += ["python3-simplejson","python3-tk"]
 
 deplist += ["libdrm-dev","libaudiofile-dev","libsndfile1-dev"]
-deplist += ["libglew-dev", "libopencv-dev"]
+deplist += ["libglew-dev"]
 
 merged = " ".join(deplist)
 os.system("sudo apt -y install %s" % merged)

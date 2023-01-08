@@ -14,6 +14,7 @@ class openvdb(dep.StdProvider):
     self.declareDep("cmake")
     self.declareDep("blosc")
     self.declareDep("boost")
+    self.declareDep("tbb")
     self._builder = self.createBuilder(dep.CMakeBuilder)
     self._builder._cmakeenv = {
       "BUILD_SHARED_LIBS": "ON"

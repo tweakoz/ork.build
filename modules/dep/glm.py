@@ -5,7 +5,7 @@
 # The Orkid Build System is published under the GPL 2.0 license
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
-from ork import dep, path
+from ork import dep, path, host
 ###############################################################################
 class glm(dep.StdProvider):
   name = "glm"
@@ -13,6 +13,10 @@ class glm(dep.StdProvider):
     super().__init__(glm.name)
     self.declareDep("cmake")
     self._builder = self.createBuilder(dep.CMakeBuilder)
+    if host.IsDarwin:
+      self._builder.setCmVars({
+        "CMAKE_CXX_FLAGS": "-Wno-deprecated-declarations",
+      })
     #self._builder.requires(["lapack"])
 
   ########################################################################
