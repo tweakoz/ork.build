@@ -114,7 +114,9 @@ class subspaceinfo:
       if container!=None:
         PYTHON_HOME = self._prefix/"envs"/container
 
-      SITE_PKG = PYTHON_HOME/"lib"/"python3"/"site-packages"
+      PYTHON_DEP = dep.instance("python")
+
+      SITE_PKG = PYTHON_HOME/"lib"/PYTHON_DEP._deconame/"site-packages"
 
       pypath = os.environ["OBT_SCRIPTS_DIR"]
       pypath += ":"+str(SITE_PKG)
@@ -123,7 +125,6 @@ class subspaceinfo:
       ldlibpath = str(PYTHON_HOME/"lib")
       ldlibpath += ":"+os.environ["LD_LIBRARY_PATH"]
 
-      PYTHON_DEP = dep.instance("python")
       the_environ = {
         "LD_LIBRARY_PATH": ldlibpath,
         "OBT_PYTHON_SUBSPACE_BUILD_DIR": PYTHON_HOME/"builds",

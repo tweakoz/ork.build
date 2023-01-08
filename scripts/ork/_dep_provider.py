@@ -84,7 +84,7 @@ class Provider(object):
       return None
     #########################################
     def areRequiredBinaryFilesPresent(self):
-      return None
+      return self.areRequiredSourceFilesPresent()
     #############################
     @property
     def scopestr(self):
