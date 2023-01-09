@@ -18,11 +18,15 @@ class rapidjson(dep.StdProvider):
         "CMAKE_BUILD_TYPE": "RELEASE",
     })
     if host.IsDarwin:
+      osxname = host.description().codename
       self._builder.setCmVars({
-        "CMAKE_CXX_FLAGS": "-Wno-deprecated-declarations -Wno-deprecated-copy-with-user-provided-copy",
         "RAPIDJSON_BUILD_THIRDPARTY_GTEST": "OFF",
         "RAPIDJSON_BUILD_TESTS": "OFF",
       })
+      if osxname=="monterey":
+        self._builder.setCmVars({
+          "CMAKE_CXX_FLAGS": "-Wno-deprecated-declarations -Wno-deprecated-copy-with-user-provided-copy"
+        })
     else:
       self._builder.setCmVars({
         "CMAKE_CXX_FLAGS": "-Wno-stringop-overflow -Wno-array-bounds",

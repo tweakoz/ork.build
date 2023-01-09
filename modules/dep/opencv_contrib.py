@@ -21,8 +21,6 @@ class opencv_contrib(dep.StdProvider):
   name = "opencv_contrib"
   def __init__(self): ############################################
     super().__init__("opencv_contrib")
-    self.manifest = path.manifests()/"opencv_contrib"
-    self.OK = self.manifest.exists()
     self._builder = self.createBuilder(dep.NopBuilder)
 
   ########################################################################
