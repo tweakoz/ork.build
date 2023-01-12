@@ -164,7 +164,19 @@ def compute_feed(material=None, endmill=None, RPM=None):
   cut_speed = material._cutspeed
   #RPM = cut_speed.to("mm/minute") / (math.pi*endmill._diameter.to("mm"))
   f_z = material.extrapolate(endmill._diameter.to("mm"))
-  return ((RPM/rotations) * (endmill._numflutes) * f_z)
+  return (RPM * endmill._numflutes * f_z)/rotations
+
+#####################################################
+
+def compute_rpm(material=None, endmill=None, feed=None):
+  cut_speed = material._cutspeed
+  f_z = material.extrapolate(endmill._diameter.to("mm"))
+  # feed = ((RPM/rotations) * (endmill._numflutes) * f_z)
+  # feed = (RPM * endmill._numflutes * f_z)/rotations
+  # feed*rotations = RPM * endmill._numflutes * f_z
+  # (feed*rotations)/(endmill._numflutes * f_z) = RPM
+  rpm = (feed * rotations) / (endmill._numflutes * f_z)
+  return rpm.to("R/minute")
 
 #####################################################
 def test():
@@ -172,7 +184,7 @@ def test():
   #####################################################
   em = EndMill( numflutes=2, diameter=(1/8)*inch )
   #####################################################
-  RPM = 10000 * rotations / minute
+  RPM = 6000 * rotations / minute
   #####################################################
 
   a = compute_feed( material = m, 
@@ -187,3 +199,6 @@ def test():
   print(" mtl : %s\n  em : %s\n RPM : %s\nfeed : %s (linear)" % (m,em,RPM,a.to(feet/minute)))
   print("##############################################################")
 
+  feed = 1*feet/minute
+  RPM = compute_rpm( material=m, endmill=em, feed=feed )
+  print(" mtl : %s\n  em : %s\nfeed : %s (linear)\n RPM : %s\n" % (m,em,feed,RPM))
