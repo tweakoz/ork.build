@@ -1,4 +1,4 @@
-from ork import dep, pip, path, dep
+from ork import dep, pip, path, dep, host
 from ork.command import Command
 ###############################################################################
 
@@ -19,8 +19,14 @@ class pydefaults(dep.Provider):
                    "numba","pyopencl",
                    "matplotlib",
                    "pyzmq"])#,"backports.lzma"])
-      ret = Command([self.python.executable,"-m","pip","install","--upgrade",
-                     "Pillow","pysqlite3","jupyter","plotly","trimesh"]).exec()
+
+      #################
+      modules2 = ["Pillow","jupyter","plotly","trimesh"]
+      if host.IsDarwin == False:
+        modules2 += ["pysqlite3"]
+      #################
+
+      ret = Command([self.python.executable,"-m","pip","install","--upgrade"]+modules2).exec()
       print("pydefaults build ret<%d>"%int(ret))
       return (ret==0)
 
