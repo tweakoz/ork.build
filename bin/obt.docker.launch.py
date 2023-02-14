@@ -25,6 +25,9 @@ def print_item(key,val):
 
 parser = argparse.ArgumentParser(description='ork.build docker launcher')
 parser.add_argument('dockermodulename', metavar='D', type=str, help='a docker module to launch')
+parser.add_argument('--env', nargs='*', action='append', type=str)
+parser.add_argument('--mount', nargs='*', action='append', type=str)
+parser.add_argument('--mapssh', action='store_true')
 
 args, unknownargs = parser.parse_known_args()
 
@@ -38,10 +41,47 @@ dockermodulename = _args["dockermodulename"]
 
 ork._globals.setOption("dockermodulename",dockermodulename)
 
+####################################
+# parse environment arguments
+####################################
+
+environ=None
+if ("env" in _args) and (_args["env"]!=None):
+  environ=dict()
+  _env = _args["env"]
+  for item in _env:
+    ev = item[0]
+    kv = ev.split("=")
+    environ[kv[0]]=kv[1]
+
+####################################
+# parse environment arguments
+####################################
+
+mounts=list()
+if ("mount" in _args) and (_args["mount"]!=None):
+  _mounts = _args["mount"]
+  for item in _mounts:
+    ev = item[0]
+    mounts += [ev]
+
+####################################
+# map ssh ?
+####################################
+
+if ("mapssh" in _args) and (_args["mapssh"]==True):
+  mounts += ["type=bind,source=%s,target=/home/realsense2/.ssh"%(os.environ["HOME"]+"/.ssh")]
+
+####################################
+# invoke on docker module
+####################################
+
 dockermodule = ork.docker.descriptor(dockermodulename)
 
-print(dockermodule)
+if len(mounts)==0:
+  mounts = None
 
-dockermodule.launch(unknownargs)
+print(_mounts)
+dockermodule.launch(unknownargs,environment=environ,mounts=mounts)
 
 sys.exit(0)

@@ -27,7 +27,8 @@ class openexr(dep.StdProvider):
   def _fetcher(self):
     return dep.GithubFetcher(name=openexr.name,
                              repospec="AcademySoftwareFoundation/openexr",
-                             revision="v2.5.8",
+                             #revision="v2.5.8",
+                             revision="v3.1.5",
                              recursive=False)
 
   ########################################################################

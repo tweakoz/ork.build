@@ -86,6 +86,8 @@ class orkid(dep.StdProvider):
       inner_build_command += ["--debug"]
     if dep._globals.getOption("verbose"):
       inner_build_command += ["--verbose"]
+    if dep._globals.getOption("serial"):
+      inner_build_command += ["--serial"]
     #inner_build_command += ["--trace"]
     return inner_build_command
 
@@ -119,6 +121,10 @@ class orkid(dep.StdProvider):
     deplist += ["glm"]
     deplist += ["bullet"]
     deplist += ["rtmidi"]
+    deplist += ["zmq"]
+    deplist += ["cppzmq"]
+    deplist += ["cpppeglib"]
+    deplist += ["klein"]
 
     if host.IsX86_64:
       deplist += ["ispctexc"]

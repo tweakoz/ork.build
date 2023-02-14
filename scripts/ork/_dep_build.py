@@ -14,7 +14,7 @@ from ork.command import Command, run
 from ork.deco import Deco
 from ork.wget import wget
 from ork import pathtools, cmake, make, path, git, host, _globals, log
-from ork._dep_node import require
+from ork._dep_impl import require
 from collections.abc import Callable
 
 deco = Deco()

@@ -26,6 +26,7 @@ parser.add_argument("--command", metavar="command", help="execute in environ")
 parser.add_argument("--numcores", metavar="numcores", help="numcores for environment")
 parser.add_argument("--quiet", action="store_true", help="no output")
 parser.add_argument('--novars', action="store_true", help='do not set env vars' )
+parser.add_argument('--subspace', metavar="subspace", help='subspace to launch' )
 parser.add_argument('--init', action="store_true" )
 parser.add_argument('--compose',action='append',help='compose obt project into container')
 
@@ -99,32 +100,40 @@ import ork.deco
 import ork.env
 import ork.path
 import ork.host
-import ork.dep
 import ork.subspace
 import ork.sdk
 import ork._globals as _glob
-from ork.command import Command
+import ork.command
+import ork.subspace
 
 deco = ork.deco.Deco()
 bin_dir = root_dir/"bin"
 
 ##########################################
 
-import _envutils 
-envsetup = _envutils.EnvSetup(stagedir=OBT_STAGE,
-                              rootdir=root_dir,
-                              projectdir=project_dir,
-                              bindir=bin_dir,
-                              scriptsdir=scripts_dir,
-                              disable_syspypath=True,
-                              is_quiet=IsQuiet,
-                              project_name = ORK_PROJECT_NAME)
+import ork._envutils 
+envsetup = ork._envutils.EnvSetup(stagedir=OBT_STAGE,
+                                  rootdir=root_dir,
+                                  projectdir=project_dir,
+                                  bindir=bin_dir,
+                                  scriptsdir=scripts_dir,
+                                  disable_syspypath=True,
+                                  is_quiet=IsQuiet,
+                                  project_name = ORK_PROJECT_NAME)
+
+os.environ["OBT_STAGE"] = str(OBT_STAGE)
 
 ###########################################
 
 if args["compose"] != None:
   for item in args["compose"]:
     envsetup.importProject(Path(item))
+
+###########################################
+# later init...
+###########################################
+
+import ork.dep
 
 ###########################################
 # per dep dynamic env init
@@ -155,8 +164,10 @@ def dynamicInit():
   subspaceitems = ork.subspace.findWithMethod("env_init")
   for subitemk in subspaceitems:
     subitem = subspaceitems[subitemk]
-    subitem._module.env_init()
+    subitem._module.env_init(envsetup)
   ####################################
+
+
 
 ###########################################
 if args["launch"]!=None:
@@ -174,13 +185,32 @@ if args["launch"]!=None:
     shell = "bash"
     bashrc = try_staging/".bashrc"
     #############
-    if args["command"]!=None:
+    if args["subspace"]!=None:
+        if args["chdir"]!=None:
+            os.chdir(args["chdir"])
+        #rval = os.system(args["command"]) # call shell with new vars (just "exit" to exit)
+        subspacemodulename = args["subspace"]
+        ork._globals.setOption("subspacemodulename",subspacemodulename)
+
+        subspacemodule = ork.subspace.requires(subspacemodulename)
+
+        if args["command"]!=None:
+          if args["chdir"]!=None:
+            os.chdir(args["chdir"])
+          rval = subspacemodule.launch(ork.command.procargs(args["command"]))
+        else:
+          rval = subspacemodule.shell()
+  
+        sys.exit(rval>>8)
+    #############
+    elif args["command"]!=None:
         if args["chdir"]!=None:
             os.chdir(args["chdir"])
         rval = os.system(args["command"]) # call shell with new vars (just "exit" to exit)
         sys.exit(rval>>8)
+    #############
     else:
-        Command([shell,"--init-file",bashrc],environment={}).exec()
+        ork.command.Command([shell,"--init-file",bashrc],environment={}).exec()
 ###########################################
 elif args["stack"]!=None:
 ###########################################
@@ -205,9 +235,9 @@ elif args["stack"]!=None:
     print("Stacking env<%s>" % deco.val(try_staging))
     envsetup.log("ork.build eviron initialized OBT_ROOT<%s>"%deco.path(root_dir))
     if args["command"]!=None:
-        Command([shell,"--init-file",bashrc,"-c",args["command"]],environment={}).exec()
+        ork.command.Command([shell,"--init-file",bashrc,"-c",args["command"]],environment={}).exec()
     else:
-        Command([shell,"--init-file",bashrc],environment={}).exec()
+        ork.command.Command([shell,"--init-file",bashrc],environment={}).exec()
     pass
 ###########################################
 else:

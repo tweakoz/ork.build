@@ -20,13 +20,16 @@ class pydefaults(dep.Provider):
                    "matplotlib",
                    "pyzmq"])#,"backports.lzma"])
 
+
+
       #################
-      modules2 = ["Pillow","jupyter","plotly","trimesh"]
+      modules2 = ["Pillow","jupyter","plotly","trimesh","asciidoc", "pyudev"]
       if host.IsDarwin == False:
         modules2 += ["pysqlite3"]
       #################
 
       ret = Command([self.python.executable,"-m","pip","install","--upgrade"]+modules2).exec()
+
       print("pydefaults build ret<%d>"%int(ret))
       return (ret==0)
 

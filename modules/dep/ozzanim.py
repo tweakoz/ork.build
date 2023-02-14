@@ -5,33 +5,27 @@
 # The Orkid Build System is published under the GPL 2.0 license
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
-from ork import dep, path
-###############################################################################
-class openvdb(dep.StdProvider):
-  name = "openvdb"
-  def __init__(self):
-    super().__init__(openvdb.name)
-    self.declareDep("cmake")
-    self.declareDep("blosc")
-    self.declareDep("boost")
-    self.declareDep("tbb")
-    self._builder = self.createBuilder(dep.CMakeBuilder)
-    self._builder._cmakeenv = {
-      "BUILD_SHARED_LIBS": "ON"
-    }
 
+from ork import dep, path
+
+###############################################################################
+
+class ozzanim(dep.StdProvider):
+  name = "ozzanim"
+  def __init__(self):
+    super().__init__(ozzanim.name)
+    self.declareDep("cmake")
+    self._builder = self.createBuilder(dep.CMakeBuilder)
   ########################################################################
   @property
   def _fetcher(self):
-    fetcher = dep.GithubFetcher(name=openvdb.name,
-                                repospec="AcademySoftwareFoundation/openvdb",
-                                revision="v9.0.0",
-                                recursive=False)
-    return fetcher
-  ########################################################################
+    return dep.GithubFetcher(name=ozzanim.name,
+                             repospec="tweakoz/ozz-animation",
+                             revision="0.14.0",
+                             recursive=True)
 
+  ########################################################################
   def areRequiredSourceFilesPresent(self):
     return (self.source_root/"CMakeLists.txt").exists()
-
   def areRequiredBinaryFilesPresent(self):
-    return path.decorate_obt_lib("openvdb").exists()
+    return (path.libs()/"libozz_base_r.so").exists()

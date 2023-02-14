@@ -43,7 +43,7 @@ class _vulkan_from_lunarg(dep.Provider):
   #######################################################################
 
   def env_init(self):
-    log.marker("registering Vulkan(%s) SDKx"%VERSION)
+    log.marker("registering Vulkan(%s) SDK"%VERSION)
     env.prepend("LD_LIBRARY_PATH",self.sdk_dir/"lib")
     env.append("PATH",self.sdk_dir/"bin")
     env.set("VULKAN_SDK",self.sdk_dir) # for cmake

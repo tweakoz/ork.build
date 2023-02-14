@@ -27,7 +27,7 @@ class parsertl14(dep.StdProvider):
                              "-r",
                              srcroot/"include"/"parsertl",
                              path.includes()
-                             ])==0
+                             ],do_log=True)==0
     #################################################
     self._builder = Builder(parsertl14.name)
   ########################################################################

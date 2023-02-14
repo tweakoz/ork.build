@@ -8,24 +8,20 @@ os.system("sudo update-alternatives --install /usr/bin/python python /usr/bin/py
 
 deplist = []
 
-if UBUNTU_VERSION <= 2004:
-  deplist =  ["gcc-8","g++-8","python-dev"] # not avail in ub22
-if UBUNTU_VERSION >= 2204:
-  deplist += ["clang-12"]
-else:
-  deplist += ["clang-10"]
+deplist =  ["gcc-8","g++-8","python-dev"]
+deplist =  ["clang-11"] # not avail in ub22
 
-os.system("sudo update-alternatives --install /usr/bin/python python /usr/bin/python3 1")
-
-deplist =  ["libboost-dev"]
+deplist += ["libboost-dev","clang","clang-format"]
 deplist += ["libboost-filesystem-dev","libboost-system-dev","libboost-thread-dev"]
-deplist += ["libboost-program-options-dev"]
+deplist += ["libboost-program-options-dev","libftdi-dev"]
 deplist += ["libglfw3-dev","libflac++-dev","scons","git"]
 deplist += ["rapidjson-dev","graphviz","doxygen","libtiff-dev"]
 deplist += ["portaudio19-dev", "pybind11-dev"]
-deplist += ["libpng-dev","clang-format"]
-deplist += ["libopenblas-dev","libncurses-dev"]
-deplist += ["librtmidi-dev","libusb-1.0-0-dev"]
+deplist += ["libpng-dev"]
+deplist += ["libjemalloc-dev"]
+deplist += ["iverilog"]
+deplist += ["libopenblas-dev"]
+deplist += ["librtmidi-dev"]
 deplist += ["texinfo","xmlto"]
 deplist += ["libgtkmm-3.0-dev"]
 deplist += ["libfltk1.3-dev","freeglut3-dev"]
@@ -40,15 +36,15 @@ deplist += ["libx11-xcb-dev"]
 deplist += ["libavformat-dev"]
 deplist += ["libavcodec-dev"]
 deplist += ["libswscale-dev"]
-deplist += ["libssl-dev", "libbz2-dev"]
-deplist += ["wget","git","git-lfs", "vim","cmake","python3-yarl", "python3-pip"]
+deplist += ["libssl-dev"]
+deplist += ["wget","git","git-lfs", "vim","cmake","python3-yarl","python3-pip", "nasm"]
 deplist += ["m4","bison","flex"]
-deplist += ["libcurl4-openssl-dev"]
+deplist += ["libcurl4-openssl-dev","libusb-1.0-0-dev", "libbz2-dev"]
 deplist += ["libreadline-dev"]
 deplist += ["libsqlite3-dev"]
 deplist += ["libtbb-dev"]
-deplist += ["libglew-dev"] # ctmviewer
-deplist += ["mesa-utils"] 
+deplist += ["openctm-tools"] # ctmviewer
+deplist += ["openscad"] # for trimesh
 deplist += ["libclang-dev"]
 deplist += ["libgmp-dev","libmpfr-dev","texinfo","libmpc-dev"]
 deplist += ["libx11-dev"]
@@ -73,12 +69,17 @@ deplist += ["libxkbcommon-dev"]
 deplist += ["libxkbcommon-x11-dev"]
 deplist += ["libxcb-xkb-dev"]
 deplist += ["libxcb-cursor-dev"]
-deplist += ["libxcb-util-dev"]
 deplist += ["libmad0-dev","libsdl2-dev","libassimp-dev"]
 deplist += ["device-tree-compiler"]
-deplist += ["imagemagick"]
+deplist += ["imagemagick","curl","tk-dev"]
+deplist += ["libgeos-dev","libpng-dev","libspatialindex-dev"]
+deplist += ["qt5-style-plugins","qt5ct","python3-gdal","python3-pyqt5","python3-pyqt5.qtopengl"]
+deplist += ["python3-simplejson","python3-tk"]
 
 deplist += ["libdrm-dev","libaudiofile-dev","libsndfile1-dev"]
+deplist += ["libglew-dev", "libopencv-dev"]
 
 merged = " ".join(deplist)
 os.system("sudo apt -y install %s" % merged)
+
+os.system("pip3 install os_release")
