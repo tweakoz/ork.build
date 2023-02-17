@@ -13,9 +13,10 @@ class glm(dep.StdProvider):
     super().__init__(glm.name)
     self.declareDep("cmake")
     self._builder = self.createBuilder(dep.CMakeBuilder)
+
     if host.IsDarwin:
       self._builder.setCmVars({
-        "CMAKE_CXX_FLAGS": "-Wno-deprecated-declarations",
+        "CMAKE_CXX_FLAGS": "-Wno-deprecated-declarations -Wno-poison-system-directories",
       })
     #self._builder.requires(["lapack"])
 

@@ -5,7 +5,7 @@
 # The Orkid Build System is published under the GPL 2.0 license
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
-from ork import dep, path
+from ork import dep, path, host
 ###############################################################################
 class eigen(dep.StdProvider):
   name = "eigen"
@@ -13,6 +13,7 @@ class eigen(dep.StdProvider):
     super().__init__(eigen.name)
     self.declareDep("cmake")
     self._builder = self.createBuilder(dep.CMakeBuilder)
+
     #self._builder.requires(["lapack"])
 
   ########################################################################
