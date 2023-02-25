@@ -125,6 +125,7 @@ class orkid(dep.StdProvider):
     deplist += ["cppzmq"]
     deplist += ["cpppeglib"]
     deplist += ["klein"]
+    deplist += ["portaudio"]
 
     if host.IsX86_64:
       deplist += ["ispctexc"]

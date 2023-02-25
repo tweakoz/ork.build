@@ -4,11 +4,11 @@ import os
 
 deplist =  ["cmake","wget","curl","libtiff","libpng"]
 deplist += ["portaudio","audiofile","m4","bison","flex","xz"]
-deplist += ["scons","ffmpeg","qt5","zlib","tbb", "glew"]
+deplist += ["scons","zlib","tbb", "glew","boost"]
 deplist += ["mpfr","openssl","graphviz","doxygen","swig","tcl-tk"]
 
-for item in deplist:
-    os.system("brew install %s" % item)
+depliststr = " ".join(deplist)
+os.system("brew install %s" % depliststr)
 
 os.system("/usr/local/bin/python3 -m pip install --upgrade setuptools")
 os.system("/usr/local/bin/pip3 install yarl")

@@ -23,7 +23,7 @@ class rapidjson(dep.StdProvider):
         "RAPIDJSON_BUILD_THIRDPARTY_GTEST": "OFF",
         "RAPIDJSON_BUILD_TESTS": "OFF",
       })
-      if osxname=="monterey":
+      if osxname=="monterey" or osxname=="ventura":
         self._builder.setCmVars({
           "CMAKE_CXX_FLAGS": "-Wno-deprecated-declarations -Wno-deprecated-copy-with-user-provided-copy"
         })
