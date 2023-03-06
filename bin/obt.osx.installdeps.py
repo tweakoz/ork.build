@@ -2,9 +2,9 @@
 
 import os
 
-deplist =  ["cmake","wget","curl","libtiff","libpng"]
+deplist =  ["cmake","wget","curl","libtiff","libpng", "git-lfs"]
 deplist += ["portaudio","audiofile","m4","bison","flex","xz"]
-deplist += ["scons","zlib","tbb", "glew","boost"]
+deplist += ["scons","zlib","tbb", "glew","boost","flac","libsndfile"]
 deplist += ["mpfr","openssl","graphviz","doxygen","swig","tcl-tk"]
 
 depliststr = " ".join(deplist)
