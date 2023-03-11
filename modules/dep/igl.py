@@ -27,7 +27,7 @@ class igl(dep.StdProvider):
                    glfw_path)
     self._builder = self.createBuilder(dep.CMakeBuilder)
     self._builder.requires(["eigen","tbb"])
-    self._builder.setCmVar("LIBIGL_WITH_CGAL","FALSE")
+    self._builder.setCmVar("LIBIGL_WITH_CGAL","TRUE")
     self._builder.setCmVar("LIBIGL_USE_STATIC_LIBRARY","OFF")
 
     boost_cmake = BOOST.cmake_additional_flags()
