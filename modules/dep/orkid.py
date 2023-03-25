@@ -129,7 +129,7 @@ class orkid(dep.StdProvider):
 
     if host.IsX86_64:
       deplist += ["ispctexc"]
-      deplist += ["igl"]
+      #deplist += ["igl"]
       deplist += ["openvdb"]
 
     #if ork.host.IsOsx: # until moltenvk fixed on big sur
