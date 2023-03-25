@@ -19,14 +19,15 @@ class premake(dep.StdProvider):
     super().__init__(premake.name)
     self.declareDep("cmake")
     self._builder = self.createBuilder(dep.CustomBuilder)
+    PLATFORM = "linux"
+    if host.IsDarwin:
+      PLATFORM = "osx"
     self._builder._incrbuildcommands = [
-      cmd(["make","-f","Bootstrap.mak","linux"])
+      cmd(["make","-f","Bootstrap.mak",PLATFORM])
     ]
     self._builder._installcommands += {
       cmd(["install","bin/release/premake5",path.bin()/"premake5"])
     }
-    #if host.IsDarwin:
-    #  self._builder.setCmVar("WITH_TLS","OFF")
   ########################################################################
   def __str__(self): 
     return "premake (github-%s)" % VERSION
