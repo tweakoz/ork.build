@@ -7,7 +7,7 @@
 ###############################################################################
 
 import platform, multiprocessing
-from ork import target
+from ork import target, sdk, command, env
 
 class hostinfo:
   ###################################
@@ -41,6 +41,18 @@ class hostinfo:
     ###################################
   ###################################
   def env_init(self):
+    #x86_64_macos = sdk.descriptor('x86_64','macos')
+    #x86_64_macos.env_init()
+    _xcodesdkstr = command.capture([
+      "xcodebuild",
+      "-version",
+      "-sdk","macosx"]).splitlines()
+    for l in _xcodesdkstr:
+      x = l.split(": ")
+      if x[0]=="Path":
+        env.append("OBT_MACOS_SDK_DIR",x[1])
+      if x[0]=="PlatformVersion":
+        env.append("OBT_MACOS_PLATFORM_VERSION",x[1])
     print("MACOS-X86_64 Host Activated...")
   ###################################
   @property
