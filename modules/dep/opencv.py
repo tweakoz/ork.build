@@ -38,6 +38,8 @@ class opencv(dep.StdProvider):
       "WITH_TBB": "OFF",
       "WITH_GDAL": "OFF",
       "WITH_QT": "OFF",
+      "WITH_GTk": "ON",
+      "WITH_GTK_2_X": "OFF",
       "WITH_OPENGL": "OFF",
       "WITH_CAROTENE": "OFF",
       "WITH_FFMPEG": "OFF",

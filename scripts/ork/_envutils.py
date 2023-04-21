@@ -59,12 +59,28 @@ class EnvSetup:
       orig_ps1 = os.environ["PS1"]
     if "LD_LIBRARY_PATH" in os.environ:
       orig_ld_library_path = os.environ["LD_LIBRARY_PATH"]
+
+    ##############################################################################
+    # retrieve original PKG_CONFIG_PATH
+    ##############################################################################
+
+    orig_pkg_config_path = ork.command.capture(["pkg-config","--variable","pc_path","pkg-config"])
+    orig_pkg_config_path = orig_pkg_config_path.replace("\n","")
+    print("orig_pkg_config_path<%s>"%orig_pkg_config_path)
+
     if "PKG_CONFIG" in os.environ:
       orig_pkg_config = os.environ["PKG_CONFIG"]
-    if "PKG_CONFIG_PATH" in os.environ:
-      orig_pkg_config_path = os.environ["PKG_CONFIG_PATH"]
+    #if "PKG_CONFIG_PATH" in os.environ:
+    #  orig_pkg_config_path = os.environ["PKG_CONFIG_PATH"]
     if "PYTHONPATH" in os.environ:
       orig_python_path = os.environ["PYTHONPATH"]
+
+    ork.env.set("PKG_CONFIG_PATH",orig_pkg_config_path )
+    ork.env.set("OBT_ORIGINAL_PKG_CONFIG_PATH",orig_pkg_config_path )
+
+    ork.env.set("OBT_ORIGINAL_PKG_CONFIG",orig_pkg_config )
+
+    ##############################################################################
 
     ork.env.set("color_prompt","yes")
     ork.env.set("OBT_STAGE",self.OBT_STAGE)
@@ -78,8 +94,6 @@ class EnvSetup:
     ork.env.set("OBT_ORIGINAL_PATH",orig_path )
     ork.env.set("OBT_ORIGINAL_LD_LIBRARY_PATH",orig_ld_library_path )
     ork.env.set("OBT_ORIGINAL_PS1",orig_ps1 )
-    ork.env.set("OBT_ORIGINAL_PKG_CONFIG",orig_pkg_config )
-    ork.env.set("OBT_ORIGINAL_PKG_CONFIG_PATH",orig_pkg_config_path )
     ork.env.set("OBT_ORIGINAL_PYTHONPATH",orig_python_path )
     ork.env.set("OBT_SCRIPTS_DIR",self.SCRIPTS_DIR )
     ork.env.set("OBT_PYTHONHOME",self.OBT_STAGE/"pyvenv")
@@ -100,24 +114,25 @@ class EnvSetup:
     if obt_prj_extensions.exists():
       self.importProject(obt_prj_extensions)
 
-    if ork.host.IsLinux:
 
-      if ork.host.IsDebian:
-        pkgcfgdir = ork.path.Path("/lib/x86_64-linux-gnu/pkgconfig")
-      elif ork.host.IsGentoo:
-        pkgcfgdir = ork.path.Path("/usr/lib64/pkgconfig")
-      elif ork.host.IsAARCH64:
-        pkgcfgdir = ork.path.Path("/usr/lib/pkgconfig")
+    #if ork.host.IsLinux:
 
-      if pkgcfgdir.exists():
-        ork.env.append("PKG_CONFIG_PATH",pkgcfgdir)
-      pkgcfgdir = ork.path.Path("/usr/share/pkgconfig")
-      if pkgcfgdir.exists():
-        ork.env.append("PKG_CONFIG_PATH",pkgcfgdir)
-    elif ork.host.IsDarwin:
-      pkgcfgdir = ork.path.Path("/usr/local/lib/pkgconfig")
-      if pkgcfgdir.exists():
-        ork.env.append("PKG_CONFIG_PATH",pkgcfgdir)
+      #if ork.host.IsDebian:
+      #  pkgcfgdir = ork.path.Path("/lib/x86_64-linux-gnu/pkgconfig")
+      #elif ork.host.IsGentoo:
+      #  pkgcfgdir = ork.path.Path("/usr/lib64/pkgconfig")
+      #elif ork.host.IsAARCH64:
+      #  pkgcfgdir = ork.path.Path("/usr/lib/pkgconfig")
+
+      #if pkgcfgdir.exists():
+      #  ork.env.append("PKG_CONFIG_PATH",pkgcfgdir)
+      #pkgcfgdir = ork.path.Path("/usr/share/pkgconfig")
+      #if pkgcfgdir.exists():
+      #  ork.env.append("PKG_CONFIG_PATH",pkgcfgdir)
+    #elif ork.host.IsDarwin:
+      #pkgcfgdir = ork.path.Path("/usr/local/lib/pkgconfig")
+      #if pkgcfgdir.exists():
+      #  ork.env.append("PKG_CONFIG_PATH",pkgcfgdir)
 
 
     if ork.path.vivado_base().exists():
