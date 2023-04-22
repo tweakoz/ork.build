@@ -190,6 +190,7 @@ class CMakeBuilder(BaseBuilder):
     if not ok2build:
       return False
     if incremental:
+      pathtools.mkdir(blddir,clean=False)
       pathtools.chdir(wrkdir)
       cmake_ctx = cmake.context(root=srcdir,
                                 env=self._cmakeenv,

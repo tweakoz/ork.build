@@ -164,6 +164,7 @@ def dynamicInit():
   subspaceitems = ork.subspace.findWithMethod("env_init")
   for subitemk in subspaceitems:
     subitem = subspaceitems[subitemk]
+    print(subitem)
     subitem._module.env_init(envsetup)
   ####################################
 
