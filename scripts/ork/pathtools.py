@@ -6,7 +6,7 @@
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
 
-import os, sys, pathlib
+import os, sys, pathlib, hashlib, glob
 import fnmatch
 from ork import buildtrace
 
@@ -92,10 +92,10 @@ def recursive_glob_get_dirs(path):
     d=[]
     try:
         x = os.listdir(path)
-        print(x)
+        #print(x)
         for i in x:
           y = path+i
-          print(i,y)
+          #print(i,y)
           if os.path.isdir(y):
             d.append(os.path.basename(i))
     except:
@@ -103,16 +103,31 @@ def recursive_glob_get_dirs(path):
         pass
     return d
 
+############################
+def md5_of_file(fname):
+    fil = open(str(fname),"rb")
+    data = fil.read()
+    fil.close()
+    md5obj = hashlib.md5()
+    md5obj.update(data)
+    return md5obj.hexdigest()
+
 ###############################################################################
 
-def globber( folderbase, wildcard, subdirlist, excludelist=[] ):
+def globber( folderbase, 
+             wildcard="*", 
+             subdirlist=None, 
+             excludelist=[] ):
     globs = []
     filtered_globs = []
+    if subdirlist==None:
+        subdirlist = [ "." ]
     for s in subdirlist:
         str_glob = folderbase
         if s!=".":
              str_glob += s + '/'
-        str_glob += wildcard
+        str_glob = str(str_glob)+"/"+wildcard
+        print(str_glob)
         these_globs = glob.glob( str_glob )
         globs += these_globs
         #print "globbing %s" % ( str_glob )
@@ -129,6 +144,69 @@ def globber( folderbase, wildcard, subdirlist, excludelist=[] ):
     #print filtered_globs
     return filtered_globs
 
+###############################################################################
+class EnumFileInfo(object):
+   def __init__(self, path, size, md5):
+      self.path = path
+      self.size = size
+      self.md5 = md5
+   def __repr__(self):
+        return "fileinfo[ path<%s> size<%d> md5<%s>]"%(self.path,self.size,self.md5)
+###############################################################################
+def enumerateContents(folderbase, 
+                      wildcard="*"):
+    return d
+###############################################################################
+class EnumDirInfo(object):
+    ############################################
+    def __init__(self, folderbase,wildcard="*"):
+        self.glob = recursive_patglob(folderbase, wildcard)
+        self.contents_by_hash = dict()
+        self.contents_by_path = dict()
+        self.bytes_by_hash = dict()
+        for item in self.glob:
+            if(os.path.isfile(item)):
+              h = md5_of_file(item)
+              size = os.path.getsize(item)
+              if h not in self.contents_by_hash:
+                self.contents_by_hash[h] = []
+              if h not in self.bytes_by_hash:
+                self.bytes_by_hash[h] = 0
+              self.bytes_by_hash[h] += size
+            finfo = EnumFileInfo(item, size, h)
+            self.contents_by_hash[h].append(finfo)
+            self.contents_by_path[item] = finfo
+    ############################################
+    def numDuplicateBytes(self):
+        numdupebytes = 0
+        for hash in self.contents_by_hash.keys():
+            file_list = self.contents_by_hash[hash]
+            if len(file_list)>1:
+              for item in file_list:
+                numdupebytes += item.size
+        return numdupebytes
+    ############################################
+    def numBytes(self):
+        numbytes = 0
+        for p in self.contents_by_path.keys():
+            item = self.contents_by_path[p]
+            numbytes += item.size
+        return numbytes
+    ############################################
+    def dump(self):
+        for p in self.contents_by_path:
+            v = self.contents_by_path[p]
+            print(v)
+    ############################################
+    def dump_duplicates(self):
+        numdupebytes = 0
+        for hash in self.contents_by_hash.keys():
+            file_list = self.contents_by_hash[hash]
+            if len(file_list)>1:
+              #print(file_list)
+              for item in file_list:
+                numdupebytes += item.size
+        print("numdupebytes<%d>"%numdupebytes)       
 ###############################################################################
 
 def mkdir(p,
@@ -185,3 +263,4 @@ def copyfiles(file_from,dest_dir,modeset=""):
   os.system("cp -r \"%s\" \"%s/\"" % (str(file_from), str(dest_dir)))
   if modeset!="":
     os.system("chmod %s %s/*"%(modeset,str(dest_dir)))
+
