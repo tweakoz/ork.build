@@ -9,11 +9,17 @@
 import platform, os, pathlib,sys
 from enum import Enum
 import ork.path 
+import ork.env 
 
 ###############################################################################
 
 file_path = os.path.realpath(__file__)
 this_dir = pathlib.Path(os.path.dirname(file_path))
+
+###############################################################################
+
+def current():
+  return os.environ.get("OBT_SUBSPACE")
 
 ###############################################################################
 

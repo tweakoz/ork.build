@@ -153,10 +153,6 @@ class EnumFileInfo(object):
    def __repr__(self):
         return "fileinfo[ path<%s> size<%d> md5<%s>]"%(self.path,self.size,self.md5)
 ###############################################################################
-def enumerateContents(folderbase, 
-                      wildcard="*"):
-    return d
-###############################################################################
 class EnumDirInfo(object):
     ############################################
     def __init__(self, folderbase,wildcard="*"):
@@ -207,6 +203,11 @@ class EnumDirInfo(object):
               for item in file_list:
                 numdupebytes += item.size
         print("numdupebytes<%d>"%numdupebytes)       
+###############################################################################
+def enumerateContents(folderbase, 
+                      wildcard="*"):
+    return EnumDirInfo(folderbase,wildcard)
+
 ###############################################################################
 
 def mkdir(p,

@@ -78,11 +78,7 @@ def subspace():
 ###############################################################################
 
 def subspace_dir():
-  subs = subspace()
-  subdir = stage()
-  if subs != "host":
-    subdir = subspace_root()/subs
-  return subdir
+  return Path(os.environ["OBT_SUBSPACE_DIR"])
 
 ###############################################################################
 

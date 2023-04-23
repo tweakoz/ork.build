@@ -129,6 +129,7 @@ class subspaceinfo:
         "LD_LIBRARY_PATH": ldlibpath,
         "OBT_PYTHON_SUBSPACE_BUILD_DIR": PYTHON_HOME/"builds",
         "OBT_SUBSPACE_LIB_DIR": PYTHON_HOME/"lib",
+        "OBT_SUBSPACE_DIR": PYTHON_HOME,
         "OBT_SUBSPACE_BIN_DIR": PYTHON_HOME/"bin",
         "PYTHONPATH": pypath,
         "OBT_PYTHONHOME": PYTHON_HOME,
