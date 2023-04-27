@@ -127,6 +127,7 @@ class orkid(dep.StdProvider):
     deplist += ["klein"]
     deplist += ["portaudio"]
     deplist += ["sigslot"]
+    deplist += ["openblas"]
 
     if host.IsX86_64:
       deplist += ["ispctexc"]
