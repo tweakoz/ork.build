@@ -4,8 +4,6 @@ from yarl import URL
 class ngc(dep.Provider):
   def __init__(self): ############################################
     super().__init__("ngc")
-    self.build_dest = path.builds()/"ngc"
-    self.manifest = path.manifests()/"ngc"
     self.OK = self.manifest.exists()
     self.dest_bin = path.obt_bin()/"ngc"
   def __str__(self):

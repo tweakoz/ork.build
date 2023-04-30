@@ -9,9 +9,6 @@ class vivado(dep.Provider):
 
   def __init__(self): ############################################
     super().__init__("vivado")
-    build_dest = path.builds()/"vivado"
-    self.build_dest = build_dest
-    self.manifest = path.manifests()/"vivado"
     self.OK = self.manifest.exists()
     self.vivbase = path.vivado_base()/VERSION
 

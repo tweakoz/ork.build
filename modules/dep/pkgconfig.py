@@ -12,7 +12,6 @@ class pkgconfig(dep.Provider):
   def __init__(self): ############################################
     super().__init__("pkgconfig")
     self.scope = dep.ProviderScope.INIT
-    self.manifest = path.manifests()/"pkgconfig"
     self.extract_dir = path.builds()/"pkgconfig"
     self.source_dir = self.extract_dir/("pkg-config-%s" % VER)
     self.build_dir = self.source_dir/".build"
@@ -21,6 +20,7 @@ class pkgconfig(dep.Provider):
     self.OK = self.manifest.exists()
 
   def build(self): ##########################################################
+    assert(False)
     self.arcpath = dep.downloadAndExtract([self.url],
                                           "pkg-config-%s" % VER,
                                           "gz",

@@ -41,9 +41,6 @@ class python_from_source(dep.Provider):
     #self.declareDep("pkgconfig")
     ##########################################
     #print(options)
-    build_dest = path.builds()/"python"
-    self.build_dest = build_dest
-    self.manifest = path.manifests()/"python"
     self.OK = self.manifest.exists()
     self.fname = "Python-%s.tgz"%VERSION
     self.source_dir = self.build_dest/("Python-%s"%VERSION)

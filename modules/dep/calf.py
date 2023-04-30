@@ -20,10 +20,7 @@ class calf(dep.Provider):
 
   def __init__(self): ############################################
     super().__init__("calf")
-    self.manifest = path.manifests()/"calf"
     self.OK = self.manifest.exists()
-    self.source_root = path.builds()/"calf"
-    self.build_dest = self.source_root/".build"
 
   ########
 

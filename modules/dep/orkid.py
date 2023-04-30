@@ -15,7 +15,7 @@ class orkid(dep.StdProvider):
     super().__init__(orkid.name)
     self._oslist = ["Linux","Darwin"]
     self._archlist = ["x86_64","aarch64"]
-    self._allow_build_in_subspaces = True 
+    self.setAllowedSubspaces(["*"])
     ################################
     # default orkid_src_dir is in builds/orkid (from dep fetcher)
     ################################
@@ -30,7 +30,7 @@ class orkid(dep.StdProvider):
     self._userworkingcopy = ("ORKID_IS_MAIN_PROJECT" in os.environ)
     if self._userworkingcopy:
       self.orkid_src_dir = path.Path(os.environ["ORKID_WORKSPACE_DIR"])
-      self.source_root = path.Path(os.environ["ORKID_WORKSPACE_DIR"])
+      self.overrideSourceRoot(path.Path(os.environ["ORKID_WORKSPACE_DIR"]))
 
     ################################
 

@@ -22,11 +22,6 @@ class unittestpp(dep.Provider):
 
   def __init__(self): ############################################
     super().__init__("unittestpp")
-
-    self.source_root = path.builds()/"unittestpp"
-    self.build_dest = path.builds()/"unittestpp"/".build"
-    self.manifest = path.manifests()/"unittestpp"
-
     self.OK = self.manifest.exists()
 
   ########

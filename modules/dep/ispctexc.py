@@ -15,7 +15,6 @@ class ispctexc(dep.StdProvider):
   def __init__(self):
     super().__init__(ispctexc.name)
     self.declareDep("ispc")
-    self.build_dest = self.source_root/"build"
     self._archlist = ["x86_64"]
 
   ########################################################################

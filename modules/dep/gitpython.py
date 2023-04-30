@@ -22,7 +22,6 @@ class gitpython(dep.Provider):
 
   def __init__(self): ############################################
     super().__init__("gitpython")
-    self.manifest = path.manifests()/"gitpython"
     self.OK = self.manifest.exists()
 
   ########

@@ -2,6 +2,7 @@ import ork.xcode
 import ork.command 
 import ork.env
 import ork.path 
+import ork.log
 import os
 
 class sdkinfo:
@@ -13,26 +14,29 @@ class sdkinfo:
       "xcodebuild",
       "-version",
       "-sdk"])
+    has_iossdk16_4 = _xcodesdkstr.find("(iphoneos16.4)")>0
     has_iossdk15_2 = _xcodesdkstr.find("(iphoneos15.2)")>0
     has_iossdk15_5 = _xcodesdkstr.find("(iphoneos15.5)")>0
-    print("has_iossdk15_2<%s>"%has_iossdk15_2)
+    print("has_iossdk16_4<%s>"%has_iossdk16_4)
     print("has_iossdk15_5<%s>"%has_iossdk15_5)
-    if has_iossdk15_2:
+    print("has_iossdk15_2<%s>"%has_iossdk15_2)
+    #############################################
+    def do_sdk(sdkname):
       _iossdkstr = ork.command.capture([
         "xcodebuild",
         "-version",
-        "-sdk", "iphoneos15.2",
+        "-sdk", sdkname,
         "Path"],do_log=False).splitlines()
-      ork.env.append("OBT_IOS_SDK","iphoneos15.2")
+      ork.env.append("OBT_IOS_SDK","iphoneos16.4")
       ork.env.append("OBT_IOS_SDK_DIR",_iossdkstr)
-    if has_iossdk15_5:
-      _iossdkstr = ork.command.capture([
-        "xcodebuild",
-        "-version",
-        "-sdk", "iphoneos15.5",
-        "Path"],do_log=False).splitlines()
-      ork.env.append("OBT_IOS_SDK","iphoneos15.5")
-      ork.env.append("OBT_IOS_SDK_DIR",_iossdkstr)
+      ork.log.marker("registering IOS SDK: %s"%sdkname)
+    #############################################
+    if has_iossdk16_4:
+      do_sdk("iphoneos16.4")
+    elif has_iossdk15_5:
+      do_sdk("iphoneos15.5")
+    elif has_iossdk15_2:
+      do_sdk("iphoneos15.2")
   #############################################
   def __init__(self):
     self.identifier = "aarch64-ios"

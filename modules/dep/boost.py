@@ -33,9 +33,6 @@ class boost(dep.Provider):
     self.fbase = ("boost_%s_%s_%s"%(VERSION[0],VERSION[1],VERSION[2]))
     self.fname = ("%s.tar.bz2"%(self.fbase))
     self.verurl = self.verurl/"source"/self.fname
-    build_dest = path.builds()/"boost"
-    self.build_dest = build_dest
-    self.manifest = path.manifests()/"boost"
     self._is_mac_arm = (self._target.identifier == "aarch64-macos")
 
     SUFFIX = ""

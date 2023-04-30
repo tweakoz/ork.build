@@ -21,9 +21,6 @@ class _llvm_from_source(dep.StdProvider):
     ##########################################
     # llvm cmake file is 1 subdir deeper than usual
     ##########################################
-    self.build_src = self.source_root/"llvm"
-    self.build_dest = self.source_root/".build"
-    ##########################################
     self._builder.setCmVars({
         "CMAKE_BUILD_TYPE": "RELEASE",
         "BUILD_SHARED_LIBS": "ON",

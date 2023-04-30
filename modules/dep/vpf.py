@@ -23,9 +23,6 @@ class vpf(dep.Provider):
   def __init__(self): ############################################
     super().__init__("vpf")
     #print(options)
-    self.source_root = path.builds()/"vpf"
-    self.build_dest = path.builds()/"vpf"/".build"
-    self.manifest = path.manifests()/"vpf"
     self.sdk_dir = path.Path("/opt/nvencsdk")
     self.OK = self.manifest.exists()
     self._archlist = ["x86_64"]

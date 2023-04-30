@@ -14,6 +14,7 @@ class parsertl14(dep.StdProvider):
   name = "parsertl14"
   def __init__(self):
     super().__init__(parsertl14.name)
+    self.setAllowedSubspaces(["host","ios"])
     #################################################
     srcroot = self.source_root
     #################################################

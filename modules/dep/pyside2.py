@@ -6,9 +6,6 @@ class pyside2(dep.Provider):
 
   def __init__(self): ############################################
     super().__init__("pyside2")
-    build_dest = path.builds()/"pyside2"
-    self.build_dest = build_dest
-    self.manifest = path.manifests()/"pyside2"
     self.OK = self.manifest.exists()
     self.python = self.declareDep("python")
 

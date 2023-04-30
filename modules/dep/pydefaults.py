@@ -6,9 +6,6 @@ class pydefaults(dep.Provider):
 
   def __init__(self): ############################################
     super().__init__("pydefaults")
-    build_dest = path.builds()/"pydefaults"
-    self.build_dest = build_dest
-    self.manifest = path.manifests()/"pydefaults"
     self.OK = self.manifest.exists()
     self.python = self.declareDep("python")
 

@@ -30,7 +30,6 @@ class avr_libc(dep.Provider):
   def __init__(self): ############################################
     super().__init__("avr_libc")
 
-    self.manifest = path.manifests()/"avr_binutils"
     self.OK = self.manifest.exists()
     self.name = "avr-libc-%s" % VER
     self.url = "http://download.savannah.gnu.org/releases/avr-libc/%s.tar.bz2"%self.name

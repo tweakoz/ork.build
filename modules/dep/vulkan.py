@@ -25,9 +25,6 @@ class _vulkan_from_lunarg(dep.Provider):
     super().__init__("vulkan")
     #print(options)
     self.fullver = VERSION
-    self.source_root = path.builds()/"vulkan"
-    self.build_dest = path.builds()/"vulkan"/".build"
-    self.manifest = path.manifests()/"vulkan"
     self.OK = self.manifest.exists()
     #self._archlist = ["x86_64"]
     

@@ -13,6 +13,7 @@ class ue5_cesium(dep.StdProvider):
   def __init__(self):
     super().__init__(ue5_cesium.name)
     #self._archlist = ["x86_64"]
+    self.enabled = False
     self.declareDep("cmake")
     self.UE5 = self.declareDep("ue5")
     UE5DIR = self.UE5.source_root

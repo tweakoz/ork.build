@@ -23,9 +23,6 @@ class frameretrace(dep.Provider):
 
   def __init__(self): ############################################
     super().__init__("frameretrace")
-    self.source_root = path.builds()/"frameretrace"
-    self.build_dest = path.builds()/"frameretrace"/".build"
-    self.manifest = path.manifests()/"frameretrace"
     self._archlist = ["x86_64"]
     self.OK = self.manifest.exists()
 

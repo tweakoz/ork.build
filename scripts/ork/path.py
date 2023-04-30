@@ -183,12 +183,6 @@ def pkgconfigdir():
 
 ###############################################################################
 
-def manifests():
-  staging = Path(os.environ["OBT_STAGE"])
-  return staging/"manifests"
-
-###############################################################################
-
 def litex_env_dir():
     return builds()/"litex-buildenv"
 

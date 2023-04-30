@@ -13,7 +13,7 @@ import ork.path, ork.host
 from ork.command import Command, run
 from ork.deco import Deco
 from ork.wget import wget
-from ork import pathtools, cmake, make, path, git, host
+from ork import pathtools, cmake, make, path, git, host, manifest
 from ork import _dep_impl, _dep_x, _globals, log, buildtrace
 from enum import Enum
 
@@ -30,8 +30,10 @@ class ProviderScope(Enum):
 class Provider(object):
     """base class for all dependency providers"""
     def __init__(self,name,target=None):
+      super().__init__()
+      self.enabled = True
       self.scope = ProviderScope.CONTAINER
-      self._allow_build_in_subspaces = False 
+      self._allowed_subspaces = ["host"]
       if target ==None:
         self._target = host.description().target
       else:
@@ -46,14 +48,22 @@ class Provider(object):
       self._bin_required_files = []
       self._required_deps = {}
       self._topoindex = -1
-      self.manifest = path.manifests()/name
-      self.OK = self.manifest.exists()
-      self.setSourceRoot(path.builds()/name)
       self._debug = False
       self._must_build_in_tree = False
+      self._overrideSourceRoot = None
       if name not in root_dep_list:
         self.declareDep("root")
+      self.manifest = manifest.instance(self)
+      self.OK = self.manifest.exists()
     #############################
+    def setAllowedSubspaces(self,subspaces):
+      self._allowed_subspaces = subspaces
+    #############################
+    def allowed_in_subspace(self,subspace):
+      allowed = (subspace in self._allowed_subspaces) or ("*" in self._allowed_subspaces)
+      #print("allowed_in_subspace: dep<%s> sub<%s> set<%s> allowed<%s>"%(self._name,subspace,self._allowed_subspaces,allowed))
+      return allowed
+    ###########################
     def declareDep(self, named):
       inst = _dep_x.instance(named)
       #print(named,type(inst))
@@ -61,7 +71,6 @@ class Provider(object):
       return inst
     #############################
     def createBuilder(self,clazz, **kwargs):
-
       if len(kwargs)>0:
         self._builder = clazz(self._name,**kwargs)
       else:
@@ -70,11 +79,34 @@ class Provider(object):
         self._builder.requires(self._required_deps)
       return self._builder
     #############################
-    def setSourceRoot(self,srcroot):
-      self.source_root = srcroot
-      self.build_src = srcroot
-      self.build_dest = srcroot/".build"
-      self.build_working_dir = self.build_dest
+    def overrideSourceRoot(self,pth):
+      self._overrideSourceRoot = pth
+    #############################
+    @property 
+    def source_root(self):
+      if self._overrideSourceRoot is not None:
+        return self._overrideSourceRoot
+      else:
+        return path.builds()/name
+    #############################
+    @property 
+    def build_src(self):
+      return self.source_root
+    #############################
+    @property 
+    def build_dest(self):
+      subspace = os.environ["OBT_SUBSPACE"]
+      if self.allowed_in_subspace(subspace):
+        return path.subspace_dir()/"builds"/self._name
+      return self.build_src/".build"
+    #############################
+    @property 
+    def build_working_dir(self):
+      return self.build_dest
+    #############################
+    @property 
+    def source_root(self):
+      return path.builds()/self._name
     #############################
     def mustBuildInTree(self):
       self.build_dest = self.build_src
@@ -291,7 +323,6 @@ class Provider(object):
 class HomebrewProvider(Provider):
   def __init__(self,name,pkgname):
     super().__init__(pkgname)
-    self.manifest = path.manifests()/name
     self.OK = self.manifest.exists()
     self.pkgname = pkgname
     self._deps = list()

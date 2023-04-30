@@ -26,19 +26,19 @@ class _qt5_from_source(dep.Provider):
   def __init__(self): ############################################
     super().__init__("qt5")
     #print(options)
+    self.enabled = False
     self.MAJOR_VERSION = "5.15"
     self.MINOR_VERSION = "2"
     self.HASH = "e1447db4f06c841d8947f0a6ce83a7b5"
-    self.manifest = path.manifests()/"qt5"
     self.OK = self.manifest.exists()
     self.baseurl = URL("https://mirrors.ukfast.co.uk/sites/qt.io/official_releases/qt")
     self.fullver = "%s.%s" % (self.MAJOR_VERSION,self.MINOR_VERSION)
     self.name = "qt-everywhere-src-%s" % self.fullver
     self.xzname = "%s.tar.xz" % self.name
     self.url = self.baseurl/self.MAJOR_VERSION/self.fullver/"single"/self.xzname
-    self.source_base = path.builds()/"qt5"
-    self.source_root = self.source_base/self.name
-    self.build_dest = path.builds()/"qt5"/"qt5-build"
+    #self.source_base = path.builds()/"qt5"
+    #self.source_root = self.source_base/self.name
+    #self.build_dest = path.builds()/"qt5"/"qt5-build"
     self._archlist = ["x86_64"]
     self.declareDep("assimp")
   ########

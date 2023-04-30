@@ -19,9 +19,6 @@ class osgeotiff(dep.StdProvider):
     self.declareDep("osgeoproj")
     self.declareDep("cmake")
     ###########################################
-    self.build_src = path.builds()/"osgeotiff"/"libgeotiff"
-    self.build_dest = self.source_root/".build"
-    ###########################################
     self._builder = self.createBuilder(dep.CMakeBuilder)
   ########################################################################
   @property

@@ -1,7 +1,7 @@
 import ork._dep_enumerate
 import ork._dep_node
 from ork.deco import Deco 
-import sys
+import sys, os
 
 deco = Deco()
 
@@ -89,11 +89,13 @@ class Chain:
     #print("sorted:")
     sorted = list(toposort_flatten(topo_unsorted))
     #print(sorted)
+    subspace = os.environ["OBT_SUBSPACE"]
     for i in reversed(sorted):
       n = indexed[i]
       #print(i,n._name)
-      self._list.append(n)
-      self._dict[n._name]=n
+      if n.allowed_in_subspace(subspace):
+        self._list.append(n)
+        self._dict[n._name]=n
       #if i._name not in self._dict.keys():
        #self._dict[i._name] = i
        #self._list.append(i)

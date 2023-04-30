@@ -20,10 +20,7 @@ class vst3sdk(dep.Provider):
 
   def __init__(self): ############################################
     super().__init__("vst3sdk")
-    self.manifest = path.manifests()/"vst3sdk"
     self.OK = self.manifest.exists()
-    self.source_root = path.builds()/"vst3sdk"
-    self.build_dest = self.source_root/".build"
     self._archlist = ["x86_64"]
 
   ########

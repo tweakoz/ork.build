@@ -11,7 +11,7 @@ class gnutar(dep.StdProvider):
     baseurl = URL("ftp.gnu.org/gnu/tar")
     basename = "tar-%s"%self._version
     filename = "%s.tar.xz" % basename
-    self.setSourceRoot(path.builds()/gnutar.name/basename)
+    self.overrideSourceRoot(path.builds()/gnutar.name/basename)
     self._fetcher._url = baseurl/filename
     self._fetcher._fname = filename
     self._fetcher._arctype = "tgz"

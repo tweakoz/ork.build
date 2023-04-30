@@ -6,7 +6,6 @@ class cuda(dep.Provider):
 
   def __init__(self): ############################################
     super().__init__("cuda")
-    self.manifest = path.manifests()/"cuda"
     self.OK = self.manifest.exists()
 
   ########

@@ -152,7 +152,8 @@ class CMakeBuilder(BaseBuilder):
     ##################################
     # implicit dependencies
     ##################################
-    if name!="cmake":
+    subspace = os.environ["OBT_SUBSPACE"]
+    if name!="cmake" and (subspace=="host"):
       self._deps += ["cmake"]
   ###############################################
   @property 

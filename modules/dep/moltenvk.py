@@ -23,9 +23,6 @@ class moltenvk(dep.Provider):
   def __init__(self): ############################################
     super().__init__("moltenvk")
     #print(options)
-    self.source_root = path.builds()/"moltenvk"
-    self.build_dest = path.builds()/"moltenvk"/".build"
-    self.manifest = path.manifests()/"moltenvk"
     self.OK = self.manifest.exists()
     self._archlist = ["x86_64"]
     self._oslist = ["Darwin"]

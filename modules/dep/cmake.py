@@ -7,6 +7,7 @@
 ###############################################################################
 
 from ork import dep, path, host
+import os
 
 ###############################################################################
 
@@ -14,10 +15,13 @@ class cmake(dep.StdProvider):
   name = "cmake"
   def __init__(self):
     super().__init__(cmake.name)
-    self.declareDep("pkgconfig")
+    subspace = os.environ["OBT_SUBSPACE"]
+    if subspace == "host":
+      self.declareDep("pkgconfig")
     self._builder = self.createBuilder(dep.CMakeBuilder)
     self._builder._cmakeenv["CMAKE_USE_SYSTEM_CURL"]="YES"
-    self._builder.requires(["pkgconfig"])
+    if subspace == "host":
+      self._builder.requires(["pkgconfig"])
   ########################################################################
   @property
   def _fetcher(self):

@@ -10,8 +10,6 @@
 
 import os, sys, pathlib, argparse, string
 
-assert(os.environ["OBT_SUBSPACE"]=="host")
-
 parser = argparse.ArgumentParser(description='ork.build dep information')
 parser.add_argument('dependency', metavar='D', type=str, help='a dependency you want information on')
 
@@ -51,6 +49,8 @@ for dep_name in instance._required_deps.keys():
 
 print_item("name",instance._name)
 print_item("scope",instance.scopestr)
+print_item("allowed subspaces",instance._allowed_subspaces)
+print_item("manifest path",instance.manifest._path)
 print_item("manifest present",instance.exists)
 print_item("source present",src_present)
 print_item("binaries present",bin_present)

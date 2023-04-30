@@ -55,9 +55,11 @@ def descriptor(subname):
 
 def requires(subname,build_opts=[]):
   sub = descriptor(subname)
-  if not sub._manifest_path.exists():
+  subspace_manifest = ork.path.stage()/"manifests"/("subspace-%s"%subname)
+  print(subspace_manifest)
+  if not subspace_manifest.exists():
     sub.build(build_opts) # todo skip if manifest present
-    sub._manifest_path.touch()
+    subspace_manifest.touch()
   return sub 
 
 ###############################################################################

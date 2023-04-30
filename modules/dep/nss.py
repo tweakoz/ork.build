@@ -15,7 +15,7 @@ class nss(dep.StdProvider):
   name = "nss"
   def __init__(self):
     super().__init__(nss.name)
-    self.setSourceRoot(path.builds()/"nss"/"source")
+    self.overrideSourceRoot(path.builds()/"nss"/"source")
     ###########################################
     self._builder = self.createBuilder(dep.CustomBuilder)
     self._builder._cleanOnClean = False

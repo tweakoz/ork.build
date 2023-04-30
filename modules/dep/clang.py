@@ -15,6 +15,7 @@ class clang(dep.StdProvider):
   def __init__(self):
     name = "clang"
     super().__init__(name=name)
+    self.enabled = False
     #self._archlist = ["x86_64"]
     self.llvm = dep.instance("llvm")
     self.hostdesc = host.description()
@@ -24,9 +25,10 @@ class clang(dep.StdProvider):
       ##########################################
       # llvm cmake file is 1 subdir deeper than usual
       ##########################################
-      self.source_root = path.builds()/"llvm"
-      self.build_src = self.source_root/"clang"
-      self.build_dest = self.source_root/".build"
+      #assert(False)
+      #self.source_root = path.builds()/"llvm"
+      #self.build_src = self.source_root/"clang"
+      #self.build_dest = self.source_root/".build"
   ##########################################
   def __str__(self):
     return "Clang(From LLVM)"

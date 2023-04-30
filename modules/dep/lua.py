@@ -25,10 +25,7 @@ class lua(dep.Provider):
   def __init__(self): ############################################
     super().__init__("lua")
     #print(options)
-    self.source_root = path.builds()/"lua"
-    self.build_dest = self.source_root
     self.header_dest = path.prefix()/"include"/"lua"
-    self.manifest = path.manifests()/"lua"
     self.OK = self.manifest.exists()
 
   ########

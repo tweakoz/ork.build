@@ -23,11 +23,6 @@ class fcollada(dep.Provider):
 
   def __init__(self): ############################################
     super().__init__("fcollada")
-
-    self.source_root = path.builds()/"fcollada"
-    self.build_dest = path.builds()/"fcollada"/".build"
-    self.manifest = path.manifests()/"fcollada"
-
     self.OK = self.manifest.exists()
 
   def __str__(self): ##########################################################

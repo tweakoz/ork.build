@@ -25,10 +25,6 @@ class astcencoder(dep.Provider):
 
     super().__init__("astcencoder")
 
-    self.source_root = path.builds()/"astcencoder"
-    self.build_dest = path.builds()/"astcencoder"/"Source"
-    self.manifest = path.manifests()/"astcencoder"
-
     self.OK = self.manifest.exists()
 
   def __str__(self): ##########################################################

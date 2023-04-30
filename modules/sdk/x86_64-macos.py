@@ -1,4 +1,4 @@
-import ork.xcode 
+from ork import xcode, log, env
 
 class sdkinfo:
   def __init__(self):
@@ -10,14 +10,13 @@ class sdkinfo:
     self.supports_host = ["x86_64-macos","aarch64-macos"]
 
   def env_init(self):
-    _xcodesdkstr = ork.command.capture([
-      "xcodebuild",
-      "-version",
-      "-sdk","macosx"]).splitlines()
+    log.marker("registering Macos SDK")
+    env.set("OBT_MACOS_SDK_DIR","")
+    _xcodesdkstr = xcode.macsdkstr()
     for l in _xcodesdkstr:
       x = l.split(": ")
       if x[0]=="Path":
-        ork.env.append("OBT_MACOS_SDK_DIR",x[1])
+        env.append("OBT_MACOS_SDK_DIR",x[1])
       if x[0]=="PlatformVersion":
-        ork.env.append("OBT_MACOS_PLATFORM_VERSION",x[1])
+        env.append("OBT_MACOS_PLATFORM_VERSION",x[1])
 

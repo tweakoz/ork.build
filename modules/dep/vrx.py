@@ -24,9 +24,6 @@ class vrx(dep.Provider):
   def __init__(self): ############################################
     super().__init__("vrx")
     #print(options)
-    self.source_root = path.builds()/"vrx"
-    self.build_dest = path.builds()/"vrx"/".build"
-    self.manifest = path.manifests()/"vrx"
     self.OK = self.manifest.exists()
     self._archlist = ["x86_64"]
   def __str__(self): ##########################################################

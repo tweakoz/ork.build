@@ -25,10 +25,6 @@ class apitrace(dep.Provider):
 
     super().__init__("apitrace")
 
-    self.source_root = path.builds()/"apitrace"
-    self.build_dest = path.builds()/"apitrace"/".build"
-    self.manifest = path.manifests()/"apitrace"
-
     self.OK = self.manifest.exists()
     self._archlist = ["x86_64"]
 

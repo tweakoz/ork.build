@@ -21,9 +21,10 @@ class opencv(dep.StdProvider):
   name = "opencv"
   def __init__(self): ############################################
     super().__init__(opencv.name)
-    self.python_dep = dep.require(["pkgconfig","pybind11","opencv_contrib"])
+
+    self.misc_deps = [self.declareDep(x) for x in ["pkgconfig","pybind11","opencv_contrib"]]
     self.EXR = self.declareDep("openexr")
-    self.python_dep = dep.require("python")
+    self.python_dep = self.declareDep("python")
 
     if self.python_dep == None:
       return False 
@@ -61,6 +62,8 @@ class opencv(dep.StdProvider):
     if host.IsLinux:
       cmakeEnv["WITH_V4L"]="ON"
     self._builder.setCmVars(cmakeEnv)
+
+    ######################################################
 
   ########################################################################
 
