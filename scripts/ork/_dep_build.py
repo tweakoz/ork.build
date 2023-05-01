@@ -113,6 +113,7 @@ class CMakeBuilder(BaseBuilder):
     super().__init__(name)
     self._minimal = False 
     self._install_prefix = install_prefix
+    self._use_xcode = False
     ##################################
     # ensure environment cmake present
     ##################################
@@ -125,22 +126,28 @@ class CMakeBuilder(BaseBuilder):
     if not static_libs:
       self._cmakeenv["BUILD_SHARED_LIBS"]="ON"
 
+    subspace = os.environ["OBT_SUBSPACE"]
     ##################################
     # default OSX stuff
     ##################################
     if ork.host.IsOsx and macos_defaults:
       sysroot_cmd = Command(["xcrun","--show-sdk-path"],do_log=False)
       sysroot = sysroot_cmd.capture().replace("\n","")
-
-      if ork.host.IsAARCH64:
-        self._cmakeenv.update({"CMAKE_HOST_SYSTEM_PROCESSOR":"arm64"})
+      if subspace == "ios":
+        self._cmakeenv.update({
+          "CMAKE_OSX_DEPLOYMENT_TARGET:STRING":"11",
+          "CMAKE_OSX_SYSROOT:STRING":sysroot,
+          "CMAKE_MACOSX_RPATH": "1",
+          "PLATFORM":"OS64"
+        })
       else:
         self._cmakeenv.update({"CMAKE_HOST_SYSTEM_PROCESSOR":"x86_64"})
+        if ork.host.IsAARCH64:
+          self._cmakeenv.update({"CMAKE_HOST_SYSTEM_PROCESSOR":"arm64"})
+        else:
+          self._cmakeenv.update({"CMAKE_HOST_SYSTEM_PROCESSOR":"x86_64"})
 
       self._cmakeenv.update({
-        "CMAKE_OSX_DEPLOYMENT_TARGET:STRING":"11",
-        "CMAKE_OSX_SYSROOT:STRING":sysroot,
-        "CMAKE_MACOSX_RPATH": "1",
         "CMAKE_INSTALL_RPATH": path.libs(),
         "CMAKE_SKIP_INSTALL_RPATH:BOOL":"NO",
         "CMAKE_SKIP_RPATH:BOOL":"NO",
@@ -158,7 +165,7 @@ class CMakeBuilder(BaseBuilder):
   ###############################################
   @property 
   def install_prefix(self):
-    return path.prefix() if (self._install_prefix==None) else self._install_prefix
+    return path.subspace_dir() if (self._install_prefix==None) else self._install_prefix
   ###########################################
   def requires(self,deplist):
     self._deps += deplist
@@ -194,6 +201,7 @@ class CMakeBuilder(BaseBuilder):
       pathtools.mkdir(blddir,clean=False)
       pathtools.chdir(wrkdir)
       cmake_ctx = cmake.context(root=srcdir,
+                                xcode = self._use_xcode,
                                 env=self._cmakeenv,
                                 osenv=self._osenv,
                                 builddir=blddir,
@@ -209,10 +217,26 @@ class CMakeBuilder(BaseBuilder):
       ok2build = cmake_ctx.exec()==0
 
     if ok2build:
-      OK = (make.exec(parallelism=self._parallelism)==0)
-      if OK and self._onPostBuild!=None:
-        self._onPostBuild()
-      return OK
+      if self._use_xcode:
+        list_schemes = False
+        if list_schemes:
+          cmdlist = ["xcodebuild", "-project",
+                     blddir/self._ios_xcprojname,
+                     "-list"]
+          OK = (run(cmdlist,do_log=True)==0)
+          assert(False)
+        else:
+          cmdlist = ["xcodebuild", "-project",
+                     blddir/self._ios_xcprojname,
+                     "-scheme",  self._ios_xcshemname,
+                     "-configuration", "Release",
+                     "-sdk","iphoneos"]
+          OK = (run(cmdlist,do_log=True)==0)
+      else:
+        OK = (make.exec(parallelism=self._parallelism)==0)
+        if OK and self._onPostBuild!=None:
+          self._onPostBuild()
+        return OK
     return False
   ###########################################
   def install(self,blddir):

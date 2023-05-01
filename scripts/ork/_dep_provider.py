@@ -64,6 +64,9 @@ class Provider(object):
       return allowed
     ###########################
     def declareDep(self, named):
+      subspace = os.environ["OBT_SUBSPACE"]
+      if named == "cmake" and subspace!="host":
+        return
       inst = _dep_x.instance(named)
       #print(named,type(inst))
       self._required_deps[named] = inst

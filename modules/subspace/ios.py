@@ -1,4 +1,4 @@
-from ork import dep, path, command, docker, wget, pathtools, host, xcode
+from ork import dep, path, command, docker, wget, pathtools, host, xcode, git
 from ork.deco import Deco
 import ork.module
 import time, re, socket, os, sys, tempfile
@@ -17,6 +17,10 @@ class subspaceinfo:
       self._name = "ios"
       self._prefix = path.subspace_root()/"ios"
       self._manifests_path = self._prefix/"manifests"
+      self._include_path = self._prefix/"include"
+      self._lib_path = self._prefix/"lib"
+      self._share_path = self._prefix/"share"
+      self._builds_path = self._prefix/"builds"
 
     ###############################################
     # build the docker image
@@ -28,7 +32,14 @@ class subspaceinfo:
       print( deco.yellow("IOS SDK: %s" % str(IOS_SDK_DIR) ) )
       print( deco.yellow("manifest dir: %s" % self._manifests_path ) )
       self._manifests_path.mkdir(parents=True,exist_ok=True)
-        
+      self._include_path.mkdir(parents=True,exist_ok=True)
+      self._lib_path.mkdir(parents=True,exist_ok=True)
+      self._share_path.mkdir(parents=True,exist_ok=True)
+      self._builds_path.mkdir(parents=True,exist_ok=True)
+      git.Clone( "https://github.com/leetal/ios-cmake",
+                 self._builds_path/"ios-cmake",
+                  rev="4.3.0")
+      
     ###############################################
     def shell(self,working_dir=None,container=None):
       import ork._envutils 
@@ -51,6 +62,7 @@ class subspaceinfo:
         "OBT_PYTHON_SUBSPACE_BUILD_DIR": self._prefix/"builds",
         "OBT_SUBSPACE_LIB_DIR": self._prefix/"lib",
         "OBT_SUBSPACE_DIR": self._prefix,
+        "CMAKE_TOOLCHAIN_FILE": self._builds_path/"ios-cmake"/"ios.toolchain.cmake",
         #"OBT_SUBSPACE_BIN_DIR": self._prefix/"bin",
       }
 

@@ -38,14 +38,14 @@ class context:
 
     if builddir!=None:
       self._sourcedir = builddir/".."
-    if sourcedir!=None:
-      self._sourcedir = sourcedir
+    if root!="":
+      self._sourcedir = root
 
   ###############################################
 
   @property 
   def install_prefix(self):
-    return path.prefix() if (self._install_prefix==None) else self._install_prefix
+    return path.subspace_dir() if (self._install_prefix==None) else self._install_prefix
 
   ###############################################
 
@@ -68,6 +68,9 @@ class context:
 
     cmdlist += ["-DCMAKE_INSTALL_PREFIX=%s"%self.install_prefix]
     cmdlist += ["-DCMAKE_MODULE_PATH=%s"%(self.install_prefix/"lib"/"cmake")]
+
+    if "CMAKE_TOOLCHAIN_FILE" in os.environ:
+      cmdlist += ["-DCMAKE_TOOLCHAIN_FILE=%s"%os.environ["CMAKE_TOOLCHAIN_FILE"]]
 
     proc_env = dict()
 
