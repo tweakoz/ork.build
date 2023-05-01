@@ -20,7 +20,6 @@ class simavr(dep.Provider):
 
   def __init__(self): ############################################
     super().__init__("simavr")
-    self.source_root = path.builds()/"simavr"
     self._archlist = ["x86_64"]
 
   def provide(self): ##########################################################

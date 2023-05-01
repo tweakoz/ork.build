@@ -49,7 +49,6 @@ class Provider(object):
       self._required_deps = {}
       self._topoindex = -1
       self._debug = False
-      self._must_build_in_tree = False
       self._overrideSourceRoot = None
       if name not in root_dep_list:
         self.declareDep("root")
@@ -107,10 +106,6 @@ class Provider(object):
     @property 
     def source_root(self):
       return path.builds()/self._name
-    #############################
-    def mustBuildInTree(self):
-      self.build_dest = self.build_src
-      self._must_build_in_tree = True
     #########################################
     def areRequiredSourceFilesPresent(self):
       return None

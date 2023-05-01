@@ -9,7 +9,8 @@ class drawtext(dep.StdProvider):
   def __init__(self):
     super().__init__(drawtext.name)
     self._archlist = ["x86_64"]
-    self.mustBuildInTree()
+    #self.mustBuildInTree()
+    self.enabled = False
     self._builder = self.createBuilder(dep.AutoConfBuilder)
 
   ########################################################################

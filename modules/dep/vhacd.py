@@ -14,9 +14,10 @@ class vhacd(dep.StdProvider):
   name = "vhacd"
   def __init__(self):
     super().__init__(vhacd.name)
+    self.enabled = False
     self.declareDep("cmake")
     self._builder = self.createBuilder(dep.CMakeBuilder)
-    self.build_src = self.build_src/"app"
+    #self.build_src = self.build_src/"app"
   ########################################################################
   @property
   def _fetcher(self):

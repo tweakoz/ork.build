@@ -31,8 +31,9 @@ class ue5_cesium(dep.StdProvider):
     self._builder._cmakeenv["CMAKE_POSITION_INDEPENDENT_CODE"]="ON"
     self._builder._cmakeenv["CMAKE_BUILD_TYPE"]="Debug"
 
-    self.build_dest = self.source_root/"extern"/"build"
-    self.build_working_dir = self.source_root/"extern"
+    #self.build_dest = self.source_root/"extern"/"build"
+    #self.build_working_dir = self.source_root/"extern"
+    self.enabled = False
 
     #####################################
     # install triangle
