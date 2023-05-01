@@ -34,7 +34,7 @@ class openblas(dep.StdProvider):
   @property
   def _fetcher(self):
     return dep.GithubFetcher(name=openblas.NAME,
-                             repospec="xianyi/OpenBLAS",
+                             repospec="tweakoz/OpenBLAS",
                              revision=openblas.VERSION,
                              recursive=True)
   ########################################################################
