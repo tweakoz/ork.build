@@ -114,6 +114,7 @@ class CMakeBuilder(BaseBuilder):
     self._minimal = False 
     self._install_prefix = install_prefix
     self._use_xcode = False
+    self._list_xcode_schemes = False
     ##################################
     # ensure environment cmake present
     ##################################
@@ -218,8 +219,7 @@ class CMakeBuilder(BaseBuilder):
 
     if ok2build:
       if self._use_xcode:
-        list_schemes = False
-        if list_schemes:
+        if self._list_xcode_schemes:
           cmdlist = ["xcodebuild", "-project",
                      blddir/self._ios_xcprojname,
                      "-list"]

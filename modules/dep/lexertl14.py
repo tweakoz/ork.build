@@ -17,9 +17,10 @@ class lexertl14(dep.StdProvider):
     self.declareDep("cmake")
     self.setAllowedSubspaces(["host","ios"])
     self._builder = self.createBuilder(dep.CMakeBuilder)
-    self._builder._ios_xcprojname = "lexertl.xcodeproj"
-    self._builder._ios_xcshemname = "install"
-    self._builder.use_xcode = False
+    #self._builder._ios_xcprojname = "lexertl.xcodeproj"
+    #self._builder._ios_xcshemname = "install"
+    #self._builder._use_xcode = False
+    #self._builder._list_xcode_schemes = False
   ########################################################################
   @property
   def _fetcher(self):
