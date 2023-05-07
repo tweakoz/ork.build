@@ -30,8 +30,11 @@ class subspaceinfo:
         command.run(cmd_list,do_log=True)
       dep.require("_nnsvs")
       pathtools.chdir(path.builds()/"_nnsvs")
-      cmd_list = [self.venv_dir/"bin"/"pip3","install","."]
-      command.run(cmd_list,do_log=True)
+      def pip_install(package):
+        cmd_list = [self.venv_dir/"bin"/"pip3","install",package]
+        command.run(cmd_list,do_log=True)
+      pip_install(".")
+      pip_install("git+https://github.com/tweakoz/pysinsy.git@master#egg=pysinsy")
     ###############################################
     # launch NNSVS namespace
     #  print out connection info
@@ -71,8 +74,10 @@ class subspaceinfo:
         "OBT_PYTHONHOME": PYTHON_HOME,
         "OBT_PYPKG": SITE_PKG,
         "CONDA_PREFIX": self.venv_dir,
-        "OBT_SUBSPACE": "conda" if (container==None) else container,
-        "OBT_SUBSPACE_PROMPT": self._gen_sysprompt(container=container)
+        "OBT_SUBSPACE": "nnsvs" if (container==None) else container,
+        "OBT_SUBSPACE_PROMPT": self._gen_sysprompt(container=container),
+        "NNSVS_ROOT": path.builds()/"_nnsvs",
+        "NNSVS_SCRIPTS": path.modules()/"subspace"/"nnsvs",
       }        
       return the_environ
     ###############################################
