@@ -23,6 +23,7 @@ def descriptor():
     osd.id = INFO.id
     osd.version_id = INFO.version_id
     osd.version_codename = INFO.version_codename
+    print("AAAA")
     return osd
   except ModuleNotFoundError:
     try:
@@ -32,6 +33,7 @@ def descriptor():
       osd.id = INFO["ID"]
       osd.version_id = INFO["RELEASE"]
       osd.version_codename = INFO["CODENAME"]
+      print("BBBB")
       return osd
     except ModuleNotFoundError:
       print("python module 'lsb_release' or 'os_release' is not installed")

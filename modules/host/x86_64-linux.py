@@ -17,6 +17,7 @@ class hostinfo:
     self.distribution = descriptor.id
     self.revision = descriptor.version_id
     self.codename = descriptor.version_codename
+    self.id = "x86_64"
     ###################################
     x86_64_linux = target.descriptor('x86_64','linux')
     aarch64_android = target.descriptor('aarch64','android')
