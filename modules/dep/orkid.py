@@ -128,7 +128,7 @@ class orkid(dep.StdProvider):
     deplist += ["portaudio"]
     deplist += ["sigslot"]
     deplist += ["openblas"]
-    deplist += ["libsurvive"]
+    #deplist += ["libsurvive"]
 
     if host.IsX86_64:
       deplist += ["ispctexc"]
