@@ -139,7 +139,7 @@ class orkid(dep.StdProvider):
     
     if host.IsLinux:
       deplist += ["igl"]
-      deplist += ["vulkan"]
+      #deplist += ["vulkan"]
       deplist += ["rtmidi"]
       if host.IsX86_64:
         deplist += ["openvr"]
