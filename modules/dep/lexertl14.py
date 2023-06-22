@@ -21,7 +21,7 @@ class lexertl14(dep.StdProvider):
   def _fetcher(self):
     return dep.GithubFetcher(name=lexertl14.name,
                              repospec="tweakoz/lexertl14",
-                             revision="e9fd6c95b530f3a3840c65e74e79627732cfd4a7",
+                             revision="e7632c128f07eebc3dc8e402101cf124eb734dfe",
                              recursive=False)
 
   #######################################################################
