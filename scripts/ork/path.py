@@ -6,7 +6,7 @@
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
 
-import os, inspect, sys, pathlib, tempfile
+import os, inspect, sys, pathlib
 from pathlib import Path as _Path_, PosixPath as _PosixPath_, WindowsPath  as _WindowsPath_
 import ork.command
 from ork import buildtrace
