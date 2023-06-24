@@ -11,5 +11,5 @@ word = sys.argv[-2]
 for key in depnodes:
     if key.startswith(word):
         val = depnodes[key]
-        if hasattr(val.instance,"on_build_shell"):
+        if hasattr(val.instance,"on_build_shell") and val.instance.supports_host:
             print(key)
