@@ -318,10 +318,18 @@ class EnvSetup:
       for json_item in json_array:
         BASHRC += "source %s\n" % json_item
 
+    ################################################
+
     obt_completions_inp = ork.path.root()/"scripts"/"ork"/"_obt_dep_completions.py"
     for item in ["obt.dep.build.py","obt.dep.info.py","obt.dep.status.py"]:
       completions_line = "complete -C %s %s\n" % (str(obt_completions_inp),item)
       BASHRC += completions_line
+
+    ################################################
+
+    obt_completions_shell_inp = ork.path.root()/"scripts"/"ork"/"_obt_dep_completions_shell.py"
+    completions_line = "complete -C %s obt.dep.shell.py\n" % (str(obt_completions_shell_inp))
+    BASHRC += completions_line
 
     ################################################
 
