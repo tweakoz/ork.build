@@ -3,7 +3,7 @@ import ork.host
 import ork.path
 import ork.deco
 import ork.command
-import os, sys, re
+import os, sys, re, json
 
 deco = ork.deco.Deco()
 
@@ -221,6 +221,8 @@ class EnvSetup:
     self.log(deco.bright("Generating bashrc override_sysprompt<%s>"%override_sysprompt))
     bdeco = ork.deco.Deco(bash=True)
 
+    HOMEDIR = ork.path.Path(os.environ["HOME"])
+
     BASHRC = ""
 
     ################################################
@@ -303,6 +305,20 @@ class EnvSetup:
         v = dirs[k]
         BASHRC += "obt.goto.%s() { cd %s; };" % (k,v)
         BASHRC += "obt.push.%s() { pushd %s; };" % (k,v)
+
+    ################################################
+    # add completions.json from ~/.obt-global/completions.json
+    ################################################
+  
+    OBT_GLOBAL = HOMEDIR/".obt-global"
+
+    if (OBT_GLOBAL/"completions.json").exists():
+      json_array = json.load(open(str(OBT_GLOBAL/"completions.json")))
+      print(json_array)
+      for json_item in json_array:
+        BASHRC += "source %s\n" % json_item
+
+    ################################################
 
     if out_path!=None:
       f = open(str(out_path), 'w')
