@@ -1,7 +1,7 @@
 from ork import dep, path, command, docker, wget, pathtools, pip, _envutils
 from ork.deco import Deco
 import ork.module
-import time, re, socket, os, sys, tempfile
+import time, re, socket, os, sys
 from pathlib import Path
 deco = ork.deco.Deco()
 
@@ -101,6 +101,7 @@ class subspaceinfo:
 
       environ = self._gen_environment(container)
 
+      import tempfile
       with tempfile.NamedTemporaryFile(dir=path.temp(),mode="w",delete=False) as tempf:
         fname = tempf.name
         tempf.write(BASHRC)

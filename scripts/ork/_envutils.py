@@ -333,6 +333,13 @@ class EnvSetup:
 
     ################################################
 
+    obt_completions_inp = ork.path.root()/"scripts"/"ork"/"_obt_subspace_completions.py"
+    for item in ["obt.subspace.build.py","obt.subspace.launch.py"]:
+      completions_line = "complete -C %s %s\n" % (str(obt_completions_inp),item)
+      BASHRC += completions_line
+
+    ################################################
+
     if out_path!=None:
       f = open(str(out_path), 'w')
       f.write(BASHRC)
