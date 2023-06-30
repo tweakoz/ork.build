@@ -32,4 +32,4 @@ if args["create"]:
 
 elif args["enter"]:
   #lxdir.chdir()
-  run("bash")
+  run(["bash"])
