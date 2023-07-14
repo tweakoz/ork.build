@@ -1,26 +1,28 @@
 # ORK.BUILD TOOLS (OBT)  
 
-### [BuildStatus](https://www.orkid-engine.dev:4431)
+## [BuildStatus](https://www.orkid-engine.dev:4431)
 
 * Ubuntu 22.04 [![CISTATUS](https://www.orkid-engine.dev:4431/orkdotbuild-ix-ub2204/develop/status.svg)](https://www.orkid-engine.dev:4431)
 * Ubuntu 20.04 [![CISTATUS](https://www.orkid-engine.dev:4431/orkdotbuild-ix-ub2004/develop/status.svg)](https://www.orkid-engine.dev:4431)
 
-### DESCRIPTION  
+---------------------------------------------------------------
 
-**ork.build** is a posix (Linux,OSX) *container based* build environment which provides shared functionality for common build automation tasks. **ork.build** also has a set of dependency providers for useful libraries. Unlike homebrew and apt the dependency provider interface is consistent regardless if you are on OSX or Linux - in general the entire interface is consistent on both OSX and Linux. ork.build is implemented primarily in python3. If you need to compose a set of build products with a unified set of versions and configuration data, then ork.build might be for you. It is also important to realize that ork.build is not a replacement for docker style containers. ork.build is specifically a build container environment, as opposed to a machine or microservice container environment. For example, one might use ork.build to prep content for use in a docker container. 
+## DESCRIPTION  
+
+**ork.build** is a posix (Linux,OSX) *container based* build environment which provides shared functionality for common build automation tasks. **ork.build** also has a set of dependency providers for useful libraries. Unlike homebrew and apt the dependency provider interface is consistent regardless if you are on OSX or Linux - in general the entire interface is consistent on both OSX and Linux. ork.build is implemented primarily in python3. If you need to compose a set of build products with a unified set of versions and configuration data, then ork.build might be for you. It is also important to realize that ork.build is not a replacement for docker style containers. ork.build is specifically a build container environment, as opposed to a machine or microservice container environment. For example, one might use ork.build to prep content for use in a docker container.
 
 ---------------------------------------------------------------
 
-### HISTORY
+## HISTORY
 
 **ork.build** historically derives from orkid's old build system, [micro_ork's build system](https://github.com/tweakoz/micro_ork/tree/master/ork.build) in conjunction with concepts from orkid's ['tozkit'](https://github.com/tweakoz/orkid/tree/osl/tozkit) dependency provider system, [homebrew](https://brew.sh/), [apt](https://wiki.debian.org/Apt), and other build systems and package managers I have worked with over the years.
 
-
 ---------------------------------------------------------------
-### DEFINITIONS  
+
+## DEFINITIONS  
 
 * Staging Folder - The container which consists of a top level folder in which all build products go and a set of environment variables
-* Module - a python script in OBT or OBT_SEARCH_PATH that describes and implements a subspace, dependency, target and SDK
+* Module - a python script in OBT or OBT_SEARCH_PATH that describes and implements a subspace, dependency, target and SDK. There are *dep*, *docker*, and *subspace* modules - each providing a different subset of functionality.
 * Subspace - a subdivision of a staging folder containing build products for a specific target, or products for a foreign environment such as conda.
 * Dependency - a recipe for building a package into a subspace, for a target, using an SDK.
 * Host - the OS instance that is executing OBT in a shell.
@@ -28,7 +30,8 @@
 * SDK - recipes for how to build products for a given target
 
 ---------------------------------------------------------------
-### SUPPORTED HOSTS
+
+## SUPPORTED HOSTS
 
 * Linux x86-64 (tested with ubuntu 20.04 and 22.04)
 * Linux arm64 (tested with ubuntu 18.04 and 20.04)
@@ -37,103 +40,111 @@
 
 ---------------------------------------------------------------
 
-### USAGE (to system python - without cloning)
+## USAGE (to system python - without cloning)
 
- * Install system scoped dependencies (requires sudo)
- * OBT will want to assume several packages are present for baseline operation
- * Some dependencies are outside the scope of python, hence we are not using pip.
+* Install system scoped dependencies (requires sudo)
+* OBT will want to assume several packages are present for baseline operation
+* Some dependencies are outside the scope of python, hence we are not using pip.
 
-**On Ubuntu-x86_64 (20.04,22.04) SUDO REQUIRED !!!**
+### On Ubuntu-x86_64 (20.04,22.04) - sudo **REQUIRED**
+
 * Review the script that will be executed if you would like to know what it is doing (especially since sudo is involved)
-* https://github.com/tweakoz/ork.build/blob/develop/bin/obt.ix.installdeps.ubuntu_x86_64.py
+* Visit <https://github.com/tweakoz/ork.build/blob/develop/bin/obt.ix.installdeps.ubuntu_x86_64.py>
 
-```
+```bash
 curl -O https://raw.githubusercontent.com/tweakoz/ork.build/develop/bin/obt.ix.installdeps.ubuntu_x86_64.py && python3 obt.ix.installdeps.ubuntu_x86_64.py
 ```
 
-**On MacOs (Ventura - x86 or arm) sudo NOT required**
+### On MacOs (Ventura - x86 or arm) - sudo **NOT required**
+
 * Install and/or update HomeBrew (https://brew.sh/)
 * Install latest Xcode (Via AppStore)
-* View the OBT system install file if you would like to know what it is doing 
-* https://github.com/tweakoz/ork.build/blob/develop/bin/obt.osx.installdeps.py
+* View the OBT system install file if you would like to know what it is doing
+* Visit <https://github.com/tweakoz/ork.build/blob/develop/bin/obt.osx.installdeps.py>
 
-```
+```bash
 curl -O https://raw.githubusercontent.com/tweakoz/ork.build/develop/bin/obt.osx.installdeps.py && python3 obt.osx.installdeps.py
 ```
 
-**Common**
- * Install OBT
+### Common
 
-```
+* Install OBT
+
+```bash
 pip3 install obt
 ```
 
 ---------------------------------------------------------------
 
+## USAGE (from git, will still require system deps from above..)
 
-### USAGE (from git, will still require system deps from above..) 
+### Clone it
 
-**Clone it**
-```
+```bash
 git clone https://github.com/tweakoz/ork.build 
 ```
 
-**Install system scoped dependencies**
+### Install system scoped dependencies
 
-```./ork.build/bin/obt.ix.installdeps.ubuntu22.py``` # On Ubuntu 19.04/20.04
+On Ubuntu 19.04/20.04
+
+```bash
+./ork.build/bin/obt.ix.installdeps.ubuntu22.py
+``` 
 
 Ubuntu may require a few deps to be installed first, like wget, for example..
 
-or
+or On MacOs (only MacOs Catalina Intel tested, atm...)
 
-```./ork.build/bin/obt.osx.installdeps.py``` # On MacOs (only MacOs Catalina Intel tested, atm...)
+```bash
+./ork.build/bin/obt.osx.installdeps.py
+```
 
 MacOs will require a few deps to be installed first, such as homebrew and macos commandline build tools.
 
-**To create an environment:**
+### To create an environment
 
-```
+```bash
 ork.build/bin/create_env.py --stagedir <staging_folder>
 ```
 
 Note that creating a staging environment will build a few core dependencies, such as python and a python virtual environment.
 
-**to launch an environment container:**
-*(the container remembers and references the original ork.build folder)*
+### to launch an environment container *(the container remembers and references the original ork.build folder)*
 
-```
+```bash
 <staging_folder>/.launch_env
 ```
 
 Launching an environment container will push the launching shell onto the shell process stack, and invoke the modified shell on the next stack level.
 
-**to exit an environment container:**
+### to exit an environment container
+
 just exit the shell and you will return to the environment's untouched parent shell.
 
-**to get list of obt commands:** (from bash shell)
+### to get list of obt commands: (from bash shell)
 
 we use bash's command line completion and ork.build's convention of prefixing all public commands with *obt*
 
-```
+```bash
 obt.<tab tab>
 ```
 
-**which returns:** (example)
+### which returns: (example)
 
-```
+```bash
 obt.dep.list.py obt.dep.require.py obt.find.py
 ```
 
-**to get list of obt dependency providers:**
+### to get list of obt dependency providers
 
-```
+```bash
 obt.dep.list.py
 ```
 
-**which returns:** (example)
+which returns something like the following
 
-
-```
+```text
      apitrace : ApiTrace (github-master)
    arachnepnr : arachnepnr (git-c40fb2289952f4f120cc10a5a4c82a6fb88442dc)
 arm64_binutils : Arm64 BinUtils (source)
@@ -250,17 +261,17 @@ rv32_binutils : <rv32_binutils.rv32_binutils object at 0x7fac5c7578c0>
           zmq : zeromq and bindings (github-v4.3.4)
 ```
 
-**to install a dependency (into the container)** 
+### to install a dependency (into the container)
 
 eg. boost
 
-```
+```bash
 obt.dep.build.py boost
 ```
 
 you can force a dep wipe and rebuild like this:
 
-```
+```bash
 obt.dep.build.py boost --force --wipe
 ```
 
@@ -268,17 +279,19 @@ or an incremntal build (on supported deps).
 
 Incremental dep builds are useful when you are modifying the source of dep - typically for fixing bugs or build issues.
 
-```
+```bash
 obt.dep.build.py boost --incremental
 ```
 
-**To check the status of a given dep like this**
+### To check the status of a given dep like this
 
-```obt.dep.status.py oiio``` 
-
-which would return something like 
-
+```bash
+obt.dep.status.py oiio
 ```
+
+which would return something like
+
+```text
 oiio (git-release)
 ############################################################################################################################
 Dependency(RevTopoOrder)   Supported      Manifest    SrcPresent    BinPresent                                    SourceRoot
@@ -295,34 +308,41 @@ Dependency(RevTopoOrder)   Supported      Manifest    SrcPresent    BinPresent  
 9. python                       True          True          True          True                          ${OBT_BUILDS}/python
 ```
 
+### To list available subspaces
 
-**To list available subspaces**
-
-```obt.subspace.list.py``` 
+```bash
+obt.subspace.list.py
+```
 
 which should return something like..
 
-```
+```text
       host.py : {'name': 'host'}
      conda.py : {'name': 'conda'}
 ```
 
-**To build a subspace**
+### To build a subspace
 
-```obt.subspace.build.py conda``` 
-
-**To launch a subspace child shell**
-
-```obt.subspace.launch.py conda``` 
-
-**Python: To invoke a conda command in subprocess (without polluting parent process)**
-
+```bash
+obt.subspace.build.py conda
 ```
+
+### To launch a subspace child shell
+
+```bash
+obt.subspace.launch.py conda
+```
+
+### Python: To invoke a conda command in subprocess (without polluting parent process)
+
+```python
 from ork import subspace
 subspace.descriptor("conda").command(["list"])
 ```
-returns.. 
-```
+
+returns..
+
+```text
 Running Command [conda, list] In Conda Subspace
 #
 # Name                    Version                   Build  Channel
@@ -333,13 +353,15 @@ alabaster                 0.7.12             pyhd3eb1b0_0
 <snipped>
 ```
 
-**To list available docker modules**
+### To list available docker modules
 
-```obt.docker.list.py``` 
+```bash
+obt.docker.list.py
+```
 
 which should return something like..
 
-```
+```text
      sagemath : {'container_name': 'obt-sagemath', 'image_name': 'obt/sagemath-jupyter', 'version': '9.6'}
    androiddev : {'image_name': 'obt-androiddev:latest'}
      ub-focal : {'image_name': 'obt-focal:latest'}
@@ -347,13 +369,14 @@ which should return something like..
        ps1dev : {'image_name': 'obt-ps1dev:latest'}
 ```
 
-**To launch a docker module**
+### To launch a docker module
 
-```obt.docker.build.py ps1dev``` 
+```bash
+obt.docker.build.py ps1dev
+```
 
-If you have problems building modules, try doing a ```docker system prune --all```
+If you have problems building modules, try doing a:
 
-**To launch a docker module**
-
-```obt.docker.launch.py ps1dev``` 
-
+```bash
+docker system prune --all
+```
