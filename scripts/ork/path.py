@@ -10,6 +10,7 @@ import os, inspect, sys, pathlib
 from pathlib import Path as _Path_, PosixPath as _PosixPath_, WindowsPath  as _WindowsPath_
 import ork.command
 from ork import buildtrace
+import pkg_resources
 
 ###############################################################################
 
@@ -81,6 +82,9 @@ def subspace_dir():
   return Path(os.environ["OBT_SUBSPACE_DIR"])
 
 ###############################################################################
+
+def pip_pkg_path(filename):
+    return pkg_resources.resource_filename('ork.build.tools', filename)
 
 def modules(provider=None):
   if provider==None:

@@ -31,8 +31,6 @@ class DepNode:
       self.module_path = dep_path
       self.modules_base = (Path(dep_path)/".."/"..").resolve()
       self.scrname = ("%s.py"%dep_name)
-      #self.module_path = ork.path.deps()/self.scrname
-      #print(dep_name,self.module_path)
       self.module_spec = importlib.util.spec_from_file_location(self.name, str(self.module_path))
       self.module = importlib.util.module_from_spec(self.module_spec)
       self.module_spec.loader.exec_module(self.module)
