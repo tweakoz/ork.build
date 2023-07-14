@@ -28,8 +28,11 @@ class litex(dep.Provider):
       commands = [Command(["wget",uri])]
       commands += [Command(["chmod","ugo+x","litex_setup.py"])]
       commands += [Command(["./litex_setup.py","init","install","--user"])]
-      commands += [Command(["./litex_setup.py","gcc"])]
-      
+      commands += [Command(["echo", "building litex unfortunately requires sudo for now.."])]
+      commands += [Command(["sudo","./litex_setup.py","gcc"])]
+      commands += ["pip3","install","git+https://github.com/litex-hub/pythondata-software-picolibc.git"]
+      commands += ["pip3","install","meson"]
+
       for item in commands:
       	ret = item.exec()
       	if ret != 0:

@@ -9,6 +9,14 @@
 
 **ork.build** is a posix (Linux,OSX) *container based* build environment which provides shared functionality for common build automation tasks. **ork.build** also has a set of dependency providers for useful libraries. Unlike homebrew and apt the dependency provider interface is consistent regardless if you are on OSX or Linux - in general the entire interface is consistent on both OSX and Linux. ork.build is implemented primarily in python3. If you need to compose a set of build products with a unified set of versions and configuration data, then ork.build might be for you. It is also important to realize that ork.build is not a replacement for docker style containers. ork.build is specifically a build container environment, as opposed to a machine or microservice container environment. For example, one might use ork.build to prep content for use in a docker container. 
 
+---------------------------------------------------------------
+
+### HISTORY
+
+**ork.build** historically derives from orkid's old build system, [micro_ork's build system](https://github.com/tweakoz/micro_ork/tree/master/ork.build) in conjunction with concepts from orkid's ['tozkit'](https://github.com/tweakoz/orkid/tree/osl/tozkit) dependency provider system, [homebrew](https://brew.sh/), [apt](https://wiki.debian.org/Apt), and other build systems and package managers I have worked with over the years.
+
+
+---------------------------------------------------------------
 ### DEFINITIONS  
 
 * Staging Folder - The container which consists of a top level folder in which all build products go and a set of environment variables
@@ -19,6 +27,7 @@
 * Target - the OS that code is being generated for (via an SDK)
 * SDK - recipes for how to build products for a given target
 
+---------------------------------------------------------------
 ### SUPPORTED HOSTS
 
 * Linux x86-64 (tested with ubuntu 20.04 and 22.04)
@@ -26,7 +35,43 @@
 * MacOs x86-64 (tested with monterey and big sur)
 * MacOs arm64 (tested with monterey)
 
-### USAGE  
+---------------------------------------------------------------
+
+### USAGE (to system python - without cloning)
+
+ * Install system scoped dependencies (requires sudo)
+ * OBT will want to assume several packages are present for baseline operation
+ * Some dependencies are outside the scope of python, hence we are not using pip.
+
+**On Ubuntu-x86_64 (20.04,22.04) SUDO REQUIRED !!!**
+* Review the script that will be executed if you would like to know what it is doing (especially since sudo is involved)
+* https://github.com/tweakoz/ork.build/blob/develop/bin/obt.ix.installdeps.ubuntu_x86_64.py
+
+```
+curl -O https://raw.githubusercontent.com/tweakoz/ork.build/develop/bin/obt.ix.installdeps.ubuntu_x86_64.py && python3 obt.ix.installdeps.ubuntu_x86_64.py
+```
+
+**On MacOs (Ventura - x86 or arm) sudo NOT required**
+* Install and/or update HomeBrew (https://brew.sh/)
+* Install latest Xcode (Via AppStore)
+* View the OBT system install file if you would like to know what it is doing 
+* https://github.com/tweakoz/ork.build/blob/develop/bin/obt.osx.installdeps.py
+
+```
+curl -O https://raw.githubusercontent.com/tweakoz/ork.build/develop/bin/obt.osx.installdeps.py && python3 obt.osx.installdeps.py
+```
+
+**Common**
+ * Install OBT
+
+```
+pip3 install obt
+```
+
+---------------------------------------------------------------
+
+
+### USAGE (from git, will still require system deps from above..) 
 
 **Clone it**
 ```
@@ -35,7 +80,7 @@ git clone https://github.com/tweakoz/ork.build
 
 **Install system scoped dependencies**
 
-```./ork.build/bin/obt.ix.installdeps.ubuntu19.py``` # On Ubuntu 19.04/20.04
+```./ork.build/bin/obt.ix.installdeps.ubuntu22.py``` # On Ubuntu 19.04/20.04
 
 Ubuntu may require a few deps to be installed first, like wget, for example..
 
@@ -311,8 +356,4 @@ If you have problems building modules, try doing a ```docker system prune --all`
 **To launch a docker module**
 
 ```obt.docker.launch.py ps1dev``` 
-
-### HISTORY
-
-**ork.build** historically derives from orkid's old build system, [micro_ork's build system](https://github.com/tweakoz/micro_ork/tree/master/ork.build) in conjunction with concepts from orkid's ['tozkit'](https://github.com/tweakoz/orkid/tree/osl/tozkit) dependency provider system, [homebrew](https://brew.sh/), [apt](https://wiki.debian.org/Apt), and other build systems and package managers I have worked with over the years.
 

@@ -70,5 +70,5 @@ deplist += ["libdrm-dev","libaudiofile-dev","libsndfile1-dev"]
 
 merged = " ".join(deplist)
 os.system("sudo apt -y install %s" % merged)
+os.system( "sudo apt remove brltty") # messes up ttyUSB serial connections
 
-print( "WTFFFF")
