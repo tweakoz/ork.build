@@ -2,6 +2,10 @@ from setuptools import setup, find_packages
 import glob, os
 import platform
 
+assert("OBT_DEPLOY_TARGET" in os.environ)
+sel_platform = os.environ["OBT_DEPLOY_TARGET"]
+assert( sel_platform in ["linux","macos"])
+
 ###############################################################################
 
 with open("README.md", "r", encoding="utf-8") as fh:
@@ -26,7 +30,7 @@ def package_files_platform_specific(directory):
         for filename in files:
             if not (filename.endswith('.pyc') or '.egg-info' in root or '__pycache__' in root):
                 filepath = os.path.join(root, filename)
-                if platform.system() == 'Darwin':  # This means it's macOS
+                if sel_platform == 'macos':  # This means it's macOS
                     if "obt.ix" in filepath:
                         continue
                 else:  # For any other OS, we skip 'obt.osx'
@@ -41,9 +45,9 @@ def glob_platform_specific(directory):
     files = glob.glob(directory)
     outfiles = []
     for f in files:
-      if platform.system() == 'Linux':
+      if sel_platform == 'linux':
           sysmatch = 'obt.osx' not in f
-      if platform.system() == 'Darwin':
+      if sel_platform == 'macos':
           sysmatch = 'obt.ix' not in f
       if sysmatch:
         outfiles.append(f)
@@ -58,9 +62,12 @@ binpriv_files = package_files_platform_specific('bin_priv')
 
 ###############################################################################
 
+
+###############################################################################
+
 setup(
     name="ork.build.tools",
-    version="0.0.10",
+    version="0.0.12",
     packages=find_packages(exclude=["bin_priv", "build", "dist"]),
     package_dir={
         "": ".",
