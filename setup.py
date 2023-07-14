@@ -18,6 +18,8 @@ def package_files(directory):
                 data_files.append((os.path.join('ork.build.tools', root), [filepath]))
     return data_files
 
+###############################################################################
+
 def package_files_platform_specific(directory):
     data_files = []
     for root, dirs, files in os.walk(directory):
@@ -33,10 +35,19 @@ def package_files_platform_specific(directory):
                 data_files.append((os.path.join('ork.build.tools', root), [filepath]))
     return data_files
 
-def glob_platform_specific(path):
-    files = glob.glob(path)
-    return [f for f in files if (platform.system() == 'Darwin' and 'obt.ix' not in f) or 
-                                (platform.system() != 'Darwin' and 'obt.osx' not in f)]
+###############################################################################
+
+def glob_platform_specific(directory):
+    files = glob.glob(directory)
+    outfiles = []
+    for f in files:
+      if platform.system() == 'Linux':
+          sysmatch = 'obt.osx' not in f
+      if platform.system() == 'Darwin':
+          sysmatch = 'obt.ix' not in f
+      if sysmatch:
+        outfiles.append(f)
+    return outfiles
 
 ###############################################################################
 
@@ -45,9 +56,11 @@ example_files = package_files('examples')
 test_files = package_files('tests')
 binpriv_files = package_files_platform_specific('bin_priv')
 
+###############################################################################
+
 setup(
     name="ork.build.tools",
-    version="0.0.6",
+    version="0.0.10",
     packages=find_packages(exclude=["bin_priv", "build", "dist"]),
     package_dir={
         "": ".",
