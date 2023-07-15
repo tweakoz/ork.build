@@ -21,8 +21,8 @@ class WindowsPath(_WindowsPath_, Path) :
 
 class PosixPath(_PosixPath_, Path) :
   if "OBT_STAGE" in os.environ:
-    from obt import buildtrace
     def chdir(self):
+      from obt import buildtrace
       buildtrace.buildTrace({"op":"path.chdir(%s)"%str(self)})
       os.chdir(str(self))
   else:
