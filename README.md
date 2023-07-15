@@ -11,6 +11,7 @@
 
 **ork.build** is a posix (Linux,OSX) *container based* build environment which provides shared functionality for common cross-language build automation tasks. **ork.build** also has a set of dependency providers for useful libraries, docker containers, and "subspaces". Unlike homebrew and apt the dependency provider interface is consistent regardless if you are on OSX or Linux - in general the entire interface is consistent on both OSX and Linux. ork.build is implemented primarily in python3. If you need to compose a set of build products (implemented in many languages) with a known working set of versions and configuration data, then ork.build might be for you. It is also important to realize that ork.build is not a replacement for docker style containers. ork.build is specifically a build container environment, as opposed to a machine or microservice container environment. For example, one might use ork.build to prep content for use in a docker container.
 
+
 ---------------------------------------------------------------
 
 ## HISTORY
@@ -38,6 +39,16 @@
 * MacOs x86-64 (tested with monterey and big sur)
 * MacOs arm64 (tested with monterey)
 
+---------------------------------------------------------------
+
+## DEPENDENCIES
+
+### pip managed 
+ * yarl  (auto installed)
+ * toposort 
+
+###
+ * c/c+
 ---------------------------------------------------------------
 
 ## USAGE (to python --user - without cloning)
