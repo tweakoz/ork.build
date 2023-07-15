@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 import glob, os
 import platform
 
-version = "0.0.18"
+version = "0.0.21"
 
 ###############################################################################
 
@@ -54,4 +54,8 @@ setup(
         "Operating System :: OS Independent",
     ],
     python_requires='>=3.6',
-)
+    install_requires=[
+        'yarl',
+        'toposort',
+    ],
+    )

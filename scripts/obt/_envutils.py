@@ -160,14 +160,14 @@ class EnvSetup:
     #####################################
     # Late init
     #####################################
-    obt.env.set("PYTHONNOUSERSITE","TRUE")
-    obt.env.append("PYTHONPATH",self.SCRIPTS_DIR)
+    #obt.env.set("PYTHONNOUSERSITE","TRUE")
+    #obt.env.append("PYTHONPATH",self.SCRIPTS_DIR)
     obt.env.prepend("PKG_CONFIG",self.OBT_STAGE/"bin"/"pkg-config")
     #obt.env.prepend("PKG_CONFIG_PREFIX",self.OBT_STAGE)
     obt.env.prepend("PKG_CONFIG_PATH",self.OBT_STAGE/"lib"/"pkgconfig")
     obt.env.prepend("PKG_CONFIG_PATH",self.OBT_STAGE/"lib64"/"pkgconfig")
-    obt.env.append("PYTHONPATH",self.OBT_STAGE/"lib"/"python")
-    obt.env.append("LD_LIBRARY_PATH",self.OBT_STAGE/"python-3.9.13"/"lib")
+    #obt.env.append("PYTHONPATH",self.OBT_STAGE/"lib"/"python")
+    #obt.env.append("LD_LIBRARY_PATH",self.OBT_STAGE/"python-3.9.13"/"lib")
 
     if obt.path.running_from_pip():
       obt.env.prepend("PATH",obt.path.obt_data_base()/"bin_priv")
