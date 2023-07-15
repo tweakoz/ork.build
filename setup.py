@@ -42,9 +42,9 @@ setup(
     long_description=long_description,
     long_description_content_type='text/markdown',
     url="https://github.com/tweakoz/ork.build",
-    packages=find_packages(["scripts"]),
+    packages=find_packages(where="scripts"),
     package_dir={
-        "": ".",
+        "": "scripts",
     },
     data_files=data_files,
     scripts=binpub_files,
