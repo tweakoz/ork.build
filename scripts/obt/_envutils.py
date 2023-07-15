@@ -169,6 +169,9 @@ class EnvSetup:
     obt.env.append("PYTHONPATH",self.OBT_STAGE/"lib"/"python")
     obt.env.append("LD_LIBRARY_PATH",self.OBT_STAGE/"python-3.9.13"/"lib")
 
+    if obt.path.running_from_pip():
+      obt.env.prepend("PATH",obt.path.obt_data_base()/"bin_priv")
+
     
   ###########################################
 
@@ -332,20 +335,20 @@ class EnvSetup:
 
     ################################################
 
-    obt_completions_inp = obt.path.root()/"scripts"/"obt"/"_obt_dep_completions.py"
+    obt_completions_inp = obt.path.obt_bin_priv_base()/"_obt_dep_completions.py"
     for item in ["obt.dep.build.py","obt.dep.info.py","obt.dep.status.py"]:
       completions_line = "complete -C %s %s\n" % (str(obt_completions_inp),item)
       BASHRC += completions_line
 
     ################################################
 
-    obt_completions_shell_inp = obt.path.root()/"scripts"/"obt"/"_obt_dep_completions_shell.py"
+    obt_completions_shell_inp = obt.path.obt_bin_priv_base()/"_obt_dep_completions_shell.py"
     completions_line = "complete -C %s obt.dep.shell.py\n" % (str(obt_completions_shell_inp))
     BASHRC += completions_line
 
     ################################################
 
-    obt_completions_inp = obt.path.root()/"scripts"/"obt"/"_obt_subspace_completions.py"
+    obt_completions_inp = obt.path.obt_bin_priv_base()/"_obt_subspace_completions.py"
     for item in ["obt.subspace.build.py","obt.subspace.launch.py"]:
       completions_line = "complete -C %s %s\n" % (str(obt_completions_inp),item)
       BASHRC += completions_line

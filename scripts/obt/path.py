@@ -95,15 +95,18 @@ def pip_obt_data_path(filename):
 
 def obt_module_path():
    import obt 
-   return obt.__path__[0]
+   return Path(obt.__path__[0])
 
 def obt_modules_base():
   return obt_data_base()/"modules"
 
+def obt_bin_priv_base():
+  return obt_data_base()/"bin_priv"
+
 def running_from_pip():
   pip_exists = obt_data_base().exists()
   if pip_exists:
-     omp = obt_module_path()
+     omp = str(obt_module_path())
      import site
      if site.USER_BASE in omp:
        return True
