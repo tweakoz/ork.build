@@ -40,7 +40,13 @@
 
 ---------------------------------------------------------------
 
-## USAGE (to system python - without cloning)
+## USAGE (to python --user - without cloning)
+
+* Install OBT
+
+```bash
+pip3 install --user ork.build
+```
 
 * Install system scoped dependencies (requires sudo)
 * OBT will want to assume several packages are present for baseline operation
@@ -52,8 +58,8 @@
 * Visit <https://github.com/tweakoz/ork.build/blob/develop/bin/obt.ix.installdeps.ubuntu_x86_64.py>
 
 ```bash
-curl -O https://raw.githubusercontent.com/tweakoz/ork.build/develop/bin/obt.ix.installdeps.ubuntu_x86_64.py && python3 obt.ix.installdeps.ubuntu_x86_64.py
-```
+obt.ix.installdeps.ubuntu_x86_64.py # will ask for sudo
+``` 
 
 ### On MacOs (Ventura - x86 or arm) - sudo **NOT required**
 
@@ -63,16 +69,11 @@ curl -O https://raw.githubusercontent.com/tweakoz/ork.build/develop/bin/obt.ix.i
 * Visit <https://github.com/tweakoz/ork.build/blob/develop/bin/obt.osx.installdeps.py>
 
 ```bash
-curl -O https://raw.githubusercontent.com/tweakoz/ork.build/develop/bin/obt.osx.installdeps.py && python3 obt.osx.installdeps.py
+obt.osx.installdeps.py
 ```
 
 ### Common
 
-* Install OBT
-
-```bash
-pip3 install obt
-```
 
 ---------------------------------------------------------------
 
@@ -105,7 +106,7 @@ MacOs will require a few deps to be installed first, such as homebrew and macos 
 ### To create an environment
 
 ```bash
-ork.build/bin/create_env.py --stagedir <staging_folder>
+ork.build/bin/obt.create.env.py --stagedir <staging_folder>
 ```
 
 Note that creating a staging environment will build a few core dependencies, such as python and a python virtual environment.
