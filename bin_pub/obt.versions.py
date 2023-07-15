@@ -4,6 +4,7 @@ import os
 import sys
 import site
 import obt.path
+import importlib.metadata
 
 def print_env_var(name, default):
     value = os.getenv(name, default)
@@ -28,10 +29,16 @@ print_env_var('sys.base_prefix', sys.base_prefix)
 
 print( "######################################################")
 
+a = importlib.metadata.distribution("ork.build").metadata
+
 print( "obt-pymodule-path: %s" % obt.path.obt_module_path() )
 print( "obt-data-base: %s" % obt.path.obt_data_base() )
 print( "obt-modules-base: %s" % obt.path.obt_modules_base() )
 print( "running_from_pip: %s" % obt.path.running_from_pip() )
 print( "running_in_tree: %s" % obt.path.obt_in_tree() )
-print( "obt.distrib: " % pkg_resources.get_distribution("ork.build") )
-print( "obt.version: " % pkg_resources.get_distribution("ork.build").version )
+print( "obt.distrib.name: " % a["Name"] )
+print( "obt.distrib.version: " % a["Version"] )
+print( "obt.distrib.author: " % a["Author"] )
+print( "obt.distrib.author-email: " % a["Author-email"] )
+print( "obt.distrib.summary: " % a["Summary"] )
+print( "obt.distrib.homepage: " % a["Home-page"] )

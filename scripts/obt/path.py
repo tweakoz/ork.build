@@ -94,7 +94,6 @@ def obt_data_base():
     keep_going = True
     counter = 0
     while keep_going:
-        print(mpath)
         p1 = mpath/"modules"/"dep"
         p2 = mpath/"obt"/"modules"/"dep"
         if p1.exists():

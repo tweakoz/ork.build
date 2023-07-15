@@ -66,7 +66,7 @@ class nvtt(dep.StdProvider):
   def _fetcher(self):
     return dep.GithubFetcher(name=nvtt.name,
                              repospec="tweakoz/nvidia-texture-tools",
-                             revision="toz_obt.otbuild",
+                             revision="toz_orkbuild",
                              recursive=False)
 
   #######################################################################

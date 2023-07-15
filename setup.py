@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 import glob, os
 import platform
 
-version = "0.0.42"
+version = "0.0.43"
 
 ###############################################################################
 
@@ -56,7 +56,6 @@ setup(
     python_requires='>=3.6',
     install_requires=[
         'yarl',
-        'toposort',
-        "pkg_resources"
+        'toposort'
     ],
     )
