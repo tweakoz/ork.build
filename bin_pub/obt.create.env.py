@@ -7,8 +7,12 @@
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
 
-
 import os, sys, pathlib, argparse, multiprocessing, json
+
+import ork 
+print(dir(ork))
+print(ork.__path__)
+assert(False)
 
 as_main = (__name__ == '__main__')
 
