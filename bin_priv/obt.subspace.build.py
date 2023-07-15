@@ -9,10 +9,10 @@
 ###############################################################################
 
 import os, sys, pathlib, argparse, string
-import ork._globals
-import ork.subspace
-from ork import dep, path
-from ork.deco import Deco
+import obt._globals
+import obt.subspace
+from obt import dep, path
+from obt.deco import Deco
 deco = Deco()
 
 def print_item(key,val):
@@ -23,7 +23,7 @@ def print_item(key,val):
 
 ###############################################################################
 
-parser = argparse.ArgumentParser(description='ork.build subspace builder')
+parser = argparse.ArgumentParser(description='obt.build subspace builder')
 parser.add_argument('subspacemodulename', metavar='S', type=str, help='a subspace module to build')
 parser.add_argument('--force', action="store_true", help='force rebuild' )
 parser.add_argument('--wipe', action="store_true", help='wipe and rebuild' )
@@ -37,7 +37,7 @@ if len(sys.argv)==1:
 
 subspacemodulename = _args["subspacemodulename"]
 
-ork._globals.setOption("subspacemodulename",subspacemodulename)
+obt._globals.setOption("subspacemodulename",subspacemodulename)
 
 do_wipe = False
 for item in "force wipe".split(" "):
@@ -45,7 +45,7 @@ for item in "force wipe".split(" "):
 
 print(subspacemodulename)
 
-subspacemodule = ork.subspace.descriptor(subspacemodulename)
+subspacemodule = obt.subspace.descriptor(subspacemodulename)
 
 print(subspacemodule)
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from ork import path, command, subspace
+from obt import path, command, subspace
 import librosa, pysinsy, wavio, io
 import numpy as np
 from nnmnkwii.io import hts

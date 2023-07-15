@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 import glob, os
 import platform
 
-version = "0.0.15"
+version = "0.0.16"
 
 ###############################################################################
 
@@ -41,7 +41,7 @@ setup(
     description="Orkid Build Tools",
     long_description=long_description,
     long_description_content_type='text/markdown',
-    url="https://github.com/tweakoz/ork.build",
+    url="https://github.com/tweakoz/obt.build",
     packages=find_packages(where="scripts"),
     package_dir={
         "": "scripts",

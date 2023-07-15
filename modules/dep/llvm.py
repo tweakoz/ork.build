@@ -6,10 +6,10 @@
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
 
-from ork import dep, host, path
-from ork.command import Command
-from ork import log
-from ork.deco import Deco
+from obt import dep, host, path
+from obt.command import Command
+from obt import log
+from obt.deco import Deco
 deco = Deco()
 
 class _llvm_from_source(dep.StdProvider):

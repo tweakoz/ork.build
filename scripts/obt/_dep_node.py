@@ -12,7 +12,7 @@ import obt.path, obt.host
 from obt.command import Command, run
 from obt.deco import Deco
 from obt.wget import wget
-from ork import pathtools, cmake, make, path, git, host, _globals, log, buildtrace
+from obt import pathtools, cmake, make, path, git, host, _globals, log, buildtrace
 import obt._dep_provider
 import obt._dep_enumerate
 #import obt._dep_x

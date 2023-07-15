@@ -7,8 +7,8 @@
 ###############################################################################
 
 from string import Template
-import ork.deco
-deco = ork.deco.Deco()
+import obt.deco
+deco = obt.deco.Deco()
 
 ####################################################################
 

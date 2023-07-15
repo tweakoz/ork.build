@@ -8,11 +8,11 @@
 ###############################################################################
 
 import os, sys, string, argparse
-import ork.search
-import ork.path
-import ork.dep
-import ork.deco
-deco = ork.deco.Deco()
+import obt.search
+import obt.path
+import obt.dep
+import obt.deco
+deco = obt.deco.Deco()
 
 parser = argparse.ArgumentParser(description='build all box products')
 parser.add_argument('--dep', help='dep to search' )
@@ -72,9 +72,9 @@ class visitor:
 #################################################################################
 if _args["dep"]!=None:
   depname = _args["dep"]
-  path_list = [ork.path.builds()/depname]
+  path_list = [obt.path.builds()/depname]
   ########################
-  depnode = ork.dep.DepNode.FIND(depname)
+  depnode = obt.dep.DepNode.FIND(depname)
   depinst = depnode.instance
   ########################
   # allow dep module to override default search path
@@ -82,6 +82,6 @@ if _args["dep"]!=None:
   if hasattr(depinst,"find_paths"):
     path_list = depinst.find_paths()
   ########################
-  #ork.search.execute_at(words,path_list)
+  #obt.search.execute_at(words,path_list)
   #########################
-  ork.search.visit(find_text, visitor(find_text,replace_text),path_list=path_list)
+  obt.search.visit(find_text, visitor(find_text,replace_text),path_list=path_list)

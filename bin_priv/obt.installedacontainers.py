@@ -11,7 +11,7 @@
 ###############################################################################
 
 import argparse, sys
-from ork import dep, host, path, pathtools, git, command, deco, _dep_fetch
+from obt import dep, host, path, pathtools, git, command, deco, _dep_fetch
 
 deco = deco.Deco()
 

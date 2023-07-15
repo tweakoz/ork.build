@@ -6,10 +6,10 @@
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
 
-from ork import dep, host, path, env, log
-from ork.path import Path
-from ork.command import Command
-from ork.deco import Deco
+from obt import dep, host, path, env, log
+from obt.path import Path
+from obt.command import Command
+from obt.deco import Deco
 from yarl import URL
 deco = Deco()
 

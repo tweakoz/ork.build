@@ -8,8 +8,8 @@
 
 VERSION = "f700c7790aaa030e794b52ba7791a05c085faf0c"
 
-from ork import dep, host, path
-from ork.command import Command as cmd
+from obt import dep, host, path
+from obt.command import Command as cmd
 
 ###############################################################################
 

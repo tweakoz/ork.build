@@ -8,15 +8,15 @@
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
 
-import ork.host, ork.sdk
+import obt.host, obt.sdk
 
-from ork import dep, path
-from ork.deco import Deco
+from obt import dep, path
+from obt.deco import Deco
 deco = Deco()
 
 
-h = ork.host.description()
-host_sdk = ork.sdk.descriptor(h.architecture,h.os)
+h = obt.host.description()
+host_sdk = obt.sdk.descriptor(h.architecture,h.os)
 
 host_id = "%s.%s" % (h.architecture,h.os)
 

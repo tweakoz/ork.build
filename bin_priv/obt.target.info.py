@@ -9,9 +9,9 @@
 ###############################################################################
 
 import os, sys, pathlib, argparse, string
-import ork.target
+import obt.target
 
-parser = argparse.ArgumentParser(description='ork.build target information')
+parser = argparse.ArgumentParser(description='obt.build target information')
 parser.add_argument('target', metavar='T', type=str, help='a target you want information on')
 
 _args = vars(parser.parse_args())
@@ -25,12 +25,12 @@ targetid = _args["target"]
 target_arch = targetid.split('-')[0]
 target_os = targetid.split('-')[1]
 
-T = ork.target.descriptor(target_arch,target_os)
+T = obt.target.descriptor(target_arch,target_os)
 
 SDK = T.sdk  
 
-from ork import dep, path
-from ork.deco import Deco
+from obt import dep, path
+from obt.deco import Deco
 deco = Deco()
 
 target_id = "%s-%s" % (T.architecture,T.os)

@@ -9,12 +9,12 @@
 VERSION = "v5.2.1"
 
 import os, tarfile
-from ork import dep, host, path, git, pathtools, command, patch, env
-from ork.deco import Deco
-from ork.wget import wget
-from ork.command import Command
-import ork.host
-from ork import log
+from obt import dep, host, path, git, pathtools, command, patch, env
+from obt.deco import Deco
+from obt.wget import wget
+from obt.command import Command
+import obt.host
+from obt import log
 
 deco = Deco()
 
@@ -55,7 +55,7 @@ class lua(dep.Provider):
     patch_items = dict()
     patch_items["CC= clang-3.8"]="CC= g++"
     patch_items["CFLAGS= -Wall -O2 $(MYCFLAGS)"]="CFLAGS= -Wall -O2 $(MYCFLAGS) -fPIC"
-    if ork.host.IsLinux:
+    if obt.host.IsLinux:
         patch_items["MYLDFLAGS= $(LOCAL) -Wl,-E"]="MYLDFLAGS= $(LOCAL) -Wl,-E -fPIC"
     else:
         patch_items["MYLDFLAGS= $(LOCAL) -Wl,-E"]="MYLDFLAGS= $(LOCAL) -fPIC"
@@ -70,7 +70,7 @@ class lua(dep.Provider):
 
     cmd = ["make","-j",host.NumCores]
 
-    if ork.host.IsOsx:
+    if obt.host.IsOsx:
         cmd += ["MACOSX_DEPLOYMENT_TARGET=10.14"]
 
     self.ok = (0 == Command(cmd).exec())

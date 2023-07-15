@@ -1,4 +1,4 @@
-import ork.xcode 
+import obt.xcode 
 
 class sdkinfo:
   def __init__(self):
@@ -12,14 +12,14 @@ class sdkinfo:
   # env_init invoked once at container startup time
   #################################################
   def env_init(self):
-    _xcodesdkstr = ork.command.capture([
+    _xcodesdkstr = obt.command.capture([
       "xcodebuild",
       "-version",
       "-sdk","macosx"]).splitlines()
     for l in _xcodesdkstr:
       x = l.split(": ")
       if x[0]=="Path":
-        ork.env.append("OBT_MACOS_SDK_DIR",x[1])
+        obt.env.append("OBT_MACOS_SDK_DIR",x[1])
       if x[0]=="PlatformVersion":
-        ork.env.append("OBT_MACOS_PLATFORM_VERSION",x[1])
+        obt.env.append("OBT_MACOS_PLATFORM_VERSION",x[1])
 

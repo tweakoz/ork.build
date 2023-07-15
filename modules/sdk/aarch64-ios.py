@@ -1,7 +1,7 @@
-import ork.xcode 
-import ork.command 
-import ork.env
-import ork.path 
+import obt.xcode 
+import obt.command 
+import obt.env
+import obt.path 
 import os
 
 class sdkinfo:
@@ -9,7 +9,7 @@ class sdkinfo:
   # env_init invoked once at container startup time
   #################################################
   def env_init(self):
-    _xcodesdkstr = ork.command.capture([
+    _xcodesdkstr = obt.command.capture([
       "xcodebuild",
       "-version",
       "-sdk"])
@@ -18,21 +18,21 @@ class sdkinfo:
     print("has_iossdk15_2<%s>"%has_iossdk15_2)
     print("has_iossdk15_5<%s>"%has_iossdk15_5)
     if has_iossdk15_2:
-      _iossdkstr = ork.command.capture([
+      _iossdkstr = obt.command.capture([
         "xcodebuild",
         "-version",
         "-sdk", "iphoneos15.2",
         "Path"],do_log=False).splitlines()
-      ork.env.append("OBT_IOS_SDK","iphoneos15.2")
-      ork.env.append("OBT_IOS_SDK_DIR",_iossdkstr)
+      obt.env.append("OBT_IOS_SDK","iphoneos15.2")
+      obt.env.append("OBT_IOS_SDK_DIR",_iossdkstr)
     if has_iossdk15_5:
-      _iossdkstr = ork.command.capture([
+      _iossdkstr = obt.command.capture([
         "xcodebuild",
         "-version",
         "-sdk", "iphoneos15.5",
         "Path"],do_log=False).splitlines()
-      ork.env.append("OBT_IOS_SDK","iphoneos15.5")
-      ork.env.append("OBT_IOS_SDK_DIR",_iossdkstr)
+      obt.env.append("OBT_IOS_SDK","iphoneos15.5")
+      obt.env.append("OBT_IOS_SDK_DIR",_iossdkstr)
   #############################################
   def __init__(self):
     self.identifier = "aarch64-ios"
@@ -44,7 +44,7 @@ class sdkinfo:
   #############################################
   @property
   def sdkdir(self):
-    return ork.path.Path(os.environ["OBT_IOS_SDK_DIR"])
+    return obt.path.Path(os.environ["OBT_IOS_SDK_DIR"])
   #############################################
   def misc(self):
     return {

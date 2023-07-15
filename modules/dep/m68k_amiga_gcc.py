@@ -7,12 +7,12 @@
 ###############################################################################
 
 import os, tarfile, sys
-from ork import dep, host, path, git, cmake, make, env
-from ork.deco import Deco
-from ork.wget import wget
-import ork.command
-from ork.command import Command
-from ork import log
+from obt import dep, host, path, git, cmake, make, env
+from obt.deco import Deco
+from obt.wget import wget
+import obt.command
+from obt.command import Command
+from obt import log
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 

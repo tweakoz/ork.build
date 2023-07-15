@@ -7,7 +7,7 @@
 ###############################################################################
 
 import os, multiprocessing 
-from ork import target, osrelease
+from obt import target, osrelease
 
 class hostinfo:
   def __init__(self):

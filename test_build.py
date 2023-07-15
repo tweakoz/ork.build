@@ -3,7 +3,7 @@
 import os, argparse, subprocess
 from pathlib import Path
 
-parser = argparse.ArgumentParser(description='orkdotbuild test buildscript')
+parser = argparse.ArgumentParser(description='obt.otbuild test buildscript')
 parser.add_argument('--stage', metavar="stagedir", help='staging directory' )
 args = vars(parser.parse_args())
 assert(args["stage"]!=None)

@@ -6,8 +6,8 @@
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
 
-from ork import dep, host, path, pathtools
-from ork.command import Command
+from obt import dep, host, path, pathtools
+from obt.command import Command
 ###############################################################################
 
 class ispctexc(dep.StdProvider):

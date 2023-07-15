@@ -9,12 +9,12 @@
 import os, inspect, tarfile
 from pathlib import Path
 import importlib.util
-import ork.path, ork.host
-from ork.command import Command, run
-from ork.deco import Deco
-from ork.wget import wget
-from ork import pathtools, cmake, make, path, git, host, _globals, log
-from ork._dep_impl import require
+import obt.path, obt.host
+from obt.command import Command, run
+from obt.deco import Deco
+from obt.wget import wget
+from obt import pathtools, cmake, make, path, git, host, _globals, log
+from obt._dep_impl import require
 from collections.abc import Callable
 
 deco = Deco()
@@ -128,11 +128,11 @@ class CMakeBuilder(BaseBuilder):
     ##################################
     # default OSX stuff
     ##################################
-    if ork.host.IsOsx and macos_defaults:
+    if obt.host.IsOsx and macos_defaults:
       sysroot_cmd = Command(["xcrun","--show-sdk-path"],do_log=False)
       sysroot = sysroot_cmd.capture().replace("\n","")
 
-      if ork.host.IsAARCH64:
+      if obt.host.IsAARCH64:
         self._cmakeenv.update({"CMAKE_HOST_SYSTEM_PROCESSOR":"arm64"})
       else:
         self._cmakeenv.update({"CMAKE_HOST_SYSTEM_PROCESSOR":"x86_64"})
@@ -196,7 +196,7 @@ class CMakeBuilder(BaseBuilder):
                                 env=self._cmakeenv,
                                 osenv=self._osenv,
                                 builddir=blddir,
-                                workdir=wrkdir,
+                                working_dir=wrkdir,
                                 install_prefix=self.install_prefix)
       ok2build = cmake_ctx.exec()==0
     else:

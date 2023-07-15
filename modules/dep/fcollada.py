@@ -9,11 +9,11 @@
 VERSION ="master"
 
 import os, tarfile
-from ork import dep, host, path, git, cmake, make
-from ork.deco import Deco
-from ork.wget import wget
-from ork.command import Command
-from ork.cmake import context
+from obt import dep, host, path, git, cmake, make
+from obt.deco import Deco
+from obt.wget import wget
+from obt.command import Command
+from obt.cmake import context
 
 deco = Deco()
 
@@ -36,7 +36,7 @@ class fcollada(dep.Provider):
 
   def build(self): ##########################################################
 
-    git.Clone("https://github.com/tweakoz/ork.fcollada",self.source_root,VERSION)
+    git.Clone("https://github.com/tweakoz/obt.fcollada",self.source_root,VERSION)
 
     os.system("rm -rf %s"%self.build_dest)
     os.mkdir(self.build_dest)

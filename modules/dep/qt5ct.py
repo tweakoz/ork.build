@@ -5,8 +5,8 @@
 # The Orkid Build System is published under the GPL 2.0 license
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
-from ork import dep, host, git, command, path, env
-from ork.deco import Deco
+from obt import dep, host, git, command, path, env
+from obt.deco import Deco
 deco = Deco()
 
 class qt5ct(dep.StdProvider):

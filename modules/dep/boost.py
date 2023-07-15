@@ -10,10 +10,10 @@ VERSION = ["1","74","0"]
 HASH = "da07ca30dd1c0d1fdedbd487efee01bd"
 
 import os,tarfile
-from ork import path,host,dep, gen_pkgconfig, patch
-from ork.wget import wget
-from ork.deco import Deco
-from ork.command import Command
+from obt import path,host,dep, gen_pkgconfig, patch
+from obt.wget import wget
+from obt.deco import Deco
+from obt.command import Command
 from pathlib import Path
 from yarl import URL
 
@@ -202,7 +202,7 @@ class boost(dep.Provider):
   def _generate_pkgconfig(self):
     LIBS_PUBLIC = """
     prg_exec_monitor 
-    math_c99f unit_test_framework 
+    math_c99f unit_test_framework.
     container log_setup math_tr1l 
     graph wserialization log 
     math_c99f type_erasure signals 
@@ -221,7 +221,7 @@ class boost(dep.Provider):
     date_time math_c99l math_tr1l 
     context regex coroutine 
     log chrono wave 
-    iostreams chrono unit_test_framework 
+    iostreams chrono unit_test_framework.
     math_c99l
     """.replace("\n","")
 
@@ -254,7 +254,7 @@ class boost(dep.Provider):
 
     if self._target.os == "macos":
       print( "MACOS - fixing boost installnames")
-      from ork import macos
+      from obt import macos
       libs = [
         "filesystem",
         "system",

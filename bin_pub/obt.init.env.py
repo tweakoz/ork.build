@@ -16,7 +16,7 @@ Path = pathlib.Path
 
 curwd = Path(os.getcwd())
 
-parser = argparse.ArgumentParser(description='ork.build environment launcher')
+parser = argparse.ArgumentParser(description='obt.build environment launcher')
 parser.add_argument('--launch', metavar="launchdir", help='launch from pre-existing folder' )
 parser.add_argument('--prjdir', metavar="prjdir", help='override project directory' )
 parser.add_argument('--chdir', metavar="chdir", help='working directory of command' )
@@ -96,23 +96,23 @@ os.environ["OBT_SEARCH_EXTLIST"] = ".cpp:.c:.cc:.h:.hpp:.inl:.qml:.m:.mm:.py:.tx
 
 ###########################################
 
-import ork.deco
-import ork.env
-import ork.path
-import ork.host
-import ork.subspace
-import ork.sdk
-import ork._globals as _glob
-import ork.command
-import ork.subspace
+import obt.deco
+import obt.env
+import obt.path
+import obt.host
+import obt.subspace
+import obt.sdk
+import obt._globals as _glob
+import obt.command
+import obt.subspace
 
-deco = ork.deco.Deco()
+deco = obt.deco.Deco()
 bin_dir = root_dir/"bin"
 
 ##########################################
 
-import ork._envutils 
-envsetup = ork._envutils.EnvSetup(stagedir=OBT_STAGE,
+import obt._envutils 
+envsetup = obt._envutils.EnvSetup(stagedir=OBT_STAGE,
                                   rootdir=root_dir,
                                   projectdir=project_dir,
                                   bindir=bin_dir,
@@ -133,7 +133,7 @@ if args["compose"] != None:
 # later init...
 ###########################################
 
-import ork.dep
+import obt.dep
 
 ###########################################
 # per dep dynamic env init
@@ -141,11 +141,11 @@ import ork.dep
 
 def dynamicInit():
   ####################################
-  hostinfo = ork.host.description()
+  hostinfo = obt.host.description()
   if hasattr(hostinfo,"env_init"):
     hostinfo.env_init()
   ####################################
-  sdkitems = ork.sdk.enumerate()
+  sdkitems = obt.sdk.enumerate()
   #print(sdkitems)
   for sdk_module_key in sdkitems.keys():
     sdk_module_item = sdkitems[sdk_module_key]
@@ -156,12 +156,12 @@ def dynamicInit():
     if hasattr(sdkinfo,"env_init"):
       sdkinfo.env_init()
   ####################################
-  depitems = ork.dep.DepNode.FindWithMethod("env_init")
+  depitems = obt.dep.DepNode.FindWithMethod("env_init")
   for depitemk in depitems:
     depitem = depitems[depitemk]
     depitem.env_init()
   ####################################
-  subspaceitems = ork.subspace.findWithMethod("env_init")
+  subspaceitems = obt.subspace.findWithMethod("env_init")
   for subitemk in subspaceitems:
     subitem = subspaceitems[subitemk]
     print(subitem)
@@ -190,14 +190,14 @@ if args["launch"]!=None:
             os.chdir(args["chdir"])
         #rval = os.system(args["command"]) # call shell with new vars (just "exit" to exit)
         subspacemodulename = args["subspace"]
-        ork._globals.setOption("subspacemodulename",subspacemodulename)
+        obt._globals.setOption("subspacemodulename",subspacemodulename)
 
-        subspacemodule = ork.subspace.requires(subspacemodulename)
+        subspacemodule = obt.subspace.requires(subspacemodulename)
 
         if args["command"]!=None:
           if args["chdir"]!=None:
             os.chdir(args["chdir"])
-          rval = subspacemodule.launch(ork.command.procargs(args["command"]))
+          rval = subspacemodule.launch(obt.command.procargs(args["command"]))
         else:
           rval = subspacemodule.shell()
   
@@ -210,11 +210,11 @@ if args["launch"]!=None:
         sys.exit(rval>>8)
     #############
     else:
-        ork.command.Command([shell,"--init-file",bashrc],environment={}).exec()
+        obt.command.Command([shell,"--init-file",bashrc],environment={}).exec()
 ###########################################
 elif args["stack"]!=None:
 ###########################################
-    ork.env.append("OBT_STACK","<")
+    obt.env.append("OBT_STACK","<")
     if args["novars"]==False:
       envsetup.install()
     #############
@@ -233,11 +233,11 @@ elif args["stack"]!=None:
     bashrc = try_staging/".bashrc-stack"
     envsetup.log(deco.inf("System is <"+os.name+">"))
     print("Stacking env<%s>" % deco.val(try_staging))
-    envsetup.log("ork.build eviron initialized OBT_ROOT<%s>"%deco.path(root_dir))
+    envsetup.log("obt.build eviron initialized OBT_ROOT<%s>"%deco.path(root_dir))
     if args["command"]!=None:
-        ork.command.Command([shell,"--init-file",bashrc,"-c",args["command"]],environment={}).exec()
+        obt.command.Command([shell,"--init-file",bashrc,"-c",args["command"]],environment={}).exec()
     else:
-        ork.command.Command([shell,"--init-file",bashrc],environment={}).exec()
+        obt.command.Command([shell,"--init-file",bashrc],environment={}).exec()
     pass
 ###########################################
 else:

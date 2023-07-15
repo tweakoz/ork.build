@@ -19,12 +19,15 @@ class WindowsPath(_WindowsPath_, Path) :
  pass
 
 class PosixPath(_PosixPath_, Path) :
- if "OBT_STAGE" in os.environ:
-   from ork import buildtrace
-   def chdir(self):
-     buildtrace.buildTrace({"op":"path.chdir(%s)"%str(self)})
-     os.chdir(str(self))
- pass
+  if "OBT_STAGE" in os.environ:
+    from obt import buildtrace
+    def chdir(self):
+      buildtrace.buildTrace({"op":"path.chdir(%s)"%str(self)})
+      os.chdir(str(self))
+  else:
+    def chdir(self):
+      os.chdir(str(self))
+  pass
 
 ###############################################################################
 
@@ -162,7 +165,7 @@ def obt_bin():
 ###############################################################################
 
 def pysite():
-  return scripts()/"ork"
+  return scripts()/"obt"
 
 ###############################################################################
 
@@ -265,8 +268,8 @@ def project_root():
 
 ###############################################################################
 def osx_sdkdir():
-  import ork.command
-  result = ork.command.capture([
+  import obt.command
+  result = obt.command.capture([
                     "xcodebuild",
                     "-version",
                     "-sdk", "macosx",

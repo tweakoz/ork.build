@@ -7,7 +7,7 @@
 ###############################################################################
 
 import platform, os, pathlib,sys
-import ork.module
+import obt.module
 
 ###############################################################################
 
@@ -17,13 +17,14 @@ this_dir = pathlib.Path(os.path.dirname(file_path))
 ###############################################################################
 
 def descriptor(architecture,osname):
-  import ork.module
+  import obt.module
+  import obt.path
   identifier = "%s-%s" % (architecture,osname)
-  hi_name = this_dir/".."/".."/"modules"/"sdk"
+  hi_name = obt.path.modules()/"sdk"
   hi_name = hi_name / ("%s.py"%identifier)
-  the_module = ork.module.instance(identifier,hi_name)
+  the_module = obt.module.instance(identifier,hi_name)
   if the_module != None:
-    hostident = ork.host.description().identifier
+    hostident = obt.host.description().identifier
     if hasattr(the_module,"sdkinfo"):
       sdkinfo = the_module.sdkinfo()
       if hostident in sdkinfo.supports_host:
@@ -37,7 +38,7 @@ class enuminterface:
     self.subdir = "sdk"
   def tryAsModule(self,hostidentifier,item,pth):
     identifier = item.replace(".py","")
-    m = ork.module.instance(identifier,pth)
+    m = obt.module.instance(identifier,pth)
     if hasattr(m,"sdkinfo"):
       sdki = m.sdkinfo()
       if hostidentifier in sdki.supports_host:
@@ -49,4 +50,4 @@ class enuminterface:
 
 def enumerate():
   iface = enuminterface()
-  return ork.module.enumerate_simple(iface)
+  return obt.module.enumerate_simple(iface)

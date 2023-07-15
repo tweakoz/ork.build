@@ -5,8 +5,8 @@
 # The Orkid Build System is published under the GPL 2.0 license
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
-from ork import dep, log, path, host
-from ork.command import Command
+from obt import dep, log, path, host
+from obt.command import Command
 ###############################################################################
 class arachnepnr(dep.StdProvider):
   VERSION = "c40fb2289952f4f120cc10a5a4c82a6fb88442dc"

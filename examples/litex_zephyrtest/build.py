@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from ork import path, pathtools, utils
+from obt import path, pathtools, utils
 import os
 
 build_dir = path.builds()/"litex_zephyrtest"

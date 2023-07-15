@@ -5,7 +5,7 @@
 # The Orkid Build System is published under the GPL 2.0 license
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
-from ork import dep, env, path, host
+from obt import dep, env, path, host
 ###############################################################################
 class openroad(dep.StdProvider):
   name = "openroad"

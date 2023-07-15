@@ -8,8 +8,8 @@
 
 VERSION = "v5.0.0-beta2"
 
-from ork import dep, host, path
-from ork.command import Command as cmd
+from obt import dep, host, path
+from obt.command import Command as cmd
 
 ###############################################################################
 

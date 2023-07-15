@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 
 import os, sys, pathlib, argparse
-from ork import dep, host, path
-import ork._globals
-import ork.deco
-deco = ork.deco.Deco()
+from obt import dep, host, path
+import obt._globals
+import obt.deco
+deco = obt.deco.Deco()
 
-parser = argparse.ArgumentParser(description='ork.build dep build shell')
+parser = argparse.ArgumentParser(description='obt.build dep build shell')
 parser.add_argument('dependency', metavar='D', type=str, help='a dependency to build')
 
 _args = vars(parser.parse_args())

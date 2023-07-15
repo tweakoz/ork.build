@@ -5,8 +5,8 @@
 # The Orkid Build System is published under the GPL 2.0 license
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
-from ork import dep, path
-from ork.command import Command
+from obt import dep, path
+from obt.command import Command
 ###############################################################################
 class bazel(dep.StdProvider):
   name = "bazel"

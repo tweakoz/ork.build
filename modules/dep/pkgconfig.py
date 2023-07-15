@@ -1,8 +1,8 @@
 import os, tarfile
-from ork import dep, host, path, make, pathtools
-from ork.deco import Deco
-from ork.wget import wget
-from ork.command import Command
+from obt import dep, host, path, make, pathtools
+from obt.deco import Deco
+from obt.wget import wget
+from obt.command import Command
 
 VER = "0.29.2"
 HASH = "f6e931e319531b736fadc017f470e68a"

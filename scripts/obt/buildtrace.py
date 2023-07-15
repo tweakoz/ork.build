@@ -162,7 +162,7 @@ def proc_list(the_list):
 ################################################
 
 def savelog():
-  import ork._globals as _glob
+  import obt._globals as _glob
   steplogfile = "%s/buildlogs/obtdump-%d.json"%(stage_dir(),curpid)
   copy = list(jsonroot)
   processed = list()

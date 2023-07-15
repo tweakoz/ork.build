@@ -14,11 +14,11 @@ VERSION = "%s.%s.%s" % (VERSION_MAJOR,VERSION_MINOR,VERSION_MICRO)
 HASH = "eafda83543bad127cadef4d288fdab87"
 
 import os, tarfile, sys
-from ork import dep, host, path, cmake, env, pip
-from ork.deco import Deco
-from ork.wget import wget
-from ork.command import Command
-from ork import log
+from obt import dep, host, path, cmake, env, pip
+from obt.deco import Deco
+from obt.wget import wget
+from obt.command import Command
+from obt import log
 
 deco = Deco()
 
@@ -200,7 +200,7 @@ class python_from_source(dep.Provider):
     env.set("CCFLAGS","-march=%s"%self._target.architecture)
 
     if host.IsOsx:
-       from ork import macos, macos_homebrew
+       from obt import macos, macos_homebrew
        sdkdir = path.osx_sdkdir()
        print(sdkdir)
        #options += ["--enable-universalsdk=%s"%sdkdir]

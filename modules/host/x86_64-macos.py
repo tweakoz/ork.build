@@ -7,7 +7,7 @@
 ###############################################################################
 
 import platform, multiprocessing
-from ork import target, sdk, command, env
+from obt import target, sdk, command, env
 
 class hostinfo:
   ###################################

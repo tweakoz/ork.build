@@ -8,11 +8,11 @@
 ###############################################################################
 
 import os, sys, string
-import ork.path
-import ork.dep
-from ork.path import *
-import ork.deco
-deco = ork.deco.Deco()
+import obt.path
+import obt.dep
+from obt.path import *
+import obt.deco
+deco = obt.deco.Deco()
 
 #################################################################################
 
@@ -95,7 +95,7 @@ def execute(word,path_list = default_pathlist):
     print("/////////////////////////////////////////////////////////////")
     print("// path : %s" % path)
     print("/////////")
-    root = str(ork.path.project_root())+"/"
+    root = str(obt.path.project_root())+"/"
     for item in results:
       pathstr = str(item.path)
       pathstr = pathstr.replace(str(root),"")
@@ -116,7 +116,7 @@ def execute_at(word_list,path_list):
      results = search_at_root(word,str(path))
      have_results = len(results)!=0
      if have_results:
-       root = str(ork.path.project_root())+"/"
+       root = str(obt.path.project_root())+"/"
        for item in results:
          pathstr = str(item.path)
          pathstr = pathstr.replace(str(root),"")

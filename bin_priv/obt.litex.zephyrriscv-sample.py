@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from ork import path, pathtools, utils, deco
+from obt import path, pathtools, utils, deco
 import os, argparse, sys
 deco = deco.Deco()
 

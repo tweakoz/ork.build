@@ -6,7 +6,7 @@
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
 
-from ork import dep, host, command, path
+from obt import dep, host, command, path
 
 ###############################################################################
 
@@ -18,8 +18,8 @@ class libcurl(dep.StdProvider):
     #################################################
     self._builder = self.createBuilder(dep.CMakeBuilder)
     if host.IsOsx:
-      import ork.macos_homebrew
-      sslroot = ork.macos_homebrew.prefix_for_package("openssl")
+      import obt.macos_homebrew
+      sslroot = obt.macos_homebrew.prefix_for_package("openssl")
       print(sslroot)
       self._builder.setCmVar("OPENSSL_ROOT_DIR",sslroot)
       self._builder.setCmVar("USE_ZLIB","ON")

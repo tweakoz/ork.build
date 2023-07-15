@@ -10,11 +10,11 @@ VERSION = "v2.1"
 
 import os, tarfile
 from yarl import URL
-from ork import dep, host, path, git, pathtools, patch
-from ork.deco import Deco
-from ork.wget import wget
-from ork.command import Command
-import ork.host
+from obt import dep, host, path, git, pathtools, patch
+from obt.deco import Deco
+from obt.wget import wget
+from obt.command import Command
+import obt.host
 import fileinput
 
 deco = Deco()
@@ -30,7 +30,7 @@ class luajit(dep.StdProvider):
 
     cmdlist = ["make","-j",host.NumCores]
 
-    if ork.host.IsOsx:
+    if obt.host.IsOsx:
         cmdlist += ["MACOSX_DEPLOYMENT_TARGET=10.15"]
 
     clean_cmd = Command(cmdlist+["clean"],working_dir=bdir)

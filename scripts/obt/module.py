@@ -9,8 +9,8 @@
 import platform, os, pathlib,sys
 import multiprocessing
 import importlib.util
-import ork.path 
-import ork.host 
+import obt.path 
+import obt.host 
 
 ###############################################################################
 
@@ -33,13 +33,13 @@ def enumerate_simple(enuminterface):
       self._fullpath = fullpath
       self._module = module
   #######################################
-  hostident = ork.host.description().identifier
+  hostident = obt.host.description().identifier
   #######################################
   module_dict = dict()
   module_dirs_list = os.environ["OBT_MODULES_PATH"].split(":")
   subdir = enuminterface.subdir
   for module_dir in module_dirs_list:
-    module_dir_2 = ork.path.Path(module_dir)/subdir
+    module_dir_2 = obt.path.Path(module_dir)/subdir
     if module_dir_2.exists():
       #print(module_dir_2)
       path_list = os.listdir(module_dir_2)

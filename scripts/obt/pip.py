@@ -1,6 +1,6 @@
-import ork.deco
-from ork import path, dep
-from ork.command import Command
+import obt.deco
+from obt import path, dep
+from obt.command import Command
 
 def _command(name_or_list,cmd):
   #Command().exec()

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 ##########################################
 
-from ork import dep 
+from obt import dep 
 import sys
 
 ##########################################

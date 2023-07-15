@@ -9,10 +9,10 @@
 VERSION = "master"
 
 import os, tarfile
-from ork import dep, host, path, cmake, git, make, pathtools
-from ork.deco import Deco
-from ork.wget import wget
-from ork.command import Command
+from obt import dep, host, path, cmake, git, make, pathtools
+from obt.deco import Deco
+from obt.wget import wget
+from obt.command import Command
 
 deco = Deco()
 

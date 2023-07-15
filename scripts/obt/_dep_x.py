@@ -1,19 +1,19 @@
-import ork._dep_enumerate
-import ork._dep_node
-from ork.deco import Deco 
+import obt._dep_enumerate
+import obt._dep_node
+from obt.deco import Deco 
 import sys
 
 deco = Deco()
 
 ###############################################################################
 def instance(named,with_overrides=True):
-  n = ork._dep_node.DepNode.nodeForName(named,with_overrides)
+  n = obt._dep_node.DepNode.nodeForName(named,with_overrides)
   if n and hasattr(n,"instance") and n.instance.supports_host:
     return n.instance
   return None
 ###############################################################################
 def module_class(named,with_overrides=True):
-  n = ork._dep_node.DepNode.nodeForName(named,with_overrides)
+  n = obt._dep_node.DepNode.nodeForName(named,with_overrides)
   if n and hasattr(n,"module_class") and n.instance.supports_host:
     return n.module_class
   return None
@@ -50,7 +50,7 @@ class Chain:
       ##########################
       # check node comformity
       ##########################
-      root = ork._dep_node.DepNode.nodeForName(named)
+      root = obt._dep_node.DepNode.nodeForName(named)
       #print(root)
       if (root==None):
         print(deco.err("DepNode<%s> does not have instance - check that the provider/class is named correctly!"%named))

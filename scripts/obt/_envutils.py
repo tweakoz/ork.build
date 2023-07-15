@@ -15,7 +15,7 @@ def root_path():
   if obt.path.running_from_pip():
     return obt.path.obt_data_base()
   elif "OBT_ROOT" in os.environ:
-    return ork.path.Path(os.environ["OBT_ROOT"]):
+    return obt.path.Path(os.environ["OBT_ROOT"])
   else:
     return None
 
@@ -32,11 +32,11 @@ class EnvSetup:
 
 
     if stagedir==None:
-      stagedir = ork.path.Path(os.environ["OBT_STAGE"])
+      stagedir = obt.path.Path(os.environ["OBT_STAGE"])
     if rootdir==None:
       rootdir = root_path()
     if projectdir==None:
-      projectdir = ork.path.Path(os.environ["OBT_PROJECT_DIR"])
+      projectdir = obt.path.Path(os.environ["OBT_PROJECT_DIR"])
     if bindir==None:
       bindir = rootdir/"bin"
     if scriptsdir==None:
@@ -58,6 +58,7 @@ class EnvSetup:
 
   ##########################################
   def install(self):
+    import obt.path
     orig_path = ""
     orig_ld_library_path = ""
     orig_ps1 = ""
@@ -75,7 +76,7 @@ class EnvSetup:
     # retrieve original PKG_CONFIG_PATH
     ##############################################################################
 
-    orig_pkg_config_path = ork.command.capture(["pkg-config","--variable","pc_path","pkg-config"])
+    orig_pkg_config_path = obt.command.capture(["pkg-config","--variable","pc_path","pkg-config"])
     orig_pkg_config_path = orig_pkg_config_path.replace("\n","")
     print("orig_pkg_config_path<%s>"%orig_pkg_config_path)
 
@@ -86,87 +87,87 @@ class EnvSetup:
     if "PYTHONPATH" in os.environ:
       orig_python_path = os.environ["PYTHONPATH"]
 
-    ork.env.set("PKG_CONFIG_PATH",orig_pkg_config_path )
-    ork.env.set("OBT_ORIGINAL_PKG_CONFIG_PATH",orig_pkg_config_path )
+    obt.env.set("PKG_CONFIG_PATH",orig_pkg_config_path )
+    obt.env.set("OBT_ORIGINAL_PKG_CONFIG_PATH",orig_pkg_config_path )
 
-    ork.env.set("OBT_ORIGINAL_PKG_CONFIG",orig_pkg_config )
+    obt.env.set("OBT_ORIGINAL_PKG_CONFIG",orig_pkg_config )
 
     ##############################################################################
 
-    ork.env.set("color_prompt","yes")
-    ork.env.set("OBT_STAGE",self.OBT_STAGE)
-    ork.env.set("OBT_BUILDS",self.OBT_STAGE/"builds")
-    ork.env.set("OBT_ROOT",self.ROOT_DIR)
-    ork.env.set("OBT_PROJECT_DIR",self.PROJECT_DIR)
-    ork.env.set("OBT_SUBSPACE","host")
-    ork.env.set("OBT_SUBSPACE_PROMPT","host")
-    ork.env.set("OBT_SUBSPACE_DIR",self.OBT_STAGE)
-    ork.env.set("OBT_PROJECT_NAME",self.PROJECT_NAME)
-    ork.env.set("OBT_ORIGINAL_PATH",orig_path )
-    ork.env.set("OBT_ORIGINAL_LD_LIBRARY_PATH",orig_ld_library_path )
-    ork.env.set("OBT_ORIGINAL_PS1",orig_ps1 )
-    ork.env.set("OBT_ORIGINAL_PYTHONPATH",orig_python_path )
-    ork.env.set("OBT_SCRIPTS_DIR",self.SCRIPTS_DIR )
-    ork.env.set("OBT_PYTHONHOME",self.OBT_STAGE/"pyvenv")
-    ork.env.set("OBT_SUBSPACE_LIB_DIR",ork.path.libs())
-    ork.env.set("OBT_SUBSPACE_BIN_DIR",ork.path.bin())
-    ork.env.prepend("PATH",self.BIN_DIR )
-    ork.env.prepend("PATH",self.OBT_STAGE/"bin")
-    ork.env.prepend("LD_LIBRARY_PATH",self.OBT_STAGE/"lib")
-    ork.env.prepend("LD_LIBRARY_PATH",self.OBT_STAGE/"lib64")
+    obt.env.set("color_prompt","yes")
+    obt.env.set("OBT_STAGE",self.OBT_STAGE)
+    obt.env.set("OBT_BUILDS",self.OBT_STAGE/"builds")
+    obt.env.set("OBT_ROOT",self.ROOT_DIR)
+    obt.env.set("OBT_PROJECT_DIR",self.PROJECT_DIR)
+    obt.env.set("OBT_SUBSPACE","host")
+    obt.env.set("OBT_SUBSPACE_PROMPT","host")
+    obt.env.set("OBT_SUBSPACE_DIR",self.OBT_STAGE)
+    obt.env.set("OBT_PROJECT_NAME",self.PROJECT_NAME)
+    obt.env.set("OBT_ORIGINAL_PATH",orig_path )
+    obt.env.set("OBT_ORIGINAL_LD_LIBRARY_PATH",orig_ld_library_path )
+    obt.env.set("OBT_ORIGINAL_PS1",orig_ps1 )
+    obt.env.set("OBT_ORIGINAL_PYTHONPATH",orig_python_path )
+    obt.env.set("OBT_SCRIPTS_DIR",self.SCRIPTS_DIR )
+    obt.env.set("OBT_PYTHONHOME",self.OBT_STAGE/"pyvenv")
+    obt.env.set("OBT_SUBSPACE_LIB_DIR",obt.path.libs())
+    obt.env.set("OBT_SUBSPACE_BIN_DIR",obt.path.bin())
+    obt.env.prepend("PATH",self.BIN_DIR )
+    obt.env.prepend("PATH",self.OBT_STAGE/"bin")
+    obt.env.prepend("LD_LIBRARY_PATH",self.OBT_STAGE/"lib")
+    obt.env.prepend("LD_LIBRARY_PATH",self.OBT_STAGE/"lib64")
 
-    ork.env.append("OBT_MODULES_PATH",ork.path.root()/"modules")
-    ork.env.append("OBT_DEP_PATH",ork.path.root()/"modules"/"dep")
+    obt.env.append("OBT_MODULES_PATH",obt.path.modules())
+    obt.env.append("OBT_DEP_PATH",obt.path.modules()/"dep")
 
     if self.GIT_SSH_COMMAND!=None:
-      ork.env.set("OBT_GIT_SSH_COMMAND",self.GIT_SSH_COMMAND)
+      obt.env.set("OBT_GIT_SSH_COMMAND",self.GIT_SSH_COMMAND)
 
     obt_prj_extensions = self.PROJECT_DIR/"obt.project"
     if obt_prj_extensions.exists():
       self.importProject(obt_prj_extensions)
 
 
-    #if ork.host.IsLinux:
+    #if obt.host.IsLinux:
 
-      #if ork.host.IsDebian:
-      #  pkgcfgdir = ork.path.Path("/lib/x86_64-linux-gnu/pkgconfig")
-      #elif ork.host.IsGentoo:
-      #  pkgcfgdir = ork.path.Path("/usr/lib64/pkgconfig")
-      #elif ork.host.IsAARCH64:
-      #  pkgcfgdir = ork.path.Path("/usr/lib/pkgconfig")
+      #if obt.host.IsDebian:
+      #  pkgcfgdir = obt.path.Path("/lib/x86_64-linux-gnu/pkgconfig")
+      #elif obt.host.IsGentoo:
+      #  pkgcfgdir = obt.path.Path("/usr/lib64/pkgconfig")
+      #elif obt.host.IsAARCH64:
+      #  pkgcfgdir = obt.path.Path("/usr/lib/pkgconfig")
 
       #if pkgcfgdir.exists():
-      #  ork.env.append("PKG_CONFIG_PATH",pkgcfgdir)
-      #pkgcfgdir = ork.path.Path("/usr/share/pkgconfig")
+      #  obt.env.append("PKG_CONFIG_PATH",pkgcfgdir)
+      #pkgcfgdir = obt.path.Path("/usr/share/pkgconfig")
       #if pkgcfgdir.exists():
-      #  ork.env.append("PKG_CONFIG_PATH",pkgcfgdir)
-    #elif ork.host.IsDarwin:
-      #pkgcfgdir = ork.path.Path("/usr/local/lib/pkgconfig")
+      #  obt.env.append("PKG_CONFIG_PATH",pkgcfgdir)
+    #elif obt.host.IsDarwin:
+      #pkgcfgdir = obt.path.Path("/usr/local/lib/pkgconfig")
       #if pkgcfgdir.exists():
-      #  ork.env.append("PKG_CONFIG_PATH",pkgcfgdir)
+      #  obt.env.append("PKG_CONFIG_PATH",pkgcfgdir)
 
 
-    if ork.path.vivado_base().exists():
-        ork.env.append("PATH",ork.path.vivado_base()/"bin")
+    if obt.path.vivado_base().exists():
+        obt.env.append("PATH",obt.path.vivado_base()/"bin")
     
     #####################################
     # Python Env Init
     #####################################
     
-    if not ork.host.IsAARCH64:
-      PYTHON = ork.dep.instance("python")
+    if not obt.host.IsAARCH64:
+      PYTHON = obt.dep.instance("python")
     
     #####################################
     # Late init
     #####################################
-    ork.env.set("PYTHONNOUSERSITE","TRUE")
-    ork.env.append("PYTHONPATH",self.SCRIPTS_DIR)
-    ork.env.prepend("PKG_CONFIG",self.OBT_STAGE/"bin"/"pkg-config")
-    #ork.env.prepend("PKG_CONFIG_PREFIX",self.OBT_STAGE)
-    ork.env.prepend("PKG_CONFIG_PATH",self.OBT_STAGE/"lib"/"pkgconfig")
-    ork.env.prepend("PKG_CONFIG_PATH",self.OBT_STAGE/"lib64"/"pkgconfig")
-    ork.env.append("PYTHONPATH",self.OBT_STAGE/"lib"/"python")
-    ork.env.append("LD_LIBRARY_PATH",self.OBT_STAGE/"python-3.9.13"/"lib")
+    obt.env.set("PYTHONNOUSERSITE","TRUE")
+    obt.env.append("PYTHONPATH",self.SCRIPTS_DIR)
+    obt.env.prepend("PKG_CONFIG",self.OBT_STAGE/"bin"/"pkg-config")
+    #obt.env.prepend("PKG_CONFIG_PREFIX",self.OBT_STAGE)
+    obt.env.prepend("PKG_CONFIG_PATH",self.OBT_STAGE/"lib"/"pkgconfig")
+    obt.env.prepend("PKG_CONFIG_PATH",self.OBT_STAGE/"lib64"/"pkgconfig")
+    obt.env.append("PYTHONPATH",self.OBT_STAGE/"lib"/"python")
+    obt.env.append("LD_LIBRARY_PATH",self.OBT_STAGE/"python-3.9.13"/"lib")
 
     
   ###########################################
@@ -183,7 +184,7 @@ class EnvSetup:
     modules_dir = prjdir/"modules"
     #print(modules_dir,modules_dir.exists())
     if modules_dir.exists():
-      ork.env.prepend("OBT_MODULES_PATH",modules_dir)
+      obt.env.prepend("OBT_MODULES_PATH",modules_dir)
 
   ###########################################
   def log(self,x):
@@ -192,19 +193,19 @@ class EnvSetup:
   ###########################################
   def lazyMakeDirs(self):
     self.log(deco.bright("Making required directories"))
-    (ork.path.prefix()/"lib").mkdir(parents=True,exist_ok=True)
-    (ork.path.prefix()/"bin").mkdir(parents=True,exist_ok=True)
-    (ork.path.prefix()/"include").mkdir(parents=True,exist_ok=True)
-    (ork.path.prefix()/"sdks").mkdir(parents=True,exist_ok=True)
-    (ork.path.prefix()/"tempdir").mkdir(parents=True,exist_ok=True)
-    (ork.path.subspace_root()).mkdir(parents=True,exist_ok=True)
-    (ork.path.quarantine()).mkdir(parents=True,exist_ok=True)
-    ork.path.downloads().mkdir(parents=True,exist_ok=True)
-    ork.path.builds().mkdir(parents=True,exist_ok=True)
-    ork.path.manifests().mkdir(parents=True,exist_ok=True)
-    ork.path.gitcache().mkdir(parents=True,exist_ok=True)
-    ork.path.apps().mkdir(parents=True,exist_ok=True)
-    ork.path.buildlogs().mkdir(parents=True,exist_ok=True)
+    (obt.path.prefix()/"lib").mkdir(parents=True,exist_ok=True)
+    (obt.path.prefix()/"bin").mkdir(parents=True,exist_ok=True)
+    (obt.path.prefix()/"include").mkdir(parents=True,exist_ok=True)
+    (obt.path.prefix()/"sdks").mkdir(parents=True,exist_ok=True)
+    (obt.path.prefix()/"tempdir").mkdir(parents=True,exist_ok=True)
+    (obt.path.subspace_root()).mkdir(parents=True,exist_ok=True)
+    (obt.path.quarantine()).mkdir(parents=True,exist_ok=True)
+    obt.path.downloads().mkdir(parents=True,exist_ok=True)
+    obt.path.builds().mkdir(parents=True,exist_ok=True)
+    obt.path.manifests().mkdir(parents=True,exist_ok=True)
+    obt.path.gitcache().mkdir(parents=True,exist_ok=True)
+    obt.path.apps().mkdir(parents=True,exist_ok=True)
+    obt.path.buildlogs().mkdir(parents=True,exist_ok=True)
   ###########################################
   def genLaunchScript(self,out_path=None,subspace=None):
     numcores = int(os.environ["OBT_NUM_CORES"])
@@ -223,16 +224,16 @@ class EnvSetup:
     LAUNCHENV += [";\n"]
 
     f = open(str(out_path), 'w')
-    f.write(" ".join(ork.command.procargs(LAUNCHENV)))
+    f.write(" ".join(obt.command.procargs(LAUNCHENV)))
     f.close()
     os.system("chmod ugo+x %s"%str(out_path))
 
   ###########################################
   def genBashRc(self,out_path=None,override_sysprompt=None):
     self.log(deco.bright("Generating bashrc override_sysprompt<%s>"%override_sysprompt))
-    bdeco = ork.deco.Deco(bash=True)
+    bdeco = obt.deco.Deco(bash=True)
 
-    HOMEDIR = ork.path.Path(os.environ["HOME"])
+    HOMEDIR = obt.path.Path(os.environ["HOME"])
 
     BASHRC = ""
 
@@ -250,9 +251,9 @@ class EnvSetup:
     # system prompt (leftmost icon in prompt)
 
     SYSPROM = ""
-    if ork.host.IsOsx:    
+    if obt.host.IsOsx:    
       SYSPROM = "🍎"
-    elif ork.host.IsLinux:    
+    elif obt.host.IsLinux:    
       SYSPROM = "🐧"
 
     if "OBT_USE_PROMPT_PREFIX" in os.environ:
@@ -304,7 +305,7 @@ class EnvSetup:
     #  generated from individual deps
     #########################################
 
-    depitems = ork.dep.DepNode.FindWithMethod("env_goto")
+    depitems = obt.dep.DepNode.FindWithMethod("env_goto")
     for depitemk in depitems:
       depitem = depitems[depitemk]
       gotos = depitem.env_goto()
@@ -331,20 +332,20 @@ class EnvSetup:
 
     ################################################
 
-    obt_completions_inp = ork.path.root()/"scripts"/"ork"/"_obt_dep_completions.py"
+    obt_completions_inp = obt.path.root()/"scripts"/"obt"/"_obt_dep_completions.py"
     for item in ["obt.dep.build.py","obt.dep.info.py","obt.dep.status.py"]:
       completions_line = "complete -C %s %s\n" % (str(obt_completions_inp),item)
       BASHRC += completions_line
 
     ################################################
 
-    obt_completions_shell_inp = ork.path.root()/"scripts"/"ork"/"_obt_dep_completions_shell.py"
+    obt_completions_shell_inp = obt.path.root()/"scripts"/"obt"/"_obt_dep_completions_shell.py"
     completions_line = "complete -C %s obt.dep.shell.py\n" % (str(obt_completions_shell_inp))
     BASHRC += completions_line
 
     ################################################
 
-    obt_completions_inp = ork.path.root()/"scripts"/"ork"/"_obt_subspace_completions.py"
+    obt_completions_inp = obt.path.root()/"scripts"/"obt"/"_obt_subspace_completions.py"
     for item in ["obt.subspace.build.py","obt.subspace.launch.py"]:
       completions_line = "complete -C %s %s\n" % (str(obt_completions_inp),item)
       BASHRC += completions_line

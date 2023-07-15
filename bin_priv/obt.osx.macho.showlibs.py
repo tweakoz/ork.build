@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
-from ork import macos, path
+from obt import macos, path
 
 parser = argparse.ArgumentParser(description='show librarys referenced by macho binary')
 parser.add_argument('--machobin', help='macho file to show libs on' )

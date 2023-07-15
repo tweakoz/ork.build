@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse, os, sys
-from ork import path, pathtools, command, env, log
+from obt import path, pathtools, command, env, log
 
 litex_dir = path.builds()/"litex"
 litex_boards_dir = litex_dir/"litex-boards"

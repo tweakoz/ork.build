@@ -8,7 +8,7 @@
 
 import platform, os, pathlib,sys
 from enum import Enum
-import ork.path 
+import obt.path 
 
 ###############################################################################
 
@@ -23,8 +23,8 @@ class Type(Enum):
 ###############################################################################
 
 def module_class(module_path,dokname):
-  import ork.module
-  the_module = ork.module.instance("dok_"+dokname,module_path)
+  import obt.module
+  the_module = obt.module.instance("dok_"+dokname,module_path)
   if the_module != None:
     return the_module.dockerinfo
   return None 
@@ -35,7 +35,7 @@ def docker_dirs():
   docker_dirs_list = list()
   module_dirs_list = os.environ["OBT_MODULES_PATH"].split(":")
   for module_dir in module_dirs_list:
-    docker_path = ork.path.Path(module_dir)/"docker"
+    docker_path = obt.path.Path(module_dir)/"docker"
     if docker_path.exists():
       docker_dirs_list += [docker_path]
   return docker_dirs_list
@@ -65,7 +65,7 @@ def enumerate():
   module_dirs_list = os.environ["OBT_MODULES_PATH"].split(":")
   for module_dir in module_dirs_list:
     #print(dep_repo)
-    docker_path = ork.path.Path(module_dir)/"docker"
+    docker_path = obt.path.Path(module_dir)/"docker"
     if docker_path.exists():
       path_list = os.listdir(docker_path)
       for item in path_list:

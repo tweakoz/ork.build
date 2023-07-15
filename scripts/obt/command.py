@@ -10,7 +10,7 @@ import os,io,sys, platform, subprocess, threading
 import shlex, errno, pty, select, signal, time
 
 from obt.deco import Deco
-from ork import log, pathtools, buildtrace
+from obt import log, pathtools, buildtrace
 
 import obt.path 
 deco = Deco()

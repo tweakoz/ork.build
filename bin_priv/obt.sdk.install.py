@@ -9,9 +9,9 @@
 ###############################################################################
 
 import os, sys, pathlib, argparse, string
-import ork.sdk
+import obt.sdk
 
-parser = argparse.ArgumentParser(description='ork.build sdk information')
+parser = argparse.ArgumentParser(description='obt.build sdk information')
 parser.add_argument('sdk', metavar='S', type=str, help='a sdk you want information on')
 
 _args = vars(parser.parse_args())
@@ -25,7 +25,7 @@ sdkid = _args["sdk"]
 target_arch = sdkid.split('-')[0]
 target_os = sdkid.split('-')[1]
 
-S = ork.sdk.descriptor(target_arch,target_os)
+S = obt.sdk.descriptor(target_arch,target_os)
 
 if S==None:
   print("SDK not supported on hosts")

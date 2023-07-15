@@ -10,7 +10,7 @@
 
 import os, sys, pathlib, argparse, string
 
-parser = argparse.ArgumentParser(description='ork.build dep builder')
+parser = argparse.ArgumentParser(description='obt.build dep builder')
 parser.add_argument('dependency', metavar='D', type=str, help='a dependency to build')
 
 _args = vars(parser.parse_args())
@@ -21,8 +21,8 @@ if len(sys.argv)==1:
 
 depname = _args["dependency"]
 
-from ork import dep, path
-from ork.deco import Deco
+from obt import dep, path
+from obt.deco import Deco
 deco = Deco()
 
 chain = dep.Chain(depname)

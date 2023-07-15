@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 
 import os, sys, pathlib, argparse
-from ork import dep, host, path
-import ork.pathtools
-import ork._globals
+from obt import dep, host, path
+import obt.pathtools
+import obt._globals
 
 assert(os.environ["OBT_SUBSPACE"]=="host")
 
@@ -11,12 +11,12 @@ assert(os.environ["OBT_SUBSPACE"]=="host")
 # build dep dict
 ##########################################
 
-depnodes = ork.dep.DepNode.ALL()
+depnodes = obt.dep.DepNode.ALL()
 
 ##########################################
 
-import ork.deco
-deco = ork.deco.Deco()
+import obt.deco
+deco = obt.deco.Deco()
 
 line_index = 0
 for key in sorted(depnodes):

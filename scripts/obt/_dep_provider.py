@@ -9,12 +9,12 @@
 import os, inspect, tarfile, sys
 from pathlib import Path
 import importlib.util
-import ork.path, ork.host
-from ork.command import Command, run
-from ork.deco import Deco
-from ork.wget import wget
-from ork import pathtools, cmake, make, path, git, host
-from ork import _dep_impl, _dep_x, _globals, log, buildtrace
+import obt.path, obt.host
+from obt.command import Command, run
+from obt.deco import Deco
+from obt.wget import wget
+from obt import pathtools, cmake, make, path, git, host
+from obt import _dep_impl, _dep_x, _globals, log, buildtrace
 from enum import Enum
 
 deco = Deco()

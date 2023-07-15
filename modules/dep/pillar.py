@@ -7,13 +7,13 @@
 ###############################################################################
 
 import os, tarfile
-from ork import dep, host, path, pathtools
-from ork.deco import Deco
-from ork.wget import wget
-import ork.git
-from ork.command import Command
-import ork.patch
-import ork.pip
+from obt import dep, host, path, pathtools
+from obt.deco import Deco
+from obt.wget import wget
+import obt.git
+from obt.command import Command
+import obt.patch
+import obt.pip
 
 deco = Deco()
 
@@ -42,11 +42,11 @@ class pillar(dep.Provider):
   def provide(self):
 
     if False==self.OK:
-      ork.git.Clone(self.url,self.source_root,"master")
+      obt.git.Clone(self.url,self.source_root,"master")
       os.chdir(self.source_root)
 
       # install deps
-      ork.pip.install([ "raven",
+      obt.pip.install([ "raven",
                         "celery",
                         "bleach",
                         "CommonMark",
@@ -54,7 +54,7 @@ class pillar(dep.Provider):
 
       # patch pillar
 
-      patcher = ork.patch.patcher("pillar")
+      patcher = obt.patch.patcher("pillar")
       patcher.patch_list([[self.source_root/"pillar","markdown.py"]])
 
       # install

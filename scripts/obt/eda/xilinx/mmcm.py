@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
 import os, fileinput
-from ork import path, pathtools
-from ork.eda.xilinx import vivado
+from obt import path, pathtools
+from obt.eda.xilinx import vivado
 
 ########################################################
 

@@ -9,12 +9,12 @@
 #pip install -r requirements.txt
 #python main.py
 
-from ork import dep, path, command, host, wget, pathtools, subspace
-from ork.deco import Deco
-import ork.module
+from obt import dep, path, command, host, wget, pathtools, subspace
+from obt.deco import Deco
+import obt.module
 import time, re, socket, os, sys
 from pathlib import Path
-deco = ork.deco.Deco()
+deco = obt.deco.Deco()
 
 this_path = os.path.realpath(__file__)
 this_dir = Path(os.path.dirname(this_path))
@@ -176,9 +176,9 @@ class subspaceinfo:
       
       print(conda_cmdlist)
 
-      import ork._envutils 
+      import obt._envutils 
       sub_name = os.environ["OBT_PROJECT_NAME"]
-      sub_env = ork._envutils.EnvSetup(project_name=sub_name)
+      sub_env = obt._envutils.EnvSetup(project_name=sub_name)
 
       override_sysprompt = "🐍-conda" if (container==None) else "🐍-%s"%container
 

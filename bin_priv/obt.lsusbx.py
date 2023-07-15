@@ -8,8 +8,8 @@
 import subprocess, sys, os, re
 from pathlib import Path
 import pyudev
-import ork.deco
-deco = ork.deco.Deco()
+import obt.deco
+deco = obt.deco.Deco()
 
 class devinfo:
     def __init__(self,name,usbpos):

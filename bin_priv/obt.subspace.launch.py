@@ -9,15 +9,15 @@
 ###############################################################################
 
 import os, sys, pathlib, argparse, string
-import ork._globals
-import ork.subspace
-from ork import dep, path
-from ork.deco import Deco
+import obt._globals
+import obt.subspace
+from obt import dep, path
+from obt.deco import Deco
 deco = Deco()
 
 ###############################################################################
 
-parser = argparse.ArgumentParser(description='ork.build subspace launcher')
+parser = argparse.ArgumentParser(description='obt.build subspace launcher')
 parser.add_argument('subspacemodulename', metavar='S', type=str, help='a subspace module to launch')
 parser.add_argument('--launchargs', action="store", type=str, help='launch arguments' )
 
@@ -31,9 +31,9 @@ if len(sys.argv)==1:
 
 subspacemodulename = _args["subspacemodulename"]
 
-ork._globals.setOption("subspacemodulename",subspacemodulename)
+obt._globals.setOption("subspacemodulename",subspacemodulename)
 
-subspacemodule = ork.subspace.requires(subspacemodulename)
+subspacemodule = obt.subspace.requires(subspacemodulename)
 
 print("unknownargs: %s"%unknownargs)
 if len(unknownargs)==0:

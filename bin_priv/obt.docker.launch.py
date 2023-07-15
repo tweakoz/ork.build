@@ -9,10 +9,10 @@
 ###############################################################################
 
 import os, sys, pathlib, argparse, string
-import ork._globals
-import ork.docker
-from ork import dep, path
-from ork.deco import Deco
+import obt._globals
+import obt.docker
+from obt import dep, path
+from obt.deco import Deco
 deco = Deco()
 
 def print_item(key,val):
@@ -23,7 +23,7 @@ def print_item(key,val):
 
 ###############################################################################
 
-parser = argparse.ArgumentParser(description='ork.build docker launcher')
+parser = argparse.ArgumentParser(description='obt.build docker launcher')
 parser.add_argument('dockermodulename', metavar='D', type=str, help='a docker module to launch')
 parser.add_argument('--env', nargs='*', action='append', type=str)
 parser.add_argument('--mount', nargs='*', action='append', type=str)
@@ -39,7 +39,7 @@ if len(sys.argv)==1:
 
 dockermodulename = _args["dockermodulename"]
 
-ork._globals.setOption("dockermodulename",dockermodulename)
+obt._globals.setOption("dockermodulename",dockermodulename)
 
 ####################################
 # parse environment arguments
@@ -76,7 +76,7 @@ if ("mapssh" in _args) and (_args["mapssh"]==True):
 # invoke on docker module
 ####################################
 
-dockermodule = ork.docker.descriptor(dockermodulename)
+dockermodule = obt.docker.descriptor(dockermodulename)
 
 if len(mounts)==0:
   mounts = None

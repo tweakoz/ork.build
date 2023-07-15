@@ -6,7 +6,7 @@
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
 
-from ork import dep, host, command, path
+from obt import dep, host, command, path
 
 ###############################################################################
 
@@ -66,7 +66,7 @@ class nvtt(dep.StdProvider):
   def _fetcher(self):
     return dep.GithubFetcher(name=nvtt.name,
                              repospec="tweakoz/nvidia-texture-tools",
-                             revision="toz_orkdotbuild",
+                             revision="toz_obt.otbuild",
                              recursive=False)
 
   #######################################################################

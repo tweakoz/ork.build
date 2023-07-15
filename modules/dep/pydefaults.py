@@ -1,5 +1,5 @@
-from ork import dep, pip, path, dep, host
-from ork.command import Command
+from obt import dep, pip, path, dep, host
+from obt.command import Command
 ###############################################################################
 
 class pydefaults(dep.Provider):

@@ -5,7 +5,7 @@
 # The Orkid Build System is published under the GPL 2.0 license
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
-from ork import dep, log, path, host
+from obt import dep, log, path, host
 ###############################################################################
 class _embree_from_source(dep.StdProvider):
   name = "embree"

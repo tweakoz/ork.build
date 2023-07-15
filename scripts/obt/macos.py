@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 ###############################################################################
 import sys
-from ork import host, path
-from ork.command import capture
-from ork.command import Deco
+from obt import host, path
+from obt.command import capture
+from obt.command import Deco
 deco = Deco()
 ###############################################################################
 def find_replace(inpstring, dictionary):

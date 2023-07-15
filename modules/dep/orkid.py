@@ -5,7 +5,7 @@
 # The Orkid Build System is published under the GPL 2.0 license
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
-from ork import dep, path, pathtools, log, env, command, host
+from obt import dep, path, pathtools, log, env, command, host
 import os
 ###############################################################################
 class orkid(dep.StdProvider):

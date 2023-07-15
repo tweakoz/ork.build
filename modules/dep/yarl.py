@@ -7,11 +7,11 @@
 ###############################################################################
 
 import os, tarfile
-from ork import dep, host, path, cmake
-from ork.deco import Deco
-from ork.wget import wget
-from ork.command import Command
-import ork.pip
+from obt import dep, host, path, cmake
+from obt.deco import Deco
+from obt.wget import wget
+from obt.command import Command
+import obt.pip
 
 deco = Deco()
 
@@ -33,7 +33,7 @@ class yarl(dep.Provider):
 
   def provide(self): ##########################################################
     if False==self.OK:
-      self.OK = 0==ork.pip.install("yarl")
+      self.OK = 0==obt.pip.install("yarl")
       if self.OK:
         self.manifest.touch()
 

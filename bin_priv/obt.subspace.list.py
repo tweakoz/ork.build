@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 
 import os, sys, pathlib, argparse
-from ork import subspace, host, path
-import ork.pathtools
-import ork._globals
+from obt import subspace, host, path
+import obt.pathtools
+import obt._globals
 
 ##########################################
 # build dep dict
@@ -13,8 +13,8 @@ subspacemodules = subspace.enumerate()
 
 ##########################################
 
-import ork.deco
-deco = ork.deco.Deco()
+import obt.deco
+deco = obt.deco.Deco()
 
 #print(subspacemodules)
 

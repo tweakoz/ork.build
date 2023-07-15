@@ -12,7 +12,7 @@ import os, sys, pathlib, argparse, string
 
 assert(os.environ["OBT_SUBSPACE"]=="host")
 
-parser = argparse.ArgumentParser(description='ork.build dep information')
+parser = argparse.ArgumentParser(description='obt.build dep information')
 parser.add_argument('dependency', metavar='D', type=str, help='a dependency you want information on')
 
 _args = vars(parser.parse_args())
@@ -23,8 +23,8 @@ if len(sys.argv)==1:
 
 depname = _args["dependency"]
 
-from ork import dep, path
-from ork.deco import Deco
+from obt import dep, path
+from obt.deco import Deco
 deco = Deco()
 
 instance = dep.instance(depname)

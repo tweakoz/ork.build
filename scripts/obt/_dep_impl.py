@@ -9,12 +9,12 @@
 import os, inspect, tarfile
 from pathlib import Path
 import importlib.util
-import ork.path, ork.host
-from ork.command import Command, run
-from ork.deco import Deco
-from ork.wget import wget
-from ork import pathtools, cmake, make, path, git, host, buildtrace
-import ork._dep_enumerate
+import obt.path, obt.host
+from obt.command import Command, run
+from obt.deco import Deco
+from obt.wget import wget
+from obt import pathtools, cmake, make, path, git, host, buildtrace
+import obt._dep_enumerate
 
 deco = Deco()
 
@@ -38,7 +38,7 @@ def switch(linux=None,macos=None):
 ###############################################################################
 
 def require(name_or_list):
-  from ork import _dep_node
+  from obt import _dep_node
   ######################################
   # list of dependencies?
   ######################################

@@ -7,10 +7,10 @@
 ###############################################################################
 
 import os, shutil
-import ork.path
+import obt.path
 from pathlib import PosixPath
-from ork.deco import Deco
-from ork.command import run
+from obt.deco import Deco
+from obt.command import run
 
 deco = Deco()
 
@@ -46,7 +46,7 @@ def Clone(url,
 
   dest_path = PosixPath(dest)
   dest_name = dest_path.name
-  cache_dest = ork.path.gitcache()/dest_name
+  cache_dest = obt.path.gitcache()/dest_name
 
   ##############################################################################
 

@@ -10,10 +10,10 @@ VERSION = "03edcafdda550e55e29bf48a682097028ae01306"
 HASH = "1453e79e663ea3bd8b528ef20a17109b"
 
 import os, tarfile
-from ork import dep, host, path, git, cmake
-from ork.deco import Deco
-from ork.wget import wget
-from ork.command import Command
+from obt import dep, host, path, git, cmake
+from obt.deco import Deco
+from obt.wget import wget
+from obt.command import Command
 
 deco = Deco()
 

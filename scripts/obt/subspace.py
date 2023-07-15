@@ -8,8 +8,8 @@
 
 import platform, os, pathlib,sys
 from enum import Enum
-import ork.path 
-import ork.env 
+import obt.path 
+import obt.env 
 
 ###############################################################################
 
@@ -24,8 +24,8 @@ def current():
 ###############################################################################
 
 def module_class(module_path,subname):
-  import ork.module
-  the_module = ork.module.instance("sub_"+subname,module_path)
+  import obt.module
+  the_module = obt.module.instance("sub_"+subname,module_path)
   if the_module != None:
     return the_module.subspaceinfo
   return None 
@@ -36,7 +36,7 @@ def subspace_dirs():
   subspace_dirs_list = list()
   module_dirs_list = os.environ["OBT_MODULES_PATH"].split(":")
   for module_dir in module_dirs_list:
-    subspace_path = ork.path.Path(module_dir)/"subspace"
+    subspace_path = obt.path.Path(module_dir)/"subspace"
     if subspace_path.exists():
       subspace_dirs_list += [subspace_path]
   return subspace_dirs_list
@@ -74,7 +74,7 @@ def enumerate():
   module_dirs_list = os.environ["OBT_MODULES_PATH"].split(":")
   for module_dir in module_dirs_list:
     #print(dep_repo)
-    subspace_path = ork.path.Path(module_dir)/"subspace"
+    subspace_path = obt.path.Path(module_dir)/"subspace"
     if subspace_path.exists():
       path_list = os.listdir(subspace_path)
       for item in path_list:

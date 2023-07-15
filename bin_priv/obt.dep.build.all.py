@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from ork.command import Command
+from obt.command import Command
 
 items =  ["yarl","pkgconfig","boost","luajit","gcode_gpr","postgresql"]
 items += ["avr_binutils","avr_gcc","avr_libc","simavr"]

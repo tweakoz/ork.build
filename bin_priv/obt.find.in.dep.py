@@ -8,9 +8,9 @@
 ###############################################################################
 
 import os, sys, string, argparse
-import ork.search
-import ork.path
-import ork.dep
+import obt.search
+import obt.path
+import obt.dep
 
 parser = argparse.ArgumentParser(description='build all box products')
 parser.add_argument('--dep', help='dep to search' )
@@ -22,9 +22,9 @@ _args = vars(parser.parse_args())
 
 if _args["dep"]!=None:
   depname = _args["dep"]
-  path_list = [ork.path.builds()/depname]
+  path_list = [obt.path.builds()/depname]
   ########################
-  depnode = ork.dep.DepNode.FIND(depname)
+  depnode = obt.dep.DepNode.FIND(depname)
   depinst = depnode.instance
   #print(depnode,depinst)
   ########################
@@ -35,4 +35,4 @@ if _args["dep"]!=None:
   ########################
   #print(path_list)
   words = _args["keywords"]
-  ork.search.execute_at(words,path_list)
+  obt.search.execute_at(words,path_list)

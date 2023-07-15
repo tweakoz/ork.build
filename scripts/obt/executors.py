@@ -1,5 +1,5 @@
-from ork import pathtools
-from ork.buildtrace import buildTrace
+from obt import pathtools
+from obt.buildtrace import buildTrace
 import shutil, os
 
 ###############################################################################

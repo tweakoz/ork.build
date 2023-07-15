@@ -16,11 +16,12 @@ this_dir = pathlib.Path(os.path.dirname(file_path))
 ###############################################################################
 
 def descriptor(architecture,osname):
-  import ork.module
+  import obt.module
+  import obt.path
   identifier = "%s-%s" % (architecture,osname)
-  hi_name = this_dir/".."/".."/"modules"/"target"
+  hi_name = obt.path.modules()/"target"
   hi_name = hi_name / ("%s.py"%identifier)
-  the_module = ork.module.instance(identifier,hi_name)
+  the_module = obt.module.instance(identifier,hi_name)
   if the_module != None:
     return the_module.targetinfo()
 
@@ -36,4 +37,4 @@ class enuminterface:
 
 def enumerate():
   iface = enuminterface()
-  return ork.module.enumerate_simple(iface)
+  return obt.module.enumerate_simple(iface)

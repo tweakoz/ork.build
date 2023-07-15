@@ -7,7 +7,7 @@
 ###############################################################################
 
 import platform, multiprocessing
-from ork import target
+from obt import target
 
 class hostinfo:
   ###################################

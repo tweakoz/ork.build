@@ -9,9 +9,9 @@
 ###############################################################################
 
 import os, sys, pathlib, argparse, string
-import ork.docker
+import obt.docker
 
-parser = argparse.ArgumentParser(description='ork.build docker information')
+parser = argparse.ArgumentParser(description='obt.build docker information')
 parser.add_argument('docker', metavar='T', type=str, help='a docker you want information on')
 
 _args = vars(parser.parse_args())
@@ -22,10 +22,10 @@ if len(sys.argv)==1:
 
 dockerid = _args["docker"]
 
-D = ork.docker.descriptor(dockerid)
+D = obt.docker.descriptor(dockerid)
 
-from ork import dep, path
-from ork.deco import Deco
+from obt import dep, path
+from obt.deco import Deco
 deco = Deco()
 
 def print_item(key,val):

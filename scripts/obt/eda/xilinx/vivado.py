@@ -3,18 +3,18 @@
 ######################################################################
 
 import os
-import ork.path
-import ork.command
-import ork.deco
-import ork.pathtools
+import obt.path
+import obt.command
+import obt.deco
+import obt.pathtools
 
 import os, platform
 from string import Template
 
 ######################################################################
 
-#builddir = ork.path.builds()/"petalinux-docker"
-deco = ork.deco.Deco()
+#builddir = obt.path.builds()/"petalinux-docker"
+deco = obt.deco.Deco()
 
 #if not builddir.exists() :
  # print(deco.yellow("You must install the eda containers first!"))
@@ -23,7 +23,7 @@ deco = ork.deco.Deco()
 ######################################################################
 
 DISPLAY=os.environ["DISPLAY"]
-HOME=ork.path.Path(os.environ["HOME"])
+HOME=obt.path.Path(os.environ["HOME"])
 
 osname = platform.system()
 
@@ -73,8 +73,8 @@ class Context:
     assert(hostdir!=None)
     #####################
     self.fpgapart = FPGAPART
-    self.hostdir = ork.path.Path(hostdir)           # directory to map to containerdir
-    self.containerdir = ork.path.Path(containerdir)
+    self.hostdir = obt.path.Path(hostdir)           # directory to map to containerdir
+    self.containerdir = obt.path.Path(containerdir)
     self.postremove = postremove
     self.posttag = None
     self.dirmaps={
@@ -104,7 +104,7 @@ class Context:
   #########################
   def _posttag_preamble(self,posttag=None):
     if posttag!=None:
-      ork.command.system(["rm","-f","container.cid"])
+      obt.command.system(["rm","-f","container.cid"])
       return ["--cidfile=./container.cid"]
     else:
       return []
@@ -114,7 +114,7 @@ class Context:
       with open('container.cid', 'r') as file:
         cid = file.read()
         assert(type(posttag)==str)
-        ork.command.system(["docker",
+        obt.command.system(["docker",
                             "commit",cid,
                             posttag])
   #########################
@@ -122,7 +122,7 @@ class Context:
           interactive=False,
           posttag=None,
           args=[]):
-    ork.pathtools.chdir(self.hostdir)
+    obt.pathtools.chdir(self.hostdir)
     preargs = self._posttag_preamble(posttag=posttag)
     cline =  self._core_commandline(dockerargs=preargs)
     #if self.postremove:
@@ -152,9 +152,9 @@ class Context:
         print(deco.white(inp), end='')
     rval = None
     if interactive:
-      rval = ork.command.system(cline)
+      rval = obt.command.system(cline)
     else:
-      rval = ork.command.run_filtered(cline,on_line=filter_line)
+      rval = obt.command.run_filtered(cline,on_line=filter_line)
     self._posttag_postamble(posttag=posttag)
     return rval
   ######################################################################
@@ -169,20 +169,20 @@ class Context:
     return self.run_batch(args=["-source",tclscriptname])
   ######################################################################
   def shell(self):
-    ork.pathtools.chdir(self.hostdir)
+    obt.pathtools.chdir(self.hostdir)
     cline =  self._core_commandline()
     cline += ["/bin/bash"]
-    return ork.command.system(cline)
+    return obt.command.system(cline)
   ######################################################################
   def shell_command(self,args,posttag=None,working_dir=None):
     if working_dir==None:
       working_dir=self.hostdir
-    ork.pathtools.chdir(working_dir)
+    obt.pathtools.chdir(working_dir)
     preargs = self._posttag_preamble(posttag=posttag)
     cline =  self._core_commandline(dockerargs=preargs)
     cline += ["/bin/bash","-l","-c"]
     cline += ['"'+" ".join(args)+'"']
-    rval = ork.command.system(cline)
+    rval = obt.command.system(cline)
     self._posttag_postamble(posttag=posttag)
     return rval
   ######################################################################

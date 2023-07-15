@@ -1,5 +1,5 @@
-from ork import dep, pip, path, dep
-from ork.command import Command
+from obt import dep, pip, path, dep
+from obt.command import Command
 ###############################################################################
 
 class pyside2(dep.Provider):

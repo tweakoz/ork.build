@@ -5,8 +5,8 @@
 # The Orkid Build System is published under the GPL 2.0 license
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
-from ork import dep, log, path, host, patch
-from ork.command import Command
+from obt import dep, log, path, host, patch
+from obt.command import Command
 ###############################################################################
 class giflib(dep.StdProvider):
   name = "giflib"

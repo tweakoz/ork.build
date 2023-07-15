@@ -7,11 +7,11 @@
 ###############################################################################
 
 import os, tarfile
-from ork import dep, host, path, git, make, pathtools, env, command
-from ork.deco import Deco
-from ork.wget import wget
-from ork.cmake import context as cmake_context
-from ork import log
+from obt import dep, host, path, git, make, pathtools, env, command
+from obt.deco import Deco
+from obt.wget import wget
+from obt.cmake import context as cmake_context
+from obt import log
 from yarl import URL
 from pathlib import Path
 
@@ -97,7 +97,7 @@ class _qt5_from_source(dep.Provider):
 
         if host.IsOsx:
           print("yo")
-          #options += ["-qt-libpng","-qt-zlib","-no-framework"]
+          #options += ["-qt-libpng","-qt-zlib","-no-framework.]
           #options += [,"-qt-libjpeg","-qt-pcre","-qt-freetype"]
           #options += ["-no-feature-sql"] # xcode11 + sql-tds (long long / uint64_t typedef compile errors)
           #options += ["-no-feature-location"]

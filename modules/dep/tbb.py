@@ -5,8 +5,8 @@
 # The Orkid Build System is published under the GPL 2.0 license
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
-from ork import dep, log, path, host, env
-from ork.command import Command
+from obt import dep, log, path, host, env
+from obt.command import Command
 ###############################################################################
 SRC_VERSION = "v2021.8.0"
 NAME = "tbb"

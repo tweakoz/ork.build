@@ -7,8 +7,8 @@
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
 
-from ork import dep, path
-from ork.command import *
+from obt import dep, path
+from obt.command import *
 
 ###############################################################################
 

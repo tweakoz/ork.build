@@ -1,13 +1,13 @@
 ###############################################################################
 # to activate, copy to ${OBT_STAGE}/dep-overrides/
 ###############################################################################
-from ork import dep
+from obt import dep
 ###############################################################################
 # get stock provider
 ###############################################################################
-BASE = dep.module_class("orkid",with_overrides=False)
+BASE = dep.module_class("obt.d",with_overrides=False)
 ###############################################################################
-class orkid(BASE):
+class obt.d(BASE):
   def __init__(self):
     super().__init__()
   #######################################################################
@@ -15,8 +15,8 @@ class orkid(BASE):
   #######################################################################
   @property
   def _fetcher(self):
-    fetcher = dep.GithubFetcher(name=orkid.name,
-                                repospec="tweakoz/orkid",
+    fetcher = dep.GithubFetcher(name=obt.d.name,
+                                repospec="tweakoz/obt.d",
                                 revision="custombranch",
                                 recursive=True,
                                 shallow=False)

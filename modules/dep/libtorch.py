@@ -6,7 +6,7 @@
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
 
-from ork import dep, path, host
+from obt import dep, path, host
 
 ###############################################################################
 # libtorch is quarantined for now..
@@ -56,7 +56,7 @@ class libtorch(dep.StdProvider):
 
 """
 
-Caffe2 is a deep learning framework that provides an easy and straightforward way for you to experiment
+Caffe2 is a deep learning framework.that provides an easy and straightforward way for you to experiment
  with deep learning and leverage community contributions of new models and algorithms. You can bring your 
  creations to scale using the power of GPUs in the cloud or to the masses on mobile 
  with Caffe2’s cross-platform libraries.

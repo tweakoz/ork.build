@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 
 import os, sys, pathlib, argparse
-import ork._globals
+import obt._globals
 
-parser = argparse.ArgumentParser(description='ork.build dep builder')
+parser = argparse.ArgumentParser(description='obt.build dep builder')
 parser.add_argument('dependency', metavar='D', type=str, help='a dependency to build')
 parser.add_argument('--force', action="store_true", help='force rebuild' )
 parser.add_argument('--wipe', action="store_true", help='wipe and redownload' )
@@ -22,13 +22,13 @@ if len(sys.argv)==1:
 
 depname = _args["dependency"]
 
-ork._globals.setOption("depname",depname)
+obt._globals.setOption("depname",depname)
 
 for item in "force wipe incremental nofetch serial usegitclone verbose debug".split(" "):
-  ork._globals.setOption(item,_args[item]==True)
+  obt._globals.setOption(item,_args[item]==True)
 
-from ork import dep
-from ork.deco import Deco
+from obt import dep
+from obt.deco import Deco
 deco = Deco()
 
 if os.environ["OBT_SUBSPACE"]!="host":

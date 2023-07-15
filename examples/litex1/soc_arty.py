@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 
-import ork.path
-import ork.litex
+import obt.path
+import obt.litex
 
-arty_cmd = "./arty.py --output-dir %s"%(ork.path.builds()/"artysoc")
+arty_cmd = "./arty.py --output-dir %s"%(obt.path.builds()/"artysoc")
 
-ork.litex.run( cpu="lm32",
+obt.litex.run( cpu="lm32",
                platform="arty",
                target="base",
                cmd=arty_cmd )

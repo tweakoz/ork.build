@@ -8,16 +8,16 @@
 ###############################################################################
 
 import os, sys, string
-import ork.search
-import ork.path
+import obt.search
+import obt.path
 
 #################################################################################
 
-path_list = [ork.path.builds()]
+path_list = [obt.path.builds()]
 
 if __name__ == "__main__":
  if not len(sys.argv) == 2:
   print("usage: word")
   sys.exit(1)
  word = sys.argv[1]
- ork.search.execute(word,path_list)
+ obt.search.execute(word,path_list)

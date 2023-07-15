@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import os, sys, string
-import ork.search as search
-import ork.path
+import obt.search as search
+import obt.path
 
 #################################################################################
 class visitor:
@@ -48,7 +48,7 @@ if __name__ == "__main__":
     print("usage: find_word repl_word")
     sys.exit(1)
   #########################
-  ork.path.project_root().chdir()
+  obt.path.project_root().chdir()
   #########################
   find_word = sys.argv[1]
   repl_word = sys.argv[2]

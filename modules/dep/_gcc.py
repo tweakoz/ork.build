@@ -1,4 +1,4 @@
-import ork, os, sys
+import obt, os, sys
 
 VER = "10.1.0"
 HASH = "7d48e00245330c48b670ec9a2c518291"
@@ -11,11 +11,11 @@ class context:
         self.version = VER
         self.name = "gcc-%s" % VER
         self.xzname = "%s.tar.xz" % self.name
-        self.archive_file = ork.path.downloads()/self.xzname
+        self.archive_file = obt.path.downloads()/self.xzname
         self.url = "https://ftp.gnu.org/gnu/gcc/gcc-%s/%s"%(VER,self.xzname)
-        self.extract_dir = ork.path.builds()/("gcc-%s"%provider)
+        self.extract_dir = obt.path.builds()/("gcc-%s"%provider)
         self.build_dir = self.extract_dir/self.name
-        self.arcpath = ork.dep.downloadAndExtract([self.url],
+        self.arcpath = obt.dep.downloadAndExtract([self.url],
                                                    self.xzname,
                                                    "xz",
                                                    HASH,
@@ -23,9 +23,9 @@ class context:
 
 
         self.newlib_xzname = "newlib-%s.tar.gz" % NEWLIB_VER
-        self.newlib_extract_dir = ork.path.builds()/("newlib-%s" % provider)
+        self.newlib_extract_dir = obt.path.builds()/("newlib-%s" % provider)
 
-        self.newlib_arc = ork.dep.downloadAndExtract(["ftp://sourceware.org/pub/newlib/%s"%self.newlib_xzname],
+        self.newlib_arc = obt.dep.downloadAndExtract(["ftp://sourceware.org/pub/newlib/%s"%self.newlib_xzname],
                                                       self.newlib_xzname,
                                                       "gz",
                                                       NEWLIB_HASH,
@@ -39,7 +39,7 @@ class context:
         for item in gccpatches:
           print("apply patch<%s>"%item)
           cmd = ["patch","-p0","-i",item]
-          ork.command.run(cmd)
+          obt.command.run(cmd)
 
         ###################################3
         # patch newlib
@@ -49,7 +49,7 @@ class context:
         for item in newlibpatches:
             print("apply patch<%s>"%item)
             cmd = ["patch","-p0","-i",item]
-            ork.command.run(cmd)
+            obt.command.run(cmd)
 
     #############################################
 
@@ -59,7 +59,7 @@ class context:
               languages="c,c++",
               enable_set=set(),
               disable_set=set(),
-              install_prefix=ork.path.prefix(),
+              install_prefix=obt.path.prefix(),
               program_prefix=None,
               with_ld=None,
               with_as=None,
@@ -122,7 +122,7 @@ class context:
 
             if do_gcc:
                 os.chdir(self.build_dir)
-                ork.command.run(["rm","-rf","libstdc++-v3"])
+                obt.command.run(["rm","-rf","libstdc++-v3"])
 
             enable_set = enable_set | set(["threads=single","multilib"])
             disable_set = disable_set | set(["shared","libssp","libatomic",
@@ -162,15 +162,15 @@ class context:
               os.system("rm -rf %s"%nlbd)
               os.mkdir(nlbd)
               os.chdir(nlbd)
-              if ork.command.run([ "../newlib-%s/configure"%NEWLIB_VER,
+              if obt.command.run([ "../newlib-%s/configure"%NEWLIB_VER,
                                   "--target=%s"%target,
                                   "--prefix=/",
                                   "--disable-newlib-supplied-syscalls",
                                   "--enable-multilib"] + build_sysroot_opts,environment=env)!=0:
                 return False
-              if ork.command.run(["make"])!=0:
+              if obt.command.run(["make"])!=0:
                 return False
-              if ork.command.system(["make","DESTDIR=%s"%install_prefix,"install"])!=0:
+              if obt.command.system(["make","DESTDIR=%s"%install_prefix,"install"])!=0:
                 return False
 
             #######################
@@ -209,10 +209,10 @@ class context:
     def _build(self,build_opts,bdest,install_prefix):
         os.mkdir(bdest)
         os.chdir(bdest)
-        if ork.command.run(['../configure']+build_opts)!=0:
+        if obt.command.run(['../configure']+build_opts)!=0:
           return False
-        if ork.make.exec("all")!=0:
+        if obt.make.exec("all")!=0:
           return False
-        if ork.command.system(["make","DESTDIR=%s"%install_prefix,"install"])!=0:
+        if obt.command.system(["make","DESTDIR=%s"%install_prefix,"install"])!=0:
           return False
         return True

@@ -8,7 +8,7 @@
 ###############################################################################
 
 import os, sys, string
-import ork.search
+import obt.search
 
 #################################################################################
 
@@ -17,4 +17,4 @@ if __name__ == "__main__":
   print("usage: word")
   sys.exit(1)
  word = sys.argv[1]
- ork.search.execute(word)
+ obt.search.execute(word)

@@ -9,11 +9,11 @@
 VERSION ="litex-vexriscv"
 
 import os, tarfile
-from ork import dep, host, path, git, cmake, make
-from ork.deco import Deco
-from ork.wget import wget
-from ork.command import Command
-from ork.cmake import context
+from obt import dep, host, path, git, cmake, make
+from obt.deco import Deco
+from obt.wget import wget
+from obt.command import Command
+from obt.cmake import context
 
 deco = Deco()
 

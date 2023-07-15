@@ -7,7 +7,7 @@
 ###############################################################################
 
 import os, multiprocessing 
-from ork import target, host
+from obt import target, host
 
 class OsDescriptor:
   def __init__(self):

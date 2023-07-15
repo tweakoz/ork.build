@@ -1,4 +1,4 @@
-from ork import template, path
+from obt import template, path
 
 class Generator:
 

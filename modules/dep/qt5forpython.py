@@ -5,7 +5,7 @@
 # The Orkid Build System is published under the GPL 2.0 license
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
-from ork import dep, host, git, command, env, log
+from obt import dep, host, git, command, env, log
 
 # OSX - brew install pyside
 

@@ -8,8 +8,8 @@
 ###############################################################################
 
 import argparse, sys, os
-from ork import deco, path
-from ork.eda.xilinx import vivado
+from obt import deco, path
+from obt.eda.xilinx import vivado
 
 deco = deco.Deco()
 

@@ -5,7 +5,7 @@
 # The Orkid Build System is published under the GPL 2.0 license
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
-from ork import dep, command, pathtools, path
+from obt import dep, command, pathtools, path
 ###############################################################################
 class openblas(dep.StdProvider):
   VERSION ="v0.3.23"

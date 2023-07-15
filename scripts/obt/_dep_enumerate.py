@@ -9,11 +9,11 @@
 import os, inspect, tarfile
 from pathlib import Path
 import importlib.util
-import ork.path, ork.host
-from ork.command import Command, run
-from ork.deco import Deco
-from ork.wget import wget
-from ork import pathtools, cmake, make, path, git, host
+import obt.path, obt.host
+from obt.command import Command, run
+from obt.deco import Deco
+from obt.wget import wget
+from obt import pathtools, cmake, make, path, git, host
 
 ###############################################################################
 def _enumerate():
@@ -27,8 +27,8 @@ def _enumerate():
   dep_search_list = os.environ["OBT_MODULES_PATH"].split(":")
   #print(dep_search_list)
   for modules_repo in dep_search_list:
-    dep_repo = ork.path.Path(modules_repo)/"dep"
-    dep_list = ork.pathtools.patglob(dep_repo,"*.py")
+    dep_repo = obt.path.Path(modules_repo)/"dep"
+    dep_list = obt.pathtools.patglob(dep_repo,"*.py")
     for item in dep_list:
       d = os.path.basename(item)
       d = os.path.splitext(d)[0]

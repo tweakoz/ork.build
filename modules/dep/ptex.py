@@ -5,7 +5,7 @@
 # The Orkid Build System is published under the GPL 2.0 license
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
-from ork import dep, log, path, template
+from obt import dep, log, path, template
 ###############################################################################
 class ptex(dep.StdProvider):
   name = "ptex"

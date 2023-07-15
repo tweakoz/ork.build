@@ -9,10 +9,10 @@
 VERSION = "v2.50.0-obt"
 
 import os
-from ork import dep, host, path, cmake, git, make, pathtools, log
-from ork.deco import Deco
-from ork.wget import wget
-from ork.command import Command
+from obt import dep, host, path, cmake, git, make, pathtools, log
+from obt.deco import Deco
+from obt.wget import wget
+from obt.command import Command
 
 deco = Deco()
 class _realsense_from_source(dep.StdProvider):

@@ -8,9 +8,9 @@
 
 from pathlib import Path
 import hashlib
-import ork.path
-from ork.command import Command
-from ork import wget
+import obt.path
+from obt.command import Command
+from obt import wget
 
 ###############################################################################
 # caching download
@@ -20,8 +20,8 @@ def scp( srcpath=None,
          output_name=None,
          md5val=None):
 
-  assert(ork.path.downloads().exists())
-  output_path = ork.path.downloads()/output_name
+  assert(obt.path.downloads().exists())
+  output_path = obt.path.downloads()/output_name
   hash_ok = False
   if md5val!=None:
     hash_ok = wget.check_hash(output_path,md5val)

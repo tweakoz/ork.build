@@ -9,10 +9,10 @@
 ###############################################################################
 
 import os, sys, pathlib, argparse, string
-import ork._globals
-import ork.docker
-from ork import dep, path
-from ork.deco import Deco
+import obt._globals
+import obt.docker
+from obt import dep, path
+from obt.deco import Deco
 deco = Deco()
 
 def print_item(key,val):
@@ -23,7 +23,7 @@ def print_item(key,val):
 
 ###############################################################################
 
-parser = argparse.ArgumentParser(description='ork.build docker method invokation')
+parser = argparse.ArgumentParser(description='obt.build docker method invokation')
 parser.add_argument('dockermodulename', metavar='D', type=str, help='a docker module to invoke method on')
 parser.add_argument('--method', action="store", type=str, help='method to call' )
 
@@ -36,12 +36,12 @@ if len(sys.argv)==1:
 dockermodulename = _args["dockermodulename"]
 method = _args["method"]
 
-ork._globals.setOption("dockermodulename",dockermodulename)
+obt._globals.setOption("dockermodulename",dockermodulename)
 
 print(dockermodulename)
 print(method)
 
-dockermodule = ork.docker.descriptor(dockermodulename)
+dockermodule = obt.docker.descriptor(dockermodulename)
 
 h = getattr(dockermodule,method)
 

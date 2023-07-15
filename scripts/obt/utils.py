@@ -18,10 +18,10 @@ import sys
 import xml.etree.ElementTree as xml
 import hashlib
 
-import ork.common
-from ork.command import Command
+import obt.common
+from obt.command import Command
 
-deco = ork.deco.Deco()
+deco = obt.deco.Deco()
 
 def is_irix():
 	return sys.platform.find("irix")!=-1
@@ -45,8 +45,8 @@ else:
   
 
 
-from ork.build.manifest import *
-from ork.pathtools import *
+from obt.build.manifest import *
+from obt.pathtools import *
 
 import select
 import fcntl
@@ -81,12 +81,12 @@ def folder_tree(rootpath):
 	return ret
 
 ###########################################
-# check for ork.build projects
+# check for obt.build projects
 ###########################################
 
 def check_for_project(path):
 	rval = None
-	prj_manifest = "%s/ork.build.manifest"%path
+	prj_manifest = "%s/obt.build.manifest"%path
 	prj_scripts = os.path.abspath("%s/scripts"%path)
 	#print "checking for project at<%s>" % deco.path(path)
 	if os.path.exists(prj_manifest):
@@ -124,7 +124,7 @@ def check_for_project(path):
 	return rval
 ###########################################
 def check_for_projects(base):
-	manifests.add_project("%s/ork.build"%base)
+	manifests.add_project("%s/obt.build"%base)
 	paths = glob.glob("%s/*"%base)
 	PRJ_LIBDIRS=" "
 	setenv_scrs = list()

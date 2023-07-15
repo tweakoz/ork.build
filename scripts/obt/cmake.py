@@ -6,8 +6,8 @@
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
 
-from ork.command import Command
-from ork import path, dep, buildtrace
+from obt.command import Command
+from obt import path, dep, buildtrace
 import os 
 
 class context:
@@ -21,7 +21,7 @@ class context:
                trace=False,
                sourcedir=None,
                builddir=None,
-               workdir=None,
+               working_dir=None,
                xcode=False,
                install_prefix=None):
 
@@ -31,7 +31,7 @@ class context:
     self._verbose = False
     self._trace = trace
     self._builddir = builddir 
-    self._workdir = workdir
+    self._working_dir = working_dir
     self._sourcedir = sourcedir
     self._xcode = xcode
     self._install_prefix = install_prefix
@@ -109,4 +109,4 @@ class context:
      "module_path": self.install_prefix/"lib"/"cmake",
      "cmake_env": proc_env,
      "os_env": the_env }) as nested:
-       return Command(cmdlist,environment=the_env,working_dir=self._workdir).exec()
+       return Command(cmdlist,environment=the_env,working_dir=self._working_dir).exec()
