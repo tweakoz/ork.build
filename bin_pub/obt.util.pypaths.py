@@ -20,9 +20,15 @@ print_env_var('PYTHONWARNINGS', 'Not set')
 print_env_var('PYTHONNOUSERSITE', 'Not set (User site directory is added to sys.path)')
 print_env_var('PYTHONUNBUFFERED', 'Not set (Buffered I/O is used for stdout and stderr)')
 
+print_env_var('site.PREFIXES', site.PREFIXES)
+print_env_var('site.USER_SITE', site.USER_SITE)
+print_env_var('site.USER_BASE', site.USER_BASE)
+print_env_var('sys.prefix', sys.prefix)
+print_env_var('sys.base_prefix', sys.base_prefix)
+
 print( "######################################################")
 
-print( "obt-pkg-path: %s" % obt.path.obt_module_path() )
+print( "obt-pymodule-path: %s" % obt.path.obt_module_path() )
 print( "obt-data-base: %s" % obt.path.obt_data_base() )
 print( "obt-modules-base: %s" % obt.path.obt_modules_base() )
 print( "running_from_pip: %s" % obt.path.running_from_pip() )

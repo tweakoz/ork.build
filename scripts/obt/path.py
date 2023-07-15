@@ -86,8 +86,11 @@ def subspace_dir():
 ##########################################
 
 def obt_data_base():
-  import site
-  P = Path(site.USER_BASE)
+  if "OBT_PYTHONHOME" in os.environ:
+    P = Path(os.environ["OBT_PYTHONHOME"])
+  else:
+    import site
+    P = Path(site.USER_BASE)
   return P/"obt"
 
 def pip_obt_data_path(filename):

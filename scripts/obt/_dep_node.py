@@ -29,7 +29,7 @@ class DepNode:
       self.miscoptions = _globals.getOptions()
       self.name = dep_name
       self.module_path = dep_path
-      self.modules_base = (Path(dep_path)/".."/"..").resolve()
+      self.modules_base = Path(obt.path.obt_modules_base()).resolve()
       self.scrname = ("%s.py"%dep_name)
       self.module_spec = importlib.util.spec_from_file_location(self.name, str(self.module_path))
       self.module = importlib.util.module_from_spec(self.module_spec)

@@ -68,7 +68,8 @@ class python_from_source(dep.Provider):
     env.set("OBT_PYTHON_DECO_NAME",self._deconame)
     env.set("OBT_PYTHON_DECOD_NAME",self._deconame_d)
     env.set("OBT_PYTHONHOME",self.virtualenv_dir)
-    #env.prepend("PATH",self.virtualenv_dir/"bin" )
+    if True: # WIP
+      env.prepend("PATH",self.virtualenv_dir/"bin" )
     #env.set("VIRTUAL_ENV",self.virtualenv_dir)
     env.prepend("LD_LIBRARY_PATH",self.home_dir/"lib")
     env.prepend("PKG_CONFIG_PATH",self.library_dir/"pkgconfig")
