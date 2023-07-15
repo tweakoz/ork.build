@@ -11,7 +11,7 @@ STAGEDIR = Path(args["stage"])
 SCRIPTDIR=Path(os.path.dirname(os.path.realpath(__file__)))
 os.chdir(SCRIPTDIR)
 
-cmdlist = ["./bin/init_env.py",
+cmdlist = ["./bin/obt.init.env.py",
            "--create",STAGEDIR,
            "--command","obt.dep.build.py pkgconfig"]
 

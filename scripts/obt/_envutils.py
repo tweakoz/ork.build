@@ -173,7 +173,7 @@ class EnvSetup:
   ###########################################
 
   def importProject(self,prjdir):
-    init_script = prjdir/"scripts"/"init_env.py"
+    init_script = prjdir/"scripts"/"obt.init.env.py"
     #print(init_script)
     if init_script.exists():
       import importlib
@@ -213,7 +213,7 @@ class EnvSetup:
     LAUNCHENV = []
     if self.GIT_SSH_COMMAND!=None:
       LAUNCHENV += ['export GIT_SSH_COMMAND="%s";'%self.GIT_SSH_COMMAND]
-    LAUNCHENV += ["%s/bin/init_env.py" % self.ROOT_DIR]
+    LAUNCHENV += ["%s/bin/obt.init.env.py" % self.ROOT_DIR]
     LAUNCHENV += ["--numcores", numcores]
     LAUNCHENV += ["--launch", self.OBT_STAGE]
     LAUNCHENV += ["--prjdir", self.PROJECT_DIR]

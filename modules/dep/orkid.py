@@ -71,7 +71,7 @@ class orkid(dep.StdProvider):
 
   @property
   def _envinitcommands(self):
-    return [path.obt_bin()/"init_env.py",
+    return [path.obt_bin()/"obt.init.env.py",
       "--stack", path.stage(),
       "--novars", # use parent environment variables
       "--compose", path.builds()/"orkid",
@@ -155,7 +155,7 @@ class orkid(dep.StdProvider):
   ########
   def on_build_shell(self):
     shell_cmd = command.Command([
-      path.obt_bin()/"init_env.py",
+      path.obt_bin()/"obt.init.env.py",
       "--stack", path.stage(),
       "--compose", path.builds()/"orkid",
       "--chdir", path.builds()/"orkid"

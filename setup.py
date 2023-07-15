@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 import glob, os
 import platform
 
-version = "0.0.16"
+version = "0.0.17"
 
 ###############################################################################
 
@@ -34,14 +34,14 @@ data_files = module_files + example_files + test_files + binpriv_files
 ###############################################################################
 
 setup(
-    name="obt",
+    name="ork.build",
     version=version,
     author="Michael T. Mayers",
     author_email="michael@tweakoz.com",
     description="Orkid Build Tools",
     long_description=long_description,
     long_description_content_type='text/markdown',
-    url="https://github.com/tweakoz/obt.build",
+    url="https://github.com/tweakoz/ork.build",
     packages=find_packages(where="scripts"),
     package_dir={
         "": "scripts",

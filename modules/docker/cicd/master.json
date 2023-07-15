@@ -17,8 +17,8 @@
       "skipLFS": true,
       "workingdir": "$REPODIR",
       "commandlist": [
-        "./bin/create_env.py --stagedir $STAGE --numcores 6",
-        "./bin/init_env.py --launch $STAGE --numcores 6 --command \"obt.dep.build.py luajit\""
+        "./bin/obt.create.env.py --stagedir $STAGE --numcores 6",
+        "./bin/obt.init.env.py --launch $STAGE --numcores 6 --command \"obt.dep.build.py luajit\""
       ]
     }
   },
