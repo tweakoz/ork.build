@@ -7,7 +7,7 @@ class ngc(dep.Provider):
     self.build_dest = path.builds()/"ngc"
     self.manifest = path.manifests()/"ngc"
     self.OK = self.manifest.exists()
-    self.dest_bin = path.obt_bin()/"ngc"
+    self.dest_bin = path.stage()/"bin"/"ngc"
   def __str__(self):
     return "NGC (nvidia-wget)"
   def download_and_extract(self): #############################################

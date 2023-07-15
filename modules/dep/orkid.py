@@ -71,7 +71,7 @@ class orkid(dep.StdProvider):
 
   @property
   def _envinitcommands(self):
-    return [path.obt_bin()/"obt.init.env.py",
+    return ["obt.init.env.py",
       "--stack", path.stage(),
       "--novars", # use parent environment variables
       "--compose", path.builds()/"orkid",
@@ -81,7 +81,8 @@ class orkid(dep.StdProvider):
 
   @property
   def _inner_build_command(self):
-    inner_build_command = ["ork.build.py", "--builddir", str(self.builddir)]
+    ork_build_script = self.orkid_src_dir/"obt.project"/"bin"/"ork.build.py"
+    inner_build_command = [str(ork_build_script), "--builddir", str(self.builddir)]
     if dep._globals.getOption("debug"):
       inner_build_command += ["--debug"]
     if dep._globals.getOption("verbose"):
@@ -155,7 +156,7 @@ class orkid(dep.StdProvider):
   ########
   def on_build_shell(self):
     shell_cmd = command.Command([
-      path.obt_bin()/"obt.init.env.py",
+      "obt.init.env.py",
       "--stack", path.stage(),
       "--compose", path.builds()/"orkid",
       "--chdir", path.builds()/"orkid"

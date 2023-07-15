@@ -94,6 +94,7 @@ if try_staging!=None:
 
 os.environ["OBT_SEARCH_EXTLIST"] = ".cpp:.c:.cc:.h:.hpp:.inl:.qml:.m:.mm:.py:.txt:.glfx"
 
+print(os.environ)
 ###########################################
 
 import obt.deco
