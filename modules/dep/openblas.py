@@ -29,5 +29,5 @@ class openblas(dep.StdProvider):
   def areRequiredSourceFilesPresent(self):
     return (self.source_root/"CMakeLists.txt").exists()
   def areRequiredBinaryFilesPresent(self):
-    return (path.include()/"openblas"/"lapacke.h").exists()
+    return (path.includes()/"openblas"/"lapacke.h").exists()
 
