@@ -18,7 +18,9 @@ class pydefaults(dep.Provider):
                    "numpy","scipy",
                    "numba","pyopencl",
                    "matplotlib",
-                   "pyzmq"])#,"backports.lzma"])
+                   "pyzmq",
+                   "ork.build" # okay...
+                   ])#,"backports.lzma"])
 
 
 
