@@ -17,7 +17,7 @@ def package_files(directory):
     for filename in files:
       if not (filename.endswith('.pyc') or '.egg-info' in root or '__pycache__' in root):
         filepath = os.path.join(root, filename)
-        dest_dir = os.path.join('ork.build.tools', root)
+        dest_dir = os.path.join('obt', root)
         data_files.append((dest_dir, [filepath]))
   return data_files
 
@@ -34,7 +34,7 @@ data_files = module_files + example_files + test_files + binpriv_files
 ###############################################################################
 
 setup(
-    name="ork.build.tools",
+    name="obt",
     version=version,
     author="Michael T. Mayers",
     author_email="michael@tweakoz.com",

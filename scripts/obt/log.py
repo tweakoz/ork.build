@@ -1,5 +1,5 @@
 import os
-from ork.deco import Deco
+from obt.deco import Deco
 
 global deco
 

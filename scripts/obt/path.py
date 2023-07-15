@@ -8,9 +8,6 @@
 
 import os, inspect, sys, pathlib
 from pathlib import Path as _Path_, PosixPath as _PosixPath_, WindowsPath  as _WindowsPath_
-import ork.command
-from ork import buildtrace
-import pkg_resources
 
 ###############################################################################
 
@@ -22,9 +19,11 @@ class WindowsPath(_WindowsPath_, Path) :
  pass
 
 class PosixPath(_PosixPath_, Path) :
- def chdir(self):
-   buildtrace.buildTrace({"op":"path.chdir(%s)"%str(self)})
-   os.chdir(str(self))
+ if "OBT_STAGE" in os.environ:
+   from ork import buildtrace
+   def chdir(self):
+     buildtrace.buildTrace({"op":"path.chdir(%s)"%str(self)})
+     os.chdir(str(self))
  pass
 
 ###############################################################################
@@ -81,14 +80,40 @@ def subspace():
 def subspace_dir():
   return Path(os.environ["OBT_SUBSPACE_DIR"])
 
-###############################################################################
+##########################################
 
-def pip_pkg_path(filename):
-    return pkg_resources.resource_filename('ork.build.tools', filename)
+def obt_data_base():
+  import site
+  P = Path(site.USER_BASE)
+  return P/"obt"
+
+def pip_obt_data_path(filename):
+  return obt_data_base()/filename
+
+def obt_module_path():
+   import obt 
+   return obt.__path__[0]
+
+def obt_modules_base():
+  return obt_data_base()/"modules"
+
+def running_from_pip():
+  pip_exists = obt_data_base().exists()
+  if pip_exists:
+     omp = obt_module_path()
+     import site
+     if site.USER_BASE in omp:
+       return True
+  return False
+
+###############################################################################
 
 def modules(provider=None):
   if provider==None:
-    return root()/"modules"
+    if running_from_pip():
+      return obt_modules_base()
+    else:
+      return root()/"modules"
   else:
     depnode = provider._node
     name = provider._name
@@ -240,6 +265,7 @@ def project_root():
 
 ###############################################################################
 def osx_sdkdir():
+  import ork.command
   result = ork.command.capture([
                     "xcodebuild",
                     "-version",

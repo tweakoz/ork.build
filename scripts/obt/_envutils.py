@@ -1,13 +1,23 @@
-import ork.env
-import ork.host
-import ork.path
-import ork.deco
-import ork.command
+import obt.env
+import obt.host
+import obt.path
+import obt.deco
+import obt.command
 import os, sys, re, json
 
-deco = ork.deco.Deco()
+deco = obt.deco.Deco()
+
 
 ##########################################
+
+def root_path():
+  import obt.path
+  if obt.path.running_from_pip():
+    return obt.path.obt_data_base()
+  elif "OBT_ROOT" in os.environ:
+    return ork.path.Path(os.environ["OBT_ROOT"]):
+  else:
+    return None
 
 class EnvSetup:
   def __init__(self,stagedir=None,
@@ -20,10 +30,11 @@ class EnvSetup:
                     project_name=None,
                     git_ssh_command=None):
 
+
     if stagedir==None:
       stagedir = ork.path.Path(os.environ["OBT_STAGE"])
     if rootdir==None:
-      rootdir = ork.path.Path(os.environ["OBT_ROOT"])
+      rootdir = root_path()
     if projectdir==None:
       projectdir = ork.path.Path(os.environ["OBT_PROJECT_DIR"])
     if bindir==None:

@@ -9,18 +9,13 @@
 
 import os, sys, pathlib, argparse, multiprocessing, json
 
-import ork 
-print(dir(ork))
-print(ork.__path__)
-assert(False)
-
 as_main = (__name__ == '__main__')
 
 Path = pathlib.Path
 
 curwd = Path(os.getcwd())
 
-parser = argparse.ArgumentParser(description='ork.build environment creator')
+parser = argparse.ArgumentParser(description='obt.build environment creator')
 parser.add_argument('--stagedir', metavar="createdir", help='create staging folder and enter session' )
 parser.add_argument('--wipe', action="store_true", help='wipe old staging folder' )
 parser.add_argument('--prompt', metavar="prompt", help='prompt suffix' )
@@ -127,15 +122,15 @@ if args["sshkey"]!=None:
 
 ###########################################
 
-import ork.deco
-import ork.env
-import ork.path
-import ork.host
-import ork.dep
-import ork._globals as _glob
-from ork.command import Command
+import obt.deco
+import obt.env
+import obt.path
+import obt.host
+import obt.dep
+import obt._globals as _glob
+from obt.command import Command
 
-deco = ork.deco.Deco()
+deco = obt.deco.Deco()
 bin_dir = root_dir/"bin"
 
 if args["obttrace"]==True:
@@ -143,9 +138,9 @@ if args["obttrace"]==True:
 
 ##########################################
 
-import ork._envutils 
+import obt._envutils 
 
-envsetup = ork._envutils.EnvSetup(stagedir=OBT_STAGE,
+envsetup = obt._envutils.EnvSetup(stagedir=OBT_STAGE,
                                   projectdir=project_dir,
                                   rootdir=root_dir,
                                   bindir=bin_dir,
@@ -164,7 +159,7 @@ if args["compose"] != None:
 if args["novars"]==False:
   envsetup.install() # sets OBT_STAGE env var (which prefix() uses)
 ###########################################
-ork.path.prefix().mkdir(parents=True,exist_ok=False)
+obt.path.prefix().mkdir(parents=True,exist_ok=False)
 #############
 # Create base scripts
 #############
@@ -173,8 +168,8 @@ envsetup.genBashRc(try_staging/".bashrc")
 envsetup.genLaunchScript(out_path=try_staging/".launch_env")
 #############
 
-#if not ork.host.IsAARCH64:
-PYTHON = ork.dep.instance("python")
+#if not obt.host.IsAARCH64:
+PYTHON = obt.dep.instance("python")
 PYTHON.provide()
-PYTHONDEFS = ork.dep.instance("pydefaults")
+PYTHONDEFS = obt.dep.instance("pydefaults")
 PYTHONDEFS.provide()

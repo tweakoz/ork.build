@@ -8,10 +8,10 @@
 
 import os
 
-import ork.deco
-from ork import log
+import obt.deco
+from obt import log
 
-deco = ork.deco.Deco()
+deco = obt.deco.Deco()
 
 ###########################################
 

@@ -9,16 +9,16 @@
 import os, inspect, tarfile
 from pathlib import Path
 import importlib.util
-import ork.path, ork.host
-from ork.command import Command, run
-from ork.deco import Deco
-from ork.wget import wget
-from ork import pathtools, cmake, make, path, git, host, _globals
-from ork._dep_fetch import *
-from ork._dep_build import *
-from ork._dep_provider import *
-from ork._dep_impl import *
-from ork._dep_node import *
-from ork._dep_dl import *
-from ork._dep_x import *
-from ork._dep_enumerate import *
+import obt.path, obt.host
+from obt.command import Command, run
+from obt.deco import Deco
+from obt.wget import wget
+from obt import pathtools, cmake, make, path, git, host, _globals
+from obt._dep_fetch import *
+from obt._dep_build import *
+from obt._dep_provider import *
+from obt._dep_impl import *
+from obt._dep_node import *
+from obt._dep_dl import *
+from obt._dep_x import *
+from obt._dep_enumerate import *

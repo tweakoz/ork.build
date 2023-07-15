@@ -8,14 +8,14 @@
 import os, inspect, tarfile, sys
 from pathlib import Path
 import importlib.util
-import ork.path, ork.host
-from ork.command import Command, run
-from ork.deco import Deco
-from ork.wget import wget
+import obt.path, obt.host
+from obt.command import Command, run
+from obt.deco import Deco
+from obt.wget import wget
 from ork import pathtools, cmake, make, path, git, host, _globals, log, buildtrace
-import ork._dep_provider
-import ork._dep_enumerate
-#import ork._dep_x
+import obt._dep_provider
+import obt._dep_enumerate
+#import obt._dep_x
 
 deco = Deco()
 def module_of_class(clazz):
@@ -39,7 +39,7 @@ class DepNode:
         self.module_class = getattr(self.module,dep_name)
        # print(self.module_class)
         assert(inspect.isclass(self.module_class))
-        assert(issubclass(self.module_class,ork._dep_provider.Provider))
+        assert(issubclass(self.module_class,obt._dep_provider.Provider))
         ##########################################################
         # check for override class in <staging>/"dep-overrides"
         ##########################################################
@@ -89,7 +89,7 @@ class DepNode:
     @classmethod
     def ALL(cls,with_overrides=True):
       ALL_DEPS = dict()
-      e = ork._dep_enumerate._enumerate()
+      e = obt._dep_enumerate._enumerate()
       for key in e.keys():
         val = e[key]
         n = DepNode(key,val._fullpath,with_overrides)
@@ -99,7 +99,7 @@ class DepNode:
 
     @classmethod
     def FIND(cls,named,with_overrides=True):
-      e = ork._dep_enumerate._enumerate()
+      e = obt._dep_enumerate._enumerate()
       n = None
       if named in e.keys():
         val = e[named]
@@ -111,7 +111,7 @@ class DepNode:
 ###############################################################################
     @classmethod
     def FindWithMethod(cls,named):
-      e = ork._dep_enumerate._enumerate()
+      e = obt._dep_enumerate._enumerate()
       rval = {}
       for k in e.keys():
         val = e[k]

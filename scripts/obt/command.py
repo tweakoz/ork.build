@@ -9,10 +9,10 @@
 import os,io,sys, platform, subprocess, threading
 import shlex, errno, pty, select, signal, time
 
-from ork.deco import Deco
+from obt.deco import Deco
 from ork import log, pathtools, buildtrace
 
-import ork.path 
+import obt.path 
 deco = Deco()
 
 ###############################################################################
@@ -56,7 +56,7 @@ class Command:
 
     def exec(self,use_shell=False):
 
-        cur_dir = ork.path.Path(os.getcwd())
+        cur_dir = obt.path.Path(os.getcwd())
         
         if self.working_dir!=None:
           pathtools.chdir(self.working_dir)
