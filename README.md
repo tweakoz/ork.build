@@ -9,7 +9,7 @@
 
 ## DESCRIPTION  
 
-**ork.build** is a posix (Linux,OSX) *container based* build environment which provides shared functionality for common cross-language build automation tasks. **ork.build** also has a set of dependency providers for useful libraries, docker containers, and "subspaces". Unlike homebrew and apt the dependency provider interface is consistent regardless if you are on OSX or Linux - in general the entire interface is consistent on both OSX and Linux. ork.build is implemented primarily in python3. If you need to compose a set of build products (implemented in many languages) with a known working set of versions and configuration data, then ork.build might be for you. It is also important to realize that ork.build is not a replacement for docker style containers. ork.build is specifically a build container environment, as opposed to a machine or microservice container environment. For example, one might use ork.build to prep content for use in a docker container.
+**ork.build** is a posix (Linux,OSX) *container based* build environment which provides shared functionality for common cross-language build automation tasks. **ork.build** also has a set of dependency providers for useful libraries, docker containers, and "subspaces". Unlike homebrew and apt the dependency provider interface is consistent regardless if you are on OSX or Linux - in general the entire interface is consistent on both OSX and Linux. ork.build is implemented primarily in python3. If you need to compose a set of build products (implemented in many languages) with a known working set of versions and configuration data, then ork.build might be for you. It is also important to realize that ork.build is not a replacement for docker style containers. ork.build is specifically a *build container* environment, as opposed to a machine or microservice container environment. For example, one might use ork.build to prep content for use in a docker container.
 
 
 ---------------------------------------------------------------
@@ -23,11 +23,21 @@
 ## DEFINITIONS  
 
 * Staging Folder - The container which consists of a top level folder in which all build products go and a set of environment variables
+
 * Module - a python script in OBT or OBT_SEARCH_PATH that describes and implements a subspace, dependency, target and SDK. There are *dep*, *docker*, and *subspace* modules - each providing a different subset of functionality.
+
 * Subspace - a subdivision of a staging folder containing build products for a specific target, and/or products for a foreign environment such as conda, and/or docker containers (for services or other items best left in a docker container).
+
+  * Host Subspace - The subspace containing products designed for distribution on the build host. Typically used for native apps that require high performance and low latency or hardware access (eg. game engines, realtime software). This is the default subspace. Even this subspace has a custom python (Built from source). Python based deps will build against this subspace's python when this subspace is active.
+
+  * Conda Subspace - Generic Anaconda based subspace. Inherits most paths from Host Subspace, except the python environment. Typically used for data science, ML or python based services running on the host natively (meaning - not in docker).
+
 * Dependency - a recipe for building a package into a subspace, for a target, using an SDK.
+
 * Host - the OS instance that is executing OBT in a shell.
+
 * Target - the OS that code is being generated for (via an SDK)
+
 * SDK - recipes for how to build products for a given target
 
 ---------------------------------------------------------------
@@ -41,14 +51,21 @@
 
 ---------------------------------------------------------------
 
-## DEPENDENCIES
+## Top Level Dependencies (User Installed)
 
-### pip managed 
- * yarl  (auto installed)
+* If using docker functionality - Docker (try rootless)
+* If using FPGA functionality - Vivado/Quartus [in /opt]
+* If using Houdini functionality - Houdini [in /opt]
+
+## Top Level Dependencies (apt/homebrew managed)
+
+* Visit <https://github.com/tweakoz/ork.build/blob/develop/bin/obt.ix.installdeps.ubuntu_x86_64.py>
+* Visit <https://github.com/tweakoz/ork.build/blob/develop/bin/obt.osx.installdeps.py>
+
+## Pip Managed dependencies (Per python env)
+ * yarl
  * toposort 
 
-###
- * c/c+
 ---------------------------------------------------------------
 
 ## USAGE (to python --user - without cloning)
