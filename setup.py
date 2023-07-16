@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 import glob, os
 import platform
 
-version = "0.0.53"
+version = "0.0.54"
 
 ###############################################################################
 
