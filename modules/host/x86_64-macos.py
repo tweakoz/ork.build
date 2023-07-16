@@ -50,9 +50,9 @@ class hostinfo:
     for l in _xcodesdkstr:
       x = l.split(": ")
       if x[0]=="Path":
-        env.append("OBT_MACOS_SDK_DIR",x[1])
+        env.set("OBT_MACOS_SDK_DIR",x[1])
       if x[0]=="PlatformVersion":
-        env.append("OBT_MACOS_PLATFORM_VERSION",x[1])
+        env.set("OBT_MACOS_PLATFORM_VERSION",x[1])
     print("MACOS-X86_64 Host Activated...")
   ###################################
   @property
