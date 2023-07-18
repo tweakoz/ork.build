@@ -18,22 +18,16 @@ class litex(dep.Provider):
     self._archlist = ["x86_64"]
 
   def build(self): ############################################################
-      #PYTHON = dep.instance("python")
-      #pip.install(["pytest",
-      #             "numpy","scipy",
-      #             "numba","pyopencl",
-      #             "matplotlib",
-      #             "pyzmq","zlib"])
       pathtools.mkdir(self.build_dest,clean=True)
       pathtools.chdir(self.build_dest)
       uri = URL("https://raw.githubusercontent.com")/"enjoy-digital"/"litex"/VERSION/"litex_setup.py"
       commands = [Command(["wget",uri])]
       commands += [Command(["chmod","ugo+x","litex_setup.py"])]
-      commands += [Command(["./litex_setup.py","init","install","--user"])]
+      commands += [Command(["./litex_setup.py","init","install"])]
       commands += [Command(["echo", "building litex unfortunately requires sudo for now.."])]
       commands += [Command(["sudo","./litex_setup.py","gcc"])]
-      commands += ["pip3","install","git+https://github.com/litex-hub/pythondata-software-picolibc.git"]
-      commands += ["pip3","install","meson"]
+      commands += [Command(["pip3","install","git+https://github.com/litex-hub/pythondata-software-picolibc.git"])]
+      commands += [Command(["pip3","install","meson"])]
 
       for item in commands:
       	ret = item.exec()
@@ -67,7 +61,7 @@ class litex(dep.Provider):
   ########
 
   def areRequiredSourceFilesPresent(self):
-    return (self.python.site_packages_dir/"litex.egg-link").exists()
+    return (self.build_dest/"setup.py").exists()
 
   def areRequiredBinaryFilesPresent(self):
-    return None
+    return (self.build_dest/"litex-boards"/"litex_boards"/"targets"/"digilent_nexys4.py").exists()
