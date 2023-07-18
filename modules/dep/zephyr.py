@@ -28,6 +28,7 @@ class zephyr(dep.Provider):
     self.manifest = path.manifests()/"zephyr"
     self.OK = self.manifest.exists()
     self._archlist = ["x86_64"]
+    self._oslist = ["Linux"]
 
   def __str__(self): ##########################################################
 

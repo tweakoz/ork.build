@@ -160,7 +160,8 @@ def dynamicInit():
   depitems = obt.dep.DepNode.FindWithMethod("env_init")
   for depitemk in depitems:
     depitem = depitems[depitemk]
-    depitem.env_init()
+    if depitem.supports_host:
+      depitem.env_init()
   ####################################
   subspaceitems = obt.subspace.findWithMethod("env_init")
   for subitemk in subspaceitems:
@@ -185,6 +186,10 @@ if args["launch"]!=None:
     #############
     shell = "bash"
     bashrc = try_staging/".bashrc"
+    if args["prjdir"]!=None:
+      #prjdir = obt.path/Pat
+      #envsetup.importProject(Path(item)/"obt.project")
+      pass
     #############
     if args["subspace"]!=None:
         if args["chdir"]!=None:

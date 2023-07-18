@@ -14,6 +14,8 @@ class litex(dep.Provider):
     self.manifest = path.manifests()/"litex"
     self.OK = self.manifest.exists()
     self.python = self.declareDep("python")
+    self._oslist = ["Linux"]
+    self._archlist = ["x86_64"]
 
   def build(self): ############################################################
       #PYTHON = dep.instance("python")
@@ -50,6 +52,9 @@ class litex(dep.Provider):
     env.set("LITEX_BOARDS",LITEX_BOARDS)
     env.append("PATH",LITEX_BOARDS/"targets")
     env.append("PATH",GCC_RISCV/"bin")
+
+  def env_goto(self):
+    return { "litex": self.build_dest }
 
   ########
 

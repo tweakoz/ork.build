@@ -8,6 +8,7 @@ class cuda(dep.Provider):
     super().__init__("cuda")
     self.manifest = path.manifests()/"cuda"
     self.OK = self.manifest.exists()
+    self._oslist = ["Linux"]
 
   ########
 

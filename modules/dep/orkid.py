@@ -27,10 +27,14 @@ class orkid(dep.StdProvider):
     #  use that as orkid_src_dir
     ################################
 
-    self._userworkingcopy = ("ORKID_IS_MAIN_PROJECT" in os.environ)
+    x = path.Path(os.environ["OBT_PROJECT_DIR"])
+    self._userworkingcopy = (x/"orkid.cmake").exists()
+      
     if self._userworkingcopy:
-      self.orkid_src_dir = path.Path(os.environ["ORKID_WORKSPACE_DIR"])
-      self.source_root = path.Path(os.environ["ORKID_WORKSPACE_DIR"])
+      self.orkid_src_dir = x
+      assert(self.orkid_src_dir==x)
+      self.source_root = x
+      self.build_src = x
 
     ################################
 
@@ -162,12 +166,18 @@ class orkid(dep.StdProvider):
       "--chdir", path.builds()/"orkid"
     ])
     return shell_cmd.exec()
+
   ########
+
   def env_init(self):
-    log.marker("registering Orkid(%s) SDK"%self.revision)
+    log.marker("registering Orkid(%s) SDK @ %s"%(self.revision,self.orkid_src_dir))
     env.set("ORKID_WORKSPACE_DIR",self.orkid_src_dir)
     env.set("ORKID_LEV2_EXAMPLES_DIR",self.orkid_src_dir/"ork.lev2"/"examples")
 
+  ########
+
+  def env_goto(self):
+    return { "orkid": self.orkid_src_dir }
     
   ########
   def find_paths(self):
@@ -177,4 +187,4 @@ class orkid(dep.StdProvider):
     return (self.source_root/"orkid.cmake").exists()
 
   def areRequiredBinaryFilesPresent(self):
-    return (path.libs()/"libork_core.so").exists()
+    return (path.libs()/("libork_core.%s"%self.shlib_extension)).exists()

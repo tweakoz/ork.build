@@ -35,10 +35,16 @@ class EnvSetup:
       stagedir = obt.path.Path(os.environ["OBT_STAGE"])
     if rootdir==None:
       rootdir = root_path()
-    if projectdir==None:
-      projectdir = obt.path.Path(os.environ["OBT_PROJECT_DIR"])
     if bindir==None:
       bindir = rootdir/"bin"
+    if projectdir==None:
+      projectdir = obt.path.Path(os.environ["OBT_PROJECT_DIR"])
+    try_project_manifest = projectdir/"obt.project"/"obt.manifest"
+    if try_project_manifest.exists():
+      try_project_bin = projectdir/"obt.project"/"bin"
+      if try_project_bin.exists():
+        obt.env.append("PATH",try_project_bin)
+
     if scriptsdir==None:
       scriptsdir = rootdir/"scripts"
     if project_name==None and "OBT_PROJECT_NAME" in os.environ:
@@ -302,7 +308,6 @@ class EnvSetup:
         "subspace": "${OBT_STAGE}/subspaces/${OBT_SUBSPACE}",
         "stage": "${OBT_STAGE}",
         "builds": "${OBT_STAGE}/builds",
-        "litex": "${OBT_STAGE}/builds/litex_env", # todo convert obt.litex.env.py to litex dep
     }
 
     #########################################
@@ -313,8 +318,9 @@ class EnvSetup:
     depitems = obt.dep.DepNode.FindWithMethod("env_goto")
     for depitemk in depitems:
       depitem = depitems[depitemk]
-      gotos = depitem.env_goto()
-      dirs.update(gotos)
+      if depitem.supports_host:
+        gotos = depitem.env_goto()
+        dirs.update(gotos)
 
     #########################################
 

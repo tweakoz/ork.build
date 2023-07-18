@@ -276,7 +276,6 @@ class Provider(object):
     def node(self):
         return self._node
 
-
     #############################
 
     @property

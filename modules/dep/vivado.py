@@ -14,6 +14,8 @@ class vivado(dep.Provider):
     self.manifest = path.manifests()/"vivado"
     self.OK = self.manifest.exists()
     self.vivbase = path.vivado_base()/VERSION
+    self._oslist = ["Linux"]
+    self._archlist = ["x86_64"]
 
   ########
 

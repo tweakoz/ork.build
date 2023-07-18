@@ -24,8 +24,8 @@ if _args["dep"]!=None:
   depname = _args["dep"]
   path_list = [obt.path.builds()/depname]
   ########################
-  depinst = obt.dep.DepNode.FIND(depname)
-  #depinst = depnode.instance
+  depnode = obt.dep.DepNode.FIND(depname)
+  depinst = depnode.instance
   #print(depnode,depinst)
   ########################
   # allow dep module to override default search path
