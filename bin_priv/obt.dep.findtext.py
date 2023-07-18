@@ -26,13 +26,11 @@ if _args["dep"]!=None:
   ########################
   depnode = obt.dep.DepNode.FIND(depname)
   depinst = depnode.instance
-  #print(depnode,depinst)
   ########################
   # allow dep module to override default search path
   ########################
   if hasattr(depinst,"find_paths"):
     path_list = depinst.find_paths()
   ########################
-  #print(path_list)
   words = _args["keywords"]
   obt.search.execute_at(words,path_list)
