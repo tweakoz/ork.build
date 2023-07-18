@@ -11,7 +11,7 @@ soc_dir = path.builds()/"litex1_nx4"
 
 parser = argparse.ArgumentParser(description="")
 parser.add_argument("-l", "--load", action="store_true")
-parser.add_argument('--tty', metavar="tty", default=None, help='arty programming tty' )
+parser.add_argument('--tty', metavar="tty", default=None, help='fpga programming tty' )
 options = vars(parser.parse_args())
 
 do_load = options["load"]
@@ -37,8 +37,8 @@ if do_load:
     command.run([ "litex_term",
       "--speed", "115200",
       tty,
-      "--kernel",loader,
-      "--kernel-adr","cff00000"])
+      "--kernel",loader])
+    #  "--kernel-adr","cff00000"])
 else:
     cmd = [
         litex_targets_dir/"digilent_nexys4.py",
