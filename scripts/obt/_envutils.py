@@ -129,6 +129,7 @@ class EnvSetup:
       obt.env.set("OBT_GIT_SSH_COMMAND",self.GIT_SSH_COMMAND)
 
     obt_prj_extensions = self.PROJECT_DIR/"obt.project"
+    print(self.PROJECT_DIR)
     if obt_prj_extensions.exists():
       self.importProject(obt_prj_extensions)
 
