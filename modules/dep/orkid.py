@@ -57,7 +57,7 @@ class orkid(dep.StdProvider):
 
   @property
   def revision(self):
-    return "toz-pipbased"
+    return "develop"
 
   @property
   def _fetcher(self):
