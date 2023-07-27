@@ -11,17 +11,14 @@ soc_dir = path.builds()/"litex1_cm7"
 
 parser = argparse.ArgumentParser(description="")
 parser.add_argument("-l", "--load", action="store_true")
-parser.add_argument('--tty', metavar="tty", default=None, help='fpga programming tty' )
+parser.add_argument("-t", '--tty', metavar="tty", default="/dev/ttyUSB0", help='fpga programming tty' )
 options = vars(parser.parse_args())
 
 do_load = options["load"]
 
-tty = "/dev/ttyUSB2"
-
 if "DEVTTY" in os.environ:
     tty = os.environ["DEVTTY"]
-
-if options["tty"] != None:
+else:
     tty = options["tty"]
 
 print(tty)
@@ -48,15 +45,18 @@ else:
         "--output-dir", soc_dir,
         "--build",
         "--cpu-type", "vexriscv",
-        "--cpu-variant", "minimal",
-        #"--with-coherent-dma",
+        "--cpu-variant", "linux",
+        #"--cpu-type", "vexriscv_smp",
+        #"--cpu-variant", "linux",
         #"--cpu-count", "2",
         #"--with-fpu",
         #"--icache-size", "4096",
         #"--dcache-size", "4096",
         #"--with-wishbone-memory",
-        #"--cpu-type", "vexriscv",
-        #"--cpu-variant", "minimal",
-        "--sys-clk-freq", "90e6",
+        #"--uart-name=crossover+uartbone",
+        #"--csr-csv=csr.csv",
+        "--sys-clk-freq", "120e6",
     ]
     command.run(cmd,do_log=True)
+
+

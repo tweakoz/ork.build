@@ -36,16 +36,17 @@ if do_load:
       "-f", soc_dir/"gateware"/"digilent_nexys4.bit" ])
     command.run([ "litex_term",
       "--speed", "115200",
-      tty,
-      "--kernel",loader])
-    #  "--kernel-adr","cff00000"])
+      tty])
+      #"--kernel",loader])
+      #"--kernel-adr","cff00000"])
 else:
     cmd = [
         litex_targets_dir/"digilent_nexys4.py",
         "--output-dir", soc_dir,
         "--build",
+        "--sys-clk-freq", "125e6",
         #"--cpu-type", "vexriscv_smp",
-        #"--cpu-variant", "linux",
+        "--cpu-variant", "linux",
         #"--with-coherent-dma",
         #"--cpu-count", "2",
         #"--with-fpu",
