@@ -29,8 +29,7 @@ class EnvSetup:
                     is_quiet=False,
                     project_name=None,
                     git_ssh_command=None):
-
-
+    
     if stagedir==None:
       stagedir = obt.path.Path(os.environ["OBT_STAGE"])
     if rootdir==None:
@@ -185,7 +184,7 @@ class EnvSetup:
   ###########################################
 
   def importProject(self,prjdir):
-    init_script = prjdir/"scripts"/"obt.init.env.py"
+    init_script = prjdir/"scripts"/"obt.env.launch.py"
     #print(init_script)
     if init_script.exists():
       import importlib
@@ -225,7 +224,7 @@ class EnvSetup:
     LAUNCHENV = []
     if self.GIT_SSH_COMMAND!=None:
       LAUNCHENV += ['export GIT_SSH_COMMAND="%s";'%self.GIT_SSH_COMMAND]
-    LAUNCHENV += ["%s/bin/obt.init.env.py" % self.ROOT_DIR]
+    LAUNCHENV += ["obt.env.launch.py"]
     LAUNCHENV += ["--numcores", numcores]
     LAUNCHENV += ["--launch", self.OBT_STAGE]
     LAUNCHENV += ["--prjdir", self.PROJECT_DIR]

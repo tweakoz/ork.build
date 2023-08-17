@@ -16,6 +16,10 @@ class Path(_Path_) :
  def __new__(cls, *args, **kvps):
   return super().__new__(WindowsPath if os.name == 'nt' else PosixPath, *args, **kvps)
 
+ @property
+ def norm(self):
+   return Path(os.path.normpath(str(self)))
+    
 class WindowsPath(_WindowsPath_, Path) :
  pass
 

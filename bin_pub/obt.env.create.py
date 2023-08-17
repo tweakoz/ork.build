@@ -165,7 +165,7 @@ obt.path.prefix().mkdir(parents=True,exist_ok=False)
 #############
 envsetup.lazyMakeDirs()
 envsetup.genBashRc(try_staging/".bashrc")
-envsetup.genLaunchScript(out_path=try_staging/".launch_env")
+envsetup.genLaunchScript(out_path=try_staging/"obt-launch-env")
 #############
 
 #if not obt.host.IsAARCH64:

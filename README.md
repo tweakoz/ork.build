@@ -117,7 +117,7 @@ git clone https://github.com/tweakoz/ork.build
 On Ubuntu 19.04/20.04
 
 ```bash
-./ork.build/bin/obt.ix.installdeps.ubuntu22.py
+obt.ix.installdeps.ubuntu22.py
 ``` 
 
 Ubuntu may require a few deps to be installed first, like wget, for example..
@@ -125,7 +125,7 @@ Ubuntu may require a few deps to be installed first, like wget, for example..
 or On MacOs (only MacOs Catalina Intel tested, atm...)
 
 ```bash
-./ork.build/bin/obt.osx.installdeps.py
+obt.osx.installdeps.py
 ```
 
 MacOs will require a few deps to be installed first, such as homebrew and macos commandline build tools.
@@ -133,7 +133,7 @@ MacOs will require a few deps to be installed first, such as homebrew and macos 
 ### To create an environment
 
 ```bash
-ork.build/bin/obt.create.env.py --stagedir <staging_folder>
+obt.env.create.py --stagedir <staging_folder>
 ```
 
 Note that creating a staging environment will build a few core dependencies, such as python and a python virtual environment.
@@ -141,7 +141,7 @@ Note that creating a staging environment will build a few core dependencies, suc
 ### to launch an environment container *(the container remembers and references the original ork.build folder)*
 
 ```bash
-<staging_folder>/.launch_env
+<staging_folder>/obt-launch-env
 ```
 
 Launching an environment container will push the launching shell onto the shell process stack, and invoke the modified shell on the next stack level.

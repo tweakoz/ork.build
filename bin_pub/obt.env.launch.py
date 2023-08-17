@@ -180,7 +180,7 @@ if args["launch"]!=None:
     envsetup.lazyMakeDirs()
     envsetup.genBashRc(try_staging/".bashrc")
     dynamicInit()
-    try_staging_sh = try_staging/".launch_env"
+    try_staging_sh = try_staging/"obt-launch-env"
     envsetup.log(try_staging_sh)
     assert(try_staging_sh.exists())
     #############
