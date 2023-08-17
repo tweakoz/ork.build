@@ -184,7 +184,7 @@ class EnvSetup:
   ###########################################
 
   def importProject(self,prjdir):
-    init_script = prjdir/"scripts"/"obt.env.launch.py"
+    init_script = prjdir/"scripts"/"obt.env.extension.py"
     #print(init_script)
     if init_script.exists():
       import importlib
