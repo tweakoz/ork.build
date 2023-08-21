@@ -6,7 +6,7 @@
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
 
-VERSION = "master"
+VERSION = "v1.2.5"
 
 import os, tarfile
 from obt import dep, host, path, cmake, git, make, command
@@ -47,11 +47,14 @@ class moltenvk(dep.Provider):
 
     os.chdir(self.source_root)
 
-    command.system(["./fetchDependencies"])
-    cmd = ["make", "macos"]
+    command.system(["./fetchDependencies --macos"])
+    cmd = ["xcodebuild", "build", 
+           "-project", '"MoltenVKPackaging.xcodeproj"',
+           "-scheme", '"MoltenVK Package (macOS only)"',
+           "-configuration", '"Debug"']
     ok = (0 == command.system(cmd))
     if ok:
-      cmd = ["cp","Package/Latest/MoltenVK/macOS/static/libMoltenVK.a",path.libs()/"libMoltenVK.a"]
+      cmd = ["cp","-r","Package/Debug/MoltenVK/dylib/macOS/*","%s/"%str(path.libs())]
       ok = (0 == command.system(cmd))
       if ok:
         cmd = ["cp","-r","Package/Latest/MoltenVK/include/*",path.includes()]
