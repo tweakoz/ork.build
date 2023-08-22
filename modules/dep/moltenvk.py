@@ -60,3 +60,5 @@ class moltenvk(dep.Provider):
         cmd = ["cp","-r","Package/Latest/MoltenVK/include/*",path.includes()]
         ok = (0 == command.system(cmd))
     return ok
+
+# Package/Debug/MoltenVKShaderConverter/Tools/MoltenVKShaderConverter <stage>/bin
