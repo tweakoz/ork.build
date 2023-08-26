@@ -30,7 +30,7 @@ class moltenvk(dep.Provider):
     self._archlist = ["x86_64"]
     self._oslist = ["Darwin"]
     self.sdk_dir = self.source_root/"Package"/"Latest"/"MoltenVK"
-
+    self.build_lib_dir = self.sdk_dir/"dylib"/"macOS"
   def __str__(self): ##########################################################
 
     return "MoltenVK (github-%s)" % VERSION
@@ -46,7 +46,7 @@ class moltenvk(dep.Provider):
     env.set("VULKAN_SDK",self.sdk_dir) # for cmake
     env.set("OBT_VULKAN_VERSION","MoltenVK-%s"%(VERSION)) # for OBT internal
     env.set("OBT_VULKAN_ROOT",self.sdk_dir) # for OBT internal
-    env.set("VK_ICD_FILENAMES",self.sdk_dir/"dylib"/"macOS"/"MoltenVK_icd.json")
+    env.set("VK_ICD_FILENAMES",self.build_lib_dir/"MoltenVK_icd.json")
 
   def build(self): ##########################################################
 
@@ -64,7 +64,7 @@ class moltenvk(dep.Provider):
            "-configuration", '"Debug"']
     ok = (0 == command.system(cmd))
     if ok:
-      cmd = ["cp","-r","Package/Debug/MoltenVK/dylib/macOS/*","%s/"%str(path.libs())]
+      cmd = ["cp",self.build_lib_dir/"libMoltenVk.dylib",path.libs()/"libvulkan.1.dylib"]
       ok = (0 == command.system(cmd))
       if ok:
         cmd = ["cp","-r","Package/Latest/MoltenVK/include/*",path.includes()]
