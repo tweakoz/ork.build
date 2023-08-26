@@ -59,6 +59,10 @@ class moltenvk(dep.Provider):
       if ok:
         cmd = ["cp","-r","Package/Latest/MoltenVK/include/*",path.includes()]
         ok = (0 == command.system(cmd))
+        if ok:
+          # moltenvlk does not automatically install shaderc
+          cmd = ["brew","install","shaderc"]
+          ok = (0 == command.system(cmd))
     return ok
 
 # Package/Debug/MoltenVKShaderConverter/Tools/MoltenVKShaderConverter <stage>/bin
