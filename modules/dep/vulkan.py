@@ -30,7 +30,7 @@ class _vulkan_from_lunarg(dep.Provider):
     self.manifest = path.manifests()/"vulkan"
     self.OK = self.manifest.exists()
     #self._archlist = ["x86_64"]
-    
+    self._oslist = ["Linux"]
     if host.IsX86_64:
       self.sdk_dir = self.source_root/VERSION/"x86_64"
     elif host.IsAARCH64:

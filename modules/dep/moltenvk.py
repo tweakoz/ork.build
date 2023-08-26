@@ -9,7 +9,7 @@
 VERSION = "v1.2.5"
 
 import os, tarfile
-from obt import dep, host, path, cmake, git, make, command
+from obt import dep, host, path, cmake, git, make, command, log, env
 from obt.deco import Deco
 from obt.wget import wget
 from obt.command import Command
@@ -29,6 +29,7 @@ class moltenvk(dep.Provider):
     self.OK = self.manifest.exists()
     self._archlist = ["x86_64"]
     self._oslist = ["Darwin"]
+    self.sdk_dir = self.source_root/"Package"/"Latest"/"MoltenVK"
 
   def __str__(self): ##########################################################
 
@@ -37,6 +38,15 @@ class moltenvk(dep.Provider):
   def wipe(self): #############################################################
     os.system("rm -rf %s"%self.source_root)
     os.system("rm -rf %s"%self.build_dest)
+
+  def env_init(self):
+    log.marker("registering Vulkan(%s) <MoltenVK> SDK"%VERSION)
+    env.prepend("LD_LIBRARY_PATH",self.sdk_dir/"dylib")
+    #env.append("PATH",self.sdk_dir/"bin")
+    env.set("VULKAN_SDK",self.sdk_dir) # for cmake
+    env.set("OBT_VULKAN_VERSION","MoltenVK-%s"%(VERSION)) # for OBT internal
+    env.set("OBT_VULKAN_ROOT",self.sdk_dir) # for OBT internal
+    env.set("VK_ICD_FILENAMES",self.sdk_dir/"dylib"/"macOS"/"MoltenVK_icd.json")
 
   def build(self): ##########################################################
 

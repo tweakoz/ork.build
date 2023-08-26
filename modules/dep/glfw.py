@@ -21,6 +21,7 @@ class glfw(dep.StdProvider):
     class FixOsx(dep.CMakeBuilder):
       def __init__(self,name):
         super().__init__(name)
+        self._cmakeenv["CMAKE_CXX_FLAGS"] = '"-D_GLFW_VULKAN_LIBRARY=MoltenVK"'
       def install(self,blddir):
         success = super().install(blddir)
         if success and host.IsOsx:
@@ -56,7 +57,7 @@ class glfw(dep.StdProvider):
   def _fetcher(self):
     return dep.GithubFetcher(name=glfw.name,
                              repospec="glfw/glfw",
-                             revision="216d5e8402513b582563d5b8433fefb449a1593e",
+                             revision="3.3.8",
                              recursive=False)
 
   ########################################################################
