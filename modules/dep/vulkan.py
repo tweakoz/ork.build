@@ -47,6 +47,7 @@ class _vulkan_from_lunarg(dep.Provider):
     env.prepend("LD_LIBRARY_PATH",self.sdk_dir/"lib")
     env.append("PATH",self.sdk_dir/"bin")
     env.set("VULKAN_SDK",self.sdk_dir) # for cmake
+    env.set("VK_LAYER_PATH", self.sdk_dir/"etc"/"vulkan"/"explicit_layer.d")
     env.set("OBT_VULKAN_VERSION",VERSION) # for OBT internal
     env.set("OBT_VULKAN_ROOT",self.sdk_dir) # for OBT internal
 
