@@ -58,8 +58,8 @@
 
 ## Top Level Dependencies (apt/homebrew managed)
 
-* Visit For Reference (Linux) <https://github.com/tweakoz/ork.build/blob/develop/bin/obt.ix.installdeps.ubuntu_x86_64.py>
-* Visit For Reference (MacOs) <https://github.com/tweakoz/ork.build/blob/develop/bin/obt.osx.installdeps.py>
+* Visit For Reference (Linux) <https://github.com/tweakoz/ork.build/blob/develop/bin_pub/obt.ix.installdeps.ubuntu_x86_64.py>
+* Visit For Reference (MacOs) <https://github.com/tweakoz/ork.build/blob/develop/bin_pub/obt.osx.installdeps.py>
 
 ## Pip Managed dependencies (Per python env)
  * yarl
