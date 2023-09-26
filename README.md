@@ -364,7 +364,7 @@ obt.subspace.launch.py conda
 ### Python: To invoke a conda command in subprocess (without polluting parent process)
 
 ```python
-from ork import subspace
+from obt import subspace
 subspace.descriptor("conda").command(["list"])
 ```
 
