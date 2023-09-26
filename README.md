@@ -82,7 +82,7 @@ pip3 install --user ork.build
 ### On Ubuntu-x86_64 (20.04,22.04) - sudo **REQUIRED**
 
 * Review the script that will be executed if you would like to know what it is doing (especially since sudo is involved)
-* Visit <https://github.com/tweakoz/ork.build/blob/develop/bin/obt.ix.installdeps.ubuntu_x86_64.py>
+* Visit <https://github.com/tweakoz/ork.build/blob/develop/bin_pub/obt.ix.installdeps.ubuntu_x86_64.py>
 
 ```bash
 obt.ix.installdeps.ubuntu_x86_64.py # will ask for sudo
@@ -93,7 +93,7 @@ obt.ix.installdeps.ubuntu_x86_64.py # will ask for sudo
 * Install and/or update HomeBrew (https://brew.sh/)
 * Install latest Xcode (Via AppStore)
 * View the OBT system install file if you would like to know what it is doing
-* Visit <https://github.com/tweakoz/ork.build/blob/develop/bin/obt.osx.installdeps.py>
+* Visit <https://github.com/tweakoz/ork.build/blob/develop/bin_pub/obt.osx.installdeps.py>
 
 ```bash
 obt.osx.installdeps.py
