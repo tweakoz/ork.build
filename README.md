@@ -52,9 +52,9 @@
 
 ## Top Level Dependencies (User Installed)
 
-* If using docker functionality - Docker (try rootless)
-* If using FPGA functionality - Vivado/Quartus [in /opt]
-* If using Houdini functionality - Houdini [in /opt]
+* If using docker functionality - Docker (try [rootless](https://docs.docker.com/engine/security/rootless/>))
+* If using FPGA functionality - [Vivado/Quartus](https://www.xilinx.com/products/design-tools/vivado.html) [in /opt]
+* If using Houdini functionality - [Houdini](https://www.sidefx.com/products/houdini/) [in /opt]
 
 ## Top Level Dependencies (apt/homebrew managed)
 
