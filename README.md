@@ -52,14 +52,14 @@
 
 ## Top Level Dependencies (User Installed)
 
-* If using docker functionality - Docker (try rootless)
-* If using FPGA functionality - Vivado/Quartus [in /opt]
-* If using Houdini functionality - Houdini [in /opt]
+* If using docker functionality - Docker (try [rootless](https://docs.docker.com/engine/security/rootless/>))
+* If using FPGA functionality - [Vivado/Quartus](https://www.xilinx.com/products/design-tools/vivado.html) [in /opt]
+* If using Houdini functionality - [Houdini](https://www.sidefx.com/products/houdini/) [in /opt]
 
 ## Top Level Dependencies (apt/homebrew managed)
 
-* Visit For Reference (Linux) <https://github.com/tweakoz/ork.build/blob/develop/bin/obt.ix.installdeps.ubuntu_x86_64.py>
-* Visit For Reference (MacOs) <https://github.com/tweakoz/ork.build/blob/develop/bin/obt.osx.installdeps.py>
+* Visit For Reference (Linux) <https://github.com/tweakoz/ork.build/blob/develop/bin_pub/obt.ix.installdeps.ubuntu_x86_64.py>
+* Visit For Reference (MacOs) <https://github.com/tweakoz/ork.build/blob/develop/bin_pub/obt.osx.installdeps.py>
 
 ## Pip Managed dependencies (Per python env)
  * yarl
@@ -82,7 +82,7 @@ pip3 install --user ork.build
 ### On Ubuntu-x86_64 (20.04,22.04) - sudo **REQUIRED**
 
 * Review the script that will be executed if you would like to know what it is doing (especially since sudo is involved)
-* Visit <https://github.com/tweakoz/ork.build/blob/develop/bin/obt.ix.installdeps.ubuntu_x86_64.py>
+* Visit <https://github.com/tweakoz/ork.build/blob/develop/bin_pub/obt.ix.installdeps.ubuntu_x86_64.py>
 
 ```bash
 obt.ix.installdeps.ubuntu_x86_64.py # will ask for sudo
@@ -93,7 +93,7 @@ obt.ix.installdeps.ubuntu_x86_64.py # will ask for sudo
 * Install and/or update HomeBrew (https://brew.sh/)
 * Install latest Xcode (Via AppStore)
 * View the OBT system install file if you would like to know what it is doing
-* Visit <https://github.com/tweakoz/ork.build/blob/develop/bin/obt.osx.installdeps.py>
+* Visit <https://github.com/tweakoz/ork.build/blob/develop/bin_pub/obt.osx.installdeps.py>
 
 ```bash
 obt.osx.installdeps.py
@@ -364,7 +364,7 @@ obt.subspace.launch.py conda
 ### Python: To invoke a conda command in subprocess (without polluting parent process)
 
 ```python
-from ork import subspace
+from obt import subspace
 subspace.descriptor("conda").command(["list"])
 ```
 
