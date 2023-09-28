@@ -6,8 +6,8 @@
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
 
-VERSION = "1.2.170.0"
-MD5 = "db7f9de7c5de9f20a8a366c795e1dd0c"
+VERSION = "1.2.198.1"
+MD5 = "c26c3febbf14faef595d7c26715a5472"
 
 import os, tarfile
 from obt import dep, host, path, cmake, git, make, command, wget, env, log, pathtools
@@ -80,15 +80,15 @@ class _vulkan_from_lunarg(dep.Provider):
     if not ok:
       return False
 
-    samples_build_dir = self.sdk_dir/".."/"samples"/".build-samples"
-    pathtools.mkdir(samples_build_dir,clean=True)
-    samples_build_dir.chdir()
-    ok = (command.system(["cmake",".."])==0)
-    if not ok:
-      return False
-    ok = (command.system(["make","-j",host.NumCores])==0)
-    if not ok:
-      return False
+    #samples_build_dir = self.sdk_dir/".."/"samples"/".build-samples"
+    #pathtools.mkdir(samples_build_dir,clean=True)
+    #samples_build_dir.chdir()
+    #ok = (command.system(["cmake",".."])==0)
+    #if not ok:
+    #  return False
+    #ok = (command.system(["make","-j",host.NumCores])==0)
+    #if not ok:
+    #  return False
 
     return True
 
