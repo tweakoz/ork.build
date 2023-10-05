@@ -9,15 +9,15 @@ os.system("sudo update-alternatives --install /usr/bin/python python /usr/bin/py
 deplist = []
 
 if UBUNTU_VERSION <= 2004:
-  deplist =  ["gcc-8","g++-8","python-dev"] # not avail in ub22
+  deplist +=  ["gcc-8","g++-8","python-dev"] # not avail in ub22
 if UBUNTU_VERSION >= 2204:
-  deplist += ["clang-12"]
+  deplist += ["clang-12", "g++-12", "libstdc++-12-dev"]
 else:
-  deplist += ["clang-10"]
+  deplist += ["clang-10", "g++-10", "libstdc++-10-dev"]
 
 os.system("sudo update-alternatives --install /usr/bin/python python /usr/bin/python3 1")
 
-deplist =  ["libboost-dev"]
+deplist += ["libboost-dev"]
 deplist += ["libboost-filesystem-dev","libboost-system-dev","libboost-thread-dev"]
 deplist += ["libboost-program-options-dev"]
 deplist += ["libglfw3-dev","libflac++-dev","scons","git"]
@@ -79,6 +79,10 @@ deplist += ["device-tree-compiler"]
 deplist += ["imagemagick"]
 
 deplist += ["libdrm-dev","libaudiofile-dev","libsndfile1-dev"]
+
+deplist += ["gfortran"]
+deplist += ["ocl-icd-opencl-dev"]
+deplist += ["libfmt-dev"]
 
 merged = " ".join(deplist)
 os.system("sudo apt -y install %s" % merged)
