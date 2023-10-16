@@ -8,10 +8,10 @@
 ###############################################################################
 
 VERSION_MAJOR = "3"
-VERSION_MINOR = "9"
-VERSION_MICRO = "13"
+VERSION_MINOR = "11"
+VERSION_MICRO = "6"
 VERSION = "%s.%s.%s" % (VERSION_MAJOR,VERSION_MINOR,VERSION_MICRO)
-HASH = "eafda83543bad127cadef4d288fdab87"
+HASH = "ed23dadb9f1b9fd2e4e7d78619685c79"
 
 import os, tarfile, sys
 from obt import dep, host, path, cmake, env, pip

@@ -23,7 +23,7 @@ class cmake(dep.StdProvider):
   def _fetcher(self):
     return dep.GithubFetcher(name=cmake.name,
                              repospec="kitware/cmake",
-                             revision="v3.22.1",
+                             revision="v3.27.7",
                              recursive=False)
   ########################################################################
   def areRequiredSourceFilesPresent(self):

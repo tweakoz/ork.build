@@ -133,6 +133,7 @@ class orkid(dep.StdProvider):
     deplist += ["portaudio"]
     deplist += ["sigslot"]
     deplist += ["openblas"]
+    deplist += ["igl"]
     #deplist += ["libsurvive"]
 
     if host.IsX86_64:
@@ -143,7 +144,6 @@ class orkid(dep.StdProvider):
     #   ork.dep.require(["moltenvk"])
     
     if host.IsLinux:
-      deplist += ["igl"]
       #deplist += ["vulkan"]
       deplist += ["rtmidi"]
       if host.IsX86_64:

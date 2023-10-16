@@ -6,7 +6,7 @@
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
 
-VERSION = "v4.3.4"
+VERSION = "v4.3.5"
 
 import os, tarfile
 from obt import dep, host, path

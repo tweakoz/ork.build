@@ -21,7 +21,7 @@ class bullet(dep.StdProvider):
   def _fetcher(self):
     return dep.GithubFetcher(name=bullet.name,
                              repospec="bulletphysics/bullet3",
-                             revision="3.24",
+                             revision="3.25",
                              recursive=False)
 
   ########################################################################

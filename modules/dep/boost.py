@@ -6,8 +6,8 @@
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
 
-VERSION = ["1","74","0"]
-HASH = "da07ca30dd1c0d1fdedbd487efee01bd"
+VERSION = ["1","81","0"]
+HASH = "3276c0637d1be8687740c550237ef999"
 
 import os,tarfile
 from obt import path,host,dep, gen_pkgconfig, patch

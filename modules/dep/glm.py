@@ -17,6 +17,7 @@ class glm(dep.StdProvider):
     if host.IsDarwin:
       self._builder.setCmVars({
         "CMAKE_CXX_FLAGS": "-Wno-deprecated-declarations -Wno-poison-system-directories",
+        "CMAKE_CXX_STANDARD": "17" 
       })
     #self._builder.requires(["lapack"])
 
@@ -25,7 +26,7 @@ class glm(dep.StdProvider):
   def _fetcher(self):
     return dep.GithubFetcher(name=glm.name,
                              repospec="tweakoz/glm",
-                             revision="master",
+                             revision="toz-oct16",
                              recursive=True)
 
   #######################################################################

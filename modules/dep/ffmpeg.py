@@ -23,6 +23,11 @@ class ffmpeg(dep.StdProvider):
     self._builder.setOption("--disable-vdpau")
     self._builder.setOption("--disable-static")
     self._builder.setOption("--enable-shared")
+    if host.IsDarwin:
+      self._builder.setEnvVar("LDFLAGS", '-Wl,-ld_classic')
+      self._builder.setOption("--enable-videotoolbox")
+    #elif host.IsLinux and host.IsX86_64:
+    #  self._builder.setOption("--enable-nvenc")
     if tgt_desc.identifier == "x86_64-macos":
       self._builder.setOption("--disable-x86asm")
 
@@ -33,7 +38,7 @@ class ffmpeg(dep.StdProvider):
   def _fetcher(self):
     return dep.GithubFetcher(name=ffmpeg.name,
                              repospec="FFmpeg/FFmpeg",
-                             revision="n5.0.1",
+                             revision="n5.1.3",
                              recursive=False)
   ########################################################################
   def areRequiredSourceFilesPresent(self):

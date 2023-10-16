@@ -25,7 +25,7 @@ class openvdb(dep.StdProvider):
   def _fetcher(self):
     fetcher = dep.GithubFetcher(name=openvdb.name,
                                 repospec="AcademySoftwareFoundation/openvdb",
-                                revision="v9.0.0",
+                                revision="v10.0.0",
                                 recursive=False)
     return fetcher
   ########################################################################

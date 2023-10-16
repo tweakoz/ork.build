@@ -234,11 +234,15 @@ class AutoConfBuilder(BaseBuilder):
     self._needsautogendotsh = False
     self._parallelism=1.0
     self._options = list()
+    self._envvars = dict()
     if _globals.tryBoolOption("serial"):
       self._parallelism=0.0
   ###########################################
   def requires(self,deplist):
     self._deps += deplist
+  ###########################################
+  def setEnvVar(self,key,value):
+    self._envvars[key] = value
   ###########################################
   def setConfVar(self,key,value):
     self._confvar[key] = value
@@ -280,7 +284,9 @@ class AutoConfBuilder(BaseBuilder):
 
       retc = Command([srcdir/"configure",
                       '--prefix=%s'%path.prefix()
-                     ]+self._options).exec()
+                     ]+self._options,
+                     environment=self._envvars
+                     ).exec()
       if retc==0:
         make.exec("all")
         retc = make.exec("install",parallelism=0.0)

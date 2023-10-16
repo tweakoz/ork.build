@@ -28,7 +28,7 @@ class openexr(dep.StdProvider):
     return dep.GithubFetcher(name=openexr.name,
                              repospec="AcademySoftwareFoundation/openexr",
                              #revision="v2.5.8",
-                             revision="v3.1.5",
+                             revision="v3.2.1",
                              recursive=False)
 
   ########################################################################
