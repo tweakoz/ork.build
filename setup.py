@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 import glob, os
 import platform
 
-version = "0.0.71"
+version = "0.0.72"
 
 ###############################################################################
 
@@ -57,6 +57,7 @@ setup(
     install_requires=[
         'yarl',
         'toposort',
-        'os-release'
+        'os-release',
+        'distro'
     ],
     )
