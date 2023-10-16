@@ -8,6 +8,21 @@ import os, sys, re, json
 deco = obt.deco.Deco()
 
 
+def validate_prompt(ps1_string):
+
+  # check for balanced \[ and \]
+  open_count = ps1_string.count('\\[')
+  close_count = ps1_string.count('\\]')
+  if open_count != close_count:
+    print(f"Mismatch detected: {open_count} '\\[' found and {close_count} '\\]' found.")
+    assert(False)
+
+  # check that all ANSI escape sequences are inside \[\] pairs
+  ansi_outside = re.findall(r"(?<!\\\[)(\033\[[^m]*m)(?!\\\])", ps1_string)
+  if ansi_outside:
+    print(f"Found ANSI escape sequences outside of '\\[' and '\\]': {ansi_outside}")
+    assert(False)
+
 ##########################################
 
 def root_path():
@@ -277,6 +292,8 @@ class EnvSetup:
     PROMPT += bdeco.promptC("\\w")
     PROMPT += bdeco.promptR("[$(parse_git_branch) ]")
     PROMPT += bdeco.bright("> ")
+
+    validate_prompt(PROMPT)
 
     ################################################
     # The sanity of this is a little debatable.

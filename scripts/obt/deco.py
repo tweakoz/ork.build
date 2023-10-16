@@ -22,7 +22,7 @@ class Theme:
     color = 16 + 36 * r + 6 * g + b
     rval = "\033[38;5;%dm" % color
     if self.bash:
-      rval = "\\[" + rval + "\\]"
+      rval = "\[" + rval + "\]"
     return rval
   ###############################
   def blink(self):
@@ -37,7 +37,7 @@ class Theme:
   def reset(self):
     rval = "\033[m"
     if self.bash:
-      rval = "\\["+rval+"\\]"
+      rval = "\["+rval+"\]"
     return rval
   ###############################
   def key(self,string):
