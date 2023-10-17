@@ -2,8 +2,8 @@
 
 ## [BuildStatus](https://www.orkid-engine.dev:4431)
 
-* Ubuntu 22.04 [![CISTATUS](https://www.orkid-engine.dev:4431/orkdotbuild-ix-ub2204/develop/status.svg)](https://www.orkid-engine.dev:4431)
-* Ubuntu 20.04 [![CISTATUS](https://www.orkid-engine.dev:4431/orkdotbuild-ix-ub2004/develop/status.svg)](https://www.orkid-engine.dev:4431)
+* Ubuntu 22.04 [![CISTATUS](https://www.orkid-engine.net:4431/orkdotbuild-ix-ub2204/develop/status.svg)](https://www.orkid-engine.net:4431)
+* Ubuntu 20.04 [![CISTATUS](https://www.orkid-engine.net:4431/orkdotbuild-ix-ub2004/develop/status.svg)](https://www.orkid-engine.net:4431)
 
 ---------------------------------------------------------------
 
