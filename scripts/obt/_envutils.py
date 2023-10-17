@@ -38,7 +38,8 @@ class EnvSetup:
   def __init__(self,stagedir=None,
                     rootdir=None,
                     projectdir=None,
-                    bindir=None,
+                    bin_pub_dir=None,
+                    bin_priv_dir=None,
                     scriptsdir=None,
                     disable_syspypath=False,
                     is_quiet=False,
@@ -49,8 +50,10 @@ class EnvSetup:
       stagedir = obt.path.Path(os.environ["OBT_STAGE"])
     if rootdir==None:
       rootdir = root_path()
-    if bindir==None:
-      bindir = rootdir/"bin"
+    if bin_pub_dir==None:
+      bin_pub_dir = rootdir/"bin_pub"
+    if bin_priv_dir==None:
+      bin_priv_dir = rootdir/"bin_priv"
     if projectdir==None:
       projectdir = obt.path.Path(os.environ["OBT_PROJECT_DIR"])
     try_project_manifest = projectdir/"obt.project"/"obt.manifest"
@@ -69,13 +72,14 @@ class EnvSetup:
     self.OBT_STAGE = stagedir 
     self.ROOT_DIR = rootdir 
     self.PROJECT_DIR = projectdir 
-    self.BIN_DIR = bindir 
+    self.BIN_PUB_DIR = bin_pub_dir 
+    self.BIN_PRIV_DIR = bin_priv_dir 
     self.SCRIPTS_DIR = scriptsdir 
     self.DISABLE_SYSPYPATH=disable_syspypath
     self.IS_QUIET = is_quiet
     self.PROJECT_NAME = project_name
     self.GIT_SSH_COMMAND = git_ssh_command
-
+    
   ##########################################
   def install(self):
     import obt.path
@@ -131,7 +135,8 @@ class EnvSetup:
     obt.env.set("OBT_PYTHONHOME",self.OBT_STAGE/"pyvenv")
     obt.env.set("OBT_SUBSPACE_LIB_DIR",obt.path.libs())
     obt.env.set("OBT_SUBSPACE_BIN_DIR",obt.path.bin())
-    obt.env.prepend("PATH",self.BIN_DIR )
+    obt.env.prepend("PATH",self.BIN_PUB_DIR )
+    obt.env.prepend("PATH",self.BIN_PRIV_DIR )
     obt.env.prepend("PATH",self.OBT_STAGE/"bin")
     obt.env.prepend("LD_LIBRARY_PATH",self.OBT_STAGE/"lib")
     obt.env.prepend("LD_LIBRARY_PATH",self.OBT_STAGE/"lib64")

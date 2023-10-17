@@ -33,6 +33,7 @@ RUN pip3 install hashfs
 RUN pip3 install zmq
 RUN pip3 install sshtunnel
 RUN pip3 install jinja2
+RUN pip3 install ork.build
 
 ############################################
 

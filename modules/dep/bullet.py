@@ -18,10 +18,18 @@ class bullet(dep.StdProvider):
     self._builder = self.createBuilder(dep.CMakeBuilder)
   ########################################################################
   @property
+  def github_repo(self):
+    return "bulletphysics/bullet3"
+  ########################################################################
+  @property
+  def revision(self):
+    return "3.25"
+  ########################################################################
+  @property
   def _fetcher(self):
     return dep.GithubFetcher(name=bullet.name,
-                             repospec="bulletphysics/bullet3",
-                             revision="3.25",
+                             repospec=self.github_repo,
+                             revision=self.revision,
                              recursive=False)
 
   ########################################################################

@@ -40,6 +40,26 @@ class _vulkan_from_lunarg(dep.Provider):
 
     return "Vulkan (lunarg-%s)" % VERSION
 
+  ########################################################################
+
+  @property
+  def download_URL(self):
+    if host.IsX86_64:
+      nam = "vulkansdk-linux-x86_64-%s.tar.gz"%VERSION
+    elif host.IsX86_32:
+      nam = "vulkansdk-linux-i386-%s.tar.gz"%VERSION
+    elif host.IsAARCH64:
+      nam = "vulkansdk-linux-aarch64-%s.tar.gz"%VERSION
+    return "https://sdk.lunarg.com/sdk/download/%s/linux/%s"%(VERSION,nam)
+
+  @property
+  def download_MD5(self):
+    return MD5
+
+  ########################################################################
+  @property
+  def revision(self):
+    return VERSION
   #######################################################################
 
   def env_init(self):
@@ -57,14 +77,8 @@ class _vulkan_from_lunarg(dep.Provider):
     return (self.sdk_dir/"bin"/"vkconfig").exists()
 
   def build(self): ##########################################################
-    if host.IsX86_64:
-      nam = "vulkansdk-linux-x86_64-%s.tar.gz"%VERSION
-    elif host.IsX86_32:
-      nam = "vulkansdk-linux-i386-%s.tar.gz"%VERSION
-    elif host.IsAARCH64:
-      nam = "vulkansdk-linux-aarch64-%s.tar.gz"%VERSION
 
-    url = "https://sdk.lunarg.com/sdk/download/%s/linux/%s"%(VERSION,nam)
+    url = self.download_URL
     ok = wget(urls=[url],output_name=nam,md5val=MD5)
 
     print(ok)

@@ -23,12 +23,15 @@ if len(sys.argv)==1:
 
 depname = _args["dependency"]
 
-from obt import dep, path
+from obt import dep, path, pathtools
 from obt.deco import Deco
 deco = Deco()
 
 instance = dep.instance(depname)
 
+if instance==None:
+   print("no available dependency %s for this host/target"%depname)
+   sys.exit(1)
 
 def print_item(key,val):
  dstr = deco.inf(depname)
@@ -50,14 +53,39 @@ for dep_name in instance._required_deps.keys():
   decl_deps += [dep_name]
 
 print_item("name",instance._name)
+print_item("provider_path",instance._node.module_path)
+print_item("has_shell",hasattr(instance,"on_build_shell"))
+print_item("has_envinit",hasattr(instance,"env_init"))
+print()
+#############################################################
+if hasattr(instance,"github_repo"):
+   print_item("github_repo",instance.github_repo)
+if hasattr(instance,"revision"):
+   print_item("revision",instance.revision)
+#############################################################
+if hasattr(instance,"download_URL"):
+   print_item("download_URL",instance.download_URL)
+if hasattr(instance,"download_MD5"):
+   print_item("download_MD5",instance.download_MD5)
+#############################################################
+print()
 print_item("scope",instance.scopestr)
 print_item("manifest present",instance.exists)
 print_item("source present",src_present)
 print_item("binaries present",bin_present)
-print_item("architectures",instance._archlist)
+print_item("architectures", "All" if (instance._archlist==None) else instance._archlist)
 print_item("declared deps",decl_deps)
-
+print()
+#############################################################
 print_item("source root",instance.source_root)
 print_item("build_src",instance.build_src)
+if instance.build_src.exists():
+  print_item("build_src size: ","%0.2f (MiB)"%(pathtools.sizeOfDirectory(instance.build_src)/1048576.0))
+
 print_item("build_dest",instance.build_dest)
+
+if instance.build_dest.exists():
+  print_item("build_dest size: ","%0.2f (MiB)"%(pathtools.sizeOfDirectory(instance.build_dest)/1048576.0))
+#############################################################
+
 

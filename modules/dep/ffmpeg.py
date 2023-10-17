@@ -35,10 +35,18 @@ class ffmpeg(dep.StdProvider):
     self.declareDep("pkgconfig")
   ########################################################################
   @property
+  def github_repo(self):
+    return "FFmpeg/FFmpeg"
+  ########################################################################
+  @property
+  def revision(self):
+    return "n5.1.3"
+  ########################################################################
+  @property
   def _fetcher(self):
     return dep.GithubFetcher(name=ffmpeg.name,
-                             repospec="FFmpeg/FFmpeg",
-                             revision="n5.1.3",
+                             repospec=self.github_repo,
+                             revision=self.revision,
                              recursive=False)
   ########################################################################
   def areRequiredSourceFilesPresent(self):

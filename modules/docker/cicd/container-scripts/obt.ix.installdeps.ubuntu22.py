@@ -1,20 +1,28 @@
 #!/usr/bin/env python3
 
-import os
+import os, distro
+
+UBUNTU_VERSION = int(float(distro.version())*100.0)
 
 os.system("sudo update-alternatives --install /usr/bin/python python /usr/bin/python3 1")
 
-deplist =  ["libboost-dev","gcc-9","g++-9","gcc-10","g++-10","gcc-11","g++-11","gcc-12","g++-12"]
+deplist = []
+
+if UBUNTU_VERSION <= 2004:
+  deplist =  ["gcc-8","g++-8","python-dev"] # not avail in ub22
+
+deplist += ["libboost-dev","gcc-9","g++-9","gcc-10","g++-10","clang-12","clang","clang-format"]
+deplist += ["g++-12"] # https://askubuntu.com/questions/1441844/todays-ubuntu-22-04-updates-seem-to-break-clang-compiler
 deplist += ["libboost-filesystem-dev","libboost-system-dev","libboost-thread-dev"]
-deplist += ["libboost-program-options-dev","libftdi-dev"]
+deplist += ["libboost-program-options-dev","libftdi-dev", "libfmt-dev"]
 deplist += ["libglfw3-dev","libflac++-dev","scons","git"]
-deplist += ["rapidjson-dev","graphviz","doxygen","clang","libtiff-dev"]
-deplist += ["portaudio19-dev", "pybind11-dev", "python3-dev"]
-deplist += ["libpng-dev","clang-format"]
+deplist += ["rapidjson-dev","graphviz","doxygen","libtiff-dev"]
+deplist += ["portaudio19-dev", "pybind11-dev"]
+deplist += ["libpng-dev"]
 deplist += ["iverilog","nvidia-cg-dev","nvidia-cuda-dev", "nvidia-cuda-toolkit"]
 deplist += ["libopenblas-dev"]
 deplist += ["librtmidi-dev"]
-deplist += ["texinfo"]
+deplist += ["texinfo","xmlto"]
 deplist += ["libgtkmm-3.0-dev"]
 deplist += ["libfltk1.3-dev","freeglut3-dev"]
 deplist += ["libfontconfig1-dev"]
@@ -29,12 +37,12 @@ deplist += ["libavformat-dev"]
 deplist += ["libavcodec-dev"]
 deplist += ["libswscale-dev"]
 deplist += ["libssl-dev"]
-deplist += ["wget","git","git-lfs", "vim","cmake"]
+deplist += ["wget","git","git-lfs", "vim","cmake","python3-pip", "nasm"]
 deplist += ["m4","bison","flex"]
-deplist += ["libcurl4-openssl-dev"]
+deplist += ["libcurl4-openssl-dev","libusb-1.0-0-dev", "libbz2-dev"]
 deplist += ["libreadline-dev"]
 deplist += ["libsqlite3-dev"]
-deplist += ["libtbb2-dev"]
+deplist += ["libtbb-dev"]
 deplist += ["openctm-tools"] # ctmviewer
 deplist += ["openscad"] # for trimesh
 deplist += ["libclang-dev"]
@@ -64,12 +72,15 @@ deplist += ["libxcb-cursor-dev"]
 deplist += ["libxcb-util-dev"]
 deplist += ["libmad0-dev","libsdl2-dev","libassimp-dev"]
 deplist += ["device-tree-compiler"]
-deplist += ["imagemagick"]
-deplist += ["f2c","gfortran"]
+deplist += ["imagemagick","curl","tk-dev"]
+deplist += ["libgeos-dev","libpng-dev","libspatialindex-dev"]
+deplist += ["qt5-style-plugins","qt5ct","python3-gdal","python3-pyqt5","python3-pyqt5.qtopengl"]
+deplist += ["python3-simplejson","python3-tk"]
 
 deplist += ["libdrm-dev","libaudiofile-dev","libsndfile1-dev"]
+deplist += ["libglew-dev"]
 
 merged = " ".join(deplist)
 os.system("sudo apt -y install %s" % merged)
-os.system( "sudo apt remove brltty") # messes up ttyUSB serial connections
 
+os.system("pip3 install os_release")

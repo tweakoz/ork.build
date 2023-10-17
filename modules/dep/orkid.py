@@ -53,6 +53,10 @@ class orkid(dep.StdProvider):
     self._builder._cleanbuildcommands += [self._outer_build_command]
     self._builder._incrbuildcommands += [self._outer_build_command]
 
+  ########################################################################
+  @property
+  def github_repo(self):
+    return "tweakoz/orkid"
   ########
 
   @property
@@ -66,7 +70,7 @@ class orkid(dep.StdProvider):
       return dep.NopFetcher(name=orkid.name)
     else:
       return dep.GithubFetcher(name=orkid.name,
-                               repospec="tweakoz/orkid",
+                               repospec=self.github_repo,
                                revision=self.revision,
                                recursive=True,
                                shallow=False)

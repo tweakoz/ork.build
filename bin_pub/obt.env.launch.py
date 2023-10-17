@@ -62,6 +62,8 @@ par5_dir = os.path.dirname(par4_dir)
 
 root_dir = Path(par2_dir)
 scripts_dir = root_dir/"scripts"
+bin_priv_dir = root_dir/"bin_priv"
+bin_pub_dir = root_dir/"bin_pub"
 
 ###########################################
 
@@ -79,12 +81,19 @@ if IsInplace:
     print(sys.path)
     ORIG_PYTHONPATH = ORIG_PYTHONPATHS[0]
     if ORIG_PYTHONPATH in sys.path:
-      sys.path.remove(ORIG_PYTHONPATH)     
+      sys.path.remove(ORIG_PYTHONPATH)
+      assert(False)
   os.environ["PYTHONPATH"]=str(scripts_dir)#+":"+os.environ["PYTHONPATH"]
   os.environ["OBT_INPLACE"]="1"
   os.environ["OBT_ROOT"]=str(root_dir)
-  sys.path.append(str(scripts_dir))
-
+  #os.environ["PATH"]=str(root_dir/"bin_priv")+":"+os.environ["PATH"]
+  sys.path = [str(scripts_dir)]+sys.path
+else:
+  bin_priv_dir = root_dir/"obt"/"bin_priv"
+  bin_pub_dir = root_dir/"bin_pub"
+  print(bin_priv_dir)
+  print(bin_pub_dir)
+   
 ###########################################
 
 ORK_PROJECT_NAME = "obt"
@@ -125,7 +134,6 @@ import obt.command
 import obt.subspace
 
 deco = obt.deco.Deco()
-bin_dir = root_dir/"bin"
 
 ##########################################
 
@@ -133,7 +141,8 @@ import obt._envutils
 envsetup = obt._envutils.EnvSetup(stagedir=OBT_STAGE,
                                   rootdir=root_dir,
                                   projectdir=project_dir,
-                                  bindir=bin_dir,
+                                  bin_priv_dir=bin_priv_dir,
+                                  bin_pub_dir=bin_pub_dir,
                                   scriptsdir=scripts_dir,
                                   disable_syspypath=True,
                                   is_quiet=IsQuiet,

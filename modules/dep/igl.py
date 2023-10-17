@@ -58,10 +58,18 @@ class igl(dep.StdProvider):
 
   ########################################################################
   @property
+  def github_repo(self):
+    return "tweakoz/libigl"
+  ########################################################################
+  @property
+  def revision(self):
+    return "master"
+  ########################################################################
+  @property
   def _fetcher(self):
     return dep.GithubFetcher(name=igl.name,
-                             repospec="tweakoz/libigl",
-                             revision="master",
+                             repospec=self.github_repo,
+                             revision=self.revision,
                              shallow=False,
                              recursive=False)
 
