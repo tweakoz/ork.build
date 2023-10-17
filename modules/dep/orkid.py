@@ -144,11 +144,13 @@ class orkid(dep.StdProvider):
     #   ork.dep.require(["moltenvk"])
     
     if host.IsLinux:
-      #deplist += ["vulkan"]
+      deplist += ["vulkan"]
       deplist += ["rtmidi"]
       if host.IsX86_64:
         deplist += ["openvr"]
         deplist += ["nvtt"]
+    elif host.IsDarwin:
+      deplist += ["moltenvk"]
 
     return deplist
 
