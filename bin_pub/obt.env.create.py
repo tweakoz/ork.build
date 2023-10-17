@@ -26,6 +26,7 @@ parser.add_argument('--compose',action='append',help='compose obt project into c
 parser.add_argument('--obttrace',action="store_true",help='enable OBT buildtrace logging')
 parser.add_argument('--sshkey',metavar="sshkey",help='ssh key to use with OBT/GIT')
 parser.add_argument('--projectdir',metavar="projectdir",help='sidechain project directory(with obt manifest)')
+parser.add_argument('--inplace', action="store_true" )
 
 args = vars(parser.parse_args())
 
@@ -58,8 +59,24 @@ par5_dir = os.path.dirname(par4_dir)
 
 root_dir = Path(par2_dir)
 scripts_dir = root_dir/"scripts"
-sys.path.append(str(scripts_dir))
 project_dir = root_dir
+
+###########################################
+
+IsInplace = (args["inplace"]==True)
+if IsInplace:
+  if "PYTHONPATH" in os.environ:
+    ORIG_PYTHONPATHS = os.environ["PYTHONPATH"].split(":")
+    ORIG_PYTHONPATHS = [s for s in ORIG_PYTHONPATHS if s]
+    print(ORIG_PYTHONPATHS)
+    print(sys.path)
+    ORIG_PYTHONPATH = ORIG_PYTHONPATHS[0]
+    if ORIG_PYTHONPATH in sys.path:
+      sys.path.remove(ORIG_PYTHONPATH)     
+  os.environ["PYTHONPATH"]=str(scripts_dir)#+":"+os.environ["PYTHONPATH"]
+  os.environ["OBT_INPLACE"]="1"
+  os.environ["OBT_ROOT"]=str(root_dir)
+  sys.path.append(str(scripts_dir))
 
 ###########################################
 # are we standalone or attached to a project ?

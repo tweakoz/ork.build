@@ -28,6 +28,7 @@ parser.add_argument("--quiet", action="store_true", help="no output")
 parser.add_argument('--novars', action="store_true", help='do not set env vars' )
 parser.add_argument('--subspace', metavar="subspace", help='subspace to launch' )
 parser.add_argument('--init', action="store_true" )
+parser.add_argument('--inplace', action="store_true" )
 parser.add_argument('--compose',action='append',help='compose obt project into container')
 
 args = vars(parser.parse_args())
@@ -39,6 +40,7 @@ if len(sys.argv)==1:
 ###########################################
 IsQuiet = (args["quiet"]==True)
 IsCommandSet = args["command"]!=None
+IsInplace = (args["inplace"]==True)
 ###########################################
 
 if IsQuiet:
@@ -48,7 +50,7 @@ if IsQuiet:
 
 if args["prompt"]!=None:
   os.environ["OBT_USE_PROMPT_PREFIX"] = args["prompt"]
-
+   
 ###########################################
 
 file_path = os.path.realpath(__file__)
@@ -60,13 +62,28 @@ par5_dir = os.path.dirname(par4_dir)
 
 root_dir = Path(par2_dir)
 scripts_dir = root_dir/"scripts"
-sys.path.append(str(scripts_dir))
 
 ###########################################
 
 project_dir = root_dir
 if args["prjdir"]!=None:
   project_dir = Path(args["prjdir"])
+
+###########################################
+
+if IsInplace:
+  if "PYTHONPATH" in os.environ:
+    ORIG_PYTHONPATHS = os.environ["PYTHONPATH"].split(":")
+    ORIG_PYTHONPATHS = [s for s in ORIG_PYTHONPATHS if s]
+    print(ORIG_PYTHONPATHS)
+    print(sys.path)
+    ORIG_PYTHONPATH = ORIG_PYTHONPATHS[0]
+    if ORIG_PYTHONPATH in sys.path:
+      sys.path.remove(ORIG_PYTHONPATH)     
+  os.environ["PYTHONPATH"]=str(scripts_dir)#+":"+os.environ["PYTHONPATH"]
+  os.environ["OBT_INPLACE"]="1"
+  os.environ["OBT_ROOT"]=str(root_dir)
+  sys.path.append(str(scripts_dir))
 
 ###########################################
 

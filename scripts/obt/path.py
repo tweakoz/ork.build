@@ -134,9 +134,10 @@ def obt_bin_priv_base():
 
 @lru_cache(maxsize=None)
 def running_from_pip():
-  # I think we will be running from pip always
-  #  using --editible if in tree
-  return True
+  if "OBT_INPLACE" in os.environ:
+    return False
+  else:
+    return True
 
 ###############################################################################
 
