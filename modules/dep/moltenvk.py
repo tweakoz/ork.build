@@ -71,7 +71,7 @@ class moltenvk(dep.Provider):
         ok = (0 == command.system(cmd))
         if ok:
           # moltenvlk does not automatically install shaderc
-          cmd = ["brew","install","shaderc"]
+          cmd = ["brew","install","--overwrite", "shaderc"]
           ok = (0 == command.system(cmd))
     return ok
 
