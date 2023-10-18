@@ -12,8 +12,20 @@ import os, sys, pathlib, argparse, multiprocessing, json
 as_main = (__name__ == '__main__')
 
 Path = pathlib.Path
-
 curwd = Path(os.getcwd())
+###########################################
+
+file_path = os.path.realpath(__file__)
+file_dir = os.path.dirname(file_path)
+par2_dir = os.path.dirname(file_dir)
+
+root_dir = Path(par2_dir)
+scripts_dir = root_dir/"scripts"
+project_dir = root_dir
+
+sys.path.append(str(file_dir))
+
+###########################################
 
 parser = argparse.ArgumentParser(description='obt.build environment creator')
 parser.add_argument('--stagedir', metavar="createdir", help='create staging folder and enter session' )
@@ -35,6 +47,11 @@ if len(sys.argv)==1:
     sys.exit(1)
 
 ###########################################
+
+from _obt_config import configFromCommandLine
+config = configFromCommandLine(args)
+
+###########################################
 IsQuiet = (args["quiet"]==True)
 ###########################################
 
@@ -43,23 +60,7 @@ if IsQuiet:
 #else:
 #    os.environ["OBT_QUIET"]=IsQuiet
 
-def my_log(x):
-    if False==IsQuiet:
-       print(x)
-
-###########################################
-
-file_path = os.path.realpath(__file__)
-my_log(file_path)
-file_dir = os.path.dirname(file_path)
-par2_dir = os.path.dirname(file_dir)
-par3_dir = os.path.dirname(par2_dir)
-par4_dir = os.path.dirname(par3_dir)
-par5_dir = os.path.dirname(par4_dir)
-
-root_dir = Path(par2_dir)
-scripts_dir = root_dir/"scripts"
-project_dir = root_dir
+config.log(file_path)
 
 ###########################################
 

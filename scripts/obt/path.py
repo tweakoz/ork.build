@@ -34,6 +34,27 @@ class PosixPath(_PosixPath_, Path) :
       os.chdir(str(self))
   pass
 
+
+###############################################################################
+
+def fileOfInvokingModule():
+  frame = inspect.stack()[1]
+  module = inspect.getmodule(frame[0])
+  if module:
+    this_path = os.path.realpath(module.__file__)
+    return Path(this_path)
+  else:
+      assert(False)
+
+def directoryOfInvokingModule():
+  frame = inspect.stack()[1]
+  module = inspect.getmodule(frame[0])
+  if module:
+    this_path = os.path.realpath(module.__file__)
+    return Path(os.path.dirname(this_path))
+  else:
+      assert(False)
+
 ###############################################################################
 
 def wrap(a):
@@ -90,47 +111,57 @@ def subspace_dir():
 
 ##########################################
 
-# USER - PYTHONUSERBASE
-
 @lru_cache(maxsize=None)
 def obt_data_base():
-    mpath = obt_module_path()
-    keep_going = True
-    counter = 0
-    while keep_going:
-        p1 = mpath/"modules"/"dep"
-        p2 = mpath/"obt"/"modules"/"dep"
-        if p1.exists():
-            return mpath
-        elif p2.exists():
-            return mpath/"obt"
-        else:
-            mpath = mpath.parent
-            counter+=1
-        keep_going = (counter<10)
-    assert(False)
-    return None
+  mpath = obt_module_path()
+  keep_going = True
+  counter = 0
+  while keep_going:
+    p1 = mpath/"modules"/"dep"
+    p2 = mpath/"obt"/"modules"/"dep"
+    if p1.exists():
+      return mpath
+    elif p2.exists():
+      return mpath/"obt"
+    else:
+      mpath = mpath.parent
+      counter+=1
+    keep_going = (counter<10)
+  assert(False)
+  return None
+
+##########################################
 
 @lru_cache(maxsize=None)
 def obt_in_tree():
   return (obt_data_base()/".git").exists()
 
+##########################################
+
 @lru_cache(maxsize=None)
 def pip_obt_data_path(filename):
   return obt_data_base()/filename
+
+##########################################
 
 @lru_cache(maxsize=None)
 def obt_module_path():
    import obt 
    return Path(obt.__path__[0])
 
+##########################################
+
 @lru_cache(maxsize=None)
 def obt_modules_base():
   return obt_data_base()/"modules"
 
+##########################################
+
 @lru_cache(maxsize=None)
 def obt_bin_priv_base():
   return obt_data_base()/"bin_priv"
+
+##########################################
 
 @lru_cache(maxsize=None)
 def running_from_pip():

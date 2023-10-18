@@ -12,13 +12,20 @@ import os, sys, pathlib, argparse, multiprocessing
 
 as_main = (__name__ == '__main__')
 
-Path = pathlib.Path
+###########################################
 
+Path = pathlib.Path
 curwd = Path(os.getcwd())
+file_path = os.path.realpath(__file__)
+file_dir = os.path.dirname(file_path)
+par2_dir = os.path.dirname(file_dir)
+root_dir = Path(par2_dir)
+
+###########################################
 
 parser = argparse.ArgumentParser(description='obt.build environment launcher')
-parser.add_argument('--launch', metavar="launchdir", help='launch from pre-existing folder' )
-parser.add_argument('--prjdir', metavar="prjdir", help='override project directory' )
+parser.add_argument('--stagedir', metavar="stagedir", help='launch from pre-existing folder' )
+parser.add_argument('--project', metavar="prjdir", help='override project directory' )
 parser.add_argument('--chdir', metavar="chdir", help='working directory of command' )
 parser.add_argument('--stack', metavar="stackdir", help='stack env' )
 parser.add_argument('--prompt', metavar="prompt", help='prompt suffix' )
@@ -37,30 +44,23 @@ if len(sys.argv)==1:
     print(parser.format_usage())
     sys.exit(1)
 
+from _obt_config import configFromCommandLine
+obt_config = configFromCommandLine(args)
+obt_config.dump()
+#envsetup = obt._envutils.EnvSetup(stagedir=OBT_STAGE,
+#                                  rootdir=root_dir,
+#                                  projectdir=project_dir,
+#                                  bin_priv_dir=bin_priv_dir,
+#                                  bin_pub_dir=bin_pub_dir,
+#                                  scriptsdir=scripts_dir,
+#                                  disable_syspypath=True,
+#                                  is_quiet=config._is_quiet,
+#                                  project_name = ORK_PROJECT_NAME)
+
 ###########################################
-IsQuiet = (args["quiet"]==True)
-IsCommandSet = args["command"]!=None
 IsInplace = (args["inplace"]==True)
 ###########################################
 
-if IsQuiet:
-    os.environ["OBT_QUIET"]="1"
-#else:
-#    os.environ["OBT_QUIET"]=IsQuiet
-
-if args["prompt"]!=None:
-  os.environ["OBT_USE_PROMPT_PREFIX"] = args["prompt"]
-   
-###########################################
-
-file_path = os.path.realpath(__file__)
-file_dir = os.path.dirname(file_path)
-par2_dir = os.path.dirname(file_dir)
-par3_dir = os.path.dirname(par2_dir)
-par4_dir = os.path.dirname(par3_dir)
-par5_dir = os.path.dirname(par4_dir)
-
-root_dir = Path(par2_dir)
 scripts_dir = root_dir/"scripts"
 bin_priv_dir = root_dir/"bin_priv"
 bin_pub_dir = root_dir/"bin_pub"
@@ -68,32 +68,9 @@ bin_pub_dir = root_dir/"bin_pub"
 ###########################################
 
 project_dir = root_dir
-if args["prjdir"]!=None:
-  project_dir = Path(args["prjdir"])
-
-###########################################
-
-if IsInplace:
-  if "PYTHONPATH" in os.environ:
-    ORIG_PYTHONPATHS = os.environ["PYTHONPATH"].split(":")
-    ORIG_PYTHONPATHS = [s for s in ORIG_PYTHONPATHS if s]
-    print(ORIG_PYTHONPATHS)
-    print(sys.path)
-    ORIG_PYTHONPATH = ORIG_PYTHONPATHS[0]
-    if ORIG_PYTHONPATH in sys.path:
-      sys.path.remove(ORIG_PYTHONPATH)
-      assert(False)
-  os.environ["PYTHONPATH"]=str(scripts_dir)#+":"+os.environ["PYTHONPATH"]
-  os.environ["OBT_INPLACE"]="1"
-  os.environ["OBT_ROOT"]=str(root_dir)
-  #os.environ["PATH"]=str(root_dir/"bin_priv")+":"+os.environ["PATH"]
-  sys.path = [str(scripts_dir)]+sys.path
-else:
-  bin_priv_dir = root_dir/"obt"/"bin_priv"
-  bin_pub_dir = root_dir/"bin_pub"
-  print(bin_priv_dir)
-  print(bin_pub_dir)
-   
+if args["project"]!=None:
+  project_dir = Path(args["project"])
+ 
 ###########################################
 
 ORK_PROJECT_NAME = "obt"
@@ -102,16 +79,10 @@ if "ORK_PROJECT_NAME" in os.environ:
 OBT_STAGE = curwd/".staging"
 if "OBT_STAGE" in os.environ:
   OBT_STAGE = Path(os.environ["OBT_STAGE"])
-if args["launch"]!=None:
-  try_staging = Path(args["launch"]).resolve()
+if args["stagedir"]!=None:
+  try_staging = Path(args["stagedir"]).resolve()
 elif args["stack"]!=None:
   try_staging = Path(args["stack"]).resolve()
-
-NumCores = multiprocessing.cpu_count()
-if args["numcores"]!=None:
-  NumCores = int(args["numcores"])
-if "OBT_NUM_CORES" not in os.environ:
-  os.environ["OBT_NUM_CORES"]=str(NumCores)
 
 if try_staging!=None:
   OBT_STAGE = try_staging
@@ -138,15 +109,7 @@ deco = obt.deco.Deco()
 ##########################################
 
 import obt._envutils 
-envsetup = obt._envutils.EnvSetup(stagedir=OBT_STAGE,
-                                  rootdir=root_dir,
-                                  projectdir=project_dir,
-                                  bin_priv_dir=bin_priv_dir,
-                                  bin_pub_dir=bin_pub_dir,
-                                  scriptsdir=scripts_dir,
-                                  disable_syspypath=True,
-                                  is_quiet=IsQuiet,
-                                  project_name = ORK_PROJECT_NAME)
+envsetup = obt._envutils.EnvSetup(obt_config)
 
 os.environ["OBT_STAGE"] = str(OBT_STAGE)
 
@@ -198,7 +161,7 @@ def dynamicInit():
 
 
 ###########################################
-if args["launch"]!=None:
+if args["stagedir"]!=None:
 ###########################################
     if args["novars"]==False:
       envsetup.install()
@@ -212,7 +175,7 @@ if args["launch"]!=None:
     #############
     shell = "bash"
     bashrc = try_staging/".bashrc"
-    if args["prjdir"]!=None:
+    if args["project"]!=None:
       #prjdir = obt.path/Pat
       #envsetup.importProject(Path(item)/"obt.project")
       pass

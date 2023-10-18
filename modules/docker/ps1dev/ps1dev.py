@@ -1,12 +1,11 @@
-from ork import dep, path, command, docker, wget, pathtools
-from ork.deco import Deco
-import ork.module
+from obt import dep, path, command, docker, wget, pathtools
+from obt.deco import Deco
+import obt.module
 import time, re, socket, os, sys
 from pathlib import Path
-deco = ork.deco.Deco()
+deco = obt.deco.Deco()
 
-this_path = os.path.realpath(__file__)
-this_dir = Path(os.path.dirname(this_path))
+this_dir = path.directoryOfInvokingModule()
 
 makedotcfg = this_dir/"Makefile.cfg"
 

@@ -165,48 +165,33 @@ class subspaceinfo:
     # launch conda subspace shell
     ###############################################
     def shell(self,working_dir=None,container=None):
-
+      from _obt_config import configFromEnvironment
+      import obt._envutils 
+      obt_config = configFromEnvironment()
+      sub_env = obt._envutils.EnvSetup(obt_config)
+      #############################
       conda_cmdlist = [self.conda_executable,"run","--no-capture-output"]
-
       TEMP_PATH = path.temp()
-      PYTHON_HOME = self._prefix
       if container!=None:
         conda_cmdlist += ["--name",container]
-        PYTHON_HOME = self._prefix/"envs"/container
-
       conda_cmdlist += ["bash"]
-      
       print(conda_cmdlist)
-
-      import obt._envutils 
-      sub_name = os.environ["OBT_PROJECT_NAME"]
-      sub_env = obt._envutils.EnvSetup(project_name=sub_name)
-
-      override_sysprompt = "🐍-conda" if (container==None) else "🐍-%s"%container
-
+      #############################
       BASHRC = sub_env.genBashRc()
       BASHRC += "\n\n"
       BASHRC += "%s --stack\n"%(self._prefix/"bin"/"activate")
-
       fname = None
-
       rval = 0
-
       environ = self._gen_environment(container)
-
       import tempfile
       with tempfile.NamedTemporaryFile(dir=path.temp(),mode="w",delete=False) as tempf:
         fname = tempf.name
         tempf.write(BASHRC)
         tempf.close()
         print(fname)
-
         conda_cmdlist += ["--rcfile",fname, "-i"]
-
-
-
         rval = command.run(conda_cmdlist,working_dir=working_dir,environment=environ,do_log=True)
-
+      #############################
       return rval
 
     ###############################################

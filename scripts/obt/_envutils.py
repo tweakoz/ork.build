@@ -35,143 +35,29 @@ def root_path():
     return None
 
 class EnvSetup:
-  def __init__(self,stagedir=None,
-                    rootdir=None,
-                    projectdir=None,
-                    bin_pub_dir=None,
-                    bin_priv_dir=None,
-                    scriptsdir=None,
-                    disable_syspypath=False,
-                    is_quiet=False,
-                    project_name=None,
-                    git_ssh_command=None):
-    
-    if stagedir==None:
-      stagedir = obt.path.Path(os.environ["OBT_STAGE"])
-    if rootdir==None:
-      rootdir = root_path()
-    if bin_pub_dir==None:
-      bin_pub_dir = rootdir/"bin_pub"
-    if bin_priv_dir==None:
-      bin_priv_dir = rootdir/"bin_priv"
-    if projectdir==None:
-      projectdir = obt.path.Path(os.environ["OBT_PROJECT_DIR"])
-    try_project_manifest = projectdir/"obt.project"/"obt.manifest"
-    if try_project_manifest.exists():
-      try_project_bin = projectdir/"obt.project"/"bin"
-      if try_project_bin.exists():
-        obt.env.append("PATH",try_project_bin)
-
-    if scriptsdir==None:
-      scriptsdir = rootdir/"scripts"
-    if project_name==None and "OBT_PROJECT_NAME" in os.environ:
-      project_name = os.environ["OBT_PROJECT_NAME"] 
-    if git_ssh_command==None and "OBT_GIT_SSH_COMMAND" in os.environ:
-      git_ssh_command = os.environ["OBT_GIT_SSH_COMMAND"] 
-
-    self.OBT_STAGE = stagedir 
-    self.ROOT_DIR = rootdir 
-    self.PROJECT_DIR = projectdir 
-    self.BIN_PUB_DIR = bin_pub_dir 
-    self.BIN_PRIV_DIR = bin_priv_dir 
-    self.SCRIPTS_DIR = scriptsdir 
-    self.DISABLE_SYSPYPATH=disable_syspypath
-    self.IS_QUIET = is_quiet
-    self.PROJECT_NAME = project_name
-    self.GIT_SSH_COMMAND = git_ssh_command
+  def __init__(self,config):
+    assert(config.valid)
+    self._config = config
     
   ##########################################
   def install(self):
-    import obt.path
-    orig_path = ""
-    orig_ld_library_path = ""
-    orig_ps1 = ""
-    orig_pkg_config = ""
-    orig_pkg_config_path = ""
-    orig_python_path = ""
-    if "PATH" in os.environ:
-      orig_path = os.environ["PATH"]
-    if "PS1" in os.environ:
-      orig_ps1 = os.environ["PS1"]
-    if "LD_LIBRARY_PATH" in os.environ:
-      orig_ld_library_path = os.environ["LD_LIBRARY_PATH"]
-
-    ##############################################################################
-    # retrieve original PKG_CONFIG_PATH
-    ##############################################################################
-
-    orig_pkg_config_path = obt.command.capture(["pkg-config","--variable","pc_path","pkg-config"])
-    orig_pkg_config_path = orig_pkg_config_path.replace("\n","")
-    print("orig_pkg_config_path<%s>"%orig_pkg_config_path)
-
-    if "PKG_CONFIG" in os.environ:
-      orig_pkg_config = os.environ["PKG_CONFIG"]
-    #if "PKG_CONFIG_PATH" in os.environ:
-    #  orig_pkg_config_path = os.environ["PKG_CONFIG_PATH"]
-    if "PYTHONPATH" in os.environ:
-      orig_python_path = os.environ["PYTHONPATH"]
-
-    obt.env.set("PKG_CONFIG_PATH",orig_pkg_config_path )
-    obt.env.set("OBT_ORIGINAL_PKG_CONFIG_PATH",orig_pkg_config_path )
-
-    obt.env.set("OBT_ORIGINAL_PKG_CONFIG",orig_pkg_config )
-
-    ##############################################################################
-
     obt.env.set("color_prompt","yes")
-    obt.env.set("OBT_STAGE",self.OBT_STAGE)
-    obt.env.set("OBT_BUILDS",self.OBT_STAGE/"builds")
-    obt.env.set("OBT_ROOT",self.ROOT_DIR)
-    obt.env.set("OBT_PROJECT_DIR",self.PROJECT_DIR)
-    obt.env.set("OBT_SUBSPACE","host")
-    obt.env.set("OBT_SUBSPACE_PROMPT","host")
-    obt.env.set("OBT_SUBSPACE_DIR",self.OBT_STAGE)
-    obt.env.set("OBT_PROJECT_NAME",self.PROJECT_NAME)
-    obt.env.set("OBT_ORIGINAL_PATH",orig_path )
-    obt.env.set("OBT_ORIGINAL_LD_LIBRARY_PATH",orig_ld_library_path )
-    obt.env.set("OBT_ORIGINAL_PS1",orig_ps1 )
-    obt.env.set("OBT_ORIGINAL_PYTHONPATH",orig_python_path )
-    obt.env.set("OBT_SCRIPTS_DIR",self.SCRIPTS_DIR )
-    obt.env.set("OBT_PYTHONHOME",self.OBT_STAGE/"pyvenv")
-    obt.env.set("OBT_SUBSPACE_LIB_DIR",obt.path.libs())
-    obt.env.set("OBT_SUBSPACE_BIN_DIR",obt.path.bin())
-    obt.env.prepend("PATH",self.BIN_PUB_DIR )
-    obt.env.prepend("PATH",self.BIN_PRIV_DIR )
-    obt.env.prepend("PATH",self.OBT_STAGE/"bin")
-    obt.env.prepend("LD_LIBRARY_PATH",self.OBT_STAGE/"lib")
-    obt.env.prepend("LD_LIBRARY_PATH",self.OBT_STAGE/"lib64")
+    obt.env.prepend("PATH",self._config._bin_pub_dir )
+    obt.env.prepend("PATH",self._config._bin_priv_dir )
+    obt.env.prepend("PATH",self._config._stage_dir/"bin")
+    obt.env.prepend("LD_LIBRARY_PATH",self._config._stage_dir/"lib")
+    obt.env.prepend("LD_LIBRARY_PATH",self._config._stage_dir/"lib64")
 
     obt.env.append("OBT_MODULES_PATH",obt.path.modules())
     obt.env.append("OBT_DEP_PATH",obt.path.modules()/"dep")
 
-    if self.GIT_SSH_COMMAND!=None:
-      obt.env.set("OBT_GIT_SSH_COMMAND",self.GIT_SSH_COMMAND)
+    if self._config._git_ssh_command!=None:
+      obt.env.set("OBT_GIT_SSH_COMMAND",self._config._git_ssh_command)
 
-    obt_prj_extensions = self.PROJECT_DIR/"obt.project"
-    print(self.PROJECT_DIR)
+    obt_prj_extensions = self._config._project_dir/"obt.project"
+    print(self._config._project_dir)
     if obt_prj_extensions.exists():
       self.importProject(obt_prj_extensions)
-
-
-    #if obt.host.IsLinux:
-
-      #if obt.host.IsDebian:
-      #  pkgcfgdir = obt.path.Path("/lib/x86_64-linux-gnu/pkgconfig")
-      #elif obt.host.IsGentoo:
-      #  pkgcfgdir = obt.path.Path("/usr/lib64/pkgconfig")
-      #elif obt.host.IsAARCH64:
-      #  pkgcfgdir = obt.path.Path("/usr/lib/pkgconfig")
-
-      #if pkgcfgdir.exists():
-      #  obt.env.append("PKG_CONFIG_PATH",pkgcfgdir)
-      #pkgcfgdir = obt.path.Path("/usr/share/pkgconfig")
-      #if pkgcfgdir.exists():
-      #  obt.env.append("PKG_CONFIG_PATH",pkgcfgdir)
-    #elif obt.host.IsDarwin:
-      #pkgcfgdir = obt.path.Path("/usr/local/lib/pkgconfig")
-      #if pkgcfgdir.exists():
-      #  obt.env.append("PKG_CONFIG_PATH",pkgcfgdir)
-
 
     if obt.path.vivado_base().exists():
         obt.env.append("PATH",obt.path.vivado_base()/"bin")
@@ -186,16 +72,16 @@ class EnvSetup:
     #####################################
     # Late init
     #####################################
-    obt.env.prepend("PKG_CONFIG",self.OBT_STAGE/"bin"/"pkg-config")
-    #obt.env.prepend("PKG_CONFIG_PREFIX",self.OBT_STAGE)
-    obt.env.prepend("PKG_CONFIG_PATH",self.OBT_STAGE/"lib"/"pkgconfig")
-    obt.env.prepend("PKG_CONFIG_PATH",self.OBT_STAGE/"lib64"/"pkgconfig")
+    obt.env.prepend("PKG_CONFIG",self._config._stage_dir/"bin"/"pkg-config")
+    #obt.env.prepend("PKG_CONFIG_PREFIX",self._config._stage_dir)
+    obt.env.prepend("PKG_CONFIG_PATH",self._config._stage_dir/"lib"/"pkgconfig")
+    obt.env.prepend("PKG_CONFIG_PATH",self._config._stage_dir/"lib64"/"pkgconfig")
 
     if True: # WIP
       obt.env.set("PYTHONNOUSERSITE","TRUE")
-      obt.env.append("PYTHONPATH",self.SCRIPTS_DIR)
-      obt.env.prepend("PYTHONPATH",self.OBT_STAGE/"lib"/"python")
-      obt.env.append("LD_LIBRARY_PATH",self.OBT_STAGE/"python-3.9.13"/"lib")
+      obt.env.append("PYTHONPATH",self._config._scripts_dir)
+      obt.env.prepend("PYTHONPATH",self._config._stage_dir/"lib"/"python")
+      obt.env.append("LD_LIBRARY_PATH",self._config._stage_dir/"python-3.9.13"/"lib")
 
     if obt.path.running_from_pip():
       obt.env.prepend("PATH",obt.path.obt_data_base()/"bin_priv")
@@ -219,7 +105,7 @@ class EnvSetup:
 
   ###########################################
   def log(self,x):
-    if not self.IS_QUIET:
+    if not self._config._quiet:
        print(x)
   ###########################################
   def lazyMakeDirs(self):
@@ -242,12 +128,12 @@ class EnvSetup:
     numcores = int(os.environ["OBT_NUM_CORES"])
 
     LAUNCHENV = []
-    if self.GIT_SSH_COMMAND!=None:
-      LAUNCHENV += ['export GIT_SSH_COMMAND="%s";'%self.GIT_SSH_COMMAND]
+    if self._config._git_ssh_command!=None:
+      LAUNCHENV += ['export GIT_SSH_COMMAND="%s";'%self._config._git_ssh_command]
     LAUNCHENV += ["obt.env.launch.py"]
     LAUNCHENV += ["--numcores", numcores]
-    LAUNCHENV += ["--launch", self.OBT_STAGE]
-    LAUNCHENV += ["--prjdir", self.PROJECT_DIR]
+    LAUNCHENV += ["--launch", self._config._stage_dir]
+    LAUNCHENV += ["--prjdir", self._config._project_dir]
 
     if subspace!= None:
       LAUNCHENV += ["--subspace", subspace]
@@ -293,7 +179,7 @@ class EnvSetup:
     if override_sysprompt!=None:
       SYSPROM = override_sysprompt
 
-    PROMPT = bdeco.promptL('%s[ %s %s-${OBT_SUBSPACE_PROMPT} ]'%(SYSPROM,stackindic,self.PROJECT_NAME))
+    PROMPT = bdeco.promptL('%s[ %s %s-${OBT_SUBSPACE_PROMPT} ]'%(SYSPROM,stackindic,self._config._project_name))
     PROMPT += bdeco.promptC("\\w")
     PROMPT += bdeco.promptR("[$(parse_git_branch) ]")
     PROMPT += bdeco.bright("> ")
