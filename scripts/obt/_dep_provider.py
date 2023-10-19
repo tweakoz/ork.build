@@ -245,9 +245,9 @@ class Provider(object):
           if self.OK:
             self.OK = self.onPostBuild()
             if self.OK:
-              gfnkdsgnjf=self.areRequiredBinaryFilesPresent()
-              if gfnkdsgnjf != None:
-                self.OK = gfnkdsgnjf
+              bins_present=self.areRequiredBinaryFilesPresent()
+              if bins_present != None:
+                self.OK = bins_present
               else:
                 self.OK = True
               if self.OK:

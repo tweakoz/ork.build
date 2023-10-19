@@ -165,6 +165,8 @@ class subspaceinfo:
     # launch conda subspace shell
     ###############################################
     def shell(self,working_dir=None,container=None):
+
+      sys.path.append(os.environ["OBT_BIN_PUB"])
       from _obt_config import configFromEnvironment
       import obt._envutils 
       obt_config = configFromEnvironment()

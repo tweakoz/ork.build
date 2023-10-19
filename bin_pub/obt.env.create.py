@@ -12,11 +12,13 @@ import os, sys, pathlib, argparse, multiprocessing, json
 as_main = (__name__ == '__main__')
 
 ###########################################
+
 Path = pathlib.Path
 curwd = Path(os.getcwd())
 file_path = os.path.realpath(__file__)
 file_dir = os.path.dirname(file_path)
 sys.path.append(str(file_dir))
+
 ###########################################
 
 parser = argparse.ArgumentParser(description='obt.build environment creator')
@@ -39,10 +41,14 @@ if len(sys.argv)==1:
     sys.exit(1)
 
 ###########################################
+# parse args and generate config / core environment vars
+###########################################
 
 from _obt_config import configFromCommandLine
 obt_config = configFromCommandLine(args)
       
+###########################################
+# wipe old staging folder ?
 ###########################################
 
 try_staging = obt_config._stage_dir
@@ -51,22 +57,11 @@ if try_staging.exists() and args["wipe"]==False:
   sys.exit(0)
 if args["wipe"] and try_staging.exists():
   os.system( "rm -rf %s"%try_staging)
-else:
-  assert(False)
 
 ###########################################
 
-import obt.deco
-import obt.env
-import obt.path
-import obt.host
-import obt.dep
-import obt._globals as _glob
-from obt.command import Command
-
-deco = obt.deco.Deco()
-
 if args["obttrace"]==True:
+  import obt._globals as _glob
   _glob.enableBuildTracing()
 
 ##########################################
@@ -81,14 +76,15 @@ if args["compose"] != None:
     envsetup.importProject(Path(item))
 
 ###########################################
+# Create staging folder, scripts
+###########################################
+
+import obt.path
+
 obt.path.prefix().mkdir(parents=True,exist_ok=False)
-#############
-# Create base scripts
-#############
 envsetup.lazyMakeDirs()
 envsetup.genBashRc(try_staging/".bashrc")
 envsetup.genLaunchScript(out_path=try_staging/"obt-launch-env")
-#############
 
 ###########################################
 # build mandatory dependencies
@@ -96,6 +92,7 @@ envsetup.genLaunchScript(out_path=try_staging/"obt-launch-env")
 
 MANDATORY_DEPS = ["cmake","python","pydefaults"]
 
+import obt.dep
 for item in MANDATORY_DEPS:
   dep = obt.dep.instance(item)
   dep.provide()

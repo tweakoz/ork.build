@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 ###############################################################################
 # Orkid Build System
 # Copyright 2010-2023, Michael T. Mayers
@@ -331,31 +332,56 @@ def configFromCommandLine(parser_args):
   _config._bin_priv_dir = _genpath(_config._root_dir/"bin_priv")
   _config._scripts_dir = _genpath(_config._root_dir/"scripts")
 
+  ########################
+  # set up sys.path so we can import OBT modules
+  ########################
+
   sys.path = [str(_config._scripts_dir)]+sys.path
 
   import obt.env
   import obt.path
+  import obt.host
+  import obt.dep
+
+  ########################
 
   def IS_ARG_SET(arg):
     return arg in parser_args and parser_args[arg]!=None
+
+  ########################
 
   if IS_ARG_SET("sshkey"):
     GIT_SSH_COMMAND="ssh -i %s" % parser_args["sshkey"]
     _config._git_ssh_command = GIT_SSH_COMMAND
 
+  ########################
+
   if IS_ARG_SET("stack"):
     try_staging = Path(parser_args["stack"]).resolve()
     assert(False)
 
+  ########################
+
   if IS_ARG_SET("command"):
     _config._command = parser_args["command"].split(" ")
+
+  ########################
+
   if IS_ARG_SET("quiet"):
     _config._quiet = parser_args["quiet"]
+
+  ########################
+
   if IS_ARG_SET("inplace"):
     _config._inplace = parser_args["inplace"]
+
+  ########################
+
   if IS_ARG_SET("stagedir"):
     _config._stage_dir = pathlib.Path(os.path.realpath(parser_args["stagedir"]))
     _config._build_dir = _config._stage_dir/"builds"
+
+  ########################
 
   if IS_ARG_SET("numcores"):
     _config._numcores = int(parser_args["numcores"])
@@ -365,8 +391,12 @@ def configFromCommandLine(parser_args):
       NumCores = multiprocessing.cpu_count()
       _config._numcores = NumCores
 
+  ########################
+
   if IS_ARG_SET("prompt"):
     _config._prompt_prefix = parser_args["prompt"]
+
+  ########################
 
   if IS_ARG_SET("project"):
     project_dir = parser_args["project"]
@@ -374,6 +404,8 @@ def configFromCommandLine(parser_args):
     _config._project_dir = pathlib.Path(project_dir)
   else:
     _config._project_dir = _config._root_dir
+
+  ########################
 
   if _config._inplace:
     if "PYTHONPATH" in os.environ:
@@ -385,15 +417,18 @@ def configFromCommandLine(parser_args):
       ORIG_PYTHONPATH = str(_config._original_python_paths[0])
       if ORIG_PYTHONPATH in sys.path:
         sys.path.remove(ORIG_PYTHONPATH)
-        assert(False)
     
     _config._did_override_pythonpath = True
     os.environ["PYTHONPATH"]=str(_config._scripts_dir)
     #os.environ["PATH"]=str(root_dir/"bin_priv")+":"+os.environ["PATH"]
     sys.path = [str(_config._scripts_dir)]+sys.path
 
+  ########################
+
   if _config._project_dir==None:
     _config._project_dir = _config._root_dir
+  
+  ########################
 
   assert(_config.valid)
 
@@ -424,6 +459,11 @@ def configFromCommandLine(parser_args):
   os.environ["OBT_PROJECT_NAME"] = str(_config._project_name)
   os.environ["OBT_MODULES_PATH"] = ":".join(_listToStrList(_config._module_paths))
   os.environ["color_prompt"] = "yes"
+  os.environ["OBT_SEARCH_EXTLIST"] = ":".join(_config._text_search_exts)
+  os.environ["OBT_SEARCH_PATH"] = ":".join(_config._text_search_paths)
+
+  os.environ["OBT_BIN_PUB"] = str(_config._bin_pub_dir)
+  os.environ["OBT_BIN_PRIVATE"] = str(_config._bin_priv_dir)
 
   obt.env.prepend("PATH",_config._bin_pub_dir )
   obt.env.prepend("PATH",_config._bin_priv_dir )
@@ -443,8 +483,6 @@ def configFromCommandLine(parser_args):
   if _config._git_ssh_command!=None:
     obt.env.set("GIT_SSH_COMMAND",_config._git_ssh_command)
 
-  import obt.host
-  import obt.dep
 
   #if not obt.host.IsAARCH64:
   #  PYTHON = obt.dep.instance("python")
@@ -459,9 +497,6 @@ def configFromCommandLine(parser_args):
     obt.env.append("PYTHONPATH",_config._scripts_dir)
     obt.env.prepend("PYTHONPATH",_config._stage_dir/"lib"/"python")
     obt.env.append("LD_LIBRARY_PATH",_config._stage_dir/"python-3.9.13"/"lib")
-
-  if obt.path.running_from_pip():
-    obt.env.prepend("PATH",obt.path.obt_data_base()/"bin_priv")
 
   #####################################################
   # load project manifest

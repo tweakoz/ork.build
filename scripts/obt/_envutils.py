@@ -38,7 +38,7 @@ class EnvSetup:
   def __init__(self,config):
     assert(config.valid)
     self._config = config
-    
+
   ###########################################
   def log(self,x):
     if not self._config._quiet:
@@ -69,6 +69,7 @@ class EnvSetup:
 
     if self._config._inplace:
       LAUNCHENV += [str(self._config._bin_pub_dir/"obt.env.launch.py")]
+      LAUNCHENV += ["--inplace"]
     else:
       LAUNCHENV += ["obt.env.launch.py"]
 

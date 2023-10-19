@@ -43,9 +43,13 @@ if len(sys.argv)==1:
     print(parser.format_usage())
     sys.exit(1)
 
+###########################################
+
 from _obt_config import configFromCommandLine
 obt_config = configFromCommandLine(args)
 obt_config.dump()
+
+###########################################
 
 import obt._envutils 
 envsetup = obt._envutils.EnvSetup(obt_config)
