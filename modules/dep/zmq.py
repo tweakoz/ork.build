@@ -30,7 +30,7 @@ class zmq(dep.StdProvider):
     return dep.GithubFetcher(name=zmq.name,
                              repospec="zeromq/libzmq",
                              revision=VERSION,
-                             recursive=True)
+                             recursive=False)
   ########################################################################
   def linkenv(self):
     LIBS = ["zmq"]

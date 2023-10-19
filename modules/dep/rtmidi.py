@@ -22,7 +22,7 @@ class rtmidi(dep.StdProvider):
     return dep.GithubFetcher(name=rtmidi.name,
                              repospec="thestk/rtmidi",
                              revision="4.0.0",
-                             recursive=True)
+                             recursive=False)
 
   ########################################################################
   def areRequiredSourceFilesPresent(self):

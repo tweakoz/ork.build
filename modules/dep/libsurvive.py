@@ -24,7 +24,7 @@ class libsurvive(dep.StdProvider):
     return dep.GithubFetcher(name=libsurvive.NAME,
                              repospec="cntools/libsurvive",
                              revision=libsurvive.VERSION,
-                             recursive=True)
+                             recursive=False)
   ########################################################################
   def areRequiredSourceFilesPresent(self):
     return (self.source_root/"CMakeLists.txt").exists()

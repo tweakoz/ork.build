@@ -24,7 +24,7 @@ class openblas(dep.StdProvider):
     return dep.GithubFetcher(name=openblas.NAME,
                              repospec="xianyi/OpenBLAS",
                              revision=openblas.VERSION,
-                             recursive=True)
+                             recursive=False)
   ########################################################################
   def areRequiredSourceFilesPresent(self):
     return (self.source_root/"CMakeLists.txt").exists()

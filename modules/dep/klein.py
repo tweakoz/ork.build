@@ -34,7 +34,7 @@ class klein(dep.StdProvider):
     return dep.GithubFetcher(name=klein.name,
                              repospec="tweakoz/klein",
                              revision="master",
-                             recursive=True)
+                             recursive=False)
   ########################################################################
   def areRequiredSourceFilesPresent(self):
     return (self.source_root/"CMakeLists.txt").exists()

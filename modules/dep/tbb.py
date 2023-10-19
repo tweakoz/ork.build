@@ -55,7 +55,7 @@ class _tbb_from_source(dep.StdProvider):
     return dep.GithubFetcher(name=NAME,
                              repospec="oneapi-src/oneTBB",
                              revision=SRC_VERSION,
-                             recursive=True)
+                             recursive=False)
 ###############################################################################
   def areRequiredSourceFilesPresent(self):
     return (self.source_root/"CMakeLists.txt").exists()

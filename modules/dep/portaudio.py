@@ -21,7 +21,7 @@ class portaudio(dep.StdProvider):
     fetcher = dep.GithubFetcher(name=portaudio.name,
                                 repospec="PortAudio/portaudio",
                                 revision="v19.7.0",
-                                recursive=True)
+                                recursive=False)
     return fetcher
   ########################################################################
 

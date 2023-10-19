@@ -47,7 +47,7 @@ class _realsense_from_source(dep.StdProvider):
     return dep.GithubFetcher(name=_realsense_from_source.name,
                              repospec="tweakoz/librealsense",
                              revision=VERSION,
-                             recursive=True)
+                             recursive=False)
 
   #######################################################################
   def linkenv(self): 

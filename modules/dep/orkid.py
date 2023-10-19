@@ -82,7 +82,7 @@ class orkid(dep.StdProvider):
     return ["obt.env.launch.py",
       "--stack", path.stage(),
       "--novars", # use parent environment variables
-      "--compose", path.builds()/"orkid",
+      "--project", path.builds()/"orkid",
     ]
 
   ########
