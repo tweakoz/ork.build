@@ -44,7 +44,7 @@ if len(sys.argv)==1:
 # parse args and generate config / core environment vars
 ###########################################
 
-from _obt_config import configFromCommandLine
+from _obt_config import configFromCommandLine, initializeDependencyEnvironments, importProject
 obt_config = configFromCommandLine(args)
       
 ###########################################
@@ -78,6 +78,9 @@ obt.path.prefix().mkdir(parents=True,exist_ok=False)
 envsetup.lazyMakeDirs()
 envsetup.genBashRc(obt_config._stage_dir/".bashrc")
 envsetup.genLaunchScript(out_path=obt_config._stage_dir/"obt-launch-env")
+
+initializeDependencyEnvironments(envsetup)
+importProject(obt_config)
 
 ###########################################
 # build mandatory dependencies

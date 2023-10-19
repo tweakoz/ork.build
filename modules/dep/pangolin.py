@@ -17,14 +17,15 @@ class pangolin(dep.StdProvider):
     #self._deps = ["pkgconfig"]
     src_root = self.source_root
     #################################################
-    self._builder = self.createBuilder(dep.CMakeBuilder)
-    self._builder.setCmVar("BUILD_PANGOLIN_LIBUVC","OFF")
-    self._builder.setCmVar("BUILD_PANGOLIN_FFMPEG","OFF")
-    #################################################
     self.declareDep("pkgconfig")
     self.declareDep("cmake")
     self.declareDep("libcurl")
     self.declareDep("pybind11")
+    #################################################
+    self._builder = self.createBuilder(dep.CMakeBuilder)
+    self._builder.setCmVar("BUILD_PANGOLIN_LIBUVC","OFF")
+    self._builder.setCmVar("BUILD_PANGOLIN_FFMPEG","OFF")
+    #################################################
   ########################################################################
   @property
   def _fetcher(self):

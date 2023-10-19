@@ -46,7 +46,7 @@ if len(sys.argv)==1:
 
 ###########################################
 
-from _obt_config import configFromCommandLine
+from _obt_config import configFromCommandLine, initializeDependencyEnvironments, importProject
 obt_config = configFromCommandLine(args)
 obt_config.dump()
 
@@ -63,61 +63,23 @@ envsetup = obt._envutils.EnvSetup(obt_config)
 
 ###########################################
 
-import obt.deco
-import obt.env
-import obt.path
-import obt.host
-import obt.subspace
-import obt.sdk
 import obt._globals as _glob
 import obt.command
-import obt.subspace
-import obt.dep
-
+import obt.deco
 deco = obt.deco.Deco()
+
 stage_dir = obt_config._stage_dir
 
 ###########################################
-# per dep dynamic env init
-###########################################
 
-def initializeDependencyEnvironments():
-  ####################################
-  hostinfo = obt.host.description()
-  if hasattr(hostinfo,"env_init"):
-    hostinfo.env_init()
-  ####################################
-  sdkitems = obt.sdk.enumerate()
-  #print(sdkitems)
-  for sdk_module_key in sdkitems.keys():
-    sdk_module_item = sdkitems[sdk_module_key]
-   # print(sdk_module_item)
-    sdk_module = sdk_module_item._module
-    #print(sdk_module)
-    sdkinfo = sdk_module.sdkinfo()
-    if hasattr(sdkinfo,"env_init"):
-      sdkinfo.env_init()
-  ####################################
-  depitems = obt.dep.DepNode.FindWithMethod("env_init")
-  for depitemk in depitems:
-    depitem = depitems[depitemk]
-    if depitem.supports_host:
-      depitem.env_init()
-  ####################################
-  subspaceitems = obt.subspace.findWithMethod("env_init")
-  for subitemk in subspaceitems:
-    subitem = subspaceitems[subitemk]
-    print(subitem)
-    subitem._module.env_init(envsetup)
-  ####################################
-
+initializeDependencyEnvironments(envsetup)
+importProject(obt_config)
 
 ###########################################
 if args["stagedir"]!=None:
 ###########################################
     envsetup.lazyMakeDirs()
     envsetup.genBashRc(stage_dir/".bashrc")
-    initializeDependencyEnvironments()
     stage_dir_sh = stage_dir/"obt-launch-env"
     envsetup.log(stage_dir_sh)
     assert(stage_dir_sh.exists())
@@ -125,7 +87,6 @@ if args["stagedir"]!=None:
     shell = "bash"
     bashrc = stage_dir/".bashrc"
     if args["project"]!=None:
-      #prjdir = obt.path/Pat
       #envsetup.importProject(Path(item)/"obt.project")
       pass
     #############
@@ -160,7 +121,6 @@ elif args["stack"]!=None:
 ###########################################
     envsetup.lazyMakeDirs()
     envsetup.genBashRc(stage_dir/".bashrc-stack")
-    initializeDependencyEnvironments()
     #############
     if args["chdir"]!=None:
       os.chdir(args["chdir"])

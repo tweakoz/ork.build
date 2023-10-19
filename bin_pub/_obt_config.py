@@ -55,19 +55,23 @@ def findExecutable(exec_name):
 
 ###########################################
 
-def importProject(config,prjdir):
-  init_script = prjdir/"scripts"/"obt.env.extension.py"
-  #print(init_script)
-  if init_script.exists():
-    import importlib
-    modulename = importlib.machinery.SourceFileLoader('modulename',str(init_script)).load_module()
-    #print(modulename)
-    modulename.setup()
-    #modul.setup()
-  modules_dir = prjdir/"modules"
-  #print(modules_dir,modules_dir.exists())
-  if modules_dir.exists():
-    obt.env.prepend("OBT_MODULES_PATH",modules_dir)
+def importProject(config):
+
+  try_project_manifest = config._project_dir/"obt.project"/"obt.manifest"
+
+  if try_project_manifest.exists():
+    manifest_json = json.load(open(try_project_manifest,"r"))
+    print(manifest_json)
+    config._project_name = manifest_json["name"]
+    autoexec = manifest_json["autoexec"]
+    autoexec = config._project_dir/"obt.project"/autoexec
+    assert(autoexec.exists())
+    # import autoexec as python module
+    spec = importlib.util.spec_from_file_location("autoexec", str(autoexec))
+    init_env = importlib.util.module_from_spec(spec) 
+    spec.loader.exec_module(init_env)
+    init_env.setup()
+
 
 ###########################################
 # Global OBT process execution configuration
@@ -509,25 +513,6 @@ def configFromCommandLine(parser_args=None):
     obt.env.append("LD_LIBRARY_PATH",_config._stage_dir/"python-3.9.13"/"lib")
 
   #####################################################
-  # load project manifest
-  #####################################################
-
-  try_project_manifest = _config._project_dir/"obt.project"/"obt.manifest"
-
-  if try_project_manifest.exists():
-    manifest_json = json.load(open(try_project_manifest,"r"))
-    print(manifest_json)
-    _config._project_name = manifest_json["name"]
-    autoexec = manifest_json["autoexec"]
-    autoexec = _config._project_dir/"obt.project"/autoexec
-    assert(autoexec.exists())
-    # import autoexec as python module
-    spec = importlib.util.spec_from_file_location("autoexec", str(autoexec))
-    init_env = importlib.util.module_from_spec(spec) 
-    spec.loader.exec_module(init_env)
-    init_env.setup()
-
-  #####################################################
 
   return _config
 
@@ -539,3 +524,41 @@ def configFromEnvironment():
   return _config
 
 ###########################################
+# per dep dynamic env init
+###########################################
+
+def initializeDependencyEnvironments(envsetup):
+
+  import obt.host
+  import obt.dep
+  import obt.sdk
+  import obt.subspace
+
+  ####################################
+  hostinfo = obt.host.description()
+  if hasattr(hostinfo,"env_init"):
+    hostinfo.env_init()
+  ####################################
+  sdkitems = obt.sdk.enumerate()
+  #print(sdkitems)
+  for sdk_module_key in sdkitems.keys():
+    sdk_module_item = sdkitems[sdk_module_key]
+   # print(sdk_module_item)
+    sdk_module = sdk_module_item._module
+    #print(sdk_module)
+    sdkinfo = sdk_module.sdkinfo()
+    if hasattr(sdkinfo,"env_init"):
+      sdkinfo.env_init()
+  ####################################
+  depitems = obt.dep.DepNode.FindWithMethod("env_init")
+  for depitemk in depitems:
+    depitem = depitems[depitemk]
+    if depitem.supports_host:
+      depitem.env_init()
+  ####################################
+  subspaceitems = obt.subspace.findWithMethod("env_init")
+  for subitemk in subspaceitems:
+    subitem = subspaceitems[subitemk]
+    print(subitem)
+    subitem._module.env_init(envsetup)
+  ####################################
