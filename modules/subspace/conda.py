@@ -9,7 +9,7 @@
 #pip install -r requirements.txt
 #python main.py
 
-from obt import dep, path, command, host, wget, pathtools, subspace
+from obt import dep, path, command, host, wget, pathtools, subspace, env
 from obt.deco import Deco
 import obt.module
 import time, re, socket, os, sys
@@ -76,7 +76,10 @@ class subspaceinfo:
         OK = self.launch(conda_cmd="config",
                            launch_args=["--system","--set", "env_prompt", '"({default_env})|"'])==0
         if OK:
-          OK = self.launch(launch_args=["pip3","install","ork.build"])==0
+          if "OBT_INPLACE" in os.environ:
+            pass
+          else:
+            OK = self.launch(launch_args=["pip3","install","ork.build"])==0
           if OK:
             self._manifest_path.touch()
         return OK 
