@@ -324,7 +324,7 @@ _config = ObtExecConfig()
 # (EXPLICIT) initialize from command line arguments
 ###########################################
 
-def configFromCommandLine(parser_args):
+def configFromCommandLine(parser_args=None):
 
   _config.setupOriginalPaths()
 
@@ -347,6 +347,8 @@ def configFromCommandLine(parser_args):
   ########################
 
   def IS_ARG_SET(arg):
+    if parser_args==None:
+      return False
     return arg in parser_args and parser_args[arg]!=None
 
   ########################
@@ -384,7 +386,8 @@ def configFromCommandLine(parser_args):
   if IS_ARG_SET("stagedir"):
     _config._stage_dir = pathlib.Path(os.path.realpath(parser_args["stagedir"]))
 
-  _config._build_dir = _config._stage_dir/"builds"
+  if _config._stage_dir!=None:
+    _config._build_dir = _config._stage_dir/"builds"
 
   ########################
 
@@ -435,8 +438,6 @@ def configFromCommandLine(parser_args):
   
   ########################
 
-  assert(_config.valid)
-
   _config._module_paths = [_config._root_dir/"modules"]
 
   #####################################################
@@ -448,19 +449,15 @@ def configFromCommandLine(parser_args):
   if _config._inplace:
     os.environ["OBT_INPLACE"]="1"
   
+  #assert(_config.valid)
+
   os.environ["OBT_ROOT"]=str(_config._root_dir)
-  os.environ["OBT_STAGE"]=str(_config._stage_dir)
-  os.environ["OBT_BUILDS"]=str(_config._build_dir)
   os.environ["OBT_PROJECT_DIR"]=str(_config._project_dir)
   os.environ["OBT_ORIGINAL_PYTHONPATH"]=str(_config._project_dir)
   os.environ["OBT_NUM_CORES"]=str(_config._numcores)
   os.environ["OBT_SCRIPTS_DIR"] = str(_config._scripts_dir) 
-  os.environ["OBT_PYTHONHOME"] = str(_config._stage_dir/"pyvenv")
-  os.environ["OBT_SUBSPACE_LIB_DIR"] = str(_config._stage_dir/"lib")
-  os.environ["OBT_SUBSPACE_BIN_DIR"] = str(_config._stage_dir/"bin")
   os.environ["OBT_SUBSPACE"] = "host"
   os.environ["OBT_SUBSPACE_PROMPT"] = "host"
-  os.environ["OBT_SUBSPACE_DIR"] = str(_config._stage_dir)
   os.environ["OBT_PROJECT_NAME"] = str(_config._project_name)
   os.environ["OBT_MODULES_PATH"] = ":".join(_listToStrList(_config._module_paths))
   os.environ["color_prompt"] = "yes"
@@ -472,9 +469,6 @@ def configFromCommandLine(parser_args):
 
   obt.env.prepend("PATH",_config._bin_pub_dir )
   obt.env.prepend("PATH",_config._bin_priv_dir )
-  obt.env.prepend("PATH",_config._stage_dir/"bin")
-  obt.env.prepend("LD_LIBRARY_PATH",_config._stage_dir/"lib")
-  obt.env.prepend("LD_LIBRARY_PATH",_config._stage_dir/"lib64")
 
   #obt.env.append("OBT_MODULES_PATH",obt.path.modules())
   obt.env.append("OBT_DEP_PATH",obt.path.modules()/"dep")
@@ -488,18 +482,27 @@ def configFromCommandLine(parser_args):
   if _config._git_ssh_command!=None:
     obt.env.set("GIT_SSH_COMMAND",_config._git_ssh_command)
 
+  obt.env.set("PYTHONNOUSERSITE","TRUE")
+  obt.env.append("PYTHONPATH",_config._scripts_dir)
 
-  #if not obt.host.IsAARCH64:
-  #  PYTHON = obt.dep.instance("python")
+  #####################################################
+  # items only valid if there is a staging folder
+  #####################################################
 
-  obt.env.prepend("PKG_CONFIG",_config._stage_dir/"bin"/"pkg-config")
-  #obt.env.prepend("PKG_CONFIG_PREFIX",_config._stage_dir)
-  obt.env.prepend("PKG_CONFIG_PATH",_config._stage_dir/"lib"/"pkgconfig")
-  obt.env.prepend("PKG_CONFIG_PATH",_config._stage_dir/"lib64"/"pkgconfig")
-
-  if True: # WIP
-    obt.env.set("PYTHONNOUSERSITE","TRUE")
-    obt.env.append("PYTHONPATH",_config._scripts_dir)
+  if _config.valid: # Valid StageDir ?
+    os.environ["OBT_STAGE"]=str(_config._stage_dir)
+    os.environ["OBT_BUILDS"]=str(_config._build_dir)
+    os.environ["OBT_PYTHONHOME"] = str(_config._stage_dir/"pyvenv")
+    os.environ["OBT_SUBSPACE_LIB_DIR"] = str(_config._stage_dir/"lib")
+    os.environ["OBT_SUBSPACE_BIN_DIR"] = str(_config._stage_dir/"bin")
+    os.environ["OBT_SUBSPACE_DIR"] = str(_config._stage_dir)
+    obt.env.prepend("PATH",_config._stage_dir/"bin")
+    obt.env.prepend("LD_LIBRARY_PATH",_config._stage_dir/"lib")
+    obt.env.prepend("LD_LIBRARY_PATH",_config._stage_dir/"lib64")
+    obt.env.prepend("PKG_CONFIG",_config._stage_dir/"bin"/"pkg-config")
+    #obt.env.prepend("PKG_CONFIG_PREFIX",_config._stage_dir)
+    obt.env.prepend("PKG_CONFIG_PATH",_config._stage_dir/"lib"/"pkgconfig")
+    obt.env.prepend("PKG_CONFIG_PATH",_config._stage_dir/"lib64"/"pkgconfig")
     obt.env.prepend("PYTHONPATH",_config._stage_dir/"lib"/"python")
     obt.env.append("LD_LIBRARY_PATH",_config._stage_dir/"python-3.9.13"/"lib")
 
