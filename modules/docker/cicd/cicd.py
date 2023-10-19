@@ -20,6 +20,7 @@ class dockerinfo:
     # build the docker image
     ###############################################
     def build(self,build_args):
+      assert(build_args!=None)
       os.chdir(str(this_dir))
       #######################################
       chain = command.chain()
@@ -32,7 +33,8 @@ class dockerinfo:
     # kill active docker container
     ###############################################
     def kill(self):
-      pass
+      os.chdir(str(this_dir))
+      command.run(["docker-compose","down"])
     ###############################################
     # launch docker container
     #  print out connection info

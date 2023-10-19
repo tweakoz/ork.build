@@ -48,7 +48,10 @@ dockermodule = obt.docker.descriptor(dockermodulename)
 
 print(dockermodule)
 
+build_args = []
+if "buildargs" in _args and _args["buildargs"]!=None:
+  build_args = _args["buildargs"]
 
-dockermodule.build(_args["buildargs"])
+dockermodule.build(build_args)
 
 sys.exit(0)

@@ -1,7 +1,8 @@
 #!/usr/bin/env python3 
 
 import os, ci_common, argparse
-from obt import path 
+from obt import path, deco
+deco = deco.Deco()
 
 os.environ["DOCKER_BUILDKIT"]="1"
 
@@ -10,11 +11,20 @@ parser.add_argument('--secretsdir', help='ssh key path' )
 
 _args = vars(parser.parse_args())
 
-
+have_secrets = False
 if "SECRETSDIR" in os.environ:
   secrets_dir = path.Path(os.environ["SECRETSDIR"])
-if "secretsdir" in _args:
+  have_secrets = True
+if "secretsdir" in _args and _args["secretsdir"]!=None:
   secrets_dir = path.Path(_args["secretsdir"])
+  have_secrets = True
+
+if not have_secrets:
+  print(deco.err("##########################################################"))
+  print()
+  print(deco.err(parser.format_usage()))
+  print(deco.err("##########################################################"))
+  assert(False)
 
 
 assert(secrets_dir/"buildkey.rsa.pub").exists()
