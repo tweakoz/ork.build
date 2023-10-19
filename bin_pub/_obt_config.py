@@ -110,6 +110,7 @@ class ObtExecConfig(object):
     self._stage_dir = None
     self._build_dir = None
     self._inplace = False
+    self._stack_depth = 0
     self._quiet = False
     self._command = None
     self._subspace = None
@@ -356,12 +357,6 @@ def configFromCommandLine(parser_args):
 
   ########################
 
-  if IS_ARG_SET("stack"):
-    try_staging = Path(parser_args["stack"]).resolve()
-    assert(False)
-
-  ########################
-
   if IS_ARG_SET("command"):
     _config._command = parser_args["command"].split(" ")
 
@@ -377,9 +372,19 @@ def configFromCommandLine(parser_args):
 
   ########################
 
+  ########################
+
+  if IS_ARG_SET("stack"):
+    try_staging = Path(parser_args["stack"]).resolve()
+    obt.env.append("OBT_STACK","<")
+    _config._stack_depth = os.environ["OBT_STACK"].count("<")
+    assert(try_staging.exists())
+    _config._stage_dir = try_staging
+  
   if IS_ARG_SET("stagedir"):
     _config._stage_dir = pathlib.Path(os.path.realpath(parser_args["stagedir"]))
-    _config._build_dir = _config._stage_dir/"builds"
+
+  _config._build_dir = _config._stage_dir/"builds"
 
   ########################
 
