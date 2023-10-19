@@ -81,7 +81,7 @@ dockermodule = obt.docker.descriptor(dockermodulename)
 if len(mounts)==0:
   mounts = None
 
-print(_mounts)
+print(mounts)
 dockermodule.launch(unknownargs,environment=environ,mounts=mounts)
 
 sys.exit(0)
