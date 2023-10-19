@@ -61,7 +61,7 @@ class orkid(dep.StdProvider):
 
   @property
   def revision(self):
-    return "develop"
+    return "toz-opengl-eol"
 
   @property
   def _fetcher(self):
