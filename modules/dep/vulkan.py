@@ -41,16 +41,19 @@ class _vulkan_from_lunarg(dep.Provider):
     return "Vulkan (lunarg-%s)" % VERSION
 
   ########################################################################
-
   @property
-  def download_URL(self):
+  def download_name(self):
     if host.IsX86_64:
       nam = "vulkansdk-linux-x86_64-%s.tar.gz"%VERSION
     elif host.IsX86_32:
       nam = "vulkansdk-linux-i386-%s.tar.gz"%VERSION
     elif host.IsAARCH64:
       nam = "vulkansdk-linux-aarch64-%s.tar.gz"%VERSION
-    return "https://sdk.lunarg.com/sdk/download/%s/linux/%s"%(VERSION,nam)
+    return nam 
+  
+  @property
+  def download_URL(self):
+    return "https://sdk.lunarg.com/sdk/download/%s/linux/%s"%(VERSION,self.download_name)
 
   @property
   def download_MD5(self):
@@ -79,7 +82,7 @@ class _vulkan_from_lunarg(dep.Provider):
   def build(self): ##########################################################
 
     url = self.download_URL
-    ok = wget(urls=[url],output_name=nam,md5val=MD5)
+    ok = wget(urls=[url],output_name=self.download_name,md5val=MD5)
 
     print(ok)
     if not ok:
@@ -90,7 +93,7 @@ class _vulkan_from_lunarg(dep.Provider):
     ok = (command.system(["rm","-rf",VERSION])==0)
     if not ok:
       return False
-    ok = (command.system(["tar","xvf",path.downloads()/nam])==0)
+    ok = (command.system(["tar","xvf",path.downloads()/self.download_name])==0)
     if not ok:
       return False
 
