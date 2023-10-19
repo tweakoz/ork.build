@@ -168,7 +168,7 @@ class orkid(dep.StdProvider):
     shell_cmd = command.Command([
       "obt.env.launch.py",
       "--stack", path.stage(),
-      "--compose", path.builds()/"orkid",
+      "--project", path.builds()/"orkid",
       "--chdir", path.builds()/"orkid"
     ])
     return shell_cmd.exec()

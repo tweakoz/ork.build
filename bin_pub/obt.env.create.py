@@ -23,16 +23,16 @@ sys.path.append(str(file_dir))
 
 parser = argparse.ArgumentParser(description='obt.build environment creator')
 parser.add_argument('--stagedir', metavar="createdir", help='create staging folder and enter session' )
-parser.add_argument('--wipe', action="store_true", help='wipe old staging folder' )
+parser.add_argument('--project',metavar="project",help='sidechain project directory(with obt manifest)')
+parser.add_argument('--inplace', action="store_true" )
 parser.add_argument('--prompt', metavar="prompt", help='prompt suffix' )
 parser.add_argument("--numcores", metavar="numcores", help="numcores for environment")
 parser.add_argument("--quiet", action="store_true", help="no output")
 parser.add_argument('--novars', action="store_true", help='do not set env vars' )
-parser.add_argument('--compose',action='append',help='compose obt project into container')
 parser.add_argument('--obttrace',action="store_true",help='enable OBT buildtrace logging')
+
+parser.add_argument('--wipe', action="store_true", help='wipe old staging folder' )
 parser.add_argument('--sshkey',metavar="sshkey",help='ssh key to use with OBT/GIT')
-parser.add_argument('--projectdir',metavar="projectdir",help='sidechain project directory(with obt manifest)')
-parser.add_argument('--inplace', action="store_true" )
 
 args = vars(parser.parse_args())
 
@@ -51,12 +51,11 @@ obt_config = configFromCommandLine(args)
 # wipe old staging folder ?
 ###########################################
 
-try_staging = obt_config._stage_dir
-if try_staging.exists() and args["wipe"]==False:
-  print("Not going to wipe your staging folder<%s> unless you ask... use --wipe"%try_staging)
+if obt_config._stage_dir.exists() and args["wipe"]==False:
+  print("Not going to wipe your staging folder<%s> unless you ask... use --wipe"%obt_config._stage_dir)
   sys.exit(0)
-if args["wipe"] and try_staging.exists():
-  os.system( "rm -rf %s"%try_staging)
+if args["wipe"] and obt_config._stage_dir.exists():
+  os.system( "rm -rf %s"%obt_config._stage_dir)
 
 ###########################################
 
@@ -70,12 +69,6 @@ import obt._envutils
 envsetup = obt._envutils.EnvSetup(obt_config)
 
 ###########################################
-
-if args["compose"] != None:
-  for item in args["compose"]:
-    envsetup.importProject(Path(item))
-
-###########################################
 # Create staging folder, scripts
 ###########################################
 
@@ -83,8 +76,8 @@ import obt.path
 
 obt.path.prefix().mkdir(parents=True,exist_ok=False)
 envsetup.lazyMakeDirs()
-envsetup.genBashRc(try_staging/".bashrc")
-envsetup.genLaunchScript(out_path=try_staging/"obt-launch-env")
+envsetup.genBashRc(obt_config._stage_dir/".bashrc")
+envsetup.genLaunchScript(out_path=obt_config._stage_dir/"obt-launch-env")
 
 ###########################################
 # build mandatory dependencies

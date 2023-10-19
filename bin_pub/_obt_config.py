@@ -438,6 +438,8 @@ def configFromCommandLine(parser_args=None):
   
   ########################
 
+  assert(str(_config._project_dir)!="/nvme4/aphidsystems/ork.build")
+  
   _config._module_paths = [_config._root_dir/"modules"]
 
   #####################################################
@@ -462,7 +464,7 @@ def configFromCommandLine(parser_args=None):
   os.environ["OBT_MODULES_PATH"] = ":".join(_listToStrList(_config._module_paths))
   os.environ["color_prompt"] = "yes"
   os.environ["OBT_SEARCH_EXTLIST"] = ":".join(_config._text_search_exts)
-  os.environ["OBT_SEARCH_PATH"] = ":".join(_config._text_search_paths)
+  os.environ["OBT_SEARCH_PATH"] = ":".join(_listToStrList(_config._text_search_paths))
 
   os.environ["OBT_BIN_PUB"] = str(_config._bin_pub_dir)
   os.environ["OBT_BIN_PRIVATE"] = str(_config._bin_priv_dir)

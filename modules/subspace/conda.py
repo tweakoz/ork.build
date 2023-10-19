@@ -74,12 +74,12 @@ class subspaceinfo:
         command.run([_archive_path,"-b","-p",self._prefix])
 
         OK = self.launch(conda_cmd="config",
-                           launch_args=["--system","--set", "env_prompt", '"({default_env})|"'])==0
+                         launch_args=["--system","--set", "env_prompt", '"({default_env})|"'])==0
         if OK:
           if "OBT_INPLACE" in os.environ:
             pass
           else:
-            OK = self.launch(launch_args=["pip3","install","ork.build"])==0
+            pass #OK = self.launch(launch_args=["pip3","install","ork.build"])==0
           if OK:
             self._manifest_path.touch()
         return OK 

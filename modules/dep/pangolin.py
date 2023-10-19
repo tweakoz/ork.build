@@ -24,6 +24,7 @@ class pangolin(dep.StdProvider):
     self.declareDep("pkgconfig")
     self.declareDep("cmake")
     self.declareDep("libcurl")
+    self.declareDep("pybind11")
   ########################################################################
   @property
   def _fetcher(self):

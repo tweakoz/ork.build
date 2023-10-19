@@ -26,16 +26,17 @@ root_dir = Path(par2_dir)
 parser = argparse.ArgumentParser(description='obt.build environment launcher')
 parser.add_argument('--stagedir', metavar="stagedir", help='launch from pre-existing folder' )
 parser.add_argument('--project', metavar="project", help='override project directory' )
-parser.add_argument('--chdir', metavar="chdir", help='working directory of command' )
-parser.add_argument('--stack', metavar="stackdir", help='stack env' )
+parser.add_argument('--inplace', action="store_true" )
 parser.add_argument('--prompt', metavar="prompt", help='prompt suffix' )
-parser.add_argument("--command", metavar="command", help="execute in environ")
 parser.add_argument("--numcores", metavar="numcores", help="numcores for environment")
 parser.add_argument("--quiet", action="store_true", help="no output")
 parser.add_argument('--novars', action="store_true", help='do not set env vars' )
+parser.add_argument('--obttrace',action="store_true",help='enable OBT buildtrace logging')
+
 parser.add_argument('--subspace', metavar="subspace", help='subspace to launch' )
-parser.add_argument('--init', action="store_true" )
-parser.add_argument('--inplace', action="store_true" )
+parser.add_argument('--chdir', metavar="chdir", help='working directory of command' )
+parser.add_argument("--command", metavar="command", help="execute in environ")
+parser.add_argument('--stack', metavar="stackdir", help='stack env' )
 
 args = vars(parser.parse_args())
 
@@ -48,6 +49,12 @@ if len(sys.argv)==1:
 from _obt_config import configFromCommandLine
 obt_config = configFromCommandLine(args)
 obt_config.dump()
+
+###########################################
+
+if args["obttrace"]==True:
+  import obt._globals as _glob
+  _glob.enableBuildTracing()
 
 ###########################################
 
