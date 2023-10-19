@@ -151,18 +151,17 @@ if args["stagedir"]!=None:
 ###########################################
 elif args["stack"]!=None:
 ###########################################
-    obt.env.append("OBT_STACK","<")
     envsetup.lazyMakeDirs()
-    envsetup.genBashRc(try_staging/".bashrc-stack")
+    envsetup.genBashRc(stage_dir/".bashrc-stack")
     initializeDependencyEnvironments()
     #############
     if args["chdir"]!=None:
       os.chdir(args["chdir"])
     #############
     shell = "bash"
-    bashrc = try_staging/".bashrc-stack"
+    bashrc = stage_dir/".bashrc-stack"
     envsetup.log(deco.inf("System is <"+os.name+">"))
-    print("Stacking env<%s>" % deco.val(try_staging))
+    print("Stacking env<%s>" % deco.val(stage_dir))
     envsetup.log("obt.build eviron initialized OBT_ROOT<%s>"%deco.path(root_dir))
     if args["command"]!=None:
         obt.command.Command([shell,"--init-file",bashrc,"-c",args["command"]],environment={}).exec()
