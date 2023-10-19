@@ -70,7 +70,7 @@ if ("mount" in _args) and (_args["mount"]!=None):
 ####################################
 
 if ("mapssh" in _args) and (_args["mapssh"]==True):
-  mounts += ["type=bind,source=%s,target=/home/realsense2/.ssh"%(os.environ["HOME"]+"/.ssh")]
+  mounts += ["type=bind,source=%s,target=%s"%((os.environ["HOME"]+"/.ssh"),mapssh)]
 
 ####################################
 # invoke on docker module
