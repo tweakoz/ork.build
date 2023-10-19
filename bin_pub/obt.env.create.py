@@ -11,20 +11,12 @@ import os, sys, pathlib, argparse, multiprocessing, json
 
 as_main = (__name__ == '__main__')
 
+###########################################
 Path = pathlib.Path
 curwd = Path(os.getcwd())
-###########################################
-
 file_path = os.path.realpath(__file__)
 file_dir = os.path.dirname(file_path)
-par2_dir = os.path.dirname(file_dir)
-
-root_dir = Path(par2_dir)
-scripts_dir = root_dir/"scripts"
-project_dir = root_dir
-
 sys.path.append(str(file_dir))
-
 ###########################################
 
 parser = argparse.ArgumentParser(description='obt.build environment creator')
@@ -49,94 +41,18 @@ if len(sys.argv)==1:
 ###########################################
 
 from _obt_config import configFromCommandLine
-config = configFromCommandLine(args)
-
-###########################################
-IsQuiet = (args["quiet"]==True)
-###########################################
-
-if IsQuiet:
-    os.environ["OBT_QUIET"]="1"
-#else:
-#    os.environ["OBT_QUIET"]=IsQuiet
-
-config.log(file_path)
-
-###########################################
-
-IsInplace = (args["inplace"]==True)
-if IsInplace:
-  if "PYTHONPATH" in os.environ:
-    ORIG_PYTHONPATHS = os.environ["PYTHONPATH"].split(":")
-    ORIG_PYTHONPATHS = [s for s in ORIG_PYTHONPATHS if s]
-    print(ORIG_PYTHONPATHS)
-    print(sys.path)
-    ORIG_PYTHONPATH = ORIG_PYTHONPATHS[0]
-    if ORIG_PYTHONPATH in sys.path:
-      sys.path.remove(ORIG_PYTHONPATH)     
-  os.environ["PYTHONPATH"]=str(scripts_dir)#+":"+os.environ["PYTHONPATH"]
-  os.environ["OBT_INPLACE"]="1"
-  os.environ["OBT_ROOT"]=str(root_dir)
-  sys.path.append(str(scripts_dir))
-
-###########################################
-# are we standalone or attached to a project ?
-###########################################
-
-explicitprojectdir = None
-if args["projectdir"]!=None:
-  explicitprojectdir = Path(args["projectdir"])
-
-####################
-# first try implicit projectdir (curwd)
-####################
-
-try_project_manifest = curwd/"obt.project"/"obt.manifest"
-if try_project_manifest.exists():
-  project_dir = curwd
-else:
-
-  project_dir = root_dir/".." # default is parent of OBT 
-
-  if (explicitprojectdir!=None) and explicitprojectdir.exists(): # explicit passed in...
-    try_project_manifest = explicitprojectdir/"obt.project"/"obt.manifest"
-    if try_project_manifest.exists():
-      project_dir = explicitprojectdir
-    else:
-      assert(False) # explicit does not exist
+obt_config = configFromCommandLine(args)
       
 ###########################################
 
-ORK_PROJECT_NAME = "obt"
-if "ORK_PROJECT_NAME" in os.environ:
-  ORK_PROJECT_NAME = os.environ["ORK_PROJECT_NAME"]
-OBT_STAGE = curwd/".staging"
-if "OBT_STAGE" in os.environ:
-  OBT_STAGE = Path(os.environ["OBT_STAGE"])
-if args["stagedir"]!=None:
-  try_staging = Path(args["stagedir"]).resolve()
-  if try_staging.exists() and args["wipe"]==False:
-    print("Not going to wipe your staging folder<%s> unless you ask... use --wipe"%try_staging)
-    sys.exit(0)
-  if args["wipe"] and try_staging.exists():
-    os.system( "rm -rf %s"%try_staging)
+try_staging = obt_config._stage_dir
+if try_staging.exists() and args["wipe"]==False:
+  print("Not going to wipe your staging folder<%s> unless you ask... use --wipe"%try_staging)
+  sys.exit(0)
+if args["wipe"] and try_staging.exists():
+  os.system( "rm -rf %s"%try_staging)
 else:
   assert(False)
-
-NumCores = multiprocessing.cpu_count()
-if args["numcores"]!=None:
-  NumCores = int(args["numcores"])
-if "OBT_NUM_CORES" not in os.environ:
-  os.environ["OBT_NUM_CORES"]=str(NumCores)
-
-if args["prompt"]!=None:
-  os.environ["OBT_USE_PROMPT_PREFIX"] = args["prompt"]
-if try_staging!=None:
-  OBT_STAGE = try_staging
-
-GIT_SSH_COMMAND = None
-if args["sshkey"]!=None:
-  GIT_SSH_COMMAND="ssh -i %s" % args["sshkey"]
 
 ###########################################
 
@@ -149,7 +65,6 @@ import obt._globals as _glob
 from obt.command import Command
 
 deco = obt.deco.Deco()
-bin_dir = root_dir/"bin"
 
 if args["obttrace"]==True:
   _glob.enableBuildTracing()
@@ -157,14 +72,7 @@ if args["obttrace"]==True:
 ##########################################
 
 import obt._envutils 
-
-envsetup = obt._envutils.EnvSetup(stagedir=OBT_STAGE,
-                                  projectdir=project_dir,
-                                  rootdir=root_dir,
-                                  bindir=bin_dir,
-                                  scriptsdir=scripts_dir,
-                                  is_quiet=IsQuiet,
-                                  git_ssh_command = GIT_SSH_COMMAND)
+envsetup = obt._envutils.EnvSetup(obt_config)
 
 ###########################################
 
@@ -172,10 +80,6 @@ if args["compose"] != None:
   for item in args["compose"]:
     envsetup.importProject(Path(item))
 
-
-###########################################
-if args["novars"]==False:
-  envsetup.install() # sets OBT_STAGE env var (which prefix() uses)
 ###########################################
 obt.path.prefix().mkdir(parents=True,exist_ok=False)
 #############
@@ -186,8 +90,12 @@ envsetup.genBashRc(try_staging/".bashrc")
 envsetup.genLaunchScript(out_path=try_staging/"obt-launch-env")
 #############
 
-#if not obt.host.IsAARCH64:
-PYTHON = obt.dep.instance("python")
-PYTHON.provide()
-PYTHONDEFS = obt.dep.instance("pydefaults")
-PYTHONDEFS.provide()
+###########################################
+# build mandatory dependencies
+###########################################
+
+MANDATORY_DEPS = ["cmake","python","pydefaults"]
+
+for item in MANDATORY_DEPS:
+  dep = obt.dep.instance(item)
+  dep.provide()

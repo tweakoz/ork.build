@@ -39,70 +39,6 @@ class EnvSetup:
     assert(config.valid)
     self._config = config
     
-  ##########################################
-  def install(self):
-    obt.env.set("color_prompt","yes")
-    obt.env.prepend("PATH",self._config._bin_pub_dir )
-    obt.env.prepend("PATH",self._config._bin_priv_dir )
-    obt.env.prepend("PATH",self._config._stage_dir/"bin")
-    obt.env.prepend("LD_LIBRARY_PATH",self._config._stage_dir/"lib")
-    obt.env.prepend("LD_LIBRARY_PATH",self._config._stage_dir/"lib64")
-
-    obt.env.append("OBT_MODULES_PATH",obt.path.modules())
-    obt.env.append("OBT_DEP_PATH",obt.path.modules()/"dep")
-
-    if self._config._git_ssh_command!=None:
-      obt.env.set("OBT_GIT_SSH_COMMAND",self._config._git_ssh_command)
-
-    obt_prj_extensions = self._config._project_dir/"obt.project"
-    print(self._config._project_dir)
-    if obt_prj_extensions.exists():
-      self.importProject(obt_prj_extensions)
-
-    if obt.path.vivado_base().exists():
-        obt.env.append("PATH",obt.path.vivado_base()/"bin")
-    
-    #####################################
-    # Python Env Init
-    #####################################
-    
-    if not obt.host.IsAARCH64:
-      PYTHON = obt.dep.instance("python")
-    
-    #####################################
-    # Late init
-    #####################################
-    obt.env.prepend("PKG_CONFIG",self._config._stage_dir/"bin"/"pkg-config")
-    #obt.env.prepend("PKG_CONFIG_PREFIX",self._config._stage_dir)
-    obt.env.prepend("PKG_CONFIG_PATH",self._config._stage_dir/"lib"/"pkgconfig")
-    obt.env.prepend("PKG_CONFIG_PATH",self._config._stage_dir/"lib64"/"pkgconfig")
-
-    if True: # WIP
-      obt.env.set("PYTHONNOUSERSITE","TRUE")
-      obt.env.append("PYTHONPATH",self._config._scripts_dir)
-      obt.env.prepend("PYTHONPATH",self._config._stage_dir/"lib"/"python")
-      obt.env.append("LD_LIBRARY_PATH",self._config._stage_dir/"python-3.9.13"/"lib")
-
-    if obt.path.running_from_pip():
-      obt.env.prepend("PATH",obt.path.obt_data_base()/"bin_priv")
-
-    
-  ###########################################
-
-  def importProject(self,prjdir):
-    init_script = prjdir/"scripts"/"obt.env.extension.py"
-    #print(init_script)
-    if init_script.exists():
-      import importlib
-      modulename = importlib.machinery.SourceFileLoader('modulename',str(init_script)).load_module()
-      #print(modulename)
-      modulename.setup()
-      #modul.setup()
-    modules_dir = prjdir/"modules"
-    #print(modules_dir,modules_dir.exists())
-    if modules_dir.exists():
-      obt.env.prepend("OBT_MODULES_PATH",modules_dir)
-
   ###########################################
   def log(self,x):
     if not self._config._quiet:
@@ -130,10 +66,15 @@ class EnvSetup:
     LAUNCHENV = []
     if self._config._git_ssh_command!=None:
       LAUNCHENV += ['export GIT_SSH_COMMAND="%s";'%self._config._git_ssh_command]
-    LAUNCHENV += ["obt.env.launch.py"]
+
+    if self._config._inplace:
+      LAUNCHENV += [str(self._config._bin_pub_dir/"obt.env.launch.py")]
+    else:
+      LAUNCHENV += ["obt.env.launch.py"]
+
     LAUNCHENV += ["--numcores", numcores]
-    LAUNCHENV += ["--launch", self._config._stage_dir]
-    LAUNCHENV += ["--prjdir", self._config._project_dir]
+    LAUNCHENV += ["--stagedir", self._config._stage_dir]
+    LAUNCHENV += ["--project", self._config._project_dir]
 
     if subspace!= None:
       LAUNCHENV += ["--subspace", subspace]

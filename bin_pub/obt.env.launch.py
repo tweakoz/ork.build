@@ -25,7 +25,7 @@ root_dir = Path(par2_dir)
 
 parser = argparse.ArgumentParser(description='obt.build environment launcher')
 parser.add_argument('--stagedir', metavar="stagedir", help='launch from pre-existing folder' )
-parser.add_argument('--project', metavar="prjdir", help='override project directory' )
+parser.add_argument('--project', metavar="project", help='override project directory' )
 parser.add_argument('--chdir', metavar="chdir", help='working directory of command' )
 parser.add_argument('--stack', metavar="stackdir", help='stack env' )
 parser.add_argument('--prompt', metavar="prompt", help='prompt suffix' )
@@ -36,7 +36,6 @@ parser.add_argument('--novars', action="store_true", help='do not set env vars' 
 parser.add_argument('--subspace', metavar="subspace", help='subspace to launch' )
 parser.add_argument('--init', action="store_true" )
 parser.add_argument('--inplace', action="store_true" )
-parser.add_argument('--compose',action='append',help='compose obt project into container')
 
 args = vars(parser.parse_args())
 
@@ -47,51 +46,10 @@ if len(sys.argv)==1:
 from _obt_config import configFromCommandLine
 obt_config = configFromCommandLine(args)
 obt_config.dump()
-#envsetup = obt._envutils.EnvSetup(stagedir=OBT_STAGE,
-#                                  rootdir=root_dir,
-#                                  projectdir=project_dir,
-#                                  bin_priv_dir=bin_priv_dir,
-#                                  bin_pub_dir=bin_pub_dir,
-#                                  scriptsdir=scripts_dir,
-#                                  disable_syspypath=True,
-#                                  is_quiet=config._is_quiet,
-#                                  project_name = ORK_PROJECT_NAME)
 
-###########################################
-IsInplace = (args["inplace"]==True)
-###########################################
+import obt._envutils 
+envsetup = obt._envutils.EnvSetup(obt_config)
 
-scripts_dir = root_dir/"scripts"
-bin_priv_dir = root_dir/"bin_priv"
-bin_pub_dir = root_dir/"bin_pub"
-
-###########################################
-
-project_dir = root_dir
-if args["project"]!=None:
-  project_dir = Path(args["project"])
- 
-###########################################
-
-ORK_PROJECT_NAME = "obt"
-if "ORK_PROJECT_NAME" in os.environ:
-  ORK_PROJECT_NAME = os.environ["ORK_PROJECT_NAME"]
-OBT_STAGE = curwd/".staging"
-if "OBT_STAGE" in os.environ:
-  OBT_STAGE = Path(os.environ["OBT_STAGE"])
-if args["stagedir"]!=None:
-  try_staging = Path(args["stagedir"]).resolve()
-elif args["stack"]!=None:
-  try_staging = Path(args["stack"]).resolve()
-
-if try_staging!=None:
-  OBT_STAGE = try_staging
-
-###########################################
-
-os.environ["OBT_SEARCH_EXTLIST"] = ".cpp:.c:.cc:.h:.hpp:.inl:.qml:.m:.mm:.py:.txt:.glfx"
-
-print(os.environ)
 ###########################################
 
 import obt.deco
@@ -103,33 +61,16 @@ import obt.sdk
 import obt._globals as _glob
 import obt.command
 import obt.subspace
+import obt.dep
 
 deco = obt.deco.Deco()
-
-##########################################
-
-import obt._envutils 
-envsetup = obt._envutils.EnvSetup(obt_config)
-
-os.environ["OBT_STAGE"] = str(OBT_STAGE)
-
-###########################################
-
-if args["compose"] != None:
-  for item in args["compose"]:
-    envsetup.importProject(Path(item))
-
-###########################################
-# later init...
-###########################################
-
-import obt.dep
+stage_dir = obt_config._stage_dir
 
 ###########################################
 # per dep dynamic env init
 ###########################################
 
-def dynamicInit():
+def initializeDependencyEnvironments():
   ####################################
   hostinfo = obt.host.description()
   if hasattr(hostinfo,"env_init"):
@@ -163,18 +104,15 @@ def dynamicInit():
 ###########################################
 if args["stagedir"]!=None:
 ###########################################
-    if args["novars"]==False:
-      envsetup.install()
-    #############
     envsetup.lazyMakeDirs()
-    envsetup.genBashRc(try_staging/".bashrc")
-    dynamicInit()
-    try_staging_sh = try_staging/"obt-launch-env"
-    envsetup.log(try_staging_sh)
-    assert(try_staging_sh.exists())
+    envsetup.genBashRc(stage_dir/".bashrc")
+    initializeDependencyEnvironments()
+    stage_dir_sh = stage_dir/"obt-launch-env"
+    envsetup.log(stage_dir_sh)
+    assert(stage_dir_sh.exists())
     #############
     shell = "bash"
-    bashrc = try_staging/".bashrc"
+    bashrc = stage_dir/".bashrc"
     if args["project"]!=None:
       #prjdir = obt.path/Pat
       #envsetup.importProject(Path(item)/"obt.project")
@@ -210,16 +148,9 @@ if args["stagedir"]!=None:
 elif args["stack"]!=None:
 ###########################################
     obt.env.append("OBT_STACK","<")
-    if args["novars"]==False:
-      envsetup.install()
-    #############
     envsetup.lazyMakeDirs()
     envsetup.genBashRc(try_staging/".bashrc-stack")
-    dynamicInit()
-    #############
-    if args["compose"]!=None:
-      for item in args["compose"]:
-        envsetup.importProject(Path(item)/"obt.project")
+    initializeDependencyEnvironments()
     #############
     if args["chdir"]!=None:
       os.chdir(args["chdir"])

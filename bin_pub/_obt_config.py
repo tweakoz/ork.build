@@ -53,6 +53,22 @@ def findExecutable(exec_name):
   return None
 
 ###########################################
+
+def importProject(config,prjdir):
+  init_script = prjdir/"scripts"/"obt.env.extension.py"
+  #print(init_script)
+  if init_script.exists():
+    import importlib
+    modulename = importlib.machinery.SourceFileLoader('modulename',str(init_script)).load_module()
+    #print(modulename)
+    modulename.setup()
+    #modul.setup()
+  modules_dir = prjdir/"modules"
+  #print(modules_dir,modules_dir.exists())
+  if modules_dir.exists():
+    obt.env.prepend("OBT_MODULES_PATH",modules_dir)
+
+###########################################
 # Global OBT process execution configuration
 #
 #  These may be intialized from a couple different paths:
@@ -89,7 +105,7 @@ class ObtExecConfig(object):
     self._root_dir = None
     self._project_dir = None
     self._project_bin_dir = None
-    self._project_name = None
+    self._project_name = "obt"
     self._stage_dir = None
     self._build_dir = None
     self._inplace = False
@@ -102,12 +118,12 @@ class ObtExecConfig(object):
     self._subspace_is_conda = False
     self._did_override_pythonpath = False
     self._text_search_paths = []
-    self._text_search_exts = []
+    self._text_search_exts = ".cpp:.c:.cc:.h:.hpp:.inl:.qml:.m:.mm:.py:.txt:.glfx".split(" ")
     self._dep_paths = []
     self._module_paths = []
     self._numcores = 1
     self._prompt_prefix = None
-    self._disable_syspypath = False
+    self._disable_syspypath = True
     self._git_ssh_command = None
 
     self._original_ld_library_paths = []
@@ -318,30 +334,46 @@ def configFromCommandLine(parser_args):
   sys.path = [str(_config._scripts_dir)]+sys.path
 
   import obt.env
+  import obt.path
 
-  if "command" in parser_args:
-    if parser_args["command"] != None:
-      _config._command = parser_args["command"].split(" ")
-  if "quiet" in parser_args:
+  def IS_ARG_SET(arg):
+    return arg in parser_args and parser_args[arg]!=None
+
+  if IS_ARG_SET("sshkey"):
+    GIT_SSH_COMMAND="ssh -i %s" % parser_args["sshkey"]
+    _config._git_ssh_command = GIT_SSH_COMMAND
+
+  if IS_ARG_SET("stack"):
+    try_staging = Path(parser_args["stack"]).resolve()
+    assert(False)
+
+  if IS_ARG_SET("command"):
+    _config._command = parser_args["command"].split(" ")
+  if IS_ARG_SET("quiet"):
     _config._quiet = parser_args["quiet"]
-  if "inplace" in parser_args:
+  if IS_ARG_SET("inplace"):
     _config._inplace = parser_args["inplace"]
-  if "stagedir" in parser_args:
+  if IS_ARG_SET("stagedir"):
     _config._stage_dir = pathlib.Path(os.path.realpath(parser_args["stagedir"]))
     _config._build_dir = _config._stage_dir/"builds"
 
-  if "numcores" in parser_args and parser_args["numcores"]!=None:
+  if IS_ARG_SET("numcores"):
     _config._numcores = int(parser_args["numcores"])
+    os.environ["OBT_NUM_CORES"]=str(_config._numcores)
   else:
     if "OBT_NUM_CORES" not in os.environ:
       NumCores = multiprocessing.cpu_count()
-      os.environ["OBT_NUM_CORES"]=str(NumCores)
+      _config._numcores = NumCores
 
-  if "prompt" in parser_args:
+  if IS_ARG_SET("prompt"):
     _config._prompt_prefix = parser_args["prompt"]
 
-  if "project" in parser_args:
-    _config._project_dir = pathlib.Path(os.path.realpath(parser_args["project"]))
+  if IS_ARG_SET("project"):
+    project_dir = parser_args["project"]
+    project_dir = os.path.realpath(project_dir)
+    _config._project_dir = pathlib.Path(project_dir)
+  else:
+    _config._project_dir = _config._root_dir
 
   if _config._inplace:
     if "PYTHONPATH" in os.environ:
@@ -391,12 +423,45 @@ def configFromCommandLine(parser_args):
   os.environ["OBT_SUBSPACE_DIR"] = str(_config._stage_dir)
   os.environ["OBT_PROJECT_NAME"] = str(_config._project_name)
   os.environ["OBT_MODULES_PATH"] = ":".join(_listToStrList(_config._module_paths))
+  os.environ["color_prompt"] = "yes"
+
+  obt.env.prepend("PATH",_config._bin_pub_dir )
+  obt.env.prepend("PATH",_config._bin_priv_dir )
+  obt.env.prepend("PATH",_config._stage_dir/"bin")
+  obt.env.prepend("LD_LIBRARY_PATH",_config._stage_dir/"lib")
+  obt.env.prepend("LD_LIBRARY_PATH",_config._stage_dir/"lib64")
+
+  #obt.env.append("OBT_MODULES_PATH",obt.path.modules())
+  obt.env.append("OBT_DEP_PATH",obt.path.modules()/"dep")
   #os.environ["OBT_ORIGINAL_PATH"] = orig_path 
   #os.environ["OBT_ORIGINAL_LD_LIBRARY_PATH"] = orig_ld_library_path
   #os.environ["OBT_ORIGINAL_PS1"] = orig_ps1
 
   if _config._prompt_prefix != None:
     os.environ["OBT_USE_PROMPT_PREFIX"] = _config._prompt_prefix
+
+  if _config._git_ssh_command!=None:
+    obt.env.set("GIT_SSH_COMMAND",_config._git_ssh_command)
+
+  import obt.host
+  import obt.dep
+
+  #if not obt.host.IsAARCH64:
+  #  PYTHON = obt.dep.instance("python")
+
+  obt.env.prepend("PKG_CONFIG",_config._stage_dir/"bin"/"pkg-config")
+  #obt.env.prepend("PKG_CONFIG_PREFIX",_config._stage_dir)
+  obt.env.prepend("PKG_CONFIG_PATH",_config._stage_dir/"lib"/"pkgconfig")
+  obt.env.prepend("PKG_CONFIG_PATH",_config._stage_dir/"lib64"/"pkgconfig")
+
+  if True: # WIP
+    obt.env.set("PYTHONNOUSERSITE","TRUE")
+    obt.env.append("PYTHONPATH",_config._scripts_dir)
+    obt.env.prepend("PYTHONPATH",_config._stage_dir/"lib"/"python")
+    obt.env.append("LD_LIBRARY_PATH",_config._stage_dir/"python-3.9.13"/"lib")
+
+  if obt.path.running_from_pip():
+    obt.env.prepend("PATH",obt.path.obt_data_base()/"bin_priv")
 
   #####################################################
   # load project manifest

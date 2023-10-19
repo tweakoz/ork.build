@@ -60,6 +60,15 @@ class Provider(object):
       self._required_deps[named] = inst
       return inst
     #############################
+    def declareDeps(self, list_of_deps):
+      list_of_insts = []
+      for named in list_of_deps:
+        inst = _dep_x.instance(named)
+        #print(named,type(inst))
+        self._required_deps[named] = inst
+        list_of_insts.append(inst)
+      return list_of_insts
+    #############################
     def createBuilder(self,clazz, **kwargs):
 
       if len(kwargs)>0:

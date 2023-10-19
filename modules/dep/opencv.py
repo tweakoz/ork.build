@@ -21,7 +21,7 @@ class opencv(dep.StdProvider):
   name = "opencv"
   def __init__(self): ############################################
     super().__init__(opencv.name)
-    self.python_dep = dep.require(["pkgconfig","pybind11","opencv_contrib"])
+    self.declareDeps(["pkgconfig","pybind11","opencv_contrib"])
     self.EXR = self.declareDep("openexr")
     self.python_dep = dep.require("python")
 

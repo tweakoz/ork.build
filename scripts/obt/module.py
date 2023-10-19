@@ -22,7 +22,6 @@ def instance(identifier,module_path):
   a = spec.loader.exec_module(module_inst)
   return module_inst
 
-
 ###############################################################################
 
 def enumerate_simple(enuminterface):
