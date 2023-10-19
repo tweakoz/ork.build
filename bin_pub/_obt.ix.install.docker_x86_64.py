@@ -10,7 +10,7 @@
 
 ###########################################
 
-import pathlib, os, sys
+import pathlib, os, sys, getpass
 
 ###########################################
 # setup sys.path so we can import _obt_config
@@ -23,13 +23,29 @@ file_dir = os.path.dirname(file_path)
 sys.path.append(str(file_dir))
 
 ###########################################
-# minimal OBT support for non-environment shell
+# minimal (stageless) OBT support for non-environment shell
 ###########################################
 
 from _obt_config import configFromCommandLine
 obt_config = configFromCommandLine()
-from obt import path, pathtools, env, command
+from obt import path, pathtools, env, command, deco
+deco = deco.Deco()
 
 ###########################################
+UID = os.getuid()
+USERNAME = getpass.getuser()
+HOMEDIR = os.environ["HOME"]
 
+#disable system scoped docker daemon
+print(deco.cyan("disabling system scoped docker"))
+command.run(["sudo","systemctl","disable","--now","docker.service","docker.socket"],do_log=True)
+command.system(["curl","-fsSL","https://get.docker.com/rootless","|","sh"],do_log=True)
+print(deco.cyan("docker installed!"))
 
+print(deco.cyan("allowing rootless docker to run when logged out"))
+command.run(["sudo","loginctl","enable-linger",USERNAME],do_log=True)
+
+print(deco.orange("add the following to your .bashrc:"))
+print(deco.yellow("export PATH=%s/bin:$PATH"%HOMEDIR))
+print(deco.yellow("export DOCKER_HOST=unix:///run/user/%d/docker.sock"%UID))
+print(deco.yellow("ALSO: see https://docs.docker.com/go/rootless/"))

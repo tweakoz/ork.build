@@ -225,7 +225,7 @@ class chain2:
 
 ###############################################################################
 
-def system(command_list,working_dir=None):
+def system(command_list,working_dir=None,do_log=False):
   buildtrace.buildTrace({  
    "op": "command(system)",
    "curwd": os.getcwd(),
@@ -235,6 +235,8 @@ def system(command_list,working_dir=None):
   joined = " ".join(args)
   if working_dir!=None:
     os.chdir(str(working_dir))
+  if do_log:
+    log.output("cmdsys: [%s]"%deco.bright(joined))
   return os.system(joined)
 
 ###############################################################################
