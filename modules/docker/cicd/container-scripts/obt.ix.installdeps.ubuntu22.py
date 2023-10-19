@@ -1,6 +1,11 @@
 #!/usr/bin/env python3
 
-import os, distro
+
+import os
+
+os.system("pip3 install os_release distro")
+
+import distro
 
 UBUNTU_VERSION = int(float(distro.version())*100.0)
 
@@ -82,5 +87,3 @@ deplist += ["libglew-dev"]
 
 merged = " ".join(deplist)
 os.system("sudo apt -y install %s" % merged)
-
-os.system("pip3 install os_release distro")

@@ -36,6 +36,9 @@ UID = os.getuid()
 USERNAME = getpass.getuser()
 HOMEDIR = os.environ["HOME"]
 
+print(deco.cyan("installing uidmap"))
+command.run(["sudo","apt","install","uidmap", "dbus-user-session"],do_log=True)
+
 #disable system scoped docker daemon
 print(deco.cyan("disabling system scoped docker"))
 command.run(["sudo","systemctl","disable","--now","docker.service","docker.socket"],do_log=True)

@@ -37,7 +37,7 @@ class dockerinfo:
     # launch docker container
     #  print out connection info
     ###############################################
-    def launch(self,launch_args):
+    def launch(self,launch_args,environment=None,mounts=None):
       os.chdir(this_dir)
       command.run(["bin/launch_testnossl.sh"])
     ###############################################

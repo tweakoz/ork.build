@@ -2,6 +2,7 @@
 
 import os
 
+os.system("pip3 install os_release distro")
 os.system("sudo update-alternatives --install /usr/bin/python python /usr/bin/python3 1")
 
 deplist =  ["libboost-dev","gcc-8","gcc-9","g++-8","g++-9","gcc-10","g++-10"]
@@ -71,4 +72,3 @@ deplist += ["libdrm-dev","libaudiofile-dev","libsndfile1-dev"]
 merged = " ".join(deplist)
 os.system("sudo apt -y install %s" % merged)
 
-os.system("pip3 install os_release distro")
