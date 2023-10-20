@@ -90,7 +90,7 @@ print(os.environ)
 print(os.environ["OBT_MODULES_PATH"])
 os.system("ls %s" % os.environ["OBT_MODULES_PATH"])
 
-os.system("ls -l /home/workerub22/.out-worker/orkdotbuild-ix-ub2204/develop")
+os.system("ls -l /home/workerub22/.out-worker/orkdotbuild-ix-ub2204/develop/repo")
 MANDATORY_DEPS = ["cmake","python","pydefaults"]
 
 import obt.dep
