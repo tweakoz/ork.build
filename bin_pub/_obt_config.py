@@ -331,30 +331,17 @@ _config = ObtExecConfig()
 
 def configFromCommandLine(parser_args=None):
 
-  _config.setupOriginalPaths()
-
-  _config._bin_pub_dir = _directoryOfInvokingModule()
-  _config._root_dir = _genpath(_config._bin_pub_dir/"..")
-  _config._bin_priv_dir = _genpath(_config._root_dir/"bin_priv")
-  _config._scripts_dir = _genpath(_config._root_dir/"scripts")
-
-  ########################
-  # set up sys.path so we can import OBT modules
-  ########################
-
-  sys.path = [str(_config._scripts_dir)]+sys.path
-
-  import obt.env
-  import obt.path
-  import obt.host
-  import obt.dep
-
   ########################
 
   def IS_ARG_SET(arg):
     if parser_args==None:
       return False
     return arg in parser_args and parser_args[arg]!=None
+
+  ########################
+
+  if IS_ARG_SET("inplace"):
+    _config._inplace = parser_args["inplace"]
 
   ########################
 
@@ -374,10 +361,30 @@ def configFromCommandLine(parser_args=None):
 
   ########################
 
-  if IS_ARG_SET("inplace"):
-    _config._inplace = parser_args["inplace"]
+  _config.setupOriginalPaths()
 
   ########################
+
+  _config._bin_pub_dir = _directoryOfInvokingModule()
+  _config._root_dir = _genpath(_config._bin_pub_dir/"..")
+
+  if _config._inplace:
+    _config._bin_priv_dir = _genpath(_config._root_dir/"bin_priv")
+    _config._scripts_dir = _genpath(_config._root_dir/"scripts")
+  else:
+    _config._bin_priv_dir = _genpath(_config._root_dir/"obt"/"bin_priv")
+    _config._scripts_dir = _genpath(_config._root_dir/"obt"/"scripts")
+
+  ########################
+  # set up sys.path so we can import OBT modules
+  ########################
+
+  sys.path = [str(_config._scripts_dir)]+sys.path
+
+  import obt.env
+  import obt.path
+  import obt.host
+  import obt.dep
 
   ########################
 
