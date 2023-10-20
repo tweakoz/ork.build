@@ -444,8 +444,11 @@ def configFromCommandLine(parser_args=None):
   ########################
 
   assert(str(_config._project_dir)!="/nvme4/aphidsystems/ork.build")
-  
-  _config._module_paths = [_config._root_dir/"obt"/"modules"]
+
+  if _config._inplace:
+    _config._module_paths = [_config._root_dir/"modules"]
+  else:
+    _config._module_paths = [_config._root_dir/"obt"/"modules"]
 
   #####################################################
   # setup os.environfrom config
