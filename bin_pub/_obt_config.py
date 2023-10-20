@@ -61,11 +61,11 @@ def importProject(config):
 
   if try_project_manifest.exists():
     manifest_json = json.load(open(try_project_manifest,"r"))
-    print(manifest_json)
+    #print(manifest_json)
     config._project_name = manifest_json["name"]
     autoexec = manifest_json["autoexec"]
     autoexec = config._project_dir/"obt.project"/autoexec
-    print(autoexec)
+    #print(autoexec)
     assert(autoexec.exists())
     # import autoexec as python module
     spec = importlib.util.spec_from_file_location("autoexec", str(autoexec))
@@ -424,8 +424,8 @@ def configFromCommandLine(parser_args=None):
     if "PYTHONPATH" in os.environ:
       ORIG_PYTHONPATHS = os.environ["PYTHONPATH"].split(":")
       ORIG_PYTHONPATHS = [_genpath(s) for s in ORIG_PYTHONPATHS if s]
-      print(ORIG_PYTHONPATHS)
-      print(sys.path)
+      #print(ORIG_PYTHONPATHS)
+      #print(sys.path)
       _config._original_python_paths = ORIG_PYTHONPATHS
       ORIG_PYTHONPATH = str(_config._original_python_paths[0])
       if ORIG_PYTHONPATH in sys.path:
@@ -538,35 +538,27 @@ def initializeDependencyEnvironments(envsetup):
   import obt.sdk
   import obt.subspace
 
-  print(os.environ)
-
   ####################################
   hostinfo = obt.host.description()
   if hasattr(hostinfo,"env_init"):
     hostinfo.env_init()
   ####################################
   sdkitems = obt.sdk.enumerate()
-  print(sdkitems)
   for sdk_module_key in sdkitems.keys():
     sdk_module_item = sdkitems[sdk_module_key]
-    print(sdk_module_item)
     sdk_module = sdk_module_item._module
-    print(sdk_module)
     sdkinfo = sdk_module.sdkinfo()
     if hasattr(sdkinfo,"env_init"):
       sdkinfo.env_init()
   ####################################
   depitems = obt.dep.DepNode.FindWithMethod("env_init")
-  print(depitems)
   for depitemk in depitems:
     depitem = depitems[depitemk]
     if depitem.supports_host:
       depitem.env_init()
   ####################################
   subspaceitems = obt.subspace.findWithMethod("env_init")
-  print(subspaceitems)
   for subitemk in subspaceitems:
     subitem = subspaceitems[subitemk]
-    print(subitem)
     subitem._module.env_init(envsetup)
   ####################################
