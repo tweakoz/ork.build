@@ -65,6 +65,7 @@ def importProject(config):
     config._project_name = manifest_json["name"]
     autoexec = manifest_json["autoexec"]
     autoexec = config._project_dir/"obt.project"/autoexec
+    print(autoexec)
     assert(autoexec.exists())
     # import autoexec as python module
     spec = importlib.util.spec_from_file_location("autoexec", str(autoexec))
@@ -444,7 +445,7 @@ def configFromCommandLine(parser_args=None):
 
   assert(str(_config._project_dir)!="/nvme4/aphidsystems/ork.build")
   
-  _config._module_paths = [_config._root_dir/"modules"]
+  _config._module_paths = [_config._root_dir/"obt"/"modules"]
 
   #####################################################
   # setup os.environfrom config
@@ -534,29 +535,33 @@ def initializeDependencyEnvironments(envsetup):
   import obt.sdk
   import obt.subspace
 
+  print(os.environ)
+
   ####################################
   hostinfo = obt.host.description()
   if hasattr(hostinfo,"env_init"):
     hostinfo.env_init()
   ####################################
   sdkitems = obt.sdk.enumerate()
-  #print(sdkitems)
+  print(sdkitems)
   for sdk_module_key in sdkitems.keys():
     sdk_module_item = sdkitems[sdk_module_key]
-   # print(sdk_module_item)
+    print(sdk_module_item)
     sdk_module = sdk_module_item._module
-    #print(sdk_module)
+    print(sdk_module)
     sdkinfo = sdk_module.sdkinfo()
     if hasattr(sdkinfo,"env_init"):
       sdkinfo.env_init()
   ####################################
   depitems = obt.dep.DepNode.FindWithMethod("env_init")
+  print(depitems)
   for depitemk in depitems:
     depitem = depitems[depitemk]
     if depitem.supports_host:
       depitem.env_init()
   ####################################
   subspaceitems = obt.subspace.findWithMethod("env_init")
+  print(subspaceitems)
   for subitemk in subspaceitems:
     subitem = subspaceitems[subitemk]
     print(subitem)
