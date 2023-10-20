@@ -25,7 +25,7 @@ def _enumerate():
   #######################################
   deps = dict()
   dep_search_list = os.environ["OBT_MODULES_PATH"].split(":")
-  print(dep_search_list)
+  #print(dep_search_list)
   for modules_repo in dep_search_list:
     dep_repo = obt.path.Path(modules_repo)/"dep"
     dep_list = obt.pathtools.patglob(dep_repo,"*.py")
@@ -33,13 +33,13 @@ def _enumerate():
       d = os.path.basename(item)
       d = os.path.splitext(d)[0]
       _dir = os.path.splitext(item)[0]
-      print(d,_dir,item)
+      #print(d,_dir,item)
       e = EnumItem(d,item)
       #if e._node and hasattr(e._node,"instance") and e._node.instance.supports_host:
       deps[d] = e
 
   #######################################
-  print(deps)
+  #print(deps)
   return deps
 
 #_ALL_DEPS = _enumerate()
