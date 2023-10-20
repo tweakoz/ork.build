@@ -86,6 +86,7 @@ importProject(obt_config)
 # build mandatory dependencies
 ###########################################
 
+print(os.environ)
 MANDATORY_DEPS = ["cmake","python","pydefaults"]
 
 import obt.dep
