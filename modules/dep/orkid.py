@@ -61,7 +61,7 @@ class orkid(dep.StdProvider):
 
   @property
   def revision(self):
-    return "develop"
+    return "toz-opengl-eol"
 
   @property
   def _fetcher(self):
@@ -168,7 +168,7 @@ class orkid(dep.StdProvider):
     shell_cmd = command.Command([
       "obt.env.launch.py",
       "--stack", path.stage(),
-      "--compose", path.builds()/"orkid",
+      "--project", path.builds()/"orkid",
       "--chdir", path.builds()/"orkid"
     ])
     return shell_cmd.exec()

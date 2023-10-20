@@ -44,7 +44,7 @@ class dockerinfo:
     # launch docker container
     #  print out connection info
     ###############################################
-    def launch(self,launch_args):
+    def launch(self,launch_args,environment=None,mounts=None):
         command.run([
             "docker", "run",
             "-it",

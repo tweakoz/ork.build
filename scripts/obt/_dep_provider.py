@@ -313,7 +313,7 @@ class HomebrewProvider(Provider):
   def build(self):
     for item in self._deps:
       n = _dep_x.instance(item)
-      print(item,n)
+      #print(item,n)
       assert(n!=None)
       n.provide()
     retc = Command(["brew","install",self.pkgname]).exec()

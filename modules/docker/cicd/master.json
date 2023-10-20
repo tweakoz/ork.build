@@ -18,7 +18,7 @@
       "workingdir": "$REPODIR",
       "commandlist": [
         "./bin_pub/obt.env.create.py --inplace --stagedir $STAGE --numcores 6",
-        "./bin_pub/obt.env.launch.py --inplace --launch $STAGE --numcores 6 --command \"obt.dep.build.py luajit\""
+        "./bin_pub/obt.env.launch.py --inplace --stagedir $STAGE --numcores 6 --command \"obt.dep.build.py luajit\""
       ]
     }
   },

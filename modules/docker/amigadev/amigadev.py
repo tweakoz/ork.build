@@ -39,7 +39,7 @@ class dockerinfo:
     ###############################################
     # launch docker container
     ###############################################
-    def launch(self,launch_args,environment=None):
+    def launch(self,launch_args,environment=None,mounts=None):
         CWD = os.getcwd()
         builddir = path.builds()/"amigadev-test1"
         sourcedir = this_dir/"test1"

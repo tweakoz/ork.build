@@ -16,7 +16,11 @@ log_node_stack = list()
 log_node_stack.append(jsonroot)
 
 def stage_dir():
-	return os.environ["OBT_STAGE"]
+  if "OBT_STAGE" in os.environ.keys():
+	  return os.environ["OBT_STAGE"]
+  else:
+    return None
+
 
 FORBIDDEN_KEYS = ["SESSION_MANAGER","SSH_AUTH_SOCK","DESKTOP_SESSION","SSH_AGENT_PID","XDG_SESSION_DESKTOP"]
 FORBIDDEN_KEYS += ["XDG_SESSION_TYPE","GPG_AGENT_INFO","VTE_VERSION","GNOME_TERMINAL_SCREEN"]
@@ -163,22 +167,22 @@ def proc_list(the_list):
 
 def savelog():
   import obt._globals as _glob
-  steplogfile = "%s/buildlogs/obtdump-%d.json"%(stage_dir(),curpid)
-  copy = list(jsonroot)
-  processed = list()
-  ##############################
-  # write top level environment to log file
-  ##############################
-  processed += [{ "topenv": iterdict(topenv) }]
-  processed += [{ "sysargv": iterlist(sys.argv) }]
-  ##############################
-  # process dictionary before logging
-  ##############################
-  processed += proc_list(copy)
-  ##############################
-  # write it out
-  ##############################
   if _glob.isBuildTraceEnabled():
+    steplogfile = "%s/buildlogs/obtdump-%d.json"%(stage_dir(),curpid)
+    copy = list(jsonroot)
+    processed = list()
+    ##############################
+    # write top level environment to log file
+    ##############################
+    processed += [{ "topenv": iterdict(topenv) }]
+    processed += [{ "sysargv": iterlist(sys.argv) }]
+    ##############################
+    # process dictionary before logging
+    ##############################
+    processed += proc_list(copy)
+    ##############################
+    # write it out
+    ##############################
     with open(str(steplogfile),"w") as f:
       as_str = json.dumps(processed, indent=2)
       f.write(as_str)

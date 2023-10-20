@@ -27,7 +27,7 @@ parser = argparse.ArgumentParser(description='obt.build docker builder')
 parser.add_argument('dockermodulename', metavar='D', type=str, help='a docker module to build')
 parser.add_argument('--force', action="store_true", help='force rebuild' )
 parser.add_argument('--wipe', action="store_true", help='wipe and rebuild' )
-parser.add_argument('--buildargs', action="store", type=str, help='wipe and rebuild' )
+parser.add_argument('--buildargs', nargs=argparse.REMAINDER, help='pass arguments to the inferior' )
 
 _args = vars(parser.parse_args())
 
@@ -48,6 +48,10 @@ dockermodule = obt.docker.descriptor(dockermodulename)
 
 print(dockermodule)
 
-dockermodule.build(_args["buildargs"])
+build_args = []
+if "buildargs" in _args and _args["buildargs"]!=None:
+  build_args = _args["buildargs"]
+
+dockermodule.build(build_args)
 
 sys.exit(0)

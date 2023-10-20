@@ -20,10 +20,11 @@ class dockerinfo:
     # build the docker image
     ###############################################
     def build(self,build_args):
-      os.chdir(this_dir)
-      chain = command.chain()
+      assert(build_args!=None)
+      os.chdir(str(this_dir))
       #######################################
-      chain.run(["bin/build_master_image.py"])
+      chain = command.chain()
+      chain.run(["bin/build_master_image.py"]+build_args)
       chain.run(["bin/build_worker_ub20_image.py"])
       chain.run(["bin/build_worker_ub22_image.py"])
       chain.run(["bin/build_worker_android_image.py"])
@@ -32,12 +33,13 @@ class dockerinfo:
     # kill active docker container
     ###############################################
     def kill(self):
-      pass
+      os.chdir(str(this_dir))
+      command.run(["docker-compose","down"])
     ###############################################
     # launch docker container
     #  print out connection info
     ###############################################
-    def launch(self,launch_args):
+    def launch(self,launch_args,environment=None,mounts=None):
       os.chdir(this_dir)
       command.run(["bin/launch_testnossl.sh"])
     ###############################################

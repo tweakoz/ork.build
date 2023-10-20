@@ -9,7 +9,7 @@ services:
       - ./conf/nginx_ssl.conf:/etc/nginx/nginx.conf
       - ./ssl/fromnamedotcom/:/etc/ssl/
   ci-master:
-    image: tweakoz/orkci_master_focal2 
+    image: obtcicd/master_focal 
     user: cimaster
     command: "./start-master.sh"
     ports:
@@ -19,7 +19,7 @@ services:
       - /etc/localtime:/etc/localtime:ro
     restart: always
   ci-worker-ub20:
-    image: tweakoz/orkci_worker_focal2 
+    image: obtcicd/worker_focal 
     user: workerub20
     command: "./start-worker.sh"
     volumes:
@@ -29,7 +29,7 @@ services:
       - ../ci_secrets/buildkey.rsa.pub:/home/workerub20/.ssh/id_rsa.pub:ro
     restart: always
   ci-worker-ub22:
-    image: tweakoz/orkci_worker_jammy1 
+    image: obtcicd/worker_jammy 
     user: workerub22
     command: "./start-worker.sh"
     volumes:

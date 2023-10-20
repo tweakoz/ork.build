@@ -27,3 +27,8 @@ class lapack(dep.StdProvider):
                                 recursive=False)
     return fetcher
   ########################################################################
+  def areRequiredSourceFilesPresent(self):
+    return (self.source_root/"README.md").exists()
+
+  def areRequiredBinaryFilesPresent(self):
+    return (path.libs()/"liblapack.so").exists()

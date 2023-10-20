@@ -20,8 +20,8 @@ services:
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
-      - ${SECRETSDIR}/buildkey.rsa:/home/workerub20/.ssh/id_rsa:ro
-      - ${SECRETSDIR}/buildkey.rsa.pub:/home/workerub20/.ssh/id_rsa.pub:ro
+      - ../ci_secrets/buildkey.rsa:/home/workerub22/.ssh/id_rsa:ro
+      - ../ci_secrets/buildkey.rsa.pub:/home/workerub22/.ssh/id_rsa.pub:ro
   ci-worker-ub22:
     image: obtcicd/worker_jammy
     user: workerub22
@@ -31,7 +31,7 @@ services:
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
-      - ${SECRETSDIR}/buildkey.rsa:/home/workerub22/.ssh/id_rsa:ro
-      - ${SECRETSDIR}/buildkey.rsa.pub:/home/workerub22/.ssh/id_rsa.pub:ro
+      - ../ci_secrets/buildkey.rsa:/home/workerub22/.ssh/id_rsa:ro
+      - ../ci_secrets/buildkey.rsa.pub:/home/workerub22/.ssh/id_rsa.pub:ro
     restart: always
 
