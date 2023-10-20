@@ -65,6 +65,7 @@ def setNode(named,value):
 ###############################################################################
 
 def getNode(named):
+  print(_nodes)
   if named in _nodes:
     return _nodes[named]
   else:
