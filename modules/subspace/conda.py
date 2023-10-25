@@ -123,8 +123,7 @@ class subspaceinfo:
 
       SITE_PKG = PYTHON_HOME/"lib"/PYTHON_DEP._deconame/"site-packages"
 
-      pypath = os.environ["OBT_SCRIPTS_DIR"]
-      pypath += ":"+str(SITE_PKG)
+      pypath  = str(SITE_PKG)
       pypath += ":"+os.environ["PYTHONPATH"]
 
       ldlibpath = str(PYTHON_HOME/"lib")
@@ -169,7 +168,7 @@ class subspaceinfo:
     ###############################################
     def shell(self,working_dir=None,container=None):
 
-      sys.path.append(os.environ["OBT_BIN_PUB"])
+      sys.path.append(os.environ["OBT_BIN_PUB_DIR"])
       from _obt_config import configFromEnvironment
       import obt._envutils 
       obt_config = configFromEnvironment()

@@ -41,7 +41,7 @@ class EnvSetup:
 
   ###########################################
   def log(self,x):
-    if not self._config._quiet:
+    if not self._config.quiet:
        print(x)
   ###########################################
   def lazyMakeDirs(self):
@@ -67,15 +67,15 @@ class EnvSetup:
     if self._config._git_ssh_command!=None:
       LAUNCHENV += ['export GIT_SSH_COMMAND="%s";'%self._config._git_ssh_command]
 
-    if self._config._inplace:
-      LAUNCHENV += [str(self._config._bin_pub_dir/"obt.env.launch.py")]
+    if self._config.inplace:
+      LAUNCHENV += [str(self._config.bin_pub_dir/"obt.env.launch.py")]
       LAUNCHENV += ["--inplace"]
     else:
       LAUNCHENV += ["obt.env.launch.py"]
 
     LAUNCHENV += ["--numcores", numcores]
-    LAUNCHENV += ["--stagedir", self._config._stage_dir]
-    LAUNCHENV += ["--project", self._config._project_dir]
+    LAUNCHENV += ["--stagedir", self._config.stage_dir]
+    LAUNCHENV += ["--project", self._config.project_dir]
 
     if subspace!= None:
       LAUNCHENV += ["--subspace", subspace]
@@ -121,7 +121,7 @@ class EnvSetup:
     if override_sysprompt!=None:
       SYSPROM = override_sysprompt
 
-    PROMPT = bdeco.promptL('%s[ %s %s-${OBT_SUBSPACE_PROMPT} ]'%(SYSPROM,stackindic,self._config._project_name))
+    PROMPT = bdeco.promptL('%s[ %s %s-${OBT_SUBSPACE_PROMPT} ]'%(SYSPROM,stackindic,self._config.project_name))
     PROMPT += bdeco.promptC("\\w")
     PROMPT += bdeco.promptR("[$(parse_git_branch) ]")
     PROMPT += bdeco.bright("> ")

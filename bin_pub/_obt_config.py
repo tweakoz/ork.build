@@ -11,11 +11,41 @@ import os, sys, argparse, inspect, pathlib, multiprocessing, json, importlib
 Path = pathlib.Path
 
 ###########################################
-# need private copy of InvokingModule fns
-###########################################
+
+def env_is_set(key):
+  return str(key) in os.environ and os.environ[str(key)]!=None
 
 def _genpath(inp):
   return pathlib.Path(os.path.realpath(str(inp)))
+
+def _genpaths(inp):
+  p = inp.split(":")
+  p = [_genpath(x) for x in p]
+  # return unique paths, preserving order 
+  uset = set()
+  rval = []
+  for x in p:
+    if x not in uset:
+      uset.add(x)
+      rval.append(x)
+  return rval
+
+def _pathlist_to_str(inp):
+  as_str = ""
+  count = len(inp)
+  uset = set()
+  for i in range(count):
+    item = inp[i]
+    item_str = str(item)
+    if item_str not in uset:
+      if i!=0:
+        as_str += ":"
+      as_str += item_str
+  return as_str
+
+###########################################
+# need private copy of InvokingModule fns
+###########################################
 
 def _fileOfInvokingModule():
   frame = inspect.stack()[1]
@@ -32,6 +62,8 @@ def _directoryOfInvokingModule():
     return _genpath(os.path.dirname(module.__file__))
   else:
       assert(False)
+
+###########################################
 
 def _ppath(p):
   return str(p)
@@ -57,14 +89,14 @@ def findExecutable(exec_name):
 
 def importProject(config):
 
-  try_project_manifest = config._project_dir/"obt.project"/"obt.manifest"
+  try_project_manifest = config.project_dir/"obt.project"/"obt.manifest"
 
   if try_project_manifest.exists():
     manifest_json = json.load(open(try_project_manifest,"r"))
     #print(manifest_json)
     config._project_name = manifest_json["name"]
     autoexec = manifest_json["autoexec"]
-    autoexec = config._project_dir/"obt.project"/autoexec
+    autoexec = config.project_dir/"obt.project"/autoexec
     #print(autoexec)
     assert(autoexec.exists())
     # import autoexec as python module
@@ -105,201 +137,227 @@ class ObtExecConfig(object):
   #####################################################################
 
   def __init__(self): # default initialization from env vars
-    self._bin_priv_dir = None 
-    self._bin_pub_dir = None
-    self._scripts_dir = None
-    self._root_dir = None
-    self._project_dir = None
-    self._project_bin_dir = None
-    self._project_name = "obt"
-    self._stage_dir = None
-    self._build_dir = None
-    self._inplace = False
-    self._stack_depth = 0
-    self._quiet = False
+
     self._command = None
-    self._subspace = None
-    self._subspace_dir = None
-    self._subspace_bin_dir = None
-    self._subspace_lib_dir = None
-    self._subspace_is_conda = False
-    self._did_override_pythonpath = False
-    self._text_search_paths = []
-    self._text_search_exts = ".cpp:.c:.cc:.h:.hpp:.inl:.qml:.m:.mm:.py:.txt:.glfx".split(" ")
-    self._dep_paths = []
-    self._module_paths = []
-    self._numcores = 1
-    self._prompt_prefix = None
     self._disable_syspypath = True
     self._git_ssh_command = None
 
-    self._original_ld_library_paths = []
-    self._original_python_paths = []
-    self._original_paths = []
-    self._original_prompt = []
-
-    if "OBT_ROOT" in os.environ:
-      self._root_dir = _genpath(os.environ["OBT_ROOT"])
-
-    if (self._root_dir!=None):
-      if "OBT_INPLACE" in os.environ:
-        self._inplace = True
-        self._bin_priv_dir = self._root_dir/"obt"/"bin_priv"
-        self._bin_pub_dir = self._root_dir/"bin_pub"
-      else:
-        self._bin_priv_dir = self._root_dir/"obt"/"bin_priv"
-        self._bin_pub_dir = self._root_dir/"bin_pub"
-
-    self.setupOriginalPaths()
-
-    ##########################################
-
-    if "OBT_SEARCH_PATH" in os.environ:
-      self._text_search_paths = os.environ["OBT_SEARCH_PATH"].split(":")
-      self._text_search_paths = [_genpath(s) for s in self._text_search_paths if s]
-    if "OBT_SEARCH_EXTLIST" in os.environ:
-      self._text_search_exts = os.environ["OBT_SEARCH_EXTLIST"].split(":")
-      self._text_search_exts = [s for s in self._text_search_exts if s]
-    if "OBT_DEP_PATH" in os.environ:
-      self._dep_paths = os.environ["OBT_DEP_PATH"].split(":")
-      self._dep_paths = [_genpath(s) for s in self._dep_paths if s]
-    if "OBT_MODULES_PATH" in os.environ:
-      self._module_paths = os.environ["OBT_MODULES_PATH"].split(":")
-      self._module_paths = [_genpath(s) for s in self._module_paths if s]
-
-    if "OBT_STAGE" in os.environ:
-      self._stage_dir = _genpath(os.environ["OBT_STAGE"])
-    if "OBT_BUILDS" in os.environ:
-      self._build_dir = _genpath(os.environ["OBT_BUILDS"])
-
-    if "OBT_SCRIPTS_DIR" in os.environ:
-      self._scripts_dir = _genpath(os.environ["OBT_SCRIPTS_DIR"])
-      sys.path.append(str(self._scripts_dir))
-
-    if "OBT_PROJECT_DIR" in os.environ:
-      self._project_dir = _genpath(os.environ["OBT_PROJECT_DIR"])
-    if "OBT_PROJECT_NAME" in os.environ:
-      self._project_name = os.environ["OBT_PROJECT_NAME"]
-    if "OBT_NUM_CORES" in os.environ:
-      self._numcores = int(os.environ["OBT_NUM_CORES"])
-    if "OBT_SUBSPACE" in os.environ:
-      self._subspace = os.environ["OBT_SUBSPACE"]
-    if "OBT_SUBSPACE_DIR" in os.environ:
-      self._subspace_dir = _genpath(os.environ["OBT_SUBSPACE_DIR"])
-      self._subspace_is_conda = "conda" in os.environ["OBT_SUBSPACE_DIR"]
-    if "OBT_SUBSPACE_BIN_DIR" in os.environ:
-      self._subspace_bin_dir = _genpath(os.environ["OBT_SUBSPACE_BIN_DIR"])
-    if "OBT_SUBSPACE_LIB_DIR" in os.environ:
-      self._subspace_lib_dir = _genpath(os.environ["OBT_SUBSPACE_LIB_DIR"])
-
   #####################################################################
-
-  def setupOriginalPaths(self):
-
-    ########################
-    # binary search paths
-    ########################
-
-    if "PATH" in os.environ:
-      self._original_paths = os.environ["PATH"].split(":")
-      self._original_paths = [_genpath(s) for s in self._original_paths if s]
-    # override with OBT_ORIGINAL_PATH if present
-    if "OBT_ORIGINAL_PATH" in os.environ:
-      self._original_paths = os.environ["OBT_ORIGINAL_PATH"].split(":")
-      self._original_paths = [_genpath(s) for s in self._original_paths if s]
-
-    if "LD_LIBRARY_PATH" in os.environ:
-      self._original_ld_library_paths = os.environ["LD_LIBRARY_PATH"].split(":")
-      self._original_ld_library_paths = [_genpath(s) for s in self._original_ld_library_paths if s]
-    # override with OBT_ORIGINAL_LD_LIBRARY_PATH if present
-    if "OBT_ORIGINAL_LD_LIBRARY_PATH" in os.environ:
-      self._original_ld_library_paths = os.environ["OBT_ORIGINAL_LD_LIBRARY_PATH"].split(":")
-      self._original_ld_library_paths = [_genpath(s) for s in self._original_ld_library_paths if s]
-
-    ########################
-    # pkgconfig
-    ########################
-
-    orig_pkg_config_path = None
-    #orig_pkg_config_path = obt.command.capture(["pkg-config","--variable","pc_path","pkg-config"])
-    #orig_pkg_config_path = orig_pkg_config_path.replace("\n","")
-    #print("orig_pkg_config_path<%s>"%orig_pkg_config_path)
-
-    if "OBT_ORIGINAL_PKG_CONFIG" in os.environ:
-      orig_pkg_config = os.environ["OBT_ORIGINAL_PKG_CONFIG"]
+  @property 
+  def num_cores(self):
+    return os.environ["OBT_NUM_CORES"]
+  #####################################################################
+  @property 
+  def inplace(self):
+    return env_is_set("OBT_INPLACE")
+  #####################################################################
+  @property 
+  def quiet(self):
+    return env_is_set("OBT_QUIET")
+  #####################################################################
+  @property 
+  def subspace(self):
+    if env_is_set("OBT_SUBSPACE"):
+      return os.environ["OBT_SUBSPACE"]
     else:
-      if "PKG_CONFIG" in os.environ:
-        orig_pkg_config = os.environ["PKG_CONFIG"]
-        os.environ["OBT_ORIGINAL_PKG_CONFIG"] = orig_pkg_config
-      else :
-        orig_pkg_config = findExecutable("pkg-config")
-        if orig_pkg_config!=None:
-          os.environ["OBT_ORIGINAL_PKG_CONFIG"] = str(orig_pkg_config)
-        else:
-          assert(False)
-
-    if "OBT_ORIGINAL_PKG_CONFIG_PATH" in os.environ:
-      orig_pkg_config_path = os.environ["OBT_ORIGINAL_PKG_CONFIG_PATH"]
+      return None
+  #####################################################################
+  @property 
+  def subspace_dir(self):
+    if env_is_set("OBT_SUBSPACE_DIR"):
+      return _genpath(os.environ["OBT_SUBSPACE_DIR"])
     else:
-      if "PKG_CONFIG_PATH" in os.environ:
-        orig_pkg_config_path = os.environ["PKG_CONFIG_PATH"].split(":")
-    
-    if orig_pkg_config_path!=None:
-      orig_pkg_config_path = [_genpath(s) for s in orig_pkg_config_path if s]
-
-    ########################
-    # python
-    ########################
-
-    if "PYTHONPATH" in os.environ:
-      ORIG_PYTHONPATHS = os.environ["PYTHONPATH"].split(":")
-      ORIG_PYTHONPATHS = [_genpath(s) for s in ORIG_PYTHONPATHS if s]
-      self._original_python_paths = ORIG_PYTHONPATHS
-
+      return None
+  #####################################################################
+  @property 
+  def subspace_bin_dir(self):
+    return self.subspace_dir/"bin"
+  #####################################################################
+  @property 
+  def subspace_lib_dir(self):
+    return self.subspace_dir/"lib"
+  #####################################################################
+  @property 
+  def subspace_build_dir(self):
+    return self.subspace_dir/"builds"
+  #####################################################################
+  @property 
+  def subspace_is_conda(self):
+    return "conda" in os.environ["OBT_SUBSPACE_DIR"]
+  #####################################################################
+  @property 
+  def text_search_exts(self):
+    return os.environ["OBT_SEARCH_EXTLIST"].split(":")
+  #####################################################################
+  @property 
+  def text_search_path(self):
+    if env_is_set("OBT_SEARCH_PATH"):
+      return _genpaths(os.environ["OBT_SEARCH_PATH"])
+    else:
+      return []
+  #####################################################################
+  @property 
+  def project_name(self):
+    return os.environ["OBT_PROJECT_NAME"]
+  #####################################################################
+  @property 
+  def root_dir(self):
+    if env_is_set("OBT_ROOT"):
+      return _genpath(os.environ["OBT_ROOT"])
+    else:
+      return None
+  #####################################################################
+  @property 
+  def scripts_dir(self):
+    if env_is_set("OBT_SCRIPTS_DIR"):
+      return _genpath(os.environ["OBT_SCRIPTS_DIR"])
+    else:
+      return None
+  #####################################################################
+  @property 
+  def stage_dir(self):
+    if env_is_set("OBT_STAGE"):
+      return _genpath(os.environ["OBT_STAGE"])
+    else:
+      return None
+  #####################################################################
+  @property 
+  def project_dir(self):
+    if env_is_set("OBT_PROJECT_DIR"):
+      return _genpath(os.environ["OBT_PROJECT_DIR"])
+    else:
+      return None
+  #####################################################################
+  @property 
+  def build_dir(self):
+    return self.stage_dir/"builds"
+  #####################################################################
+  @property 
+  def original_python_path(self):
+    if env_is_set("OBT_ORIGINAL_PYTHONPATH"):
+      return _genpaths(os.environ["OBT_ORIGINAL_PYTHONPATH"])
+    else:
+      return []
+  #####################################################################
+  @property 
+  def python_home(self):
+    if env_is_set("OBT_PYTHONHOME"):
+      return _genpath(os.environ["OBT_PYTHONHOME"])
+    else:
+      return None
+  #####################################################################
+  @property 
+  def python_path(self):
+    if env_is_set("PYTHONPATH"):
+      return _genpaths(os.environ["PYTHONPATH"])
+    else:
+      return []
+  #####################################################################
+  @property 
+  def original_ld_library_path(self):
+    if env_is_set("OBT_ORIGINAL_LD_LIBRARY_PATH"):
+      return _genpaths(os.environ["OBT_ORIGINAL_LD_LIBRARY_PATH"])
+    else:
+      return []
+  #####################################################################
+  @property 
+  def original_pkg_path(self):
+    if env_is_set("OBT_ORIGINAL_PKG_CONFIG_PATH"):
+      return _genpaths(os.environ["OBT_ORIGINAL_PKG_CONFIG_PATH"])
+    else:
+      return []
+  #####################################################################
+  @property 
+  def modules_path(self):
+    if env_is_set("OBT_MODULES_PATH"):
+      return _genpaths(os.environ["OBT_MODULES_PATH"])
+    else:
+      return []
+  #####################################################################
+  @property 
+  def dep_path(self):
+    if env_is_set("OBT_DEP_PATH"):
+      return _genpaths(os.environ["OBT_DEP_PATH"])
+    else:
+      return []
+  #####################################################################
+  @property 
+  def bin_pub_dir(self):
+    if env_is_set("OBT_BIN_PUB_DIR"):
+      return _genpath(os.environ["OBT_BIN_PUB_DIR"])
+    else:
+      return None
+  #####################################################################
+  @property 
+  def bin_priv_dir(self):
+    if env_is_set("OBT_BIN_PRIV_DIR"):
+      return _genpath(os.environ["OBT_BIN_PRIV_DIR"])
+    else:
+      return None
+  #####################################################################
+  @property 
+  def python_package_install_dir(self):
+    if env_is_set("OBT_PYPKG"):
+      return _genpath(os.environ["OBT_PYPKG"])
+    else:
+      return 0
+  #####################################################################
+  @property 
+  def stack_depth(self):
+    if env_is_set("OBT_STACK"):
+      return os.environ["OBT_STACK"].count("<")
+    else:
+      return 0
   #####################################################################
 
   def log(self,text):
-    if self._quiet==False:
+    if self.quiet==False:
       print(text)
 
   #####################################################################
 
-  def dump(self):
-
+  def dump_env(self):
     for key in os.environ:
       if "OBT" in key:
         print(key,os.environ[key])
+
+  def dump(self):
+
     print("##########################################################")
-    print( "obtconfig.quiet: %s"%self._quiet )
-    print( "obtconfig.inplace: %s"%self._inplace )
+    print( "obtconfig.quiet: %s"%self.quiet )
+    print( "obtconfig.inplace: %s"%self.inplace )
     print( "obtconfig.command: %s"%self._command )
-    print( "obtconfig.numcores: %s"%self._numcores )
-    print( "obtconfig.did_override_pythonpath: %s"%self._did_override_pythonpath )
+    print( "obtconfig.numcores: %s"%self.num_cores )
+    print( "obtconfig.stack_depth: %s"%self.stack_depth )
     print("##########################################################")
-    print( "obtconfig.project_name: %s"%self._project_name )
-    print( "obtconfig.project_dir: %s"%_ppath(self._project_dir ))
+    print( "obtconfig.project_name: %s"%self.project_name )
+    print( "obtconfig.project_dir: %s"%_ppath(self.project_dir ))
     print("##########################################################")
-    print( "obtconfig.bin_priv_dir: %s"%_ppath(self._bin_priv_dir ))
-    print( "obtconfig.bin_pub_dir: %s"%_ppath(self._bin_pub_dir ))
-    print( "obtconfig.scripts_dir: %s"%_ppath(self._scripts_dir ))
-    print( "obtconfig.build_dir: %s"%_ppath(self._build_dir ))
-    print( "obtconfig.root_dir: %s"%_ppath(self._root_dir ))
-    print( "obtconfig.stage_dir: %s"%_ppath(self._stage_dir ))
+    print( "obtconfig.bin_priv_dir: %s"%_ppath(self.bin_priv_dir ))
+    print( "obtconfig.bin_pub_dir: %s"%_ppath(self.bin_pub_dir ))
+    print( "obtconfig.scripts_dir: %s"%_ppath(self.scripts_dir ))
+    print( "obtconfig.build_dir: %s"%_ppath(self.build_dir ))
+    print( "obtconfig.root_dir: %s"%_ppath(self.root_dir ))
+    print( "obtconfig.stage_dir: %s"%_ppath(self.stage_dir ))
     print("##########################################################")
-    print( "obtconfig.text_search_extensions: %s"%self._text_search_exts )
-    print( "obtconfig.text_search_paths: %s"%_ppaths(self._text_search_paths ))
+    print( "obtconfig.text_search_extensions: %s"%self.text_search_exts )
+    print( "obtconfig.text_search_paths: %s"%_ppaths(self.text_search_path ))
     print("##########################################################")
-    print( "obtconfig.module_paths: %s"%_ppaths(self._module_paths ))
-    print( "obtconfig.dep_paths: %s"%_ppaths(self._dep_paths ))
+    print( "obtconfig.modules_path: %s"%_ppaths(self.modules_path ))
+    print( "obtconfig.dep_path: %s"%_ppaths(self.dep_path ))
     print("##########################################################")
-    print( "obtconfig.original_ld_library_paths: %s"%_ppaths(self._original_ld_library_paths ))
-    print( "obtconfig.original_python_paths: %s"%_ppaths(self._original_python_paths ))
+    print( "obtconfig.original_ld_library_path: %s"%_ppaths(self.original_ld_library_path ))
+    print( "obtconfig.original_python_paths: %s"%_ppaths(self.original_python_path ))
+    print( "obtconfig.current_python_paths: %s"%_ppaths(self.python_path ))
+    print( "obtconfig.python_home: %s"%_ppath(self.python_home ))
+    print( "obtconfig.python_package_install_dir: %s"%_ppath(self.python_package_install_dir ))
     print("##########################################################")
-    print( "obtconfig.subspace: %s"%self._subspace )
-    print( "obtconfig.subspace_is_conda: %s"%self._subspace_is_conda )
-    print( "obtconfig.subspace_dir: %s"%self._subspace_dir )
-    print( "obtconfig.subspace_bin_dir: %s"%self._subspace_bin_dir )
-    print( "obtconfig.subspace_lib_dir: %s"%self._subspace_lib_dir )
+    print( "obtconfig.subspace: %s"%self.subspace )
+    print( "obtconfig.subspace_is_conda: %s"%self.subspace_is_conda )
+    print( "obtconfig.subspace_dir: %s"%self.subspace_dir )
+    print( "obtconfig.subspace_bin_dir: %s"%self.subspace_bin_dir )
+    print( "obtconfig.subspace_lib_dir: %s"%self.subspace_lib_dir )
+    print( "obtconfig.subspace_build_dir: %s"%_ppath(self.subspace_build_dir ))
     print("##########################################################")
     print( "obtconfig.VALID: %s"%self.valid )
     print("##########################################################")
@@ -308,13 +366,12 @@ class ObtExecConfig(object):
 
   @property
   def valid(self):
-    valid = (self._bin_priv_dir!=None)
-    valid = valid and (self._bin_pub_dir!=None)
-    valid = valid and (self._bin_pub_dir!=None)
-    valid = valid and (self._scripts_dir!=None)
-    valid = valid and (self._root_dir!=None)
-    valid = valid and (self._project_dir!=None)
-    valid = valid and (self._stage_dir!=None)
+    valid = (self.bin_priv_dir!=None)
+    valid = valid and (self.bin_pub_dir!=None)
+    valid = valid and (self.scripts_dir!=None)
+    valid = valid and (self.root_dir!=None)
+    valid = valid and (self.project_dir!=None)
+    valid = valid and (self.stage_dir!=None)
     return valid
 
 
@@ -331,17 +388,150 @@ _config = ObtExecConfig()
 
 def configFromCommandLine(parser_args=None):
 
-  ########################
-
   def IS_ARG_SET(arg):
-    if parser_args==None:
+    if (parser_args!=None) and (arg in parser_args) and (parser_args[arg]!=None):
+      return True
+    else:
       return False
-    return arg in parser_args and parser_args[arg]!=None
+
+  ########################
+  # independent items not attached to directories
+  ########################
+
+  if IS_ARG_SET("inplace") and parser_args["inplace"]:
+    os.environ["OBT_INPLACE"] = "1"
+
+  if IS_ARG_SET("quiet"):
+    os.environ["OBT_QUIET"] = "1"
+
+  if IS_ARG_SET("numcores"):
+    numcores = int(parser_args["numcores"])
+    os.environ["OBT_NUM_CORES"]=str(numcores)
+  else:
+    if "OBT_NUM_CORES" not in os.environ:
+      numcores = multiprocessing.cpu_count()
+      os.environ["OBT_NUM_CORES"]=str(numcores)
+
+  if IS_ARG_SET("prompt"):
+    os.environ["OBT_USE_PROMPT_PREFIX"] = parser_args["prompt"]
+
+  os.environ["color_prompt"] = "yes"
+
+  ########################
+  # cache exterior env vars
+  ########################
+
+  if not env_is_set("OBT_ROOT"):
+    os.environ["OBT_BIN_PUB_DIR"] = str(_directoryOfInvokingModule())
+    os.environ["OBT_ROOT"] = str(_genpath(_config.bin_pub_dir/".."))
+
+  if _config.inplace:
+    os.environ["OBT_BIN_PRIV_DIR"] = str(_genpath(_config.root_dir/"bin_priv"))
+    os.environ["OBT_SCRIPTS_DIR"] = str(_genpath(_config.root_dir/"scripts")) 
+    sys.path.append(str(_config.scripts_dir))
+  else:
+    for item in sys.path:
+      if len(item):
+        p = _genpath(item)
+        try_scripts_dir = p/"obt"
+        print(try_scripts_dir,try_scripts_dir.exists())
+        if try_scripts_dir.exists():
+          os.environ["OBT_SCRIPTS_DIR"] = str(_genpath(try_scripts_dir))
+          #sys.path.append(str(_config.scripts_dir))
+    os.environ["OBT_BIN_PRIV_DIR"] = str(_genpath(_config.root_dir/"obt"/"bin_priv"))
+
+
+    def do_path(a,b):
+      if env_is_set(a):
+        os.environ[b] = os.environ[a] 
+      else:
+        os.environ[b] = ""
+
+    do_path("PATH","OBT_ORIGINAL_PATH")
+    do_path("LD_LIBRARY_PATH","OBT_ORIGINAL_LD_LIBRARY_PATH")
+    do_path("PS1","OBT_ORIGINAL_PS1")
+    do_path("PKG_CONFIG_PATH","OBT_ORIGINAL_PKG_CONFIG_PATH")
+
+    #################################
+
+    do_path("PYTHONPATH","OBT_ORIGINAL_PYTHONPATH")
+
+    pypath = []
+
+    if _config.inplace:
+        ORIG_PYTHONPATHS = _config.original_python_path
+        ORIG_PYTHONPATH0 = str(_config.original_python_path[0])
+        if ORIG_PYTHONPATH0 in sys.path:
+          sys.path.remove(ORIG_PYTHONPATH0)
+    else:
+      pass
+
+    if env_is_set("OBT_ORIGINAL_PYTHONPATH"):
+      pypath += os.environ["OBT_ORIGINAL_PYTHONPATH"].split(":")
+    os.environ["PYTHONPATH"]=_pathlist_to_str(pypath)
+
+    #################################
+
+    if "PKG_CONFIG" in os.environ:
+      os.environ["OBT_ORIGINAL_PKG_CONFIG"] = os.environ["PKG_CONFIG"]
+    else :
+      orig_pkg_config = findExecutable("pkg-config")
+      if orig_pkg_config!=None:
+        os.environ["OBT_ORIGINAL_PKG_CONFIG"] = str(orig_pkg_config)
+      else:
+        assert(False)
+
+  ########################
+  # stage dir
+  ########################
+
+  if IS_ARG_SET("stagedir"):
+    os.environ["OBT_STAGE"] = os.path.realpath(parser_args["stagedir"])
+
+  assert(env_is_set("OBT_STAGE"))
+
+  ########################
+  # project dir
+  ########################
+
+  if not env_is_set("OBT_PROJECT_NAME"):
+    os.environ["OBT_PROJECT_NAME"] = "OBT"
+
+  if not env_is_set("OBT_PROJECT_DIR"):
+    if IS_ARG_SET("project"):
+      project_dir = parser_args["project"]
+      project_dir = os.path.realpath(project_dir)
+    else:
+      project_dir = _config.root_dir
+    os.environ["OBT_PROJECT_DIR"] = str(project_dir)
+
+  assert(env_is_set("OBT_PROJECT_DIR"))
+
+  ########################
+  # subspace
+  ########################
+
+  if not env_is_set("OBT_SUBSPACE"):
+    os.environ["OBT_SUBSPACE"] = "host"
+    os.environ["OBT_SUBSPACE_PROMPT"] = "host"
+  if IS_ARG_SET("subspace"):
+    os.environ["OBT_SUBSPACE"] = parser_args["subspace"]
+    os.environ["OBT_SUBSPACE_PROMPT"] = parser_args["subspace"]
+
+  assert(env_is_set("OBT_SUBSPACE"))
 
   ########################
 
-  if IS_ARG_SET("inplace"):
-    _config._inplace = parser_args["inplace"]
+  if not env_is_set("OBT_MODULES_PATH"):
+    if _config.inplace:
+      os.environ["OBT_MODULES_PATH"] = str(_config.root_dir/"modules")
+    else:
+      os.environ["OBT_MODULES_PATH"] = str(_config.root_dir/"obt"/"modules")
+
+  ########################
+
+  if not env_is_set("OBT_PYTHONHOME"):
+    os.environ["OBT_PYTHONHOME"] = str(_config.stage_dir/"pyvenv")
 
   ########################
 
@@ -355,176 +545,76 @@ def configFromCommandLine(parser_args=None):
     _config._command = parser_args["command"].split(" ")
 
   ########################
-
-  if IS_ARG_SET("quiet"):
-    _config._quiet = parser_args["quiet"]
-
-  ########################
-
-  _config.setupOriginalPaths()
-
-  ########################
-
-  _config._bin_pub_dir = _directoryOfInvokingModule()
-  _config._root_dir = _genpath(_config._bin_pub_dir/"..")
-
-  if _config._inplace:
-    _config._bin_priv_dir = _genpath(_config._root_dir/"bin_priv")
-    _config._scripts_dir = _genpath(_config._root_dir/"scripts")
-  else:
-    _config._bin_priv_dir = _genpath(_config._root_dir/"obt"/"bin_priv")
-    _config._scripts_dir = _genpath(_config._root_dir/"obt"/"scripts")
-
-  ########################
   # set up sys.path so we can import OBT modules
   ########################
-
-  sys.path = [str(_config._scripts_dir)]+sys.path
 
   import obt.env
   import obt.path
   import obt.host
   import obt.dep
+  import obt.subspace
+
+  ########################
+
+  obt.env.append("OBT_DEP_PATH",_config.modules_path[0]/"dep")
 
   ########################
 
   if IS_ARG_SET("stack"):
-    try_staging = Path(parser_args["stack"]).resolve()
+    stack_dir = Path(parser_args["stack"]).resolve()
     obt.env.append("OBT_STACK","<")
-    _config._stack_depth = os.environ["OBT_STACK"].count("<")
-    assert(try_staging.exists())
-    _config._stage_dir = try_staging
-  
-  if IS_ARG_SET("stagedir"):
-    _config._stage_dir = pathlib.Path(os.path.realpath(parser_args["stagedir"]))
-
-  if _config._stage_dir!=None:
-    _config._build_dir = _config._stage_dir/"builds"
-
-  ########################
-
-  if IS_ARG_SET("numcores"):
-    _config._numcores = int(parser_args["numcores"])
-    os.environ["OBT_NUM_CORES"]=str(_config._numcores)
-  else:
-    if "OBT_NUM_CORES" not in os.environ:
-      NumCores = multiprocessing.cpu_count()
-      _config._numcores = NumCores
-
-  ########################
-
-  if IS_ARG_SET("prompt"):
-    _config._prompt_prefix = parser_args["prompt"]
-
-  ########################
-
-  if IS_ARG_SET("project"):
-    project_dir = parser_args["project"]
-    project_dir = os.path.realpath(project_dir)
-    _config._project_dir = pathlib.Path(project_dir)
-  else:
-    _config._project_dir = _config._root_dir
-
-  ########################
-
-  if _config._inplace:
-    if "PYTHONPATH" in os.environ:
-      ORIG_PYTHONPATHS = os.environ["PYTHONPATH"].split(":")
-      ORIG_PYTHONPATHS = [_genpath(s) for s in ORIG_PYTHONPATHS if s]
-      #print(ORIG_PYTHONPATHS)
-      #print(sys.path)
-      _config._original_python_paths = ORIG_PYTHONPATHS
-      ORIG_PYTHONPATH = str(_config._original_python_paths[0])
-      if ORIG_PYTHONPATH in sys.path:
-        sys.path.remove(ORIG_PYTHONPATH)
-    
-    _config._did_override_pythonpath = True
-    os.environ["PYTHONPATH"]=str(_config._scripts_dir)
-    #os.environ["PATH"]=str(root_dir/"bin_priv")+":"+os.environ["PATH"]
-    sys.path = [str(_config._scripts_dir)]+sys.path
-
-  ########################
-
-  if _config._project_dir==None:
-    _config._project_dir = _config._root_dir
-  
-  ########################
-
-  assert(str(_config._project_dir)!="/nvme4/aphidsystems/ork.build")
-
-  if _config._inplace:
-    _config._module_paths = [_config._root_dir/"modules"]
-  else:
-    _config._module_paths = [_config._root_dir/"obt"/"modules"]
+    assert(stack_dir.exists())
+    assert( stack_dir == _config.stage_dir)
 
   #####################################################
   # setup os.environfrom config
   #####################################################
 
-  if _config._quiet:
-    os.environ["OBT_QUIET"]="1"
-  if _config._inplace:
-    os.environ["OBT_INPLACE"]="1"
-  
-  #assert(_config.valid)
-
-  os.environ["OBT_ROOT"]=str(_config._root_dir)
-  os.environ["OBT_PROJECT_DIR"]=str(_config._project_dir)
-  os.environ["OBT_ORIGINAL_PYTHONPATH"]=str(_config._project_dir)
-  os.environ["OBT_NUM_CORES"]=str(_config._numcores)
-  os.environ["OBT_SCRIPTS_DIR"] = str(_config._scripts_dir) 
-  os.environ["OBT_SUBSPACE"] = "host"
-  os.environ["OBT_SUBSPACE_PROMPT"] = "host"
-  os.environ["OBT_PROJECT_NAME"] = str(_config._project_name)
-  os.environ["OBT_MODULES_PATH"] = ":".join(_listToStrList(_config._module_paths))
-  os.environ["color_prompt"] = "yes"
-  os.environ["OBT_SEARCH_EXTLIST"] = ":".join(_config._text_search_exts)
-  os.environ["OBT_SEARCH_PATH"] = ":".join(_listToStrList(_config._text_search_paths))
-
-  os.environ["OBT_BIN_PUB"] = str(_config._bin_pub_dir)
-  os.environ["OBT_BIN_PRIVATE"] = str(_config._bin_priv_dir)
-
-  obt.env.prepend("PATH",_config._bin_pub_dir )
-  obt.env.prepend("PATH",_config._bin_priv_dir )
-
-  #obt.env.append("OBT_MODULES_PATH",obt.path.modules())
-  obt.env.append("OBT_DEP_PATH",obt.path.modules()/"dep")
-  #os.environ["OBT_ORIGINAL_PATH"] = orig_path 
-  #os.environ["OBT_ORIGINAL_LD_LIBRARY_PATH"] = orig_ld_library_path
-  #os.environ["OBT_ORIGINAL_PS1"] = orig_ps1
-
-  if _config._prompt_prefix != None:
-    os.environ["OBT_USE_PROMPT_PREFIX"] = _config._prompt_prefix
+  obt.env.prepend("PATH",_config.bin_pub_dir )
+  obt.env.prepend("PATH",_config.bin_priv_dir )
 
   if _config._git_ssh_command!=None:
     obt.env.set("GIT_SSH_COMMAND",_config._git_ssh_command)
 
   obt.env.set("PYTHONNOUSERSITE","TRUE")
-  obt.env.append("PYTHONPATH",_config._scripts_dir)
+
+  #####################################################
+
+  if not env_is_set("OBT_SEARCH_EXTLIST"):
+    os.environ["OBT_SEARCH_EXTLIST"] = ".cpp:.c:.cc:.h:.hpp:.inl:.qml:.m:.mm:.py:.txt:.glfx"
+  if not env_is_set("OBT_SEARCH_PATH"):
+    os.environ["OBT_SEARCH_PATH"] = ""
 
   #####################################################
   # items only valid if there is a staging folder
   #####################################################
-
+  
   if _config.valid: # Valid StageDir ?
-    os.environ["OBT_STAGE"]=str(_config._stage_dir)
-    os.environ["OBT_BUILDS"]=str(_config._build_dir)
-    os.environ["OBT_PYTHONHOME"] = str(_config._stage_dir/"pyvenv")
-    os.environ["OBT_SUBSPACE_LIB_DIR"] = str(_config._stage_dir/"lib")
-    os.environ["OBT_SUBSPACE_BIN_DIR"] = str(_config._stage_dir/"bin")
-    os.environ["OBT_SUBSPACE_DIR"] = str(_config._stage_dir)
-    obt.env.prepend("PATH",_config._stage_dir/"bin")
-    obt.env.prepend("LD_LIBRARY_PATH",_config._stage_dir/"lib")
-    obt.env.prepend("LD_LIBRARY_PATH",_config._stage_dir/"lib64")
-    obt.env.prepend("PKG_CONFIG",_config._stage_dir/"bin"/"pkg-config")
-    #obt.env.prepend("PKG_CONFIG_PREFIX",_config._stage_dir)
-    obt.env.prepend("PKG_CONFIG_PATH",_config._stage_dir/"lib"/"pkgconfig")
-    obt.env.prepend("PKG_CONFIG_PATH",_config._stage_dir/"lib64"/"pkgconfig")
-    obt.env.prepend("PYTHONPATH",_config._stage_dir/"lib"/"python")
-    obt.env.append("LD_LIBRARY_PATH",_config._stage_dir/"python-3.9.13"/"lib")
+    obt.env.prepend("PATH",_config.stage_dir/"bin")
+    obt.env.prepend("LD_LIBRARY_PATH",_config.stage_dir/"lib")
+    obt.env.prepend("LD_LIBRARY_PATH",_config.stage_dir/"lib64")
+    obt.env.prepend("PKG_CONFIG",_config.stage_dir/"bin"/"pkg-config")
+    obt.env.prepend("PKG_CONFIG_PATH",_config.stage_dir/"lib"/"pkgconfig")
+    obt.env.prepend("PKG_CONFIG_PATH",_config.stage_dir/"lib64"/"pkgconfig")
+    #obt.env.prepend("PYTHONPATH",_config.stage_dir/"lib"/"python")
+
+    ########################
+
+    if _config.project_dir!=_config.root_dir:
+      _config.dump_env()
+      importProject(_config)
+
+    # subspace paths
+    subspace_dir = _config.stage_dir
+    if _config.subspace!="host":
+      subspace_dir = obt.subspace.descriptor(_config.subspace)._prefix
+    os.environ["OBT_SUBSPACE_DIR"] = str(subspace_dir)
+    os.environ["OBT_SUBSPACE_LIB_DIR"] = str(_config.subspace_lib_dir)
+    os.environ["OBT_SUBSPACE_BIN_DIR"] = str(_config.subspace_bin_dir)
+    os.environ["OBT_BUILDS"] = str(_config.build_dir)
+    os.environ["OBT_SUBSPACE_BUILD_DIR"] = str(_config.subspace_build_dir)
 
   #####################################################
-
   return _config
 
 ###########################################

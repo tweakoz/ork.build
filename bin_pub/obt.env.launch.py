@@ -48,8 +48,6 @@ if len(sys.argv)==1:
 
 from _obt_config import configFromCommandLine, initializeDependencyEnvironments, importProject
 obt_config = configFromCommandLine(args)
-obt_config.dump()
-
 ###########################################
 
 if args["obttrace"]==True:
@@ -68,12 +66,13 @@ import obt.command
 import obt.deco
 deco = obt.deco.Deco()
 
-stage_dir = obt_config._stage_dir
+stage_dir = obt_config.stage_dir
 
 ###########################################
 
 initializeDependencyEnvironments(envsetup)
-importProject(obt_config)
+#importProject(obt_config)
+obt_config.dump()
 
 ###########################################
 if args["stagedir"]!=None:

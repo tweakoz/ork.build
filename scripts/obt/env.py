@@ -38,3 +38,8 @@ def append(key,val):
   else:
     os.environ[str(key)] = os.environ[str(key)]+":"+str(val)
     #log.output(deco.cyan("append")+" var<" + deco.key(key) + "> to<" + deco.path(os.environ[key]) + ">")
+
+###########################################
+
+def is_set(key):
+  return str(key) in os.environ

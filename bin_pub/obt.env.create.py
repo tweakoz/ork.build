@@ -51,11 +51,11 @@ obt_config = configFromCommandLine(args)
 # wipe old staging folder ?
 ###########################################
 
-if obt_config._stage_dir.exists() and args["wipe"]==False:
-  print("Not going to wipe your staging folder<%s> unless you ask... use --wipe"%obt_config._stage_dir)
+if obt_config.stage_dir.exists() and args["wipe"]==False:
+  print("Not going to wipe your staging folder<%s> unless you ask... use --wipe"%obt_config.stage_dir)
   sys.exit(0)
-if args["wipe"] and obt_config._stage_dir.exists():
-  os.system( "rm -rf %s"%obt_config._stage_dir)
+if args["wipe"] and obt_config.stage_dir.exists():
+  os.system( "rm -rf %s"%obt_config.stage_dir)
 
 ###########################################
 
@@ -76,8 +76,8 @@ import obt.path
 
 obt.path.prefix().mkdir(parents=True,exist_ok=False)
 envsetup.lazyMakeDirs()
-envsetup.genBashRc(obt_config._stage_dir/".bashrc")
-envsetup.genLaunchScript(out_path=obt_config._stage_dir/"obt-launch-env")
+envsetup.genBashRc(obt_config.stage_dir/".bashrc")
+envsetup.genLaunchScript(out_path=obt_config.stage_dir/"obt-launch-env")
 
 initializeDependencyEnvironments(envsetup)
 importProject(obt_config)
