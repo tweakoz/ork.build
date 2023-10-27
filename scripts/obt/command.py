@@ -42,13 +42,14 @@ class Command:
                  do_log=True,
                  working_dir=None,
                  use_shell=False):
-
+        print(command_list)
         assert(type(command_list)==list)
         self.env = os.environ
         self.working_dir = working_dir
         for k in environment.keys():
             self.env[k]=str(environment[k])
         self.command_list = procargs(command_list)
+        print(self.command_list)
         self._do_log = do_log
         self._use_shell = use_shell
 
@@ -260,4 +261,12 @@ def subshell(directory=None,prompt=None,environment=dict()):
 
 cmd = Command 
 
-__all__ =   [ "Command", "cmd" ]
+class factory:
+  def __init__(self,prefix=[],wdir=None,do_log=True):
+    self._working_dir = wdir 
+    self._do_log = do_log
+    self._clprefix = prefix
+  def cmd(self,*args):
+    return Command(self._clprefix+list(args),working_dir=self._working_dir,do_log=self._do_log)
+
+__all__ =   [ "Command", "cmd","factory" ]

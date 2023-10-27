@@ -70,9 +70,11 @@ stage_dir = obt_config.stage_dir
 
 ###########################################
 
-initializeDependencyEnvironments(envsetup)
-#importProject(obt_config)
 obt_config.dump()
+print(sys.path)
+initializeDependencyEnvironments(envsetup)
+obt_config.dump()
+#importProject(obt_config)
 
 ###########################################
 if args["stagedir"]!=None:

@@ -431,9 +431,17 @@ def configFromCommandLine(parser_args=None):
     os.environ["OBT_ROOT"] = str(_genpath(_config.bin_pub_dir/".."))
 
   if _config.inplace:
+    scripts_dir = str(_genpath(_config.root_dir/"scripts")) 
     os.environ["OBT_BIN_PRIV_DIR"] = str(_genpath(_config.root_dir/"bin_priv"))
-    os.environ["OBT_SCRIPTS_DIR"] = str(_genpath(_config.root_dir/"scripts")) 
-    sys.path.append(str(_config.scripts_dir))
+    os.environ["OBT_SCRIPTS_DIR"] = scripts_dir     
+    sys.path = [scripts_dir]+sys.path
+    orig_pyth_path = os.environ["PYTHONPATH"].split(":")
+    orig_pyth_paths = [scripts_dir]
+    for x in orig_pyth_path:
+      if x != "":
+        orig_pyth_paths += [x]
+    print(orig_pyth_paths)
+    os.environ["PYTHONPATH"] = ":".join(orig_pyth_paths)
   else:
     for item in sys.path:
       if len(item):
@@ -443,6 +451,9 @@ def configFromCommandLine(parser_args=None):
         if try_scripts_dir.exists():
           os.environ["OBT_SCRIPTS_DIR"] = str(_genpath(try_scripts_dir))
           #sys.path.append(str(_config.scripts_dir))
+
+    do_path("PYTHONPATH","OBT_ORIGINAL_PYTHONPATH")
+
     os.environ["OBT_BIN_PRIV_DIR"] = str(_genpath(_config.root_dir/"obt"/"bin_priv"))
 
     do_path("PATH","OBT_ORIGINAL_PATH")
@@ -451,7 +462,6 @@ def configFromCommandLine(parser_args=None):
     
     #################################
 
-    do_path("PYTHONPATH","OBT_ORIGINAL_PYTHONPATH")
 
     pypath = []
 

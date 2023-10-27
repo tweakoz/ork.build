@@ -6,43 +6,37 @@
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
 from obt import dep, log, path, template
-from obt.command import Command
+from obt import command 
 ###############################################################################
 class pipewire(dep.StdProvider):
   name = "pipewire"
   def __init__(self):
     super().__init__(pipewire.name)
     self._builder = self.createBuilder(dep.CustomBuilder)
-    def cmd(cmd_l):
-      return Command(
-      cmd_l,
-      do_log=True,
-      working_dir=self.source_root)
-    def mcmd(cmd_l):
-        return cmd(["meson"]+cmd_l)
-    def ccmd(key,val):
-        c_str = "-D%s=%s"%(key,str(val))
-        return mcmd(["configure",".build",c_str])
-    self._builder._cleanbuildcommands = [mcmd(["setup",".build"])]
-    self._builder._incrbuildcommands += [ccmd("prefix",path.stage())]
-    self._builder._incrbuildcommands += [ccmd("systemd-user-service","disabled")]
-    self._builder._incrbuildcommands += [ccmd("session-managers","[]")]
-    self._builder._incrbuildcommands += [ccmd("udevrulesdir",path.stage()/"udevrules")]
-    self._builder._incrbuildcommands += [ccmd("dbus","disabled")]
-    self._builder._incrbuildcommands += [ccmd("alsa","enabled")]
-    self._builder._incrbuildcommands += [ccmd("libdir","lib")]
+
+    def configure_pw(key,val):
+      f2 = command.factory(prefix=["meson","configure",".build"],wdir=self.source_root)
+      self._builder._incrbuildcommands += [f2.cmd("-D%s=%s"%(key,str(val)))]
+
+    pw_meson = command.factory(prefix=["meson"],wdir=self.source_root)
+    self._builder._cleanbuildcommands = [pw_meson.cmd("setup",".build")]
+    configure_pw("prefix",path.stage())
+    configure_pw("systemd-user-service","disabled")
+    configure_pw("session-managers","['wireplumber']")
+    configure_pw("udevrulesdir",path.stage()/"udevrules")
+    configure_pw("dbus","enabled")
+    configure_pw("alsa","enabled")
+    configure_pw("libdir","lib")
     
     
     # systemd-system-unit-dir : /usr/lib/systemd/system
     # systemd-user-unit-dir   : /usr/lib/systemd/user
     # udevrulesdir : /lib/udev/rules.d
 
-    self._builder._incrbuildcommands += [mcmd(["configure",".build"])]
-    self._builder._incrbuildcommands += [mcmd(["compile","-C",".build"])]
-    self._builder._installcommands  = [mcmd(["install","-C",".build"])]
-    self._builder._installcommands += [cmd(["cp",
-                                            path.modules()/"misc"/"pipewire.conf",
-                                            path.stage()/"etc"/"pipewire.conf"])]
+    self._builder._incrbuildcommands += [pw_meson.cmd("configure",".build")]
+    if True:
+      self._builder._incrbuildcommands += [pw_meson.cmd("compile","-C",".build")]
+      self._builder._installcommands  = [pw_meson.cmd("install","-C",".build")]
 
     # PIPEWIRE_CONFIG_DIR=${OBT_STAGE}/etc pipewire
 
