@@ -7,7 +7,7 @@
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
 
-import os, sys, argparse, inspect, pathlib, multiprocessing, json, importlib
+import os, sys, argparse, inspect, pathlib, subprocess, multiprocessing, json, importlib
 Path = pathlib.Path
 
 ###########################################
@@ -420,6 +420,11 @@ def configFromCommandLine(parser_args=None):
   ########################
   # cache exterior env vars
   ########################
+  def do_path(a,b):
+    if env_is_set(a):
+      os.environ[b] = os.environ[a] 
+    else:
+      os.environ[b] = ""
 
   if not env_is_set("OBT_ROOT"):
     os.environ["OBT_BIN_PUB_DIR"] = str(_directoryOfInvokingModule())
@@ -440,18 +445,10 @@ def configFromCommandLine(parser_args=None):
           #sys.path.append(str(_config.scripts_dir))
     os.environ["OBT_BIN_PRIV_DIR"] = str(_genpath(_config.root_dir/"obt"/"bin_priv"))
 
-
-    def do_path(a,b):
-      if env_is_set(a):
-        os.environ[b] = os.environ[a] 
-      else:
-        os.environ[b] = ""
-
     do_path("PATH","OBT_ORIGINAL_PATH")
     do_path("LD_LIBRARY_PATH","OBT_ORIGINAL_LD_LIBRARY_PATH")
     do_path("PS1","OBT_ORIGINAL_PS1")
-    do_path("PKG_CONFIG_PATH","OBT_ORIGINAL_PKG_CONFIG_PATH")
-
+    
     #################################
 
     do_path("PYTHONPATH","OBT_ORIGINAL_PYTHONPATH")
@@ -480,6 +477,18 @@ def configFromCommandLine(parser_args=None):
         os.environ["OBT_ORIGINAL_PKG_CONFIG"] = str(orig_pkg_config)
       else:
         assert(False)
+
+  if("PKG_CONFIG_PATH" not in os.environ):
+    pkg_config_result = subprocess.run(["pkg-config", "--variable=pc_path", "pkg-config"], capture_output=True, text=True)
+    pkg_config_paths = []
+    if pkg_config_result.returncode == 0:
+      pkg_config_paths = pkg_config_result.stdout.strip().split(':')
+      print(pkg_config_paths)
+      os.environ["OBT_ORIGINAL_PKG_CONFIG_PATH"] = ":".join(pkg_config_paths)
+      os.environ["PKG_CONFIG_PATH"] = ":".join(pkg_config_paths)
+      print(os.environ)
+  else:
+    do_path("PKG_CONFIG_PATH","OBT_ORIGINAL_PKG_CONFIG_PATH")
 
   ########################
   # stage dir
@@ -597,7 +606,7 @@ def configFromCommandLine(parser_args=None):
     obt.env.prepend("PKG_CONFIG_PATH",_config.stage_dir/"lib"/"pkgconfig")
     obt.env.prepend("PKG_CONFIG_PATH",_config.stage_dir/"lib64"/"pkgconfig")
     #obt.env.prepend("PYTHONPATH",_config.stage_dir/"lib"/"python")
-
+    print(os.environ)
     ########################
 
     if _config.project_dir!=_config.root_dir:
