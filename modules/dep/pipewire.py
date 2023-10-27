@@ -29,6 +29,9 @@ class pipewire(dep.StdProvider):
     self._builder._incrbuildcommands += [ccmd("session-managers","[]")]
     self._builder._incrbuildcommands += [ccmd("udevrulesdir",path.stage()/"udevrules")]
     self._builder._incrbuildcommands += [ccmd("dbus","disabled")]
+    self._builder._incrbuildcommands += [ccmd("alsa","enabled")]
+    self._builder._incrbuildcommands += [ccmd("libdir","lib")]
+    
     
     # systemd-system-unit-dir : /usr/lib/systemd/system
     # systemd-user-unit-dir   : /usr/lib/systemd/user
