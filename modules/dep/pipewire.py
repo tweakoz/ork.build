@@ -20,10 +20,22 @@ class pipewire(dep.StdProvider):
       working_dir=self.source_root)
     def mcmd(cmd_l):
         return cmd(["meson"]+cmd_l)
+    def ccmd(key,val):
+        c_str = "-D%s='%s'"%(key,val)
+        return mcmd(["configure",".build",c_str])
     self._builder._cleanbuildcommands = [mcmd(["setup",".build"])]
-    self._builder._incrbuildcommands = [mcmd(["configure",".build",("-Dprefix=%s"%path.stage())])]
+    self._builder._incrbuildcommands = [ccmd("prefix",path.stage())]
+    self._builder._incrbuildcommands = [ccmd("systemd-user-service","disabled")]
+    self._builder._incrbuildcommands = [ccmd("session-managers","[]")]
+    
+
+    # systemd-system-unit-dir : /usr/lib/systemd/system
+    # systemd-user-unit-dir   : /usr/lib/systemd/user
+    # udevrulesdir : /lib/udev/rules.d
+
     self._builder._incrbuildcommands = [mcmd(["configure",".build"])]
-    self._builder._installcommands = []
+    #self._builder._incrbuildcommands = [mcmd(["compile","-C",".build"])]
+    #self._builder._installcommands = [mcmd(["install","-C",".build"])]
 
   ########################################################################
   @property
