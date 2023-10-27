@@ -6,20 +6,24 @@
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
 from obt import dep, log, path, template
+from obt.command import Command
 ###############################################################################
 class pipewire(dep.StdProvider):
   name = "pipewire"
   def __init__(self):
     super().__init__(pipewire.name)
-    self.declareDep("cmake")
-    self._builder = self.createBuilder(dep.CMakeBuilder)
-    self._builder._cmakeenv = {
-      "CMAKE_CXX_STANDARD": "17",
-      "PXR_ENABLE_PYTHON_SUPPORT": "OFF",
-      "BOOST_ROOT": path.stage(),
-      "Boost_NO_SYSTEM_PATHS": "ON",
-      #"Boost_DEBUG":"ON"
-    }
+    self._builder = self.createBuilder(dep.CustomBuilder)
+    def cmd(cmd_l):
+      return Command(
+      cmd_l,
+      do_log=True,
+      working_dir=self.source_root)
+    def mcmd(cmd_l):
+        return cmd(["meson"]+cmd_l)
+    self._builder._cleanbuildcommands = [mcmd(["setup",".build"])]
+    self._builder._incrbuildcommands = [mcmd(["configure",".build",("-Dprefix=%s"%path.stage())])]
+    self._builder._incrbuildcommands = [mcmd(["configure",".build"])]
+    self._builder._installcommands = []
 
   ########################################################################
   @property
