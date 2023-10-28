@@ -16,7 +16,7 @@ command.run(["cp",
 ############################################
 def thread_pipewire_daemon():
  environ = {
-  "PIPEWIRE_DEBUG": "0",
+  "PIPEWIRE_DEBUG": "3",
   "PIPEWIRE_CONFIG_DIR": path.stage()/"etc"
  }
  command.run(["pipewire"],environment=environ)
