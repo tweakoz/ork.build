@@ -14,12 +14,17 @@ class pipewire(dep.StdProvider):
     super().__init__(pipewire.name)
     self._builder = self.createBuilder(dep.CustomBuilder)
 
+    pw_meson = command.factory(prefix=["meson"],wdir=self.source_root)
+    self._builder._cleanbuildcommands = [pw_meson.cmd("setup",".build")]
+
+    ###########################
+    # configure pipewire
+    ###########################
+
     def configure_pw(key,val):
       f2 = command.factory(prefix=["meson","configure",".build"],wdir=self.source_root)
       self._builder._incrbuildcommands += [f2.cmd("-D%s=%s"%(key,str(val)))]
 
-    pw_meson = command.factory(prefix=["meson"],wdir=self.source_root)
-    self._builder._cleanbuildcommands = [pw_meson.cmd("setup",".build")]
     configure_pw("prefix",path.stage())
     configure_pw("systemd-user-service","disabled")
     configure_pw("session-managers","['wireplumber']")
@@ -28,7 +33,18 @@ class pipewire(dep.StdProvider):
     configure_pw("alsa","enabled")
     #configure_pw("pipewire-alsa","enabled")
     configure_pw("libdir","lib")
-    
+
+    ###########################
+    # configure wireplumber
+    ###########################
+
+    def configure_wp(key,val):
+      f2 = command.factory(prefix=["meson","configure",".build"],wdir=self.source_root)
+      self._builder._incrbuildcommands += [f2.cmd("-Dwireplumber:%s=%s"%(key,str(val)))]
+
+    configure_wp("elogind","disabled")
+
+    ###########################
     
     # systemd-system-unit-dir : /usr/lib/systemd/system
     # systemd-user-unit-dir   : /usr/lib/systemd/user

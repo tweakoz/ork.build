@@ -32,7 +32,7 @@ time.sleep(3)
 #                           do_log=True)
 #print(play_cmd.command_list)
 #play_cmd.exec(use_shell=False)
-print("in another shell, run pw-play %s" % wav_path)
+#print("in another shell, run pw-play %s" % wav_path)
 ############################################
 thr1.join()
 thr2.join()
