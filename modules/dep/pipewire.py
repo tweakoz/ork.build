@@ -24,8 +24,9 @@ class pipewire(dep.StdProvider):
     configure_pw("systemd-user-service","disabled")
     configure_pw("session-managers","['wireplumber']")
     configure_pw("udevrulesdir",path.stage()/"udevrules")
-    configure_pw("dbus","enabled")
+    configure_pw("dbus","disabled")
     configure_pw("alsa","enabled")
+    #configure_pw("pipewire-alsa","enabled")
     configure_pw("libdir","lib")
     
     

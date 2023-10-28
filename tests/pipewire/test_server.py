@@ -5,10 +5,6 @@ import threading, time
 
 this_dir = path.directoryOfInvokingModule()
 
-wav_path = wget.wget(urls=["https://www2.cs.uic.edu/~i101/SoundFiles/ImperialMarch60.wav"],
-                     output_name=path.temp()/"sound.wav",
-                     md5val="4f4ce82317b15ee9cebc9b75c90509c0")
-
 command.run(["cp",
              this_dir/"pipewire.conf",
              path.stage()/"etc"/"pipewire.conf"])
@@ -31,7 +27,6 @@ thr2.start()
 time.sleep(3)
 ############################################
 #print("STARTING SOUND... %s"%wav_path)
-#assert(wav_path!=None)  
 #print(wav_path)
 #play_cmd = command.Command(["pw-play",str(wav_path)],
 #                           do_log=True)
