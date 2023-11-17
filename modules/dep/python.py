@@ -206,7 +206,7 @@ class python_from_source(dep.Provider):
        print(sdkdir)
        #options += ["--enable-universalsdk=%s"%sdkdir]
 
-       sslpath = macos_homebrew.prefix_for_package("openssl@1.1")
+       sslpath = macos_homebrew.prefix_for_package("openssl@3")
        print(sslpath)
  
        xzpath = macos_homebrew.prefix_for_package("xz")

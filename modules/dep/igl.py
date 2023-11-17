@@ -39,6 +39,7 @@ class igl(dep.StdProvider):
     if host.IsOsx or host.IsAARCH64: # sadly mac igl-embree support is broken..
       # https://github.com/libigl/libigl/issues/1302
       self._builder.setCmVar("LIBIGL_WITH_EMBREE","OFF")
+      self._builder.setCmVar("CMAKE_EXE_LINKER_FLAGS","-ld_classic")
 
     self._builder._parallelism = 0.5 # prevent out of memory..
 
@@ -63,7 +64,7 @@ class igl(dep.StdProvider):
   ########################################################################
   @property
   def revision(self):
-    return "master"
+    return "toz-v2.5.0"
   ########################################################################
   @property
   def _fetcher(self):

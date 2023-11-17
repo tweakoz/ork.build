@@ -8,7 +8,7 @@
 from obt import dep, command, pathtools, path, host
 ###############################################################################
 class rapidjson(dep.StdProvider):
-  VERSION ="master"
+  VERSION ="toz-master"
   NAME = "rapidjson"
   def __init__(self):
     super().__init__(rapidjson.NAME)

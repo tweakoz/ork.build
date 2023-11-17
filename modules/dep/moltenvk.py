@@ -27,7 +27,7 @@ class moltenvk(dep.Provider):
     self.build_dest = path.builds()/"moltenvk"/".build"
     self.manifest = path.manifests()/"moltenvk"
     self.OK = self.manifest.exists()
-    self._archlist = ["x86_64"]
+    #self._archlist = ["x86_64"]
     self._oslist = ["Darwin"]
     self.sdk_dir = self.source_root/"Package"/"Latest"/"MoltenVK"
     self.build_lib_dir = self.sdk_dir/"dylib"/"macOS"
