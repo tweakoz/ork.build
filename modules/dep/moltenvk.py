@@ -64,7 +64,7 @@ class moltenvk(dep.Provider):
            "-configuration", '"Debug"']
     ok = (0 == command.system(cmd))
     if ok:
-      cmd = ["cp",self.build_lib_dir/"libMoltenVk.dylib",path.libs()/"libvulkan.1.dylib"]
+      cmd = ["cp",self.build_lib_dir/"libMoltenVk.dylib",path.libs()/"libMoltenVk.dylib"]
       ok = (0 == command.system(cmd))
       if ok:
         cmd = ["cp","-r","Package/Latest/MoltenVK/include/*",path.includes()]
