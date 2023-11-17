@@ -25,6 +25,8 @@ class hostinfo:
       self.codename = "monterey"
     if(sliced==13):
       self.codename = "ventura"
+    if(sliced==14):
+      self.codename = "sonoma"
     ###################################
     x86_64_macos = target.descriptor('x86_64','macos')
     aarch64_macos = target.descriptor('aarch64','macos')
