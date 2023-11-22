@@ -53,7 +53,7 @@ def directoryOfInvokingModule(the_file=None):
     module = inspect.getmodule(frame[0])
     if module:
       this_path = os.path.realpath(module.__file__)
-      return obt.path.Path(os.path.dirname(this_path))
+      return Path(os.path.dirname(this_path))
     else:
       assert(False)
   else:
