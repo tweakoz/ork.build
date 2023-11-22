@@ -46,14 +46,19 @@ def fileOfInvokingModule():
   else:
       assert(False)
 
-def directoryOfInvokingModule():
-  frame = inspect.stack()[1]
-  module = inspect.getmodule(frame[0])
-  if module:
-    this_path = os.path.realpath(module.__file__)
-    return Path(os.path.dirname(this_path))
-  else:
+def directoryOfInvokingModule(the_file=None):
+  if(the_file==None):
+    import inspect
+    frame = inspect.stack()[1]
+    module = inspect.getmodule(frame[0])
+    if module:
+      this_path = os.path.realpath(module.__file__)
+      return obt.path.Path(os.path.dirname(this_path))
+    else:
       assert(False)
+  else:
+    this_path = os.path.realpath(the_file)
+    return obt.path.Path(os.path.dirname(this_path))
 
 ###############################################################################
 
