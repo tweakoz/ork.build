@@ -58,7 +58,7 @@ def directoryOfInvokingModule(the_file=None):
       assert(False)
   else:
     this_path = os.path.realpath(the_file)
-    return obt.path.Path(os.path.dirname(this_path))
+    return Path(os.path.dirname(this_path))
 
 ###############################################################################
 
