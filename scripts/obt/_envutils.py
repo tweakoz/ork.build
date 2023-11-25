@@ -59,6 +59,16 @@ class EnvSetup:
     obt.path.gitcache().mkdir(parents=True,exist_ok=True)
     obt.path.apps().mkdir(parents=True,exist_ok=True)
     obt.path.buildlogs().mkdir(parents=True,exist_ok=True)
+    # create symlink to default python
+    if not (obt.path.prefix()/"bin/python").exists():
+      if obt.host.IsOsx:
+        if obt.host.IsAppleSilicon:
+          os.system("ln -s /opt/local/bin/python3 %s" % str(obt.path.prefix()/"bin/os-python"))
+        else:
+          os.system("ln -s /usr/local/bin/python3 %s" % str(obt.path.prefix()/"bin/os-python"))
+      else:
+        os.system("ln -s /usr/bin/python3 %s" % str(obt.path.prefix()/"bin/os-python"))
+
   ###########################################
   def genLaunchScript(self,out_path=None,subspace=None):
     numcores = int(os.environ["OBT_NUM_CORES"])

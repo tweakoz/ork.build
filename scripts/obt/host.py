@@ -18,7 +18,7 @@ IsIx = IsLinux or IsOsx or IsIrix
 IsX86_64 = platform.machine()=="x86_64"
 IsAARCH64 = (platform.machine()=="aarch64") or (platform.machine()=="arm64")
 IsX86_32 = platform.machine()=="i686"
-
+IsAppleSilicon = IsAARCH64 and IsDarwin
 file_path = os.path.realpath(__file__)
 this_dir = pathlib.Path(os.path.dirname(file_path))
 
