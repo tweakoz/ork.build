@@ -401,7 +401,7 @@ def configFromCommandLine(parser_args=None):
   if IS_ARG_SET("inplace") and parser_args["inplace"]:
     os.environ["OBT_INPLACE"] = "1"
 
-  if IS_ARG_SET("quiet"):
+  if IS_ARG_SET("quiet") and parser_args["quiet"]:
     os.environ["OBT_QUIET"] = "1"
 
   if IS_ARG_SET("numcores"):
