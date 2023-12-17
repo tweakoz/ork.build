@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 import glob, os
 import platform
 
-version = "0.0.128"
+version = "0.0.129"
 
 ###############################################################################
 
@@ -58,6 +58,8 @@ setup(
         'yarl',
         'toposort',
         'os-release',
-        'distro'
+        'distro',
+        "twine",
+        "build"
     ],
     )

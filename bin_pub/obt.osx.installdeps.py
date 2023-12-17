@@ -2,13 +2,14 @@
 
 import os
 
-deplist =  ["cmake","wget","curl","libtiff","libpng", "git-lfs"]
+deplist =  ["pkgconfig","cmake","wget","curl","libtiff","libpng", "git-lfs"]
 deplist += ["portaudio","audiofile","m4","bison","flex","xz"]
-deplist += ["scons","zlib","tbb", "glew","boost","flac","libsndfile"]
+deplist += ["scons","zlib","tbb", "glew","flac","libsndfile"]
 deplist += ["mpfr","openssl","graphviz","doxygen","swig","tcl-tk"]
 deplist += ["pyqt5","qt5"]
 
 depliststr = " ".join(deplist)
 os.system("brew install %s" % depliststr)
+os.system("brew remove boost")
 
-os.system("/usr/local/bin/python3 -m pip install --upgrade setuptools")
+os.system("python3 -m pip install --upgrade setuptools")

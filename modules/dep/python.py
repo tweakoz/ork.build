@@ -190,7 +190,6 @@ class python_from_source(dep.Provider):
     options = [
         "--prefix",self.home_dir,
         "--with-system-ffi",
-        "--enable-shared",
         #"--enable-loadable-sqlite-extensions",
         "--with-ensurepip=install" # atomically build pip
     ]
@@ -213,10 +212,13 @@ class python_from_source(dep.Provider):
        print(xzpath)
  
        options += ["--with-openssl=%s"%sslpath]
+       #options += ["--enable-framework"]
+       options += ["--enable-shared"]
         #export LDFLAGS="-L$(brew --prefix xz)/lib $LDFLAGS";  export CPPFLAGS="-I$(brew --prefix xz)/include $CPPFLAGS";  export PKG_CONFIG_PATH="$(brew --prefix xz)/lib/pkgconfig:$PKG_CONFIG_PATH"
 
     else:
        options += ["--with-openssl=/usr"]
+       options += ["--enable-shared"]
 
     Command(["../configure"]+options).exec()
     OK = (0==Command(["make",

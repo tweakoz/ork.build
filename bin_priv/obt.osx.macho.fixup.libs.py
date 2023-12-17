@@ -31,18 +31,18 @@ if _args["alllibs"]!=False:
   do_boost()
 
 if _args["orklibs"]!=False:
-  for item in pathtools.patglob(path.stage()/"lib","libork*.dylib"):
+  for item in macos.enumerateOrkLibs(path.stage()/"lib"):
     macos.macho_replace_loadpaths(item,"@executable_path/../lib","@rpath")
     macos.macho_dump(item)
 
 if _args["orkpymods"]!=False:
   PYTHON = dep.instance("python")
 
-  for item in pathtools.patglob(PYTHON.site_packages_dir/"orkengine"/"core","*.so"):
+  for item in macos.enumerateOrkPyMods(PYTHON.site_packages_dir/"orkengine"/"core"):
     macos.macho_replace_loadpaths(item,"@executable_path/../lib","@rpath")
     macos.macho_dump(item)
 
-  for item in pathtools.patglob(PYTHON.site_packages_dir/"orkengine"/"lev2","*.so"):
+  for item in macos.enumerateOrkPyMods(PYTHON.site_packages_dir/"orkengine"/"lev2"):
     macos.macho_replace_loadpaths(item,"@executable_path/../lib","@rpath")
     macos.macho_dump(item)
 
