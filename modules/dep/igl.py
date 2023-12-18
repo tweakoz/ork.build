@@ -36,7 +36,7 @@ class igl(dep.StdProvider):
       self._builder.setCmVar(key,val)
 
     #self._builder.setCmVar("CMAKE_MODULE_PATH",module_path)
-    if host.IsOsx or host.IsAARCH64: # sadly mac igl-embree support is broken..
+    if host.IsAppleSilicon: # sadly mac igl-embree support is broken..
       # https://github.com/libigl/libigl/issues/1302
       self._builder.setCmVar("LIBIGL_WITH_EMBREE","OFF")
       self._builder.setCmVar("CMAKE_EXE_LINKER_FLAGS","-ld_classic")
