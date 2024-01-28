@@ -4,14 +4,19 @@ import os, distro
 
 UBUNTU_VERSION = int(float(distro.version())*100.0)
 
+print(UBUNTU_VERSION)
 os.system("sudo update-alternatives --install /usr/bin/python python /usr/bin/python3 1")
 
 deplist = []
 
-if UBUNTU_VERSION <= 2004:
+if UBUNTU_VERSION >= 2310:
+  deplist =  ["clang-17"]
+elif UBUNTU_VERSION <= 2004:
   deplist =  ["gcc-8","g++-8","python-dev"] # not avail in ub22
+else:
+  deplist += ["clang-12"]
 
-deplist += ["libboost-dev","gcc-9","g++-9","gcc-10","g++-10","clang-12","clang","clang-format"]
+deplist += ["libboost-dev","gcc-9","g++-9","gcc-10","g++-10","clang","clang-format"]
 deplist += ["g++-12","gfortran"] # https://askubuntu.com/questions/1441844/todays-ubuntu-22-04-updates-seem-to-break-clang-compiler
 deplist += ["libboost-filesystem-dev","libboost-system-dev","libboost-thread-dev"]
 deplist += ["libboost-program-options-dev","libftdi-dev", "libfmt-dev"]
