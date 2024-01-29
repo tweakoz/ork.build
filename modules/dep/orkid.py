@@ -152,7 +152,7 @@ class orkid(dep.StdProvider):
       deplist += ["rtmidi"]
       if host.IsX86_64:
         deplist += ["openvr"]
-        deplist += ["nvtt"]
+        #deplist += ["nvtt"]
     elif host.IsDarwin:
       deplist += ["moltenvk"]
 

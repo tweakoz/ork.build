@@ -40,7 +40,7 @@ class ffmpeg(dep.StdProvider):
   ########################################################################
   @property
   def revision(self):
-    return "n5.1.3"
+    return "n6.1.1"
   ########################################################################
   @property
   def _fetcher(self):

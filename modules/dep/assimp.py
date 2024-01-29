@@ -5,7 +5,7 @@
 # The Orkid Build System is published under the GPL 2.0 license
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
-from obt import dep, command, pathtools, path, host
+from obt import dep, command, pathtools, path, host, osrelease
 ###############################################################################
 class assimp(dep.StdProvider):
   name = "assimp"
@@ -19,7 +19,11 @@ class assimp(dep.StdProvider):
     if host.IsDarwin:
       self._builder.setCmVar("CMAKE_CXX_FLAGS","-Wno-deprecated-declarations")
     else:
+      desc = osrelease.descriptor()
       self._builder.setCmVar("CMAKE_CXX_FLAGS","-Wno-maybe-uninitialized")
+      if desc.version_id == "23.10":
+        self._builder.setCmVar("CMAKE_CXX_COMPILER","g++-11")
+        self._builder.setCmVar("CMAKE_CMAKE_C_COMPILER","gcc-11")
   ########################################################################
   @property
   def _fetcher(self):

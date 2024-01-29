@@ -5,10 +5,10 @@
 # The Orkid Build System is published under the GPL 2.0 license
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
-from obt import dep, log, path, host, env
+from obt import dep, log, path, host, env, osrelease
 from obt.command import Command
 ###############################################################################
-SRC_VERSION = "v2021.8.0"
+SRC_VERSION = "v2021.11.0"
 NAME = "tbb"
 class _tbb_from_source(dep.StdProvider):
   def __init__(self):
@@ -16,8 +16,14 @@ class _tbb_from_source(dep.StdProvider):
 
     self._builder = self.createBuilder(dep.CMakeBuilder)
     self._builder._cmakeenv = {
-      "BUILD_SHARED_LIBS": "ON"
+      "BUILD_SHARED_LIBS": "ON",
     }
+    
+    desc = osrelease.descriptor()
+    
+    if desc.version_id == "23.10" and host.IsLinux:
+      self._builder._cmakeenv["CMAKE_CXX_COMPILER"] = "g++-11"
+      self._builder._cmakeenv["CMAKE_CMAKE_C_COMPILERCXX_COMPILER"] = "gcc-11"
 
     #self._builder = self.createBuilder(dep.CustomBuilder)
     #build_dir = path.subspace_build_dir/"tbb"

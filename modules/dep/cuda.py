@@ -21,7 +21,9 @@ class cuda(dep.Provider):
   def cxx_compiler(self):
     if host.IsDebian:
       desc = host.description()
-      if desc.codename=="jammy":
+      if desc.codename=="mantic":
+        return "g++-12"
+      elif desc.codename=="jammy":
         return "g++-9"
       else:
         return "g++-8"
@@ -30,7 +32,9 @@ class cuda(dep.Provider):
   def c_compiler(self):
     if host.IsDebian:
       desc = host.description()
-      if desc.codename=="jammy":
+      if desc.codename=="mantic":
+        return "gcc-12"
+      elif desc.codename=="jammy":
         return "gcc-9"
       else:
         return "gcc-8"

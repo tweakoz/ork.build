@@ -5,7 +5,7 @@
 # The Orkid Build System is published under the GPL 2.0 license
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
-from obt import dep, command, pathtools, path, host
+from obt import dep, command, pathtools, path, host, osrelease
 ###############################################################################
 class rapidjson(dep.StdProvider):
   VERSION ="toz-master"
@@ -28,8 +28,14 @@ class rapidjson(dep.StdProvider):
           "CMAKE_CXX_FLAGS": "-Wno-deprecated-declarations -Wno-deprecated-copy-with-user-provided-copy"
         })
     else:
+      desc = osrelease.descriptor()
+      if desc.version_id == "23.10":
+        self._builder.setCmVar("CMAKE_CXX_COMPILER","g++-10")
+        self._builder.setCmVar("CMAKE_CMAKE_C_COMPILER","gcc-10")
+        self._builder.setCmVar("RAPIDJSON_BUILD_CXX17","ON")
+        self._builder.setCmVar("RAPIDJSON_BUILD_CXX11","OFF")
       self._builder.setCmVars({
-        "CMAKE_CXX_FLAGS": "-Wno-stringop-overflow -Wno-array-bounds",
+        "CMAKE_CXX_FLAGS": "-Wno-stringop-overflow -Wno-array-bounds -std=c++17",
         "BUILD_EXAMPLES": "ON",
       })
   ########################################################################
