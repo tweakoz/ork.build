@@ -6,7 +6,7 @@
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
 
-from obt import dep, path
+from obt import dep, path, osrelease, host
 
 ###############################################################################
 
@@ -21,6 +21,10 @@ class depthaicore(dep.StdProvider):
       "DEPTHAI_BUILD_TESTS": "ON",
     	"DEPTHAI_BUILD_EXAMPLES": "OFF"
     }
+    desc = osrelease.descriptor()
+    if desc.version_id == "23.10" and host.IsLinux:
+      self._builder.setCmVar("CMAKE_CXX_COMPILER","g++-11")
+      self._builder.setCmVar("CMAKE_C_COMPILER","gcc-11")
 
 	# echo 'SUBSYSTEM=="usb", ATTRS{idVendor}=="03e7", MODE="0666"' | sudo tee /etc/udev/rules.d/80-movidius.rules
   # sudo udevadm control --reload-rules && sudo udevadm trigger
