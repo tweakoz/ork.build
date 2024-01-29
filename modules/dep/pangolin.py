@@ -6,7 +6,7 @@
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
 
-from obt import dep, host, command, path
+from obt import dep, host, command, path, osrelease
 
 ###############################################################################
 
@@ -25,6 +25,11 @@ class pangolin(dep.StdProvider):
     self._builder = self.createBuilder(dep.CMakeBuilder)
     self._builder.setCmVar("BUILD_PANGOLIN_LIBUVC","OFF")
     self._builder.setCmVar("BUILD_PANGOLIN_FFMPEG","OFF")
+    desc = osrelease.descriptor()
+   
+    if desc.version_id == "23.10" and host.IsLinux:
+      self._builder.setCmVar("CMAKE_CXX_COMPILER","g++-11")
+      self._builder.setCmVar("CMAKE_C_COMPILER","gcc-11")
     #################################################
   ########################################################################
   @property

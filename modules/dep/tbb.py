@@ -23,7 +23,7 @@ class _tbb_from_source(dep.StdProvider):
     
     if desc.version_id == "23.10" and host.IsLinux:
       self._builder._cmakeenv["CMAKE_CXX_COMPILER"] = "g++-11"
-      self._builder._cmakeenv["CMAKE_CMAKE_C_COMPILERCXX_COMPILER"] = "gcc-11"
+      self._builder._cmakeenv["CMAKE_C_COMPILER"] = "gcc-11"
 
     #self._builder = self.createBuilder(dep.CustomBuilder)
     #build_dir = path.subspace_build_dir/"tbb"

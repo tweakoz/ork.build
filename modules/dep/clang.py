@@ -52,7 +52,8 @@ class clang(dep.StdProvider):
       "bionic": "clang++-10",
       "buster": "clang++-13",
       "focal": "clang++-10",
-      "jammy": "clang++-12"
+      "jammy": "clang++-12",
+      "mantic": "clang++-17",
    }
    if host.IsLinux:
       return self.linux_bindir/ub_release[self.hostdesc.codename]
@@ -64,7 +65,8 @@ class clang(dep.StdProvider):
       "bionic": "clang-10",
       "buster": "clang-11",
       "focal": "clang-10",
-      "jammy": "clang-12"
+      "jammy": "clang-12",
+      "mantic": "clang-17",
    }   
    if host.IsLinux:
      return self.linux_bindir/ub_release[self.hostdesc.codename]
