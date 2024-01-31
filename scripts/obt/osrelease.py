@@ -63,13 +63,14 @@ def descriptorLinux():
 def descriptorMacos():
   try:
     import os_release
-    INFO = os_release.current_release()
-    print(INFO)
+    print(dir(os_release))
+    #INFO = os_release.current_release()
+    #print(INFO)
     osd = OsDescriptor()
     print(osd)
-    osd.id = INFO.id
-    osd.version_id = INFO.version_id
-    osd.version_codename = INFO.version_codename
+    #osd.id = INFO.id
+    #osd.version_id = INFO.version_id
+    #osd.version_codename = INFO.version_codename
     return osd
   except ModuleNotFoundError:
     try:
