@@ -128,7 +128,7 @@ MacOs will require a few deps to be installed first, such as homebrew and macos 
 ### To create an environment
 
 ```bash
-<ork.build>/bin_pub/obt.env.create.py --stagedir <staging_folder> --inplace
+obt.env.create.py --stagedir <staging_folder> --inplace
 ```
 
 Note that creating a staging environment will build a few core dependencies, such as python and a python virtual environment.
