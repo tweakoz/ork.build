@@ -266,7 +266,9 @@ class factory:
     self._working_dir = wdir 
     self._do_log = do_log
     self._clprefix = prefix
-  def cmd(self,*args):
-    return Command(self._clprefix+list(args),working_dir=self._working_dir,do_log=self._do_log)
+  def cmd(self,*args,extra_args=[]):
+    return Command( self._clprefix + list(args) + extra_args, #
+                    working_dir=self._working_dir, #
+                    do_log=self._do_log )
 
 __all__ =   [ "Command", "cmd","factory" ]
