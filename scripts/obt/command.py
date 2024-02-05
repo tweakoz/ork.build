@@ -42,14 +42,14 @@ class Command:
                  do_log=True,
                  working_dir=None,
                  use_shell=False):
-        print(command_list)
+        #print(command_list)
         assert(type(command_list)==list)
         self.env = os.environ
         self.working_dir = working_dir
         for k in environment.keys():
             self.env[k]=str(environment[k])
         self.command_list = procargs(command_list)
-        print(self.command_list)
+        #print(self.command_list)
         self._do_log = do_log
         self._use_shell = use_shell
 
