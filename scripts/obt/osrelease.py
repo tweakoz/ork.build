@@ -23,22 +23,22 @@ def descriptorLinux():
   try:
     import distro
     INFO = distro.name(), distro.version()
-    print(INFO)
-    print(dir(distro))
+    #print(INFO)
+    #print(dir(distro))
     osd = OsDescriptor()
     osd.id = distro.name()
     osd.version_id = distro.version()
     osd.version_codename = distro.codename()
-    print(osd)
+    #print(osd)
     #assert(False)
     return osd
   except ModuleNotFoundError:
     try:
       import os_release
       INFO = os_release.current_release()
-      print(INFO)
+      #print(INFO)
       osd = OsDescriptor()
-      print(osd)
+      #print(osd)
       osd.id = INFO.id
       osd.version_id = INFO.version_id
       osd.version_codename = INFO.version_codename
@@ -47,7 +47,7 @@ def descriptorLinux():
       try:
         import lsb_release
         INFO = lsb_release.get_os_release()
-        print(INFO)
+        #print(INFO)
         osd = OsDescriptor()
         osd.id = INFO["ID"]
         osd.version_id = INFO["RELEASE"]
@@ -63,11 +63,11 @@ def descriptorLinux():
 def descriptorMacos():
   try:
     import os_release
-    print(dir(os_release))
+    #print(dir(os_release))
     #INFO = os_release.current_release()
     #print(INFO)
     osd = OsDescriptor()
-    print(osd)
+    #print(osd)
     #osd.id = INFO.id
     #osd.version_id = INFO.version_id
     #osd.version_codename = INFO.version_codename
@@ -76,12 +76,12 @@ def descriptorMacos():
     try:
       import lsb_release
       INFO = lsb_release.get_os_release()
-      print(INFO)
+      #print(INFO)
       osd = OsDescriptor()
       osd.id = INFO["ID"]
       osd.version_id = INFO["RELEASE"]
       osd.version_codename = INFO["CODENAME"]
-      print(osd)
+      #print(osd)
       return osd
     except ModuleNotFoundError:
       print("python module 'lsb_release' or 'os_release' is not installed")
