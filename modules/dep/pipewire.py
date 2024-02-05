@@ -39,7 +39,8 @@ class pipewire(dep.StdProvider):
                           wdir=self.source_root #
                         )
 
-    self._builder._incrbuildcommands += [f2.cmd(extra_args=meson_args)]
+    #self._builder._incrbuildcommands += [f2.cmd(extra_args=meson_args)]
+    self._builder._cleanbuildcommands += [f2.cmd(extra_args=meson_args)]
     
     ######################
 
