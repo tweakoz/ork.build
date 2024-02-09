@@ -189,7 +189,6 @@ class python_from_source(dep.Provider):
     os.chdir(str(build_temp))
     options = [
         "--prefix",self.home_dir,
-        "--with-system-ffi",
         #"--enable-loadable-sqlite-extensions",
         "--with-ensurepip=install" # atomically build pip
     ]
@@ -215,8 +214,9 @@ class python_from_source(dep.Provider):
        #options += ["--enable-framework"]
        options += ["--enable-shared"]
         #export LDFLAGS="-L$(brew --prefix xz)/lib $LDFLAGS";  export CPPFLAGS="-I$(brew --prefix xz)/include $CPPFLAGS";  export PKG_CONFIG_PATH="$(brew --prefix xz)/lib/pkgconfig:$PKG_CONFIG_PATH"
-
+      
     else:
+       options += ["--with-system-ffi"]
        options += ["--with-openssl=/usr"]
        options += ["--enable-shared"]
 
