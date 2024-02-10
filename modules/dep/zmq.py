@@ -21,6 +21,14 @@ class zmq(dep.StdProvider):
     self._builder = self.createBuilder(dep.CMakeBuilder)
     if host.IsDarwin:
       self._builder.setCmVar("WITH_TLS","OFF")
+      libpath = path.libs()/"libzmq.5.dylib"
+      def postInstall():
+        from obt import macos
+        from obt.deco import Deco
+        deco = Deco()
+        print(deco.inf("Macos fixup dll installname for %s"% str(libpath)))
+        macos.macho_change_id(libpath,"@rpath/libzmq.5.dylib")
+      self._builder._onPostInstall = postInstall
   ########################################################################
   def __str__(self): 
     return "zeromq (github-%s)" % VERSION
