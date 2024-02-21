@@ -4,7 +4,7 @@ from obt import dep, path, pathtools, command
 ###############################################################################
 
 class dspstretch(dep.StdProvider):
-  VERSION = "main"
+  VERSION = "c315378"
   name = "dspstretch"
   def __init__(self):
     build_dir = path.builds()/dspstretch.name
