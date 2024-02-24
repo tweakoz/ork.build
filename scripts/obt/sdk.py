@@ -16,20 +16,30 @@ this_dir = pathlib.Path(os.path.dirname(file_path))
 
 ###############################################################################
 
+_descriptors = {}
+
 def descriptor(architecture,osname):
-  import obt.module
-  import obt.path
-  identifier = "%s-%s" % (architecture,osname)
-  hi_name = obt.path.modules()/"sdk"
-  hi_name = hi_name / ("%s.py"%identifier)
-  the_module = obt.module.instance(identifier,hi_name)
-  if the_module != None:
-    hostident = obt.host.description().identifier
-    if hasattr(the_module,"sdkinfo"):
-      sdkinfo = the_module.sdkinfo()
-      if hostident in sdkinfo.supports_host:
-        return sdkinfo
-  return None
+  global _descriptors
+  rval = None
+  hash = "%s-%s" % (architecture,osname)
+  if hash in _descriptors:
+    rval = _descriptors[hash]
+  else:  
+    import obt.module
+    import obt.path
+    identifier = "%s-%s" % (architecture,osname)
+    hi_name = obt.path.modules()/"sdk"
+    hi_name = hi_name / ("%s.py"%identifier)
+    the_module = obt.module.instance(identifier,hi_name)
+    if the_module != None:
+      hostident = obt.host.description().identifier
+      if hasattr(the_module,"sdkinfo"):
+        sdkinfo = the_module.sdkinfo()
+        if hostident in sdkinfo.supports_host:
+          _descriptors[hash] = sdkinfo
+          rval = sdkinfo
+    _descriptors[hash] = rval
+  return rval
 
 ###############################################################################
 

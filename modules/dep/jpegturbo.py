@@ -10,9 +10,8 @@ from obt import dep, log, path
 class jpegturbo(dep.StdProvider):
   name = "jpegturbo"
   def __init__(self):
-    super().__init__(jpegturbo.name)
+    super().__init__(jpegturbo.name,subspace_vif=2)
     self._builder = self.createBuilder(dep.CMakeBuilder)
-
   ########################################################################
   @property
   def _fetcher(self):

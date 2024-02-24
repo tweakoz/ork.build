@@ -318,6 +318,8 @@ def builds():
   staging = Path(os.environ["OBT_STAGE"])
   return staging/"builds"
 
+def subspace_builds():
+  return subspace_dir()/"builds"
 
 def orkid():
   orkroot = Path(os.environ["ORKID_WORKSPACE_DIR"])
