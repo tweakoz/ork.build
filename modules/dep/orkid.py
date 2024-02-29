@@ -138,6 +138,8 @@ class orkid(dep.StdProvider):
     deplist += ["sigslot"]
     deplist += ["openblas"]
     deplist += ["igl"]
+    deplist += ["dsp"]
+    deplist += ["dspstretch"]
     #deplist += ["libsurvive"]
 
     if host.IsX86_64:
