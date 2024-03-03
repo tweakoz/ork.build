@@ -10,6 +10,7 @@
 
 import os, sys, pathlib, argparse, string
 import obt.target
+import obt.sdk
 
 parser = argparse.ArgumentParser(description='obt.build target information')
 parser.add_argument('target', metavar='T', type=str, help='a target you want information on')
@@ -26,8 +27,10 @@ target_arch = targetid.split('-')[0]
 target_os = targetid.split('-')[1]
 
 T = obt.target.descriptor(target_arch,target_os)
-
-SDK = T.sdk  
+SDK = obt.sdk.descriptor(target_arch,target_os)
+print(T)
+print(SDK)
+#SDK = T.sdk  
 
 from obt import dep, path
 from obt.deco import Deco

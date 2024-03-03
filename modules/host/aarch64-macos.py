@@ -7,7 +7,7 @@
 ###############################################################################
 
 import platform, multiprocessing
-from obt import target
+from obt import target, env
 
 class hostinfo:
   ###################################
@@ -43,6 +43,11 @@ class hostinfo:
 
     self.targets = targets
     self.target = aarch64_macos # host SDK
+
+  ###################################
+
+  def env_init(self):
+    env.set("OBT_TARGET", "aarch64-macos")
 
   ###################################
   @property

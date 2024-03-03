@@ -5,57 +5,33 @@ import obt.path
 import os
 import subprocess
 
-class _iossdk_private:
+class _xrossdk_private:
   def __init__(self):
     self._xcodesdkstr = obt.command.capture([
       "xcodebuild",
       "-version",
       "-sdk"])
-    self.has_iossdk15_2 = self._xcodesdkstr.find("(iphoneos15.2)")>0
-    self.has_iossdk15_5 = self._xcodesdkstr.find("(iphoneos15.5)")>0
-    self.has_iossdk17_0 = self._xcodesdkstr.find("(iphoneos17.0)")>0
-    print("has_iossdk15_2<%s>"%self.has_iossdk15_2)
-    print("has_iossdk15_5<%s>"%self.has_iossdk15_5)
-    print("has_iossdk17_0<%s>"%self.has_iossdk17_0)
-    if self.has_iossdk15_2:
-      self._iossdkver = "15.2"
-      self._iossdkstr = obt.command.capture([
+    self.has_xrosdk_1 = self._xcodesdkstr.find("(xrsimulator1.0)")>0
+    print("has_xrosdk_1<%s>"%self.has_xrosdk_1)
+    if self.has_xrosdk_1:
+      self._xrosdkver = "1.0"
+      self._xrosdkstr = obt.command.capture([
         "xcodebuild",
         "-version",
-        "-sdk", "iphoneos15.2",
-        "Path"],do_log=False).splitlines()
-      #obt.env.set("OBT_IOS_SDK","iphoneos15.2")
-      #obt.env.set("OBT_IOS_SDK_DIR",self._iossdkstr)
-    elif self.has_iossdk15_5:
-      self._iossdkver = "15.5"
-      self._iossdkstr = obt.command.capture([
-        "xcodebuild",
-        "-version",
-        "-sdk", "iphoneos15.5",
-        "Path"],do_log=False).splitlines()
-      #obt.env.set("OBT_IOS_SDK","iphoneos15.5")
-      #obt.env.set("OBT_IOS_SDK_DIR",self._iossdkstr)
-    elif self.has_iossdk17_0:
-      self._iossdkstr = obt.command.capture([
-        "xcodebuild",
-        "-version",
-        "-sdk", "iphoneos17.0",
-        "Path"],do_log=False).splitlines()[0]
-      self._iossdkver = "17.0"
-      #obt.env.set("OBT_IOS_SDK","iphoneos17.0")
-      #obt.env.set("OBT_IOS_SDK_DIR",a)
+        "-sdk", "xrsimulator1.0",
+        "Path"],do_log=False).splitlines()[0].strip("\"")
     try:
       # Use xcrun to find the path to clang for the current SDK
       clang_path = subprocess.check_output([
         "xcrun",
         "-find",
         "clang"
-      ], text=True).strip()
+      ], text=True).strip().strip("\"")
       clangpp_path = subprocess.check_output([
         "xcrun",
         "-find",
         "clang++"
-      ], text=True).strip()
+      ], text=True).strip().strip("\"")
 
       # Set environment variable for the compiler path
       self._clang_path = clang_path
@@ -74,31 +50,31 @@ class sdkinfo:
 
   #############################################
   def __init__(self):
-    self.identifier = "aarch64-ios"
+    self.identifier = "aarch64-xros"
     self.architecture = "aarch64"
-    self.os = "ios"
+    self.os = "xrossim"
     self.c_compiler = "clang"
     self.cxx_compiler = "clang++"
     self.supports_host = ["x86_64-macos","aarch64-macos"]
   #############################################
   @property
   def sdkdir(self):
-    return obt.path.Path(os.environ["OBT_IOS_SDK_DIR"])
+    return obt.path.Path(os.environ["OBT_XROS_SDK_DIR"])
   @property
   def _sdkdir(self):
-    IOS_SDK = _iossdk_private()
-    return IOS_SDK._iossdkstr
+    IOS_SDK = _xrossdk_private()
+    return IOS_SDK._xrosdkstr
   @property
   def _sdkver(self):
-    IOS_SDK = _iossdk_private()
-    return IOS_SDK._iossdkver
+    IOS_SDK = _xrossdk_private()
+    return IOS_SDK._xrosdkver
   @property
   def _clang_path(self):
-    IOS_SDK = _iossdk_private()
+    IOS_SDK = _xrossdk_private()
     return IOS_SDK._clang_path
   @property
   def _clangpp_path(self):
-    IOS_SDK = _iossdk_private()
+    IOS_SDK = _xrossdk_private()
     return IOS_SDK._clang_path
   #############################################
   def misc(self):
