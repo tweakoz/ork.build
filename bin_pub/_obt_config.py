@@ -448,7 +448,9 @@ def configFromCommandLine(parser_args=None):
     os.environ["OBT_BIN_PRIV_DIR"] = str(_genpath(_config.root_dir/"bin_priv"))
     os.environ["OBT_SCRIPTS_DIR"] = scripts_dir     
     sys.path = [scripts_dir]+sys.path
-    orig_pyth_path = os.environ["PYTHONPATH"].split(":")
+    orig_pyth_path = []
+    if "PYTHONPATH" in os.environ:
+      orig_pyth_path = os.environ["PYTHONPATH"].split(":")
     orig_pyth_paths = [scripts_dir]
     for x in orig_pyth_path:
       if x != "":
