@@ -128,7 +128,10 @@ class CMakeBuilder(BaseBuilder):
     ##################################
     # default OSX stuff
     ##################################
-    if obt.host.IsOsx and macos_defaults:
+    if obt.target.is_ios:
+      self._cmakeenv.update({"CMAKE_HOST_SYSTEM_PROCESSOR":"arm64"})
+      self._cmakeenv.update({"CMAKE_TOOLCHAIN_FILE":path.subspace_dir()/"ios.toolchain.cmake"})
+    elif obt.target.is_macos and macos_defaults:
       sysroot_cmd = Command(["xcrun","--show-sdk-path"],do_log=False)
       sysroot = sysroot_cmd.capture().replace("\n","")
 

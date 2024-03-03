@@ -29,7 +29,7 @@ class ProviderScope(Enum):
 ###############################################################################
 class Provider(object):
     """base class for all dependency providers"""
-    def __init__(self,name,target=None):
+    def __init__(self,name,target=None,subspace_vif=1):
       self.scope = ProviderScope.CONTAINER
       self._allow_build_in_subspaces = False 
       if target ==None:
@@ -48,7 +48,11 @@ class Provider(object):
       self._topoindex = -1
       self.manifest = path.manifests()/name
       self.OK = self.manifest.exists()
-      self.setSourceRoot(path.builds()/name)
+      if subspace_vif==2:
+        self.setSourceRoot(path.subspace_builds()/name)
+        self._allow_build_in_subspaces = True
+      else:
+        self.setSourceRoot(path.builds()/name)
       self._debug = False
       self._must_build_in_tree = False
       if name not in root_dep_list:
@@ -325,8 +329,8 @@ class HomebrewProvider(Provider):
 
 class StdProvider(Provider):
     #############################
-    def __init__(self,name):
-      super().__init__(name)
+    def __init__(self,name,subspace_vif=1):
+      super().__init__(name,subspace_vif=subspace_vif)
       self._builder = None
 
     ########
