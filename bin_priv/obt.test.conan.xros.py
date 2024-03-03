@@ -216,7 +216,7 @@ command.run(cmd,environment=the_environ,do_log=True)
 ##############################################
 
 APPID = "com.example.minimalapp"
-BUNDLE_NAME = "MYAPP"
+#BUNDLE_NAME = "MYAPP"
 
 ##############################################
 
@@ -241,7 +241,9 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
     MACOSX_BUNDLE_INFO_PLIST ${CMAKE_CURRENT_SOURCE_DIR}/Info.plist
 )
 
-target_link_libraries(${PROJECT_NAME} PRIVATE ZLIB::ZLIB)
+find_library(UIKIT_FRAMEWORK UIKit)
+target_link_libraries(${PROJECT_NAME} PRIVATE "${UIKIT_FRAMEWORK}")
+#target_link_libraries(${PROJECT_NAME} PRIVATE ZLIB::ZLIB)
 """ % (SDK_DIR,str(tc_output),APPID,APPID)
 
 with open(prefix / "CMakeLists.txt", "w") as f:
@@ -254,6 +256,46 @@ info_plist_content = """
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>BuildMachineOSBuild</key>
+	<string>23C71</string>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>en</string>
+	<key>CFBundleExecutable</key>
+	<string>xros_minimal_app</string>
+	<key>CFBundleIdentifier</key>
+	<string>com.example.minimalapp</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>XROS_TEST</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>1.0</string>
+	<key>CFBundleSupportedPlatforms</key>
+	<array>
+		<string>XRSimulator</string>
+	</array>
+	<key>CFBundleVersion</key>
+	<string>1</string>
+	<key>DTCompiler</key>
+	<string>com.apple.compilers.llvm.clang.1_0</string>
+	<key>DTPlatformBuild</key>
+	<string>21N301</string>
+	<key>DTPlatformName</key>
+	<string>xrsimulator</string>
+	<key>DTPlatformVersion</key>
+	<string>1.0</string>
+	<key>DTSDKBuild</key>
+	<string>21N301</string>
+	<key>DTSDKName</key>
+	<string>xrsimulator1.0</string>
+	<key>DTXcode</key>
+	<string>1520</string>
+	<key>DTXcodeBuild</key>
+	<string>15C500b</string>
+	<key>MinimumOSVersion</key>
+	<string>1.0</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationPreferredDefaultSceneSessionRole</key>
@@ -263,6 +305,10 @@ info_plist_content = """
 		<key>UISceneConfigurations</key>
 		<dict/>
 	</dict>
+	<key>UIDeviceFamily</key>
+	<array>
+		<integer>7</integer>
+	</array>
 </dict>
 </plist>
 """
@@ -275,24 +321,51 @@ with open(info_plist_path, "w") as f:
 
 # main.mm
 objc_plus_plus_source = """
-#include <iostream>
-#include <zlib.h>
-#include <string>
+#import <UIKit/UIKit.h>
+#import <zlib.h>
+#import <string>
+#import <iostream>
 
-int main(int argc, const char * argv[]) {
+@interface AppDelegate : UIResponder <UIApplicationDelegate>
+@property (strong, nonatomic) UIWindow *window;
+@end
+
+@implementation AppDelegate
+
+- (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
+    /*self.window = [[UIWindow alloc] initWithFrame:[[UIScreen mainScreen] bounds]];
+    UIViewController *viewController = [[UIViewController alloc] init];
+    self.window.rootViewController = viewController;
+    
     std::string originalStr = "Hello, Conan and iOS World!";
     uLongf compressedDataSize = compressBound(originalStr.size());
     Bytef *compressedData = (Bytef*)malloc(compressedDataSize);
-
+    
     if (compress(compressedData, &compressedDataSize, (Bytef*)originalStr.data(), originalStr.size()) == Z_OK) {
-        std::cout << "Original string: " << originalStr << "\\n";
-        std::cout << "Compressed size: " << compressedDataSize << "\\n";
+        std::cout << "Original string: " << originalStr << "\n";
+        std::cout << "Compressed size: " << compressedDataSize << "\n";
     } else {
-        std::cout << "Compression failed!" << "\\n";
+        std::cout << "Compression failed!" << "\n";
     }
-
+    
     free(compressedData);
-    return 0;
+    
+    UILabel *label = [[UILabel alloc] initWithFrame:CGRectMake(20, 100, 300, 40)];
+    label.numberOfLines = 0;
+    label.text = [NSString stringWithFormat:@"Original: %lu, Compressed: %lu", originalStr.size(), compressedDataSize];
+    [viewController.view addSubview:label];
+    
+    self.window.backgroundColor = [UIColor whiteColor];
+    [self.window makeKeyAndVisible];*/
+    return YES;
+}
+
+@end
+
+int main(int argc, char * argv[]) {
+    @autoreleasepool {
+        return UIApplicationMain(argc, argv, nil, NSStringFromClass([AppDelegate class]));
+    }
 }
 """
 
@@ -328,21 +401,17 @@ command.run([ "cmake", #
 # Build the project with CMake
 command.run(["cmake", "--build", ".", "--target", "xros_minimal_app"], environment=the_environ, do_log=True)
 
-# Create app bundle structure
-app_bundle_dir = prefix / (BUNDLE_NAME+".app")
-os.makedirs(app_bundle_dir, exist_ok=True)
-
-# Copy executable
-executable_src = prefix / ".build/xros_minimal_app"  # Change this to the actual path of your executable
-executable_dest = app_bundle_dir / BUNDLE_NAME  # Change "MyApp" to your app's name
-pathtools.copyfile(executable_src, executable_dest)
-
-# Copy Info.plist
-
-# Add any other necessary resources (images, storyboards, etc.) to the Resources directory
-pathtools.copyfile(prefix / "Info.plist", app_bundle_dir / "Info.plist")
-
 # Code sign the app bundle (you may need to adjust this based on your code signing configuration)
-command.run(["codesign", "-s", CERTNAME,  "--deep", app_bundle_dir], do_log=True)
+#command.run(["codesign", "-s", CERTNAME,  "--deep", app_bundle_dir], do_log=True)
+
+
+print( "INSTALLING TO SIMULATOR")
+XROS_SIM_DEVID = os.environ["XROS_SIM_DEVID"]
+command.run(["xcrun","simctl","install",XROS_SIM_DEVID,".build/Debug-xros/xros_minimal_app.app"], 
+             working_dir=prefix,
+             do_log=True)
+command.run(["xcrun","simctl","launch",XROS_SIM_DEVID,".build/Debug-xros/xros_minimal_app.app"], 
+             working_dir=prefix,
+             do_log=True)
 
 #command.run(["ideviceinstaller","-i",prefix/(BUNDLE_NAME+".app")], do_log=True)
