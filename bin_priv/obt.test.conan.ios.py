@@ -124,111 +124,119 @@ with open(tc_output,"w") as f:
 lexertl = dep.instance("lexertl14")
 print(lexertl)
 #print(dir(lexertl))
-print(lexertl._conanfile)
 
-lexertl14_dir = prefix / "conan" / "lexertl14"
-lexertl14_dir.mkdir(parents=True, exist_ok=True)  # Ensure the directory exists
-lrtl_output = lexertl14_dir / "conanfile.py"
-with open(lrtl_output, "w") as f:
-    f.write(lexertl._conanfile)  # Assuming lexertl._conanfile is the recipe text
-os.chdir(str(lexertl14_dir))
-#conan export . lexertl14/tweakoz-obt@user/channel
-command.run(["conan","export",".",
-             "--user=user",
-             "--channel=channel"], #
-             environment=the_environ,do_log=True ) 
+if 0:
+  print(lexertl._conanfile)
 
-conanfile = """
-[requires]
-zlib/1.2.11
-boost/1.81.0
-assimp/5.2.2
-ptex/2.4.2
-openexr/3.2.1
-rapidjson/cci.20220822
-eigen/3.4.0
-glm/cci.20230113
-bullet3/3.25
-zeromq/4.3.5
-cppzmq/4.10.0
-sigslot/1.2.2 
-moltenvk/1.2.2
-lexertl14/tweakoz-obt
+  lexertl14_dir = prefix / "conan" / "lexertl14"
+  lexertl14_dir.mkdir(parents=True, exist_ok=True)  # Ensure the directory exists
+  lrtl_output = lexertl14_dir / "conanfile.py"
+  with open(lrtl_output, "w") as f:
+      f.write(lexertl._conanfile)  # Assuming lexertl._conanfile is the recipe text
+  os.chdir(str(lexertl14_dir))
+  #conan export . lexertl14/tweakoz-obt@user/channel
+  command.run(["conan","export",".",
+               "--user=user",
+               "--channel=channel"], #
+               environment=the_environ,do_log=True ) 
 
-[generators]
-CMakeDeps
-CMakeToolchain
-"""
+  conanfile = """
+  [requires]
+  zlib/1.2.11
+  boost/1.81.0
+  assimp/5.2.2
+  ptex/2.4.2
+  openexr/3.2.1
+  rapidjson/cci.20220822
+  eigen/3.4.0
+  glm/cci.20230113
+  bullet3/3.25
+  zeromq/4.3.5
+  cppzmq/4.10.0
+  sigslot/1.2.2 
+  moltenvk/1.2.2
+  lexertl14/tweakoz-obt
 
-cf_output = prefix/"conanfile.txt"
-with open(cf_output,"w") as f:
-  f.write(conanfile)
+  [generators]
+  CMakeDeps
+  CMakeToolchain
+  """
 
-##############################################
-# generate conan profile for ios
-##############################################
+  cf_output = prefix/"conanfile.txt"
+  with open(cf_output,"w") as f:
+    f.write(conanfile)
 
-conan_host_profile = """
-[settings]
-os=iOS
-os.version=17.0
-arch=armv8
-compiler=apple-clang
-compiler.version=15.0
-compiler.libcxx=libc++
-build_type=Release
-os.sdk=iphoneos
-"""
+  ##############################################
+  # generate conan profile for ios
+  ##############################################
 
-cp_output = prefix/"ios.host.profile"
-with open(cp_output,"w") as f:
-  f.write(conan_host_profile)
+  conan_host_profile = """
+  [settings]
+  os=iOS
+  os.version=17.0
+  arch=armv8
+  compiler=apple-clang
+  compiler.version=15.0
+  compiler.libcxx=libc++
+  build_type=Release
+  os.sdk=iphoneos
+  """
 
-##############################################
+  cp_output = prefix/"ios.host.profile"
+  with open(cp_output,"w") as f:
+    f.write(conan_host_profile)
 
-conan_build_profile = """
-[settings]
-os=Macos
-arch=armv8  
-compiler=apple-clang
-compiler.version=15.0
-compiler.libcxx=libc++
-build_type=Release
-"""
+  ##############################################
 
-cp_output = prefix/"ios.build.profile"
-with open(cp_output,"w") as f:
-  f.write(conan_build_profile)
+  conan_build_profile = """
+  [settings]
+  os=Macos
+  arch=armv8  
+  compiler=apple-clang
+  compiler.version=15.0
+  compiler.libcxx=libc++
+  build_type=Release
+  """
 
-##############################################
-  
-cmd =  ["conan","install","."]
-cmd += [f"--profile:host={prefix}/ios.host.profile"]
-cmd += [f"--profile:build={prefix}/ios.build.profile"]
-cmd += ["--build=missing"]
+  cp_output = prefix/"ios.build.profile"
+  with open(cp_output,"w") as f:
+    f.write(conan_build_profile)
 
-command.run(cmd,environment=the_environ,do_log=True)
+  ##############################################
+    
+  cmd =  ["conan","install","."]
+  cmd += [f"--profile:host={prefix}/ios.host.profile"]
+  cmd += [f"--profile:build={prefix}/ios.build.profile"]
+  cmd += ["--build=missing"]
+
+  command.run(cmd,environment=the_environ,do_log=True)
 
 ##############################################
 
 cmake_lists_content = """
-cmake_minimum_required(VERSION 3.15)
+cmake_minimum_required(VERSION 3.28.3)
 project(ios_minimal_app LANGUAGES CXX OBJCXX)
 set(CMAKE_OSX_SYSROOT %s CACHE PATH "The iOS SDK sysroot")
 
-#include(${CMAKE_BINARY_DIR}/conan_toolchain.cmake)
 include(${CMAKE_CURRENT_SOURCE_DIR}/ios.toolchain.cmake)
 
 find_package(ZLIB REQUIRED)
 
 add_executable(${PROJECT_NAME} main.mm)
+
+target_link_libraries(${PROJECT_NAME} PRIVATE ZLIB::ZLIB)
+
+# Link against the C++ standard library
+target_link_libraries(${PROJECT_NAME} PRIVATE c++)
+
 set_target_properties(${PROJECT_NAME} PROPERTIES
     XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER "com.example.minimalapp"
-    XCODE_ATTRIBUTE_DEVELOPMENT_TEAM "YOUR_TEAM_ID"
+    XCODE_ATTRIBUTE_DEVELOPMENT_TEAM "$ENV{DEVELOPMENT_TEAM}"
+    XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY "iPhone Developer"
+    XCODE_ATTRIBUTE_CODE_SIGN_STYLE "Automatic"
     MACOSX_BUNDLE_GUI_IDENTIFIER "com.example.minimalapp"
     MACOSX_BUNDLE_INFO_PLIST ${CMAKE_CURRENT_SOURCE_DIR}/Info.plist
 )
-target_link_libraries(${PROJECT_NAME} PRIVATE ZLIB::ZLIB)
 """ % SDK_DIR
 
 with open(prefix / "CMakeLists.txt", "w") as f:
@@ -244,9 +252,9 @@ info_plist_content = """
     <key>CFBundleDisplayName</key>
     <string>MyApp</string>
     <key>CFBundleExecutable</key>
-    <string>MyApp</string>
+    <string>ios_minimal_app</string>
     <key>CFBundleIdentifier</key>
-    <string>com.aphidsystems.myapp</string>
+    <string>com.example.minimalapp</string>
     <key>CFBundleInfoDictionaryVersion</key>
     <string>6.0</string>
     <key>CFBundleName</key>
@@ -323,27 +331,27 @@ for item in the_environ:
 
 print( "############## end envdump ##############")
 
-command.run(["cmake", "..", "-DCMAKE_BUILD_TYPE=Release"], environment=the_environ, do_log=True)
-#command.run(["cmake", ".", "-DCMAKE_BUILD_TYPE=Release", environment=the_environ, do_log=True)
+command.run(["cmake", "..", "-G", "Xcode"], environment=the_environ, do_log=True)
+
+# ... (previous code remains the same)
 
 # Build the project with CMake
-command.run(["cmake", "--build", "."], environment=the_environ, do_log=True)
+command.run(["cmake", "--build", ".","--config", "Release"], environment=the_environ, do_log=True)
 
-# Create app bundle structure
-app_bundle_dir = prefix / "MyApp.app"
-os.makedirs(app_bundle_dir, exist_ok=True)
+app_bundle_dir = prefix / ".build/Release-iphoneos/ios_minimal_app.app"
+# Verify the executable exists within the bundle
+executable_path = app_bundle_dir / "ios_minimal_app"
+if not os.path.exists(executable_path):
+    print(f"Executable not found at {executable_path}")
+    sys.exit(1)
 
-# Copy executable
-executable_src = prefix / ".build/ios_minimal_app"  # Change this to the actual path of your executable
-executable_dest = app_bundle_dir / "MyApp"  # Change "MyApp" to your app's name
-pathtools.copyfile(executable_src, executable_dest)
+# Check if the device is connected
+device_info = subprocess.check_output(["idevice_id", "-l"], universal_newlines=True).strip()
+if not device_info:
+    print("No iOS device connected. Please connect an iOS device and try again.")
+    sys.exit(1)
 
-# Copy Info.plist
+command.run(["ideviceinstaller", "-U", "com.example.minimalapp"], do_log=True)
 
-# Add any other necessary resources (images, storyboards, etc.) to the Resources directory
-pathtools.copyfile(prefix / "Info.plist", app_bundle_dir / "Info.plist")
-
-# Code sign the app bundle (you may need to adjust this based on your code signing configuration)
-command.run(["codesign", "-s", CERTNAME,  "--deep", app_bundle_dir], do_log=True)
-
-command.run(["ideviceinstaller","-i",prefix/"MyApp.app"], do_log=True)
+# Install the app on the connected device
+command.run(["ideviceinstaller", "-i", app_bundle_dir], do_log=True)

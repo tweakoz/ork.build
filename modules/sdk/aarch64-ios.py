@@ -2,48 +2,63 @@ import obt.xcode
 import obt.command 
 import obt.env
 import obt.path 
-import os
+import os, re
 import subprocess
 
 class _iossdk_private:
-  def __init__(self):
+
+  _instance = None
+
+  def __new__(cls):
+    if cls._instance is None:
+      cls._instance = super().__new__(cls)
+      cls._instance._initialize()
+    return cls._instance
+
+  def _initialize(self):
+
     self._xcodesdkstr = obt.command.capture([
       "xcodebuild",
       "-version",
       "-sdk"])
-    self.has_iossdk15_2 = self._xcodesdkstr.find("(iphoneos15.2)")>0
-    self.has_iossdk15_5 = self._xcodesdkstr.find("(iphoneos15.5)")>0
-    self.has_iossdk17_0 = self._xcodesdkstr.find("(iphoneos17.0)")>0
-    print("has_iossdk15_2<%s>"%self.has_iossdk15_2)
-    print("has_iossdk15_5<%s>"%self.has_iossdk15_5)
-    print("has_iossdk17_0<%s>"%self.has_iossdk17_0)
-    if self.has_iossdk15_2:
-      self._iossdkver = "15.2"
-      self._iossdkstr = obt.command.capture([
-        "xcodebuild",
-        "-version",
-        "-sdk", "iphoneos15.2",
-        "Path"],do_log=False).splitlines()
-      #obt.env.set("OBT_IOS_SDK","iphoneos15.2")
-      #obt.env.set("OBT_IOS_SDK_DIR",self._iossdkstr)
-    elif self.has_iossdk15_5:
-      self._iossdkver = "15.5"
-      self._iossdkstr = obt.command.capture([
-        "xcodebuild",
-        "-version",
-        "-sdk", "iphoneos15.5",
-        "Path"],do_log=False).splitlines()
-      #obt.env.set("OBT_IOS_SDK","iphoneos15.5")
-      #obt.env.set("OBT_IOS_SDK_DIR",self._iossdkstr)
-    elif self.has_iossdk17_0:
-      self._iossdkstr = obt.command.capture([
-        "xcodebuild",
-        "-version",
-        "-sdk", "iphoneos17.0",
-        "Path"],do_log=False).splitlines()[0]
-      self._iossdkver = "17.0"
-      #obt.env.set("OBT_IOS_SDK","iphoneos17.0")
-      #obt.env.set("OBT_IOS_SDK_DIR",a)
+
+    lines = self._xcodesdkstr.splitlines()
+
+    class SDKVER:
+      def __init__(self, match):
+        self.number = a.group(1)
+        self.name = a.group(0)
+        self.major,self.minor = self.number.split(".")
+        self.path = obt.command.capture([
+          "xcodebuild",
+          "-version",
+          "-sdk", self.name,
+          "Path"],do_log=False).splitlines()
+
+      def __repr__(self):
+        return "%s : %s " % (self.name, self.path)
+
+    self.versions = dict()    
+
+    for line in lines:
+      regex = re.compile(r"iphoneos(\d+.\d+)")    
+      a = regex.search(line)
+      if a is not None:
+        sdk = SDKVER(a)
+        self.versions[sdk.number] = sdk
+      
+    #print(self.versions)  
+
+    sorted = list(self.versions.keys())
+    sorted.sort()
+    
+    highest = self.versions[sorted[-1]]
+    
+    self._iossdkstr = highest.path
+    self._iossdkver = highest.number
+
+    print(f"Using SDK: {self._iossdkver} {self._iossdkstr}")
+    
     try:
       # Use xcrun to find the path to clang for the current SDK
       clang_path = subprocess.check_output([
@@ -65,6 +80,8 @@ class _iossdk_private:
       print(f"Error executing command: {e}")
     except Exception as e:
       print(f"An unexpected error occurred: {e}")
+
+    #assert(False)
 
 
 class sdkinfo:
