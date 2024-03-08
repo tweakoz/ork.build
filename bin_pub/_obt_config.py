@@ -405,14 +405,14 @@ def configFromCommandLine(parser_args=None):
 
   if IS_ARG_SET("inplace") and parser_args["inplace"]:
     os.environ["OBT_INPLACE"] = "1"
-  else:
-    di = _directoryOfInvokingModule()
-    obt_folder = di/".."/"scripts/"/"obt"
-    if(obt_folder.exists()):
-      print("#######################################")
-      print("YOU SHOULD USE --inplace if running OBT from a working copy!")
-      print("#######################################")
-      sys.exit(-1)
+    if "OBT_INPLACE" not in os.environ:
+      di = _directoryOfInvokingModule()
+      obt_folder = di/".."/"scripts/"/"obt"
+      if(obt_folder.exists()):
+        print("#######################################")
+        print("YOU SHOULD USE --inplace if running OBT from a working copy!")
+        print("#######################################")
+        sys.exit(-1)
 
   if IS_ARG_SET("quiet") and parser_args["quiet"]:
     os.environ["OBT_QUIET"] = "1"

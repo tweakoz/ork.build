@@ -16,6 +16,10 @@ from obt.wget import wget
 from obt import pathtools, cmake, make, path, git, host, _globals
 from obt._dep_fetch import *
 from obt._dep_build import *
+from obt._dep_build_autoconf import *
+from obt._dep_build_bin import *
+from obt._dep_build_cmake import *
+from obt._dep_build_custom import *
 from obt._dep_provider import *
 from obt._dep_impl import *
 from obt._dep_node import *

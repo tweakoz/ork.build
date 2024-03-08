@@ -10,26 +10,29 @@ class dsp(dep.StdProvider):
     build_dir = path.builds()/dsp.name
     super().__init__(dsp.name)
     
-    pathtools.ensureDirectoryExists(path.includes()/"dsp")
-
-    items = pathtools.patglob(self.source_root, "*.h")
-    print(items)
-
-    copy_commands = []
-    for item in items:
-      print(item)
-      cmd = command.Command([
-        "cp",str(item), str(path.includes()/"dsp")+"/"
-        ])
-      copy_commands.append(cmd)
-
-    print(copy_commands)
+    self.dest_header_path = path.includes()/"dsp"
     
     self._builder = self.createBuilder(dep.CustomBuilder)
     self._builder._cleanOnClean = False
-    self._builder._cleanbuildcommands = copy_commands
-    self._builder._incrbuildcommands = copy_commands
+    
+    def before_build():
+      print("before_build")
+      pathtools.ensureDirectoryExists(self.dest_header_path)
+      items = pathtools.patglob(self.source_root, "*.h")
+      copy_commands = []
+      for item in items:
+        print(item)
+        cmd = command.Command([
+          "cp",str(item), str(self.dest_header_path)+"/"
+          ])
+        copy_commands.append(cmd)
+      self._builder._cleanbuildcommands = copy_commands
+      self._builder._incrbuildcommands = copy_commands
+      print("copy_commands: %s" % copy_commands)
 
+    self._builder._invokeBeforeBuild = before_build
+
+    
   ########################################################################
   @property
   def _fetcher(self):
