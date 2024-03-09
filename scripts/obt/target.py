@@ -27,6 +27,18 @@ def descriptor(architecture,osname):
 
 ###############################################################################
 
+def current():
+  tgt_name = os.environ.get("OBT_TARGET")
+  if tgt_name==None:
+    return None
+  else:
+    split = tgt_name.split("-")
+    if len(split)==2:
+      return descriptor(split[0],split[1])
+    else:
+      return None
+###############################################################################
+
 class enuminterface:
   def __init__(self):
     self.subdir = "target"

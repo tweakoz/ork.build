@@ -26,7 +26,6 @@ class subspaceinfo:
     #  print out connection info
     ###############################################
     def launch(self,launch_args):
-      os.environ["OBT_TARGET"] = "aarch64-macos"
       print("launch host")
     ###############################################
     # information dictionary

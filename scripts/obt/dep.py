@@ -19,6 +19,7 @@ from obt._dep_build import *
 from obt._dep_build_autoconf import *
 from obt._dep_build_bin import *
 from obt._dep_build_cmake import *
+from obt._dep_build_conan import *
 from obt._dep_build_custom import *
 from obt._dep_provider import *
 from obt._dep_impl import *

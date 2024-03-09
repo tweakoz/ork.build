@@ -10,7 +10,7 @@
 
 import os, sys, pathlib, argparse, string
 
-assert(os.environ["OBT_SUBSPACE"]=="host")
+#assert(os.environ["OBT_SUBSPACE"]=="host")
 
 parser = argparse.ArgumentParser(description='obt.build dep information')
 parser.add_argument('dependency', metavar='D', type=str, help='a dependency you want information on')
@@ -52,6 +52,8 @@ for dep_name in instance._required_deps.keys():
   dep_inst = instance._required_deps[dep_name]
   decl_deps += [dep_name]
 
+subspace_VIF = instance._subspace_vif
+
 print_item("name",instance._name)
 print_item("provider_path",instance._node.module_path)
 print_item("has_shell",hasattr(instance,"on_build_shell"))
@@ -75,7 +77,12 @@ print_item("source present",src_present)
 print_item("binaries present",bin_present)
 print_item("architectures", "All" if (instance._archlist==None) else instance._archlist)
 print_item("declared deps",decl_deps)
+print_item("subspace_VIF",subspace_VIF)
 print()
+#############################################################
+if subspace_VIF==2:
+  print_item("conanfile",instance._conanfile)
+  print_item("conan_build",instance._conan_build)
 #############################################################
 print_item("source root",instance.source_root)
 print_item("build_src",instance.build_src)

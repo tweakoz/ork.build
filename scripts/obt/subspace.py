@@ -23,6 +23,13 @@ def current():
 
 ###############################################################################
 
+def targeting_host():
+  host = os.environ.get("OBT_HOST")
+  target = os.environ.get("OBT_TARGET")
+  return host==target
+
+###############################################################################
+
 def module_class(module_path,subname):
   import obt.module
   the_module = obt.module.instance("sub_"+subname,module_path)
@@ -99,6 +106,8 @@ def enumerate():
               module_dict[item] = e
   return module_dict
   
+###############################################################################
+
 def findWithMethod(named):
   e = enumerate()
   rval = {}

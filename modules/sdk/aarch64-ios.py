@@ -2,7 +2,7 @@ import obt.xcode
 import obt.command 
 import obt.env
 import obt.path 
-import os, re
+import os, re, sys
 import subprocess
 
 class _iossdk_private:
@@ -117,6 +117,36 @@ class sdkinfo:
   def _clangpp_path(self):
     IOS_SDK = _iossdk_private()
     return IOS_SDK._clang_path
+  #############################################
+  @property
+  def _environment(self):
+    IOS_SDK = _iossdk_private()
+    return {
+      "IOS_SDK_DIR": self._sdkdir,
+      "IOS_SDK_VER": self._sdkver,
+      "IOS_CLANG_PATH": self._clang_path,
+      "IOS_CLANGPP_PATH": self._clangpp_path,
+      #"CMAKE_TOOLCHAIN_FILE": prefix/"ios.toolchain.cmake",
+      #"OBT_SUBSPACE_PROMPT": self._gen_sysprompt(),
+      "OBT_TARGET": "aarch64-ios",
+      "IOS_PREFIX": obt.path.subspace_root()/"ios",
+      #"OBT_SUBSPACE": "ios",
+    }
+  #############################################
+  def install_app(self,bundle_id,app_bundle_dir):
+    ##############################################
+    # Check if the device is connected
+    ##############################################
+    device_info = subprocess.check_output(["idevice_id", "-l"], universal_newlines=True).strip()
+    if not device_info:
+      print("No iOS device connected. Please connect an iOS device and try again.")
+      sys.exit(1)
+    ##############################################
+    # Install the app on the connected device
+    ##############################################
+    print(f"Installing app {bundle_id} from {app_bundle_dir} to iphone")
+    subprocess.check_output(["ideviceinstaller", "-U", bundle_id])
+    subprocess.check_output(["ideviceinstaller", "-i", app_bundle_dir])
   #############################################
   def misc(self):
     return {

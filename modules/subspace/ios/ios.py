@@ -1,4 +1,4 @@
-from obt import dep, path, command, docker, wget, pathtools, sdk
+from obt import dep, path, command, docker, wget, pathtools, sdk, conan
 from obt.deco import Deco
 import obt.module
 import time, re, socket, os, sys
@@ -7,6 +7,7 @@ deco = obt.deco.Deco()
 
 this_path = os.path.realpath(__file__)
 this_dir = Path(os.path.dirname(this_path))
+PREFIX = path.subspace_root()/"ios"
 
 ###############################################################################
 
@@ -28,40 +29,90 @@ set(CMAKE_INSTALL_PREFIX $ENV{OBT_SUBSPACE_BUILD_DIR})
 
 ###############################################################################
 
+conan_host_profile = """
+[settings]
+os=iOS
+os.version=17.0
+arch=armv8
+compiler=apple-clang
+compiler.version=15.0
+compiler.libcxx=libc++
+build_type=Release
+os.sdk=iphoneos
+"""
+
+conan_build_profile = """
+[settings]
+os=Macos
+arch=armv8  
+compiler=apple-clang
+compiler.version=15.0
+compiler.libcxx=libc++
+build_type=Release
+"""
+
+
+###############################################################################
+
+class _iossubspace_private:
+
+  _instance = None
+
+  def __new__(cls):
+    if cls._instance is None:
+      cls._instance = super().__new__(cls)
+      cls._instance._initialize()
+    return cls._instance
+
+  def _initialize(self):
+    host_profile_path = PREFIX/"ios.host.profile"
+    build_profile_path = PREFIX/"ios.build.profile"
+    if not host_profile_path.exists():
+      with open(host_profile_path,"w") as f:
+        f.write(conan_host_profile)
+    if not build_profile_path.exists():
+      with open(build_profile_path,"w") as f:
+        f.write(conan_build_profile)
+    pathtools.ensureDirectoryExists(PREFIX)
+    pathtools.ensureDirectoryExists(PREFIX/"manifests")
+    pathtools.ensureDirectoryExists(PREFIX/"builds")
+    pathtools.ensureDirectoryExists(PREFIX/"include")
+    pathtools.ensureDirectoryExists(PREFIX/"lib")
+    pathtools.ensureDirectoryExists(PREFIX/"bin")
+    pathtools.ensureDirectoryExists(PREFIX/"conan")
+
+###############################################################################
+
 class subspaceinfo:
     ###############################################
     def __init__(self):
       super().__init__()
+      self._private = _iossubspace_private()
       self._name = "ios"
       self._subsrc = this_dir
-      self._prefix = path.subspace_root()/"ios"
+      self._prefix = PREFIX
       self._manifest_path = path.manifests()/self._name
     ###############################################
     # build the docker image
     ###############################################
     def build(self,build_args,do_wipe=False):
-      pathtools.ensureDirectoryExists(self._prefix)
-      pathtools.ensureDirectoryExists(self._prefix/"builds")
-      pathtools.ensureDirectoryExists(self._prefix/"lib")
-      pathtools.ensureDirectoryExists(self._prefix/"bin")
       os.chdir(self._prefix)
       #####################
       # generate cmake toolchain
       #####################
       tc_output = self._prefix/"ios.toolchain.cmake"
       with open(tc_output,"w") as f:
-        f.write(cmake_tc)
-      #####################
-
-# You might need to set more variables depending on your setup
-
-      
-      print("build ios")
+        f.write(cmake_tc)     
     ###############################################
     def _gen_sysprompt(self):
       return "ios"
     ###############################################
     def _gen_environment(self):
+      
+      if "DEVELOPMENT_TEAM" not in os.environ:
+        print(deco.err("DEVELOPMENT_TEAM not set"))
+        assert(False)
+      
       TEMP_PATH = path.temp()
       IOS_SDK = sdk.descriptor("aarch64","ios")
       SDK_DIR = IOS_SDK._sdkdir
@@ -80,7 +131,8 @@ class subspaceinfo:
         "CMAKE_TOOLCHAIN_FILE": self._prefix/"ios.toolchain.cmake",
         "OBT_SUBSPACE_PROMPT": self._gen_sysprompt(),
         "OBT_TARGET": "aarch64-ios",
-      }        
+      }       
+      the_environ.update(conan.environment()) 
       return the_environ
     ###############################################
     # launch conda subspace shell

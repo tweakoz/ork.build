@@ -114,6 +114,16 @@ def subspace():
 def subspace_dir():
   return Path(os.environ["OBT_SUBSPACE_DIR"])
 
+###############################################################################
+
+def subspace_builds():
+  return subspace_dir()/"builds"
+
+###############################################################################
+
+def conan_prefix():
+  return subspace_dir()/"conan"
+
 ##########################################
 
 @lru_cache(maxsize=None)
@@ -260,6 +270,9 @@ def bin():
 def includes():
   return prefix()/"include"
 
+def subspace_includes():
+  return subspace_dir()/"include"
+
 ###############################################################################
 
 def libs():
@@ -278,8 +291,7 @@ def pkgconfigdir():
 ###############################################################################
 
 def manifests():
-  staging = Path(os.environ["OBT_STAGE"])
-  return staging/"manifests"
+  return subspace_dir()/"manifests"
 
 ###############################################################################
 

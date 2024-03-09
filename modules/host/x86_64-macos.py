@@ -6,7 +6,7 @@
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
 
-import platform, multiprocessing
+import platform, multiprocessing, os
 from obt import target, sdk, command, env
 
 class hostinfo:
@@ -40,6 +40,7 @@ class hostinfo:
     targets.add(aarch64_android)
     self.targets = targets
     self.target = x86_64_macos # host SDK
+    os.environ["OBT_HOST"] = "x86_64-macos"
     ###################################
   ###################################
   def env_init(self):

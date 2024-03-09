@@ -13,7 +13,7 @@ import obt.path, obt.host
 from obt.command import Command, run
 from obt.deco import Deco
 from obt.wget import wget
-from obt import pathtools, cmake, make, path, git, host
+from obt import pathtools, cmake, make, path, git, host, subspace
 from obt import _dep_impl, _dep_x, _globals, log, buildtrace
 from enum import Enum
 
@@ -25,11 +25,13 @@ class ProviderScope(Enum):
   CONTAINER = 1 # dependency is scoped to the container
   INIT = 2  # dependency is scoped to the container and rendered upon creation of container (always present)
   HOST = 3 # dependency is sourced from the host (apt install, brew install, etc...)
+  SUBSPACE = 4 # dependency is scoped to the subspace
 
 ###############################################################################
 class Provider(object):
     """base class for all dependency providers"""
-    def __init__(self,name,target=None):
+    def __init__(self,name,target=None,subspace_vif=1):
+      self._subspace_vif = subspace_vif
       self.scope = ProviderScope.CONTAINER
       self._allow_build_in_subspaces = False 
       if target ==None:
@@ -48,11 +50,16 @@ class Provider(object):
       self._topoindex = -1
       self.manifest = path.manifests()/name
       self.OK = self.manifest.exists()
-      self.setSourceRoot(path.builds()/name)
       self._debug = False
       self._must_build_in_tree = False
       if name not in root_dep_list:
         self.declareDep("root")
+      #############################
+      self.setSourceRoot(path.builds()/name)
+      if subspace_vif==2:
+        #self.setSourceRoot(path.subspace_builds()/name)
+        self._allow_build_in_subspaces = True
+      #############################
     #############################
     def declareDep(self, named):
       inst = _dep_x.instance(named)
@@ -196,8 +203,14 @@ class Provider(object):
 
     @property
     def should_build(self):
+      if subspace.targeting_host():
         return (not self.manifest.exists()) or self.should_force_build or self.should_incremental_build
-
+      else:
+        if self._allow_build_in_subspaces:
+          if self._subspace_vif==2:
+            return (not self.manifest.exists()) or self.should_force_build or self.should_incremental_build
+        return False
+      
     #############################
 
     @property
@@ -325,8 +338,8 @@ class HomebrewProvider(Provider):
 
 class StdProvider(Provider):
     #############################
-    def __init__(self,name):
-      super().__init__(name)
+    def __init__(self,name,subspace_vif=1):
+      super().__init__(name,subspace_vif=subspace_vif)
       self._builder = None
 
     ########

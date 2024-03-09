@@ -237,7 +237,7 @@ class python_from_source(dep.Provider):
       Command([obt_python,"-m","venv", self.virtualenv_dir]).exec()
       Command([venv_python,"-m","pip","install","--upgrade","pip"]).exec()
 
-      modules =  ["yarl","toposort","pytest","os_release","pyyaml"]
+      modules =  ["yarl","toposort","pytest","os_release","pyyaml", "conan"]
 
       Command([venv_python,"-m","pip","install"]+modules).exec()
 
