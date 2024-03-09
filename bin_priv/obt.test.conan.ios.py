@@ -220,14 +220,15 @@ set(CMAKE_OSX_SYSROOT %s CACHE PATH "The iOS SDK sysroot")
 
 include(${CMAKE_CURRENT_SOURCE_DIR}/ios.toolchain.cmake)
 
-find_package(ZLIB REQUIRED)
+# Find the required frameworks
+find_library(UIKit UIKit REQUIRED)
+find_library(Foundation Foundation REQUIRED)
+find_library(CoreGraphics CoreGraphics REQUIRED)
 
 add_executable(${PROJECT_NAME} main.mm)
 
-target_link_libraries(${PROJECT_NAME} PRIVATE ZLIB::ZLIB)
-
-# Link against the C++ standard library
-target_link_libraries(${PROJECT_NAME} PRIVATE c++)
+# Link against the required frameworks
+target_link_libraries(${PROJECT_NAME} PRIVATE ${UIKit} ${Foundation} ${CoreGraphics})
 
 set_target_properties(${PROJECT_NAME} PROPERTIES
     XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER "com.example.minimalapp"
@@ -267,11 +268,9 @@ info_plist_content = """
     <string>1</string>
     <key>LSRequiresIPhoneOS</key>
     <true/>
-    <key>UILaunchStoryboardName</key>
-    <string>LaunchScreen</string>
     <key>UIRequiredDeviceCapabilities</key>
     <array>
-        <string>armv7</string>
+        <string>arm64</string>
     </array>
     <key>UISupportedInterfaceOrientations</key>
     <array>
@@ -289,24 +288,95 @@ with open(info_plist_path, "w") as f:
 
 # main.mm
 objc_plus_plus_source = """
-#include <iostream>
-#include <zlib.h>
-#include <string>
+#import <UIKit/UIKit.h>
 
-int main(int argc, const char * argv[]) {
-    std::string originalStr = "Hello, Conan and iOS World!";
-    uLongf compressedDataSize = compressBound(originalStr.size());
-    Bytef *compressedData = (Bytef*)malloc(compressedDataSize);
 
-    if (compress(compressedData, &compressedDataSize, (Bytef*)originalStr.data(), originalStr.size()) == Z_OK) {
-        std::cout << "Original string: " << originalStr << "\\n";
-        std::cout << "Compressed size: " << compressedDataSize << "\\n";
-    } else {
-        std::cout << "Compression failed!" << "\\n";
+// Simple macro distinguishes iPhone from iPad
+
+#define IS_IPHONE (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPhone)
+
+
+@interface TestBedAppDelegate : NSObject <UIApplicationDelegate>
+
+{
+
+    UIWindow *window;
+
+}
+
+@end
+
+
+@implementation TestBedAppDelegate
+
+- (UIViewController *) helloController
+
+{
+
+    UIViewController *vc = [[UIViewController alloc] init];
+
+    vc.view.backgroundColor = [UIColor greenColor];
+
+
+    // Add a basic label that says "Hello World"
+
+    UILabel *label = [[UILabel alloc] initWithFrame:
+
+        CGRectMake(0.0f, 0.0f, window.bounds.size.width, 80.0f)];
+
+    label.text = @"Hello World";
+
+    label.center = CGPointMake(CGRectGetMidX(window.bounds),
+
+        CGRectGetMidY(window.bounds));
+
+    label.textAlignment = UITextAlignmentCenter;
+
+    label.font = [UIFont boldSystemFontOfSize: IS_IPHONE ? 32.0f : 64.0f];
+
+    label.backgroundColor = [UIColor clearColor];
+
+    [vc.view addSubview:label];
+
+
+    return vc;
+
+}
+
+
+- (BOOL)application:(UIApplication *)application
+
+    didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
+
+{
+
+    window = [[UIWindow alloc] initWithFrame:
+
+        [[UIScreen mainScreen] bounds]];
+
+    window.rootViewController = [self helloController];
+
+    [window makeKeyAndVisible];
+
+    return YES;
+
+}
+
+@end
+
+
+int main(int argc, char *argv[]) {
+
+    @autoreleasepool {
+
+        int retVal =
+
+            UIApplicationMain(argc, argv, nil, @"TestBedAppDelegate");
+
+        return retVal;
+
     }
 
-    free(compressedData);
-    return 0;
 }
 """
 
