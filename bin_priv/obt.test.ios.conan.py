@@ -83,30 +83,6 @@ the_environ = {
 }     
 
 ##############################################
-# generate cmake toolchain
-##############################################
-
-cmake_tc = """
-set(IOS_SDK_PATH $ENV{IOS_SDK_DIR})
-set(CMAKE_SYSTEM_NAME iOS)
-
-# Specify the architectures to build for (e.g., arm64 for actual devices)
-set(CMAKE_OSX_ARCHITECTURES arm64)
-
-# Specify the minimum iOS deployment target
-set(CMAKE_OSX_DEPLOYMENT_TARGET $ENV{IOS_SDK_VER})
-
-# Specify the path to the compiler
-set(CMAKE_C_COMPILER $ENV{IOS_CLANG_PATH})
-set(CMAKE_CXX_COMPILER $ENV{IOS_CLANGPP_PATH})
-set(CMAKE_INSTALL_PREFIX $ENV{OBT_SUBSPACE_BUILD_DIR})
-"""
-
-tc_output = prefix/"ios.toolchain.cmake"
-with open(tc_output,"w") as f:
-  f.write(cmake_tc)
-
-##############################################
 # generate conanfile
 ##############################################
 
@@ -218,14 +194,17 @@ if 0:
 
 ##############################################
 
-src_cmake = IOS_SUBSPACE_DIR / "CMakeLists.txt"
-dst_cmake = prefix / "CMakeLists.txt"
-command.run(["cp", src_cmake, dst_cmake], do_log=True)
+file_list = [
+  "CMakeLists.txt",
+  "Info.plist",
+  "ios.toolchain.cmake",
+]
 
-src_plist = IOS_SUBSPACE_DIR / "Info.plist"
-dst_plist = prefix / "Info.plist"
-command.run(["cp", src_plist, dst_plist], do_log=True)
-
+for f in file_list:
+  src = IOS_SUBSPACE_DIR / f
+  dst = prefix / f
+  command.run(["cp", src, dst], do_log=True)
+  
 ##############################################
 
 pathtools.mkdir(prefix/".build",clean=True)
