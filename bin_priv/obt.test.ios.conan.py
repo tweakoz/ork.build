@@ -9,15 +9,19 @@ IOS_SUBSPACE_DIR = subspace.descriptor("ios")._subsrc
 IOS_SDK = sdk.descriptor("aarch64","ios")
 prefix = path.subspace_dir()
 
+my_build_dir = prefix/"builds"/"conanapp"
+pathtools.ensureDirectoryExists(my_build_dir)
+
 assert(subspace.current() == "ios")
 
 ##############################################
 
-os.chdir(prefix)
+os.chdir(my_build_dir)
 
 lexertl = dep.require("lexertl14")
+parsertl = dep.require("parsertl14")
 
-conan.require(prefix,[
+conan.require(prefix,my_build_dir,[
   "zlib/1.2.11",
   "boost/1.81.0",
   "lexertl14/tweakoz-obt@user/channel",
@@ -36,18 +40,8 @@ the_environ.update({
 
 ##############################################
 
-file_list = [
-  "Info.plist",
-  "ios.toolchain.cmake",
-]
-
-for f in file_list:
-  src = IOS_SUBSPACE_DIR / f
-  dst = prefix / f
-  command.run(["cp", src, dst], do_log=True)
-
-command.run(["cp", IOS_SUBSPACE_DIR/"CMakeListsConan.txt", prefix/"CMakeLists.txt"], do_log=True)
-command.run(["cp", IOS_SUBSPACE_DIR/"InfoConan.plist", prefix/"Info.plist"], do_log=True)
+command.run(["cp", IOS_SUBSPACE_DIR/"CMakeListsConan.txt", my_build_dir/"CMakeLists.txt"], do_log=True)
+command.run(["cp", IOS_SUBSPACE_DIR/"InfoConan.plist", my_build_dir/"Info.plist"], do_log=True)
   
 ##############################################
 
@@ -63,14 +57,14 @@ print( "############## end envdump ##############")
 
 ##############################################
 
-pathtools.mkdir(prefix/".build-conan",clean=True)
-os.chdir(prefix/".build-conan")
+pathtools.mkdir(my_build_dir/".build-conan",clean=True)
+os.chdir(my_build_dir/".build-conan")
 command.run(["cmake", "..", "-G", "Xcode"], environment=the_environ, do_log=True)
 command.run(["cmake", "--build", ".","--config", "Release"], environment=the_environ, do_log=True)
 
 ##############################################
 
-app_bundle_dir = prefix / ".build-conan/Release-iphoneos/ios_conan_app.app"
+app_bundle_dir = my_build_dir / ".build-conan/Release-iphoneos/ios_conan_app.app"
 # Verify the executable exists within the bundle
 executable_path = app_bundle_dir / "ios_conan_app"
 if not os.path.exists(executable_path):

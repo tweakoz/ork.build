@@ -59,7 +59,7 @@ CMakeDeps
 CMakeToolchain
 """
   
-def require(prefix,deplist):
+def require(prefix,build_dir,deplist):
 
   conanfile = "[requires]\n"
 
@@ -71,7 +71,7 @@ def require(prefix,deplist):
   conanfile += "CMakeDeps\n"
   conanfile += "CMakeToolchain\n"
 
-  cf_output = prefix/"conanfile.txt"
+  cf_output = build_dir/"conanfile.txt"
   with open(cf_output,"w") as f:
     f.write(conanfile)
 
@@ -84,5 +84,5 @@ def require(prefix,deplist):
 
   command.run(cmd, #
               environment=the_environ, #
-              working_dir=prefix, #
+              working_dir=build_dir, #
               do_log=True)
