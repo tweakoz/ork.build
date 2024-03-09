@@ -11,7 +11,7 @@
 - (UIViewController *) helloController
 {
         UIViewController *vc = [[UIViewController alloc] init];
-    vc.view.backgroundColor = [UIColor yellowColor];
+    vc.view.backgroundColor = [UIColor magentaColor];
 
     // Add a basic label that says "Hello World"
         UILabel *label = [[UILabel alloc] initWithFrame:

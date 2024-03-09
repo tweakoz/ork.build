@@ -218,92 +218,20 @@ if 0:
 
 ##############################################
 
-cmake_lists_content = """
-cmake_minimum_required(VERSION 3.28.3)
-project(ios_minimal_app LANGUAGES CXX OBJCXX)
-set(CMAKE_OSX_SYSROOT %s CACHE PATH "The iOS SDK sysroot")
+src_cmake = IOS_SUBSPACE_DIR / "CMakeLists.txt"
+dst_cmake = prefix / "CMakeLists.txt"
+command.run(["cp", src_cmake, dst_cmake], do_log=True)
 
-include(${CMAKE_CURRENT_SOURCE_DIR}/ios.toolchain.cmake)
-
-# Find the required frameworks
-find_library(UIKit UIKit REQUIRED)
-find_library(Foundation Foundation REQUIRED)
-find_library(CoreGraphics CoreGraphics REQUIRED)
-
-add_executable(${PROJECT_NAME} $ENV{OBT_ROOT}/modules/subspace/ios/main.mm)
-
-# Link against the required frameworks
-target_link_libraries(${PROJECT_NAME} PRIVATE ${UIKit} ${Foundation} ${CoreGraphics})
-
-set_target_properties(${PROJECT_NAME} PROPERTIES
-    XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER "com.example.minimalapp"
-    XCODE_ATTRIBUTE_DEVELOPMENT_TEAM "$ENV{DEVELOPMENT_TEAM}"
-    XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY "iPhone Developer"
-    XCODE_ATTRIBUTE_CODE_SIGN_STYLE "Automatic"
-    MACOSX_BUNDLE_GUI_IDENTIFIER "com.example.minimalapp"
-    MACOSX_BUNDLE_INFO_PLIST ${CMAKE_CURRENT_SOURCE_DIR}/Info.plist
-)
-""" % SDK_DIR
-
-with open(prefix / "CMakeLists.txt", "w") as f:
-    f.write(cmake_lists_content)
+src_plist = IOS_SUBSPACE_DIR / "Info.plist"
+dst_plist = prefix / "Info.plist"
+command.run(["cp", src_plist, dst_plist], do_log=True)
 
 ##############################################
-
-info_plist_content = """
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-    <key>CFBundleDisplayName</key>
-    <string>MyApp</string>
-    <key>CFBundleExecutable</key>
-    <string>ios_minimal_app</string>
-    <key>CFBundleIdentifier</key>
-    <string>com.example.minimalapp</string>
-    <key>CFBundleInfoDictionaryVersion</key>
-    <string>6.0</string>
-    <key>CFBundleName</key>
-    <string>MyApp</string>
-    <key>CFBundlePackageType</key>
-    <string>APPL</string>
-    <key>CFBundleShortVersionString</key>
-    <string>1.0</string>
-    <key>CFBundleVersion</key>
-    <string>1</string>
-    <key>LSRequiresIPhoneOS</key>
-    <true/>
-    <key>UIRequiredDeviceCapabilities</key>
-    <array>
-        <string>arm64</string>
-    </array>
-    <key>UISupportedInterfaceOrientations</key>
-    <array>
-        <string>UIInterfaceOrientationPortrait</string>
-    </array>
-</dict>
-</plist>
-"""
-
-info_plist_path = prefix / "Info.plist"
-with open(info_plist_path, "w") as f:
-    f.write(info_plist_content)
-
-##############################################
-
-# Write the source to a file
-#app_src_file = IOS_SUBSPACE_DIR / "main.mm" 
-#app_dest_file = prefix / "main.mm"
-#command.run(["cp", app_src_file, app_dest_file], do_log=True)
 
 pathtools.mkdir(prefix/".build",clean=True)
 os.chdir(prefix/".build")
 
 the_environ["VERBOSE"] = "1"
-
-print( "############## begin CMakelists.txt ##############")
-print(cmake_lists_content)
-print( "############## end CMakelists.txt ##############")
 
 print( "############## begin envdump ##############")
 
