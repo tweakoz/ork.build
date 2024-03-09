@@ -1,0 +1,45 @@
+cmake_minimum_required(VERSION 3.28.3)
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED on)
+
+project(ios_metal_app LANGUAGES CXX OBJCXX)
+
+set(CMAKE_OSX_SYSROOT %s CACHE PATH "The iOS SDK sysroot")
+
+include($ENV{OBT_SUBSPACE_DIR}/ios.toolchain.cmake)
+include(${CMAKE_CURRENT_SOURCE_DIR}/conan_toolchain.cmake)
+
+# Find the required frameworks
+find_library(UIKit UIKit REQUIRED)
+find_library(Foundation Foundation REQUIRED)
+find_library(CoreGraphics CoreGraphics REQUIRED)
+find_library(Metal Metal REQUIRED)
+find_library(QuartzCore QuartzCore)
+
+find_package(ZLIB REQUIRED)
+find_package(Boost REQUIRED COMPONENTS system filesystem)
+#find_package(lexertl14 REQUIRED)
+
+add_executable(${PROJECT_NAME} $ENV{OBT_ROOT}/modules/subspace/ios/main_metal.mm)
+target_include_directories(${PROJECT_NAME} PRIVATE $ENV{OBT_SUBSPACE_DIR}/include)
+# Link against the required frameworks
+
+target_link_libraries(${PROJECT_NAME} PRIVATE 
+  ${UIKit} 
+  ${Foundation} 
+  ${CoreGraphics}
+  ${Metal}
+  ${QuartzCore}
+  ZLIB::ZLIB 
+  Boost::system Boost::filesystem
+  #CONAN_PKG::lexertl14
+)
+
+set_target_properties(${PROJECT_NAME} PROPERTIES
+    XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER "com.example.metalapp"
+    XCODE_ATTRIBUTE_DEVELOPMENT_TEAM "$ENV{DEVELOPMENT_TEAM}"
+    XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY "iPhone Developer"
+    XCODE_ATTRIBUTE_CODE_SIGN_STYLE "Automatic"
+    MACOSX_BUNDLE_GUI_IDENTIFIER "com.example.metalapp"
+    MACOSX_BUNDLE_INFO_PLIST ${CMAKE_CURRENT_SOURCE_DIR}/Info.plist
+)

@@ -117,6 +117,8 @@ class subspaceinfo:
       IOS_SDK = sdk.descriptor("aarch64","ios")
       SDK_DIR = IOS_SDK._sdkdir
       SDK_VER = IOS_SDK._sdkver
+      
+      orig_path = os.environ["PATH"]
       the_environ = {
         "OBT_SUBSPACE_BUILD_DIR": self._prefix/"builds",
         "OBT_SUBSPACE_LIB_DIR": self._prefix/"lib",
@@ -131,6 +133,7 @@ class subspaceinfo:
         "CMAKE_TOOLCHAIN_FILE": self._prefix/"ios.toolchain.cmake",
         "OBT_SUBSPACE_PROMPT": self._gen_sysprompt(),
         "OBT_TARGET": "aarch64-ios",
+        "PATH": orig_path+":"+str(this_dir/"bin"),
       }       
       the_environ.update(conan.environment()) 
       return the_environ
