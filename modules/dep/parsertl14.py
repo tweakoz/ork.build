@@ -13,7 +13,7 @@ from obt import dep, path, command, env
 class parsertl14(dep.StdProvider):
   name = "parsertl14"
   def __init__(self):
-    super().__init__(parsertl14.name)
+    super().__init__(parsertl14.name,subspace_vif=2)
     #################################################
     srcroot = self.source_root
     #################################################
@@ -26,7 +26,7 @@ class parsertl14(dep.StdProvider):
         return command.run([ "cp",
                              "-r",
                              srcroot/"include"/"parsertl",
-                             path.includes()
+                             path.subspace_includes()
                              ],do_log=True)==0
     #################################################
     self._builder = Builder(parsertl14.name)
@@ -43,4 +43,4 @@ class parsertl14(dep.StdProvider):
     return (self.source_root/"README.md").exists()
 
   def areRequiredBinaryFilesPresent(self):
-    return (path.includes()/"parsertl"/"parse.hpp").exists()
+    return (path.subspace_includes()/"parsertl"/"parse.hpp").exists()

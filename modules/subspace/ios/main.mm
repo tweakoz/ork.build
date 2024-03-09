@@ -1,4 +1,5 @@
 #import <UIKit/UIKit.h>
+
 // Simple macro distinguishes iPhone from iPad
 #define IS_IPHONE (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPhone)
 @interface TestBedAppDelegate : NSObject <UIApplicationDelegate>
@@ -19,7 +20,7 @@
         label.text = @"Hello World XYZ";
         label.center = CGPointMake(CGRectGetMidX(window.bounds),
             CGRectGetMidY(window.bounds));
-        label.textAlignment = UITextAlignmentCenter;
+        label.textAlignment = NSTextAlignment(UITextAlignmentCenter);
         label.font = [UIFont boldSystemFontOfSize: IS_IPHONE ? 32.0f : 64.0f];
         label.backgroundColor = [UIColor clearColor];
         [vc.view addSubview:label];

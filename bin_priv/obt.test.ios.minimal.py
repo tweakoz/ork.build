@@ -17,12 +17,12 @@ os.chdir(prefix)
 
 ##############################################
 
-the_environ = conan.environment()
+the_environ = os.environ.copy()
+the_environ.update(conan.environment())
 the_environ.update(IOS_SDK._environment)
 the_environ.update({
   "OBT_SUBSPACE_BUILD_DIR": prefix/"builds",
   "OBT_SUBSPACE_LIB_DIR": prefix/"lib",
-  "OBT_SUBSPACE_DIR": prefix,
   "OBT_SUBSPACE_BIN_DIR": prefix/"bin",
 })
 
@@ -39,6 +39,8 @@ for f in file_list:
   dst = prefix / f
   command.run(["cp", src, dst], do_log=True)
   
+command.run(["cp", IOS_SUBSPACE_DIR/"InfoMinimal.plist", prefix/"Info.plist"], do_log=True)
+  
 ##############################################
 
 the_environ["VERBOSE"] = "1"
@@ -52,14 +54,14 @@ print( "############## end envdump ##############")
 
 ##############################################
 
-pathtools.mkdir(prefix/".build",clean=True)
-os.chdir(prefix/".build")
+pathtools.mkdir(prefix/".build-minimal",clean=True)
+os.chdir(prefix/".build-minimal")
 command.run(["cmake", "..", "-G", "Xcode"], environment=the_environ, do_log=True)
 command.run(["cmake", "--build", ".","--config", "Release"], environment=the_environ, do_log=True)
 
 ##############################################
 
-app_bundle_dir = prefix / ".build/Release-iphoneos/ios_minimal_app.app"
+app_bundle_dir = prefix / ".build-minimal/Release-iphoneos/ios_minimal_app.app"
 # Verify the executable exists within the bundle
 executable_path = app_bundle_dir / "ios_minimal_app"
 if not os.path.exists(executable_path):

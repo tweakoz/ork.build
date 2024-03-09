@@ -31,7 +31,6 @@ the_environ.update(IOS_SDK._environment)
 the_environ.update({
   "OBT_SUBSPACE_BUILD_DIR": prefix/"builds",
   "OBT_SUBSPACE_LIB_DIR": prefix/"lib",
-  "OBT_SUBSPACE_DIR": prefix,
   "OBT_SUBSPACE_BIN_DIR": prefix/"bin",
 })
 
@@ -48,11 +47,10 @@ for f in file_list:
   command.run(["cp", src, dst], do_log=True)
 
 command.run(["cp", IOS_SUBSPACE_DIR/"CMakeListsConan.txt", prefix/"CMakeLists.txt"], do_log=True)
+command.run(["cp", IOS_SUBSPACE_DIR/"InfoConan.plist", prefix/"Info.plist"], do_log=True)
   
 ##############################################
 
-pathtools.mkdir(prefix/".build",clean=True)
-os.chdir(prefix/".build")
 
 the_environ["VERBOSE"] = "1"
 
@@ -63,27 +61,24 @@ for item in the_environ:
 
 print( "############## end envdump ##############")
 
+##############################################
+
+pathtools.mkdir(prefix/".build-conan",clean=True)
+os.chdir(prefix/".build-conan")
 command.run(["cmake", "..", "-G", "Xcode"], environment=the_environ, do_log=True)
-
-# ... (previous code remains the same)
-
-# Build the project with CMake
 command.run(["cmake", "--build", ".","--config", "Release"], environment=the_environ, do_log=True)
 
-app_bundle_dir = prefix / ".build/Release-iphoneos/ios_minimal_app.app"
+##############################################
+
+app_bundle_dir = prefix / ".build-conan/Release-iphoneos/ios_conan_app.app"
 # Verify the executable exists within the bundle
-executable_path = app_bundle_dir / "ios_minimal_app"
+executable_path = app_bundle_dir / "ios_conan_app"
 if not os.path.exists(executable_path):
     print(f"Executable not found at {executable_path}")
     sys.exit(1)
 
-# Check if the device is connected
-device_info = subprocess.check_output(["idevice_id", "-l"], universal_newlines=True).strip()
-if not device_info:
-    print("No iOS device connected. Please connect an iOS device and try again.")
-    sys.exit(1)
-
-command.run(["ideviceinstaller", "-U", "com.example.minimalapp"], do_log=True)
-
+##############################################
 # Install the app on the connected device
-command.run(["ideviceinstaller", "-i", app_bundle_dir], do_log=True)
+##############################################
+
+IOS_SDK.install_app("com.example.conanapp", app_bundle_dir)

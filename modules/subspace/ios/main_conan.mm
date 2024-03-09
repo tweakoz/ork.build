@@ -1,6 +1,6 @@
 #import <UIKit/UIKit.h>
-
 #include <boost/filesystem.hpp>
+#include <parsertl/parse.hpp>
 
 // Simple macro distinguishes iPhone from iPad
 #define IS_IPHONE (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPhone)
@@ -26,7 +26,7 @@
     label.center = CGPointMake(CGRectGetMidX(window.bounds),
                                CGRectGetMidY(window.bounds));
     label.numberOfLines = 0; // Enable text wrapping
-    label.textAlignment = UITextAlignmentCenter;
+    label.textAlignment = NSTextAlignment(UITextAlignmentCenter);
     label.font = [UIFont boldSystemFontOfSize: IS_IPHONE ? 12.0f : 18.0f];
     label.backgroundColor = [UIColor clearColor];
 
