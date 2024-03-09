@@ -7,7 +7,7 @@
 ###############################################################################
 
 import platform, os, pathlib,sys
-
+from obt import host
 ###############################################################################
 
 file_path = os.path.realpath(__file__)
@@ -29,14 +29,13 @@ def descriptor(architecture,osname):
 
 def current():
   tgt_name = os.environ.get("OBT_TARGET")
+  d = None
   if tgt_name==None:
-    return None
+    d = host.description().identifier.split("-")
   else:
-    split = tgt_name.split("-")
-    if len(split)==2:
-      return descriptor(split[0],split[1])
-    else:
-      return None
+    d = tgt_name.split("-")
+  if len(d)==2:
+    return descriptor(d[0],d[1])
 ###############################################################################
 
 class enuminterface:

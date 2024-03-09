@@ -9,6 +9,8 @@ IOS_SUBSPACE_DIR = subspace.descriptor("ios")._subsrc
 IOS_SDK = sdk.descriptor("aarch64","ios")
 prefix = path.subspace_dir()
 
+assert(subspace.current() == "ios")
+
 ##############################################
 
 os.chdir(prefix)

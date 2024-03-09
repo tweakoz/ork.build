@@ -26,7 +26,7 @@ class opencv(dep.StdProvider):
     self.python_dep = dep.require("python")
 
     if self.python_dep == None:
-      return False 
+      return None 
 
     self._builder = self.createBuilder(dep.CMakeBuilder)
 

@@ -54,7 +54,7 @@ class lexertl14(dep.StdProvider):
     self.declareDep("cmake")
     tgt = target.current()
     ############################################
-    if tgt.os=="ios":
+    if tgt != None and tgt.os=="ios":
     ############################################
       self._builder = self.createBuilder(dep.ConanBuilder)
       lexertl14_dir = path.conan_prefix() / "lexertl14"

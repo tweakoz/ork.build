@@ -10,6 +10,9 @@
 import os, sys, argparse, inspect, pathlib, subprocess, multiprocessing, json, importlib
 Path = pathlib.Path
 
+from obt.deco import Deco 
+
+deco = Deco()
 ###########################################
 
 def env_is_set(key):
@@ -504,6 +507,10 @@ def configFromCommandLine(parser_args=None):
         assert(False)
 
   if("PKG_CONFIG_PATH" not in os.environ):
+    orig_pkg_config = findExecutable("pkg-config")
+    if orig_pkg_config==None:
+      print(deco.err("NO PKG-CONFIG FOUND, is your base shell setup correctly ?"))
+      assert(False)
     pkg_config_result = subprocess.run(["pkg-config", "--variable=pc_path", "pkg-config"], capture_output=True, text=True)
     pkg_config_paths = []
     if pkg_config_result.returncode == 0:

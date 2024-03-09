@@ -65,6 +65,13 @@ class _iossubspace_private:
     return cls._instance
 
   def _initialize(self):
+    pathtools.ensureDirectoryExists(PREFIX)
+    pathtools.ensureDirectoryExists(PREFIX/"manifests")
+    pathtools.ensureDirectoryExists(PREFIX/"builds")
+    pathtools.ensureDirectoryExists(PREFIX/"include")
+    pathtools.ensureDirectoryExists(PREFIX/"lib")
+    pathtools.ensureDirectoryExists(PREFIX/"bin")
+    pathtools.ensureDirectoryExists(PREFIX/"conan")
     host_profile_path = PREFIX/"ios.host.profile"
     build_profile_path = PREFIX/"ios.build.profile"
     if not host_profile_path.exists():
@@ -73,13 +80,6 @@ class _iossubspace_private:
     if not build_profile_path.exists():
       with open(build_profile_path,"w") as f:
         f.write(conan_build_profile)
-    pathtools.ensureDirectoryExists(PREFIX)
-    pathtools.ensureDirectoryExists(PREFIX/"manifests")
-    pathtools.ensureDirectoryExists(PREFIX/"builds")
-    pathtools.ensureDirectoryExists(PREFIX/"include")
-    pathtools.ensureDirectoryExists(PREFIX/"lib")
-    pathtools.ensureDirectoryExists(PREFIX/"bin")
-    pathtools.ensureDirectoryExists(PREFIX/"conan")
 
 ###############################################################################
 
@@ -87,7 +87,6 @@ class subspaceinfo:
     ###############################################
     def __init__(self):
       super().__init__()
-      self._private = _iossubspace_private()
       self._name = "ios"
       self._subsrc = this_dir
       self._prefix = PREFIX
@@ -96,6 +95,7 @@ class subspaceinfo:
     # build the docker image
     ###############################################
     def build(self,build_args,do_wipe=False):
+      self._private = _iossubspace_private()
       os.chdir(self._prefix)
       #####################
       # generate cmake toolchain
@@ -138,6 +138,7 @@ class subspaceinfo:
     # launch conda subspace shell
     ###############################################
     def shell(self,working_dir=None,container=None):
+      self._private = _iossubspace_private()
       sys.path.append(os.environ["OBT_BIN_PUB_DIR"])
       from _obt_config import configFromEnvironment
       import obt._envutils 
@@ -167,6 +168,7 @@ class subspaceinfo:
     #  print out connection info
     ###############################################
     def launch(self,launch_args):
+      self._private = _iossubspace_private()
       print("launch ios")
     ###############################################
     # information dictionary
