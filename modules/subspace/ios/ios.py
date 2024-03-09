@@ -33,6 +33,7 @@ class subspaceinfo:
     def __init__(self):
       super().__init__()
       self._name = "ios"
+      self._subsrc = this_dir
       self._prefix = path.subspace_root()/"ios"
       self._manifest_path = path.manifests()/self._name
     ###############################################

@@ -2,7 +2,7 @@
 
 import os, sys, subprocess, argparse
 
-from obt import command, path, pathtools, sdk, dep
+from obt import command, path, pathtools, sdk, dep, subspace
 
 parser = argparse.ArgumentParser(description='obt.build dep builder')
 parser.add_argument('--gencert', action="store_true", help='generate ios certificate' )
@@ -51,6 +51,11 @@ if args.gencert:
   print("Now, upload the certificate signing request to the Apple Developer portal to create a certificate.")
   sys.exit(0)
 
+
+##############################################
+
+IOS_SUBSPACE_DIR = subspace.descriptor("ios")._subsrc
+print(IOS_SUBSPACE_DIR)
 
 ##############################################
 
@@ -225,7 +230,7 @@ find_library(UIKit UIKit REQUIRED)
 find_library(Foundation Foundation REQUIRED)
 find_library(CoreGraphics CoreGraphics REQUIRED)
 
-add_executable(${PROJECT_NAME} main.mm)
+add_executable(${PROJECT_NAME} $ENV{OBT_ROOT}/modules/subspace/ios/main.mm)
 
 # Link against the required frameworks
 target_link_libraries(${PROJECT_NAME} PRIVATE ${UIKit} ${Foundation} ${CoreGraphics})
@@ -286,106 +291,12 @@ with open(info_plist_path, "w") as f:
 
 ##############################################
 
-# main.mm
-objc_plus_plus_source = """
-#import <UIKit/UIKit.h>
-
-
-// Simple macro distinguishes iPhone from iPad
-
-#define IS_IPHONE (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPhone)
-
-
-@interface TestBedAppDelegate : NSObject <UIApplicationDelegate>
-
-{
-
-    UIWindow *window;
-
-}
-
-@end
-
-
-@implementation TestBedAppDelegate
-
-- (UIViewController *) helloController
-
-{
-
-    UIViewController *vc = [[UIViewController alloc] init];
-
-    vc.view.backgroundColor = [UIColor greenColor];
-
-
-    // Add a basic label that says "Hello World"
-
-    UILabel *label = [[UILabel alloc] initWithFrame:
-
-        CGRectMake(0.0f, 0.0f, window.bounds.size.width, 80.0f)];
-
-    label.text = @"Hello World";
-
-    label.center = CGPointMake(CGRectGetMidX(window.bounds),
-
-        CGRectGetMidY(window.bounds));
-
-    label.textAlignment = UITextAlignmentCenter;
-
-    label.font = [UIFont boldSystemFontOfSize: IS_IPHONE ? 32.0f : 64.0f];
-
-    label.backgroundColor = [UIColor clearColor];
-
-    [vc.view addSubview:label];
-
-
-    return vc;
-
-}
-
-
-- (BOOL)application:(UIApplication *)application
-
-    didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
-
-{
-
-    window = [[UIWindow alloc] initWithFrame:
-
-        [[UIScreen mainScreen] bounds]];
-
-    window.rootViewController = [self helloController];
-
-    [window makeKeyAndVisible];
-
-    return YES;
-
-}
-
-@end
-
-
-int main(int argc, char *argv[]) {
-
-    @autoreleasepool {
-
-        int retVal =
-
-            UIApplicationMain(argc, argv, nil, @"TestBedAppDelegate");
-
-        return retVal;
-
-    }
-
-}
-"""
-
 # Write the source to a file
-app_source_file = prefix / "main.mm"
-with open(app_source_file, "w") as f:
-    f.write(objc_plus_plus_source)
+#app_src_file = IOS_SUBSPACE_DIR / "main.mm" 
+#app_dest_file = prefix / "main.mm"
+#command.run(["cp", app_src_file, app_dest_file], do_log=True)
 
-pathtools.ensureDirectoryExists(prefix/".build")
+pathtools.mkdir(prefix/".build",clean=True)
 os.chdir(prefix/".build")
 
 the_environ["VERBOSE"] = "1"

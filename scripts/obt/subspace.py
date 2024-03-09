@@ -49,7 +49,10 @@ def descriptor(subname):
     try_path = subspace_dir/("%s.py"%subname)
     if try_path.exists():
       return module_class(try_path,subname)()
-
+    else:
+      try_path = subspace_dir/subname/("%s.py"%subname)
+      if try_path.exists():
+        return module_class(try_path,subname)()
 
 ###############################################################################
 
@@ -65,29 +68,37 @@ def requires(subname,build_opts=[]):
 def enumerate():
   #######################################
   class EnumItem:
-    def __init__(self,name,fullpath,module):
-      self._name = name 
+    def __init__(self, name, fullpath, module):
+      self._name = name
       self._fullpath = fullpath
       self._module = module
   #######################################
   module_dict = dict()
   module_dirs_list = os.environ["OBT_MODULES_PATH"].split(":")
   for module_dir in module_dirs_list:
-    #print(dep_repo)
-    subspace_path = obt.path.Path(module_dir)/"subspace"
+    subspace_path = obt.path.Path(module_dir) / "subspace"
     if subspace_path.exists():
-      path_list = os.listdir(subspace_path)
-      for item in path_list:
-        module_test_path = subspace_path/item
-        has_py_ext = (str(module_test_path).find(".py")>0)
-        if module_test_path.exists() and has_py_ext:
-          mclass = module_class(module_test_path,item)
-          module = mclass()
-          if module!=None:
-            e = EnumItem(item,module_test_path,module)
-            module_dict[item] = e
+      for item in os.listdir(subspace_path):
+        module_test_path = subspace_path / item
+        if module_test_path.is_dir():
+          # Check for a subspace module in the subfolder
+          subfolder_module_path = module_test_path / f"{item}.py"
+          if subfolder_module_path.exists():
+            mclass = module_class(subfolder_module_path, item)
+            module = mclass()
+            if module is not None:
+              e = EnumItem(item, subfolder_module_path, module)
+              module_dict[item] = e
+        else:
+          has_py_ext = str(module_test_path).endswith(".py")
+          if module_test_path.exists() and has_py_ext:
+            mclass = module_class(module_test_path, item)
+            module = mclass()
+            if module is not None:
+              e = EnumItem(item, module_test_path, module)
+              module_dict[item] = e
   return module_dict
-
+  
 def findWithMethod(named):
   e = enumerate()
   rval = {}
