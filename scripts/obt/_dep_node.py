@@ -57,7 +57,7 @@ class DepNode:
             #assert(issubclass(override_class,self.module_class))
             self.module_class = override_class
         ##########################################################
-        print(dep_name)
+        #print(dep_name)
         self.instance = self.module_class()
         self.instance._node = self
     ## string descriptor of dependency
@@ -116,7 +116,7 @@ class DepNode:
       rval = {}
       for k in e.keys():
         val = e[k]
-        print(val._fullpath)
+        #print(val._fullpath)
         n = DepNode(k,val._fullpath)
         if n and hasattr(n,"instance") and n.instance.supports_host:
           if hasattr(n.instance,named):
