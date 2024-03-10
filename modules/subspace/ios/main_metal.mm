@@ -19,6 +19,10 @@ namespace {
     };
 
     void renderTriangle(id<MTLDevice> device, id<MTLCommandQueue> commandQueue, id<CAMetalDrawable> drawable) {
+
+        static float phi = 0.0f;
+        phi += 0.03f;
+        /*
         id<MTLLibrary> defaultLibrary = [device newDefaultLibrary];
         id<MTLFunction> vertexFunction = [defaultLibrary newFunctionWithName:@"vertexShader"];
         id<MTLFunction> fragmentFunction = [defaultLibrary newFunctionWithName:@"fragmentShader"];
@@ -34,17 +38,22 @@ namespace {
             NSLog(@"Failed to create pipeline state: %@", error);
             return;
         }
+        */
+
+       float R = 0.5f*(sinf(phi*0.5f) + 1.0f);
+       float G = 0.5f*(sinf(phi*0.7f) + 1.0f);
+       float B = 0.5f*(sinf(phi*0.9f) + 1.0f);
 
         id<MTLCommandBuffer> commandBuffer = [commandQueue commandBuffer];
         MTLRenderPassDescriptor *renderPassDescriptor = [MTLRenderPassDescriptor renderPassDescriptor];
         renderPassDescriptor.colorAttachments[0].texture = drawable.texture;
         renderPassDescriptor.colorAttachments[0].loadAction = MTLLoadActionClear;
-        renderPassDescriptor.colorAttachments[0].clearColor = MTLClearColorMake(0.0, 0.0, 0.0, 1.0);
+        renderPassDescriptor.colorAttachments[0].clearColor = MTLClearColorMake(R,G,B, 1.0);
 
         id<MTLRenderCommandEncoder> renderEncoder = [commandBuffer renderCommandEncoderWithDescriptor:renderPassDescriptor];
-        [renderEncoder setRenderPipelineState:pipelineState];
-        [renderEncoder setVertexBytes:triangleVertices length:sizeof(triangleVertices) atIndex:0];
-        [renderEncoder drawPrimitives:MTLPrimitiveTypeTriangle vertexStart:0 vertexCount:3];
+        //[renderEncoder setRenderPipelineState:pipelineState];
+        //[renderEncoder setVertexBytes:triangleVertices length:sizeof(triangleVertices) atIndex:0];
+        //[renderEncoder drawPrimitives:MTLPrimitiveTypeTriangle vertexStart:0 vertexCount:3];
         [renderEncoder endEncoding];
 
         [commandBuffer presentDrawable:drawable];
@@ -58,6 +67,7 @@ namespace {
     id<MTLCommandQueue> commandQueue;
     CAMetalLayer *metalLayer;
     UIViewController *viewController;
+    CADisplayLink *displayLink;
 }
 @end
 
@@ -78,7 +88,11 @@ namespace {
     metalLayer.frame = window.bounds;
     [window.layer addSublayer:metalLayer];
     
-    //[self drawFrame];
+    [self drawFrame];
+
+    displayLink = [CADisplayLink displayLinkWithTarget:self selector:@selector(drawFrame)];
+    [displayLink addToRunLoop:[NSRunLoop mainRunLoop] forMode:NSDefaultRunLoopMode];
+
 }
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
@@ -92,8 +106,16 @@ namespace {
    
 
     [window makeKeyAndVisible];
-    //[self setupMetal];
+    [self setupMetal];
     return YES;
+}
+
+- (void)applicationWillTerminate:(UIApplication *)application {
+    [displayLink invalidate];
+}
+
+- (void)applicationDidEnterBackground:(UIApplication *)application {
+    [displayLink invalidate];
 }
 
 @end
@@ -138,14 +160,14 @@ int main(int argc, char *argv[]) {
             NSLog(@"Failed to create library: %@", error);
              return 1;
         }
-
+        /*
         id<MTLFunction> vertexFunction = [library newFunctionWithName:@"vertexShader"];
         id<MTLFunction> fragmentFunction = [library newFunctionWithName:@"fragmentShader"];
         
         if (!vertexFunction || !fragmentFunction) {
             NSLog(@"Failed to create shader functions");
             return 1;
-        }
+        }*/
 
         int retVal = UIApplicationMain(argc, argv, nil, @"TestBedAppDelegate");
         return retVal;
