@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 
 import os, sys, subprocess, argparse
-
 from obt import command, path, pathtools
 from obt import sdk, dep, subspace, conan
+
+##############################################
 
 IOS_SUBSPACE_DIR = subspace.descriptor("ios")._subsrc
 IOS_SDK = sdk.descriptor("aarch64","ios")
@@ -24,6 +25,7 @@ parsertl = dep.require("parsertl14")
 conan.require(prefix,my_build_dir,[
   "zlib/1.2.11",
   "boost/1.81.0",
+  "glm/cci.20230113",
   "lexertl14/tweakoz-obt@user/channel",
 ])
 
@@ -43,18 +45,6 @@ the_environ.update({
 command.run(["cp", IOS_SUBSPACE_DIR/"CMakeListsMetal.txt", my_build_dir/"CMakeLists.txt"], do_log=True)
 command.run(["cp", IOS_SUBSPACE_DIR/"InfoMetal.plist", my_build_dir/"Info.plist"], do_log=True)
   
-##############################################
-
-
-the_environ["VERBOSE"] = "1"
-
-print( "############## begin envdump ##############")
-
-for item in the_environ:
-  print(f"{item}={the_environ[item]}")
-
-print( "############## end envdump ##############")
-
 ##############################################
 
 pathtools.mkdir(my_build_dir/".build-metal",clean=True)

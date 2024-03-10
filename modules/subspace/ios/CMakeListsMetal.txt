@@ -6,7 +6,7 @@ project(ios_metal_app LANGUAGES CXX OBJCXX)
 
 set(CMAKE_OSX_SYSROOT %s CACHE PATH "The iOS SDK sysroot")
 
-include($ENV{OBT_SUBSPACE_DIR}/ios.toolchain.cmake)
+include(${CMAKE_CURRENT_SOURCE_DIR}/../../ios.toolchain.cmake)
 include(${CMAKE_CURRENT_SOURCE_DIR}/conan_toolchain.cmake)
 
 # Find the required frameworks
@@ -14,14 +14,15 @@ find_library(UIKit UIKit REQUIRED)
 find_library(Foundation Foundation REQUIRED)
 find_library(CoreGraphics CoreGraphics REQUIRED)
 find_library(Metal Metal REQUIRED)
-find_library(QuartzCore QuartzCore)
+find_library(QuartzCore QuartzCore REQUIRED)
+find_package(glm REQUIRED)
 
 find_package(ZLIB REQUIRED)
 find_package(Boost REQUIRED COMPONENTS system filesystem)
 #find_package(lexertl14 REQUIRED)
 
 add_executable(${PROJECT_NAME} $ENV{OBT_ROOT}/modules/subspace/ios/main_metal.mm)
-target_include_directories(${PROJECT_NAME} PRIVATE $ENV{OBT_SUBSPACE_DIR}/include)
+target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../../include)
 # Link against the required frameworks
 
 target_link_libraries(${PROJECT_NAME} PRIVATE 
@@ -32,6 +33,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
   ${QuartzCore}
   ZLIB::ZLIB 
   Boost::system Boost::filesystem
+  glm::glm
   #CONAN_PKG::lexertl14
 )
 
