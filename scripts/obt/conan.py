@@ -32,6 +32,7 @@ def environment():
 #openimageio/2.5.6
 #rapidjson/cci.20230929 <incompatible with assimp/5.2.2>
 #openblas/0.3.26 
+#"libsndfile/1.2.2",
 
 #lexertl = dep.instance("lexertl14")
 #print(lexertl)
@@ -59,6 +60,9 @@ lexertl14/tweakoz-obt
 "stb/cci.20230920"
   "sqlite3/3.45.0",
   "sqlitecpp/3.3.1",
+  "libbacktrace/cci.20210118",
+  "audiofile/1.1.1",
+  "alembic/1.8.6",
 [generators]
 CMakeDeps
 CMakeToolchain

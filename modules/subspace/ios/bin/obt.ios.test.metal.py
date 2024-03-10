@@ -30,8 +30,6 @@ conan.require(prefix,my_build_dir,[
   "zmqpp/4.2.0",
   #"openimageio/2.5.9.0",
   "stb/cci.20230920",
-  "sqlite3/3.45.0",
-  "sqlitecpp/3.3.1",
   "lexertl14/tweakoz-obt@user/channel",
 ])
 
