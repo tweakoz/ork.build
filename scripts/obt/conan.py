@@ -53,7 +53,12 @@ cppzmq/4.10.0
 sigslot/1.2.2 
 moltenvk/1.2.2
 lexertl14/tweakoz-obt
-
+"zeromq/4.3.4",
+"zmqpp/4.2.0",
+"tracy/cci.20220130",
+"stb/cci.20230920"
+  "sqlite3/3.45.0",
+  "sqlitecpp/3.3.1",
 [generators]
 CMakeDeps
 CMakeToolchain

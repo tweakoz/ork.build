@@ -16,6 +16,9 @@ find_library(CoreGraphics CoreGraphics REQUIRED)
 find_library(Metal Metal REQUIRED)
 find_library(QuartzCore QuartzCore REQUIRED)
 find_package(glm REQUIRED)
+#find_package(openimageio REQUIRED)
+find_package(SQLite3 REQUIRED)
+find_package(SQLiteCpp REQUIRED)
 
 find_package(ZLIB REQUIRED)
 find_package(Boost REQUIRED COMPONENTS system filesystem)
@@ -34,6 +37,9 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
   ZLIB::ZLIB 
   Boost::system Boost::filesystem
   glm::glm
+  #${OPENIMAGEIO_LIBRARIES}
+  SQLiteCpp
+  sqlite3
   #CONAN_PKG::lexertl14
 )
 

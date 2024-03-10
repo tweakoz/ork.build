@@ -24,8 +24,14 @@ parsertl = dep.require("parsertl14")
 
 conan.require(prefix,my_build_dir,[
   "zlib/1.2.11",
-  "boost/1.81.0",
+  "boost/1.84.0",
   "glm/cci.20230113",
+  "zeromq/4.3.4",
+  "zmqpp/4.2.0",
+  #"openimageio/2.5.9.0",
+  "stb/cci.20230920",
+  "sqlite3/3.45.0",
+  "sqlitecpp/3.3.1",
   "lexertl14/tweakoz-obt@user/channel",
 ])
 
