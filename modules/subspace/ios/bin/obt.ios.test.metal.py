@@ -4,11 +4,22 @@ import os, sys, subprocess, argparse
 from obt import command, path, pathtools
 from obt import sdk, dep, subspace, conan
 
+this_dir = path.directoryOfInvokingModule()
+
+argparser = argparse.ArgumentParser(description="Build and install the ios_metal_app")
+argparser.add_argument("--clean", action="store_true", help="clean build")
+argparser.add_argument("--install", action="store_true", help="install the app on the connected device")
+args = argparser.parse_args()
+
+do_install = args.install
+do_clean = args.clean
+
 ##############################################
 
 IOS_SUBSPACE_DIR = subspace.descriptor("ios")._subsrc
 IOS_SDK = sdk.descriptor("aarch64","ios")
 prefix = path.subspace_dir()
+SRC_DIR = this_dir/".."
 
 my_build_dir = prefix/"builds"/"metalapp"
 pathtools.ensureDirectoryExists(my_build_dir)
@@ -17,25 +28,9 @@ assert(subspace.current() == "ios")
 
 ##############################################
 
-os.chdir(my_build_dir)
-
+IOS_SDK = sdk.descriptor("aarch64","ios")
 lexertl = dep.require("lexertl14")
 parsertl = dep.require("parsertl14")
-
-conan.require(prefix,my_build_dir,[
-  "zlib/1.2.11",
-  "boost/1.84.0",
-  "glm/cci.20230113",
-  "zeromq/4.3.4",
-  "zmqpp/4.2.0",
-  #"openimageio/2.5.9.0",
-  "stb/cci.20230920",
-  "lexertl14/tweakoz-obt@user/channel",
-])
-
-##############################################
-
-IOS_SDK = sdk.descriptor("aarch64","ios")
 the_environ = conan.environment()
 the_environ.update(IOS_SDK._environment)
 the_environ.update({
@@ -46,15 +41,41 @@ the_environ.update({
 
 ##############################################
 
-command.run(["cp", IOS_SUBSPACE_DIR/"CMakeListsMetal.txt", my_build_dir/"CMakeLists.txt"], do_log=True)
-command.run(["cp", IOS_SUBSPACE_DIR/"InfoMetal.plist", my_build_dir/"Info.plist"], do_log=True)
-  
+os.chdir(my_build_dir)
+
 ##############################################
 
-pathtools.mkdir(my_build_dir/".build-metal",clean=True)
-os.chdir(my_build_dir/".build-metal")
-command.run(["cmake", "..", "-G", "Xcode"], environment=the_environ, do_log=True)
-command.run(["cmake", "--build", ".","--config", "Release"], environment=the_environ, do_log=True)
+if not (my_build_dir/".build-metal").exists():
+  do_clean = True
+
+##############################################
+
+command.run(["cp", IOS_SUBSPACE_DIR/"CMakeListsMetal.txt", my_build_dir/"CMakeLists.txt"], do_log=True)
+command.run(["cp", IOS_SUBSPACE_DIR/"InfoMetal.plist", my_build_dir/"Info.plist"], do_log=True)
+
+##############################################
+if do_clean: # CLEAN BUILD
+##############################################
+  conan.require(prefix,my_build_dir,[
+    "zlib/1.2.11",
+    "boost/1.84.0",
+    "glm/cci.20230113",
+    "zeromq/4.3.4",
+    "zmqpp/4.2.0",
+    #"openimageio/2.5.9.0",
+    "stb/cci.20230920",
+    "lexertl14/tweakoz-obt@user/channel",
+  ])
+  pathtools.mkdir(my_build_dir/".build-metal",clean=True)
+  os.chdir(my_build_dir/".build-metal")
+  command.run(["cmake", "..", "-G", "Xcode","-DSRC_DIR=%s"%str(SRC_DIR)], environment=the_environ, do_log=True)
+  command.run(["cmake", "--build", ".","--config", "Release"], environment=the_environ, do_log=True)
+
+##############################################
+else: # INCREMENTAL BUILD
+##############################################
+  os.chdir(my_build_dir/".build-metal")
+  command.run(["cmake", "--build", ".","--config", "Release"], environment=the_environ, do_log=True)
 
 ##############################################
 
@@ -69,4 +90,5 @@ if not os.path.exists(executable_path):
 # Install the app on the connected device
 ##############################################
 
-IOS_SDK.install_app("com.example.metalapp", app_bundle_dir)
+if do_install:
+  IOS_SDK.install_app("com.example.metalapp", app_bundle_dir)

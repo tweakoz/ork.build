@@ -7,6 +7,7 @@
 #include <string>
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
+#include "dll.h"
 //#include <SQLiteCpp/SQLiteCpp.h>
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -70,7 +71,6 @@ void renderTriangle(mtl_dev_t device,      //
   float R = 0.5f * (sinf(phi * 0.5f) + 1.0f);
   float G = 0.5f * (sinf(phi * 0.7f) + 1.0f);
   float B = 0.5f * (sinf(phi * 0.9f) + 1.0f);
-
 
   fquat q = glm::angleAxis(phi, fvec3(0.0f, 0.0f, 1.0f));
 
@@ -228,6 +228,7 @@ void renderTriangle(mtl_dev_t device,      //
 
 int main(int argc, char *argv[]) {
   @autoreleasepool {
+    DLL::a_function();
     int retVal = UIApplicationMain(argc, argv, nil, @"TestBedAppDelegate");
     return retVal;
   }

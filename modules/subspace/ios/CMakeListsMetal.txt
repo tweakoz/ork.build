@@ -15,7 +15,7 @@ find_library(Foundation Foundation REQUIRED)
 find_library(CoreGraphics CoreGraphics REQUIRED)
 find_library(Metal Metal REQUIRED)
 find_library(QuartzCore QuartzCore REQUIRED)
-find_package(glm REQUIRED)
+find_package(glm CONFIG REQUIRED)
 #find_package(openimageio REQUIRED)
 #find_package(SQLite3 REQUIRED)
 #find_package(SQLiteCpp REQUIRED)
@@ -24,8 +24,19 @@ find_package(ZLIB REQUIRED)
 find_package(Boost REQUIRED COMPONENTS system filesystem)
 #find_package(lexertl14 REQUIRED)
 
-add_executable(${PROJECT_NAME} $ENV{OBT_ROOT}/modules/subspace/ios/main_metal.mm)
+set( DLL_NAME ${PROJECT_NAME}_DLL )
+add_library( ${DLL_NAME} SHARED ${SRC_DIR}/dll.mm )
+target_include_directories(${DLL_NAME} PRIVATE ${SRC_DIR})
+
+set_target_properties(${DLL_NAME} PROPERTIES
+    INSTALL_NAME_DIR "@rpath"
+)
+
+add_executable(${PROJECT_NAME} ${SRC_DIR}/main_metal.mm)
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../../include)
+target_include_directories(${PROJECT_NAME} PRIVATE ${SRC_DIR})
+target_include_directories(${PROJECT_NAME} PRIVATE ${Boost_INCLUDE_DIRS})
+target_include_directories(${PROJECT_NAME} PRIVATE ${glm_INCLUDE_DIRS})
 # Link against the required frameworks
 
 target_link_libraries(${PROJECT_NAME} PRIVATE 
@@ -35,19 +46,36 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
   ${Metal}
   ${QuartzCore}
   ZLIB::ZLIB 
-  Boost::system Boost::filesystem
+  Boost::system 
+  Boost::filesystem
   glm::glm
+  ${DLL_NAME}
   #${OPENIMAGEIO_LIBRARIES}
   #SQLiteCpp
   #sqlite3
   #CONAN_PKG::lexertl14
 )
 
+set_target_properties(${DLL_NAME} PROPERTIES
+  INSTALL_NAME_DIR "@rpath"
+  XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER "com.example.metalapp.dll"
+  XCODE_ATTRIBUTE_DEVELOPMENT_TEAM "$ENV{DEVELOPMENT_TEAM}"
+  XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY "iPhone Developer"
+  XCODE_ATTRIBUTE_CODE_SIGN_STYLE "Automatic"
+  FRAMEWORK TRUE
+  FRAMEWORK_VERSION A
+  MACOSX_FRAMEWORK_IDENTIFIER "com.example.metalapp.dll"
+  PUBLIC_HEADER "${SRC_DIR}/dll.h"
+)
 set_target_properties(${PROJECT_NAME} PROPERTIES
-    XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER "com.example.metalapp"
-    XCODE_ATTRIBUTE_DEVELOPMENT_TEAM "$ENV{DEVELOPMENT_TEAM}"
-    XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY "iPhone Developer"
-    XCODE_ATTRIBUTE_CODE_SIGN_STYLE "Automatic"
-    MACOSX_BUNDLE_GUI_IDENTIFIER "com.example.metalapp"
-    MACOSX_BUNDLE_INFO_PLIST ${CMAKE_CURRENT_SOURCE_DIR}/Info.plist
+  XCODE_ATTRIBUTE_LD_RUNPATH_SEARCH_PATHS "@executable_path/Frameworks"
+  XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER "com.example.metalapp"
+  XCODE_ATTRIBUTE_DEVELOPMENT_TEAM "$ENV{DEVELOPMENT_TEAM}"
+  XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY "iPhone Developer"
+  XCODE_ATTRIBUTE_CODE_SIGN_STYLE "Automatic"
+  MACOSX_BUNDLE_GUI_IDENTIFIER "com.example.metalapp"
+  MACOSX_BUNDLE_INFO_PLIST ${CMAKE_CURRENT_SOURCE_DIR}/Info.plist
+  XCODE_ATTRIBUTE_INFOPLIST_KEY_LSMinimumSystemVersion "16.0"
+  XCODE_ATTRIBUTE_INFOPLIST_KEY_CFBundleExecutable "${PROJECT_NAME}"
+  XCODE_EMBED_FRAMEWORKS "${DLL_NAME}"
 )
