@@ -3,6 +3,7 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED on)
 
 project(ios_metal_app LANGUAGES CXX OBJCXX)
+set( DLL_NAME ${PROJECT_NAME}_DLL )
 
 set(CMAKE_OSX_SYSROOT %s CACHE PATH "The iOS SDK sysroot")
 
@@ -24,7 +25,6 @@ find_package(ZLIB REQUIRED)
 find_package(Boost REQUIRED COMPONENTS system filesystem)
 #find_package(lexertl14 REQUIRED)
 
-set( DLL_NAME ${PROJECT_NAME}_DLL )
 add_library( ${DLL_NAME} SHARED ${SRC_DIR}/dll.mm )
 target_include_directories(${DLL_NAME} PRIVATE ${SRC_DIR})
 

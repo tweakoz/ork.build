@@ -2,7 +2,7 @@
 
 import os, sys, subprocess, argparse
 from obt import command, path, pathtools
-from obt import sdk, dep, subspace, conan
+from obt import sdk, dep, subspace, conan, cmake_gen
 
 this_dir = path.directoryOfInvokingModule()
 
@@ -52,6 +52,38 @@ if not (my_build_dir/".build-metal").exists():
 
 command.run(["cp", IOS_SUBSPACE_DIR/"CMakeListsMetal.txt", my_build_dir/"CMakeLists.txt"], do_log=True)
 command.run(["cp", IOS_SUBSPACE_DIR/"InfoMetal.plist", my_build_dir/"Info.plist"], do_log=True)
+
+##############################################
+# generate cmake project
+##############################################
+
+do_cmakegen = False
+
+if do_cmakegen:
+  WS = cmake_gen.workspace("ObtMetalApp")
+
+  WS.findLibrary("UIKit")
+  WS.findLibrary("Foundation")
+  WS.findLibrary("CoreGraphics")
+  WS.findLibrary("Metal")
+  WS.findLibrary("QuartzCore")
+  WS.findPackage("glm",CONFIG=True)
+  WS.findPackage("ZLIB")
+  WS.findPackage("Boost",COMPONENTS=["system","filesystem"])
+
+  WS.setVar("DLL_NAME", "${PROJECT_NAME}_DLL")
+  WS.setVar("APP_NAME", "${PROJECT_NAME}_APP")
+
+  APP = WS.createExecutable("${APP_NAME}")
+  DLL = WS.createSharedLibrary("${DLL_NAME}")
+  APP.dependsOn(DLL)
+  APP.add_src("${SRC_DIR}/main_metal.mm")
+  DLL.add_src("${SRC_DIR}/dll.mm")
+
+
+  EMITTER = cmake_gen.emitter("ios")
+  WS.emit(EMITTER)
+  assert(False)
 
 ##############################################
 if do_clean: # CLEAN BUILD
