@@ -641,10 +641,6 @@ def configFromCommandLine(parser_args=None):
     print(os.environ)
     ########################
 
-    if _config.project_dir!=_config.root_dir:
-      _config.dump_env()
-      importProject(_config)
-
     # subspace paths
     subspace_dir = _config.stage_dir
     if _config.subspace!="host":
@@ -654,6 +650,10 @@ def configFromCommandLine(parser_args=None):
     os.environ["OBT_SUBSPACE_BIN_DIR"] = str(_config.subspace_bin_dir)
     os.environ["OBT_BUILDS"] = str(_config.build_dir)
     os.environ["OBT_SUBSPACE_BUILD_DIR"] = str(_config.subspace_build_dir)
+
+    if _config.project_dir!=_config.root_dir:
+      _config.dump_env()
+      importProject(_config)
 
   #####################################################
   return _config
