@@ -64,8 +64,10 @@
 
 ---------------------------------------------------------------
 
-## USAGE Via PIP (to python user directory)
+## USAGE Via PIP (to python venv directory)
 
+* Virtual Environments are required from this point forward because [pep-668](https://peps.python.org/pep-0668/) has been mainlined into new linux distributions and MacOS/Homebrew. Rather than fight it, we have embraced it.
+  
 * Create Virtual Environment (Required)
 
 ```python -m venv <venvdir>```
@@ -93,7 +95,9 @@ prepend_to_python_path() {
   fi
 }
 
-prepend_to_python_path ~/<venvdir>/lib/python3.10/site-packages
+# we add to PYTHONPATH so that modules in venv available to OBT's built python without reinstalling.
+
+prepend_to_python_path ~/<venvdir>/lib/pythonx.xx/site-packages
 
 bash --rcfile <(echo "source ~/<venvdir>/bin/activate")
 ```
