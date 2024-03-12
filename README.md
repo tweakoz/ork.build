@@ -64,7 +64,7 @@
 
 ---------------------------------------------------------------
 
-## USAGE Via PIP (to python user directory)
+## USAGE Via PIP (to python venv directory)
 
 * Create Virtual Environment (Required)
 
