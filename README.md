@@ -93,6 +93,8 @@ prepend_to_python_path() {
   fi
 }
 
+# we add to PYTHONPATH so that modules in venv available to OBT's built python without reinstalling.
+
 prepend_to_python_path ~/<venvdir>/lib/pythonx.xx/site-packages
 
 bash --rcfile <(echo "source ~/<venvdir>/bin/activate")
