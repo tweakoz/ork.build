@@ -28,6 +28,9 @@ def targeting_host():
   target = os.environ.get("OBT_TARGET")
   return host==target
 
+def is_host_subspace():
+  return current()=="host"
+
 ###############################################################################
 
 def module_class(module_path,subname):

@@ -25,8 +25,6 @@ class zephyr(dep.Provider):
     super().__init__("zephyr")
     self.source_root = path.builds()/"zephyr"
     self.build_dest = path.builds()/"zephyr"/".build"
-    self.manifest = path.manifests()/"zephyr"
-    self.OK = self.manifest.exists()
     self._archlist = ["x86_64"]
     self._oslist = ["Linux"]
 

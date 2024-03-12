@@ -26,8 +26,6 @@ class avr_binutils(dep.Provider):
 
     super().__init__("avr_binutils")
 
-    self.manifest = path.manifests()/"avr_binutils"
-    self.OK = self.manifest.exists()
     self._archlist = ["x86_64"]
 
   ########

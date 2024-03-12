@@ -21,7 +21,6 @@ class linuxcnc(dep.Provider):
 
   def __init__(self): ############################################
     super().__init__("linuxcnc")
-    self.manifest = path.manifests()/"linuxcnc"
     self.source_root = path.builds()/"linuxcnc"
     self._archlist = ["x86_64"]
 

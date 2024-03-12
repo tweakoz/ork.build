@@ -21,8 +21,6 @@ class yarl(dep.Provider):
 
   def __init__(self): ############################################
     super().__init__("yarl")
-    self.manifest = path.manifests()/"yarl"
-    self.OK = self.manifest.exists()
 
   ########
 

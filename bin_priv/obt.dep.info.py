@@ -72,17 +72,21 @@ if hasattr(instance,"download_MD5"):
 #############################################################
 print()
 print_item("scope",instance.scopestr)
-print_item("manifest present",instance.exists)
+print_item("manifest path",instance.manifest)
+print_item("manifest present",instance.manifest.exists())
 print_item("source present",src_present)
 print_item("binaries present",bin_present)
+print_item("os", "All" if (instance._oslist==None) else instance._oslist)
 print_item("architectures", "All" if (instance._archlist==None) else instance._archlist)
 print_item("declared deps",decl_deps)
 print_item("subspace_VIF",subspace_VIF)
 print()
 #############################################################
 if subspace_VIF==2:
-  print_item("conanfile",instance._conanfile)
-  print_item("conan_build",instance._conan_build)
+  if hasattr(instance,"_conanfile"):
+     print_item("conanfile",instance._conanfile)
+  if hasattr(instance,"_conan_build"):
+     print_item("conan_build",instance._conan_build)
 #############################################################
 print_item("source root",instance.source_root)
 print_item("build_src",instance.build_src)

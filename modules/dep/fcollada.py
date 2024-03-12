@@ -26,9 +26,6 @@ class fcollada(dep.Provider):
 
     self.source_root = path.builds()/"fcollada"
     self.build_dest = path.builds()/"fcollada"/".build"
-    self.manifest = path.manifests()/"fcollada"
-
-    self.OK = self.manifest.exists()
 
   def __str__(self): ##########################################################
 

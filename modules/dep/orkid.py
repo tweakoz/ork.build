@@ -12,7 +12,8 @@ class orkid(dep.StdProvider):
   name = "orkid"
 
   def __init__(self):
-    super().__init__(orkid.name)
+    super().__init__(orkid.name,subspace_vif=2)
+    self.scope = dep.ProviderScope.SUBSPACE    
     self._oslist = ["Linux","Darwin"]
     self._archlist = ["x86_64","aarch64"]
     self._allow_build_in_subspaces = True 

@@ -20,8 +20,6 @@ class irrlicht(dep.Provider):
 
   def __init__(self): ############################################
     super().__init__("irrlicht")
-    self.manifest = path.manifests()/"irrlicht"
-    self.OK = self.manifest.exists()
 
   ########
 
@@ -31,10 +29,11 @@ class irrlicht(dep.Provider):
   ########
 
   def provide(self): ##########################################################
+    OK = self.manifest.exists()
     if False==self.OK:
       if host.IsOsx:
-        self.OK = 0==Command(["brew","install","irrlicht"]).exec()
-      if self.OK:
+        OK = 0==Command(["brew","install","irrlicht"]).exec()
+      if OK:
         self.manifest.touch()
 
-    return self.OK
+    return OK

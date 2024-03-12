@@ -29,8 +29,6 @@ class _qt5_from_source(dep.Provider):
     self.MAJOR_VERSION = "5.15"
     self.MINOR_VERSION = "2"
     self.HASH = "e1447db4f06c841d8947f0a6ce83a7b5"
-    self.manifest = path.manifests()/"qt5"
-    self.OK = self.manifest.exists()
     self.baseurl = URL("https://mirrors.ukfast.co.uk/sites/qt.io/official_releases/qt")
     self.fullver = "%s.%s" % (self.MAJOR_VERSION,self.MINOR_VERSION)
     self.name = "qt-everywhere-src-%s" % self.fullver

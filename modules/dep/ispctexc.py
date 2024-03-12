@@ -47,22 +47,23 @@ class ispctexc(dep.StdProvider):
 
     self.source_root.chdir()
     r = Command(["make","-f","Makefile.linux"]).exec()
-    self.OK = (r==0)
+    OK = (r==0)
 
-    return self.OK
+    if OK:
+      install()
+
+    return OK
 
   def install(self):
-    if self.OK:
-      sonam = "libispc_texcomp.so"
-      hdrnam = "ispc_texcomp.h"
-      if host.IsOsx:
-        cmd = ["install_name_tool",
-               "-id","@rpath/libispc_texcomp.so",
-               self.build_dest/sonam]
-        Command(cmd).exec()
-      pathtools.copyfile(self.build_dest/sonam,path.stage()/"lib"/sonam)
-      pathtools.copyfile(self.source_root/"ispc_texcomp"/hdrnam,path.stage()/"include"/hdrnam)
-    return self.OK
+    sonam = "libispc_texcomp.so"
+    hdrnam = "ispc_texcomp.h"
+    if host.IsOsx:
+      cmd = ["install_name_tool",
+             "-id","@rpath/libispc_texcomp.so",
+             self.build_dest/sonam]
+      Command(cmd).exec()
+    pathtools.copyfile(self.build_dest/sonam,path.stage()/"lib"/sonam)
+    pathtools.copyfile(self.source_root/"ispc_texcomp"/hdrnam,path.stage()/"include"/hdrnam)
 
   def areRequiredSourceFilesPresent(self):
     return (self.source_root/"Makefile.linux").exists()

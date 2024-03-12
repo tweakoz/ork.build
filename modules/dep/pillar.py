@@ -27,10 +27,6 @@ class pillar(dep.Provider):
     super().__init__("pillar")
     self.source_root = path.builds()/"pillar-python-sdk"
     self.url = "https://github.com/armadillica/pillar"
-    self.manifest = path.manifests()/"pillar-python-sdk"
-    self.OK = self.manifest.exists()
-    if self.option("force")==True:
-      self.OK = False
 
   ################################
 

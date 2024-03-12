@@ -25,9 +25,7 @@ class vpf(dep.Provider):
     #print(options)
     self.source_root = path.builds()/"vpf"
     self.build_dest = path.builds()/"vpf"/".build"
-    self.manifest = path.manifests()/"vpf"
     self.sdk_dir = path.Path("/opt/nvencsdk")
-    self.OK = self.manifest.exists()
     self._archlist = ["x86_64"]
 
   def __str__(self): ##########################################################
@@ -80,9 +78,10 @@ class vpf(dep.Provider):
     # build
     #########################################
 
+    OK = True
     if ok2build:
-        self.OK = (make.exec("install")==0)
-    return self.OK
+        OK = (make.exec("install")==0)
+    return OK
 
   def linkenv(self): ##########################################################
     LIBS = ["ork_vpf"]

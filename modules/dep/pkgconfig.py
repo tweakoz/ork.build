@@ -12,13 +12,10 @@ class pkgconfig(dep.Provider):
   def __init__(self): ############################################
     super().__init__("pkgconfig")
     self.scope = dep.ProviderScope.INIT
-    self.manifest = path.manifests()/"pkgconfig"
     self.extract_dir = path.builds()/"pkgconfig"
     self.source_dir = self.extract_dir/("pkg-config-%s" % VER)
     self.build_dir = self.source_dir/".build"
     self.url = "http://pkgconfig.freedesktop.org/releases/pkg-config-%s.tar.gz" % VER
-
-    self.OK = self.manifest.exists()
 
   def build(self): ##########################################################
     self.arcpath = dep.downloadAndExtract([self.url],
@@ -39,7 +36,7 @@ class pkgconfig(dep.Provider):
     if host.IsLinux and host.IsAARCH64:
       conf_cmd += ["--build=aarch64-linux-gnu"]
 
-    self.OK = (Command(conf_cmd).exec()==0)
+    OK = (Command(conf_cmd).exec()==0)
 
     #assert(False)
 
@@ -52,10 +49,10 @@ class pkgconfig(dep.Provider):
 
     pathtools.ensureDirectoryExists(path.pkgconfigdir())
 
-    if self.OK:
-      self.OK = (make.exec( "install" )==0)
+    if OK:
+      OK = (make.exec( "install" )==0)
 
-    return self.OK
+    return OK
   ########################################################################
   def areRequiredSourceFilesPresent(self):
     return (self.source_dir/"config.guess").exists()

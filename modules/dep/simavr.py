@@ -20,7 +20,6 @@ class simavr(dep.Provider):
 
   def __init__(self): ############################################
     super().__init__("simavr")
-    self.manifest = path.manifests()/"simavr"
     self.source_root = path.builds()/"simavr"
     self._archlist = ["x86_64"]
 
@@ -29,7 +28,7 @@ class simavr(dep.Provider):
     git.Clone("https://github.com/tweakoz/simavr",self.source_root,"master")
     os.chdir(self.source_root)
     os.environ["INSTALL_PREFIX"] = str(path.prefix())
-    make.exec("install")
-    self.manifest.touch()
-    self.OK = self.manifest.exists()
-    return self.OK
+    OK = make.exec("install")
+    if OK:
+      self.manifest.touch()
+    return OK

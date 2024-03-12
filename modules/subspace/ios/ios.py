@@ -1,4 +1,4 @@
-from obt import dep, path, command, docker, wget, pathtools, sdk, conan
+from obt import dep, path, command, docker, wget, pathtools, sdk, conan, target
 from obt.deco import Deco
 import obt.module
 import time, re, socket, os, sys
@@ -91,6 +91,7 @@ class subspaceinfo:
       self._subsrc = this_dir
       self._prefix = PREFIX
       self._manifest_path = path.manifests()/self._name
+      self._target = target.descriptor("aarch64","ios")
     ###############################################
     # build the docker image
     ###############################################

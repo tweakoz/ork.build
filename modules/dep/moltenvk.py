@@ -25,8 +25,6 @@ class moltenvk(dep.Provider):
     #print(options)
     self.source_root = path.builds()/"moltenvk"
     self.build_dest = path.builds()/"moltenvk"/".build"
-    self.manifest = path.manifests()/"moltenvk"
-    self.OK = self.manifest.exists()
     #self._archlist = ["x86_64"]
     self._oslist = ["Darwin"]
     self.sdk_dir = self.source_root/"Package"/"Latest"/"MoltenVK"

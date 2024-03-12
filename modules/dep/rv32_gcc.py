@@ -30,9 +30,5 @@ class rv32_gcc(dep.Provider):
 
   def provide(self): ##########################################################
     gcc = _gcc.context("riscv32-elf")
-    self.OK = gcc.build()
-
-
-    self.OK = True
-
-    return self.OK
+    OK = gcc.build()
+    return OK

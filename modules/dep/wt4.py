@@ -27,8 +27,6 @@ class wt4(dep.Provider):
     #print(options)
     build_dest = path.builds()/"wt4"
     self.build_dest = build_dest
-    self.manifest = path.manifests()/"wt4"
-    self.OK = self.manifest.exists()
     self.fname = "wt-%s.tar.gz"%VERSION
     self._archlist = ["x86_64"]
 
@@ -82,10 +80,4 @@ class wt4(dep.Provider):
     return 0==Command(["make","-j",host.NumCores,"install"]).exec()
 
   def provide(self): ##########################################################
-
-    if False==self.OK:
-      self.download_and_extract()
-      self.OK = self.build()
-      if self.OK:
-        self.manifest.touch()
-    return self.OK
+    return super()._old_provide()

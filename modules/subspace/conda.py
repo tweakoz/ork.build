@@ -82,6 +82,13 @@ class subspaceinfo:
             pass #OK = self.launch(launch_args=["pip3","install","ork.build"])==0
           if OK:
             self._manifest_path.touch()
+            pathtools.ensureDirectoryExists(self._prefix)
+            pathtools.ensureDirectoryExists(self._prefix/"manifests")
+            pathtools.ensureDirectoryExists(self._prefix/"builds")
+            pathtools.ensureDirectoryExists(self._prefix/"include")
+            pathtools.ensureDirectoryExists(self._prefix/"lib")
+            pathtools.ensureDirectoryExists(self._prefix/"bin")
+            pathtools.ensureDirectoryExists(self._prefix/"conan")
         return OK 
 
     ###############################################

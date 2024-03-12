@@ -8,8 +8,6 @@ class pyopengl(dep.Provider):
     super().__init__("pyopengl")
     build_dest = path.builds()/"pyopengl"
     self.build_dest = build_dest
-    self.manifest = path.manifests()/"pyopengl"
-    self.OK = self.manifest.exists()
     self.python = self.declareDep("python")
 
   def build(self): ############################################################

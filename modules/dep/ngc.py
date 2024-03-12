@@ -5,8 +5,6 @@ class ngc(dep.Provider):
   def __init__(self): ############################################
     super().__init__("ngc")
     self.build_dest = path.builds()/"ngc"
-    self.manifest = path.manifests()/"ngc"
-    self.OK = self.manifest.exists()
     self.dest_bin = path.stage()/"bin"/"ngc"
   def __str__(self):
     return "NGC (nvidia-wget)"
@@ -39,9 +37,10 @@ class ngc(dep.Provider):
 
     return self.dest_bin.exists()
   def provide(self): ##########################################################
-    if False==self.OK:
+    OK = self.manifest.exists()
+    if False==OK:
       self.download_and_extract()
-      self.OK = self.build()
-      if self.OK:
+      OK = self.build()
+      if OK:
         self.manifest.touch()
-    return self.OK
+    return OK

@@ -1,4 +1,4 @@
-from obt import dep, path, command, docker, wget, pathtools
+from obt import dep, path, command, docker, wget, pathtools, host, target
 from obt.deco import Deco
 import obt.module
 import time, re, socket, os, sys
@@ -15,6 +15,18 @@ class subspaceinfo:
     def __init__(self):
       super().__init__()
       self._name = "host"
+      is_linux = host.IsLinux 
+      is_arm = host.IsAARCH64
+      if is_linux:
+        if is_arm:
+          self._target = target.descriptor("aarch64","linux")
+        else:
+          self._target = target.descriptor("x86_64","linux")
+      else:
+        if is_arm:
+          self._target = target.descriptor("aarch64","macos")
+        else:
+          self._target = target.descriptor("x86_64","macos")
     ###############################################
     # build the docker image
     ###############################################

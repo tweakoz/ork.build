@@ -26,8 +26,6 @@ class minetest(dep.Provider):
     #print(options)
     build_dest = path.builds()/"minetest"
     self.build_dest = build_dest
-    self.manifest = path.manifests()/"minetest"
-    self.OK = self.manifest.exists()
     self.fname = "minetest-%s.zip" % VERSION
     self._archlist = ["x86_64"]
 
@@ -98,10 +96,4 @@ class minetest(dep.Provider):
     return 0==Command(["make","-j",host.NumCores,"install"]).exec()
 
   def provide(self): ##########################################################
-    if False==self.OK:
-      self.download_and_extract()
-      self.OK = self.build()
-      if self.OK:
-        self.manifest.touch()
-
-    return self.OK
+    return super()._old_provide()

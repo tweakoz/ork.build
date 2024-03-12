@@ -1,12 +1,15 @@
 from obt import subspace, path
 
+###########################################################
+
 def exists(name):
-  if subspace.targeting_host():
+  
+  if subspace.is_host_subspace():
     manifest = path.subspace_dir()/"manifest"
     if (manifest/name).exists():
       return True
     else:
-      manifest = path.stage_dir()/"manifest"
+      manifest = path.stage()/"manifest"
       return (manifest/name).exists()
   else:
     manifest = path.subspace_dir()/"manifest"

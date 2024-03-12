@@ -20,8 +20,6 @@ class faust(dep.Provider):
 
   def __init__(self): ############################################
     super().__init__("faust")
-    self.manifest = path.manifests()/"faust"
-    self.OK = self.manifest.exists()
     self.source_root = path.builds()/"faust"
     self.build_dest = self.source_root/".build"
     self._archlist = ["x86_64"]
@@ -35,7 +33,7 @@ class faust(dep.Provider):
 
   def build(self): #############################################################
 
-    self.OK = False
+    OK = False
     if self.should_force_build:
         os.system("rm -rf %s"%self.source_root)
 
@@ -52,16 +50,12 @@ class faust(dep.Provider):
 
     if command.Command(['make',"-e"],environment=makeenv).exec()==0:
         if command.Command(['make',"-e","install"],environment=makeenv).exec()==0:
-          self.OK = True
+          OK = True
           self.manifest.touch()
 
-    return self.OK
+    return OK
 
   ########
 
   def provide(self): ##########################################################
-
-    if self.should_build:
-      self.OK = self.build()
-    print(self.OK)
-    return self.OK
+    super()._old_provide()

@@ -28,8 +28,6 @@ class postgresql(dep.Provider):
     #print(options)
     build_dest = path.builds()/"postgresql"
     self.build_dest = build_dest
-    self.manifest = path.manifests()/"postgresql"
-    self.OK = self.manifest.exists()
     self.fname = "postgresql-%s.tar.bz2"%VERSION
     self._archlist = ["x86_64"]
 

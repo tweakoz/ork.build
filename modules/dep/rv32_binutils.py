@@ -40,8 +40,7 @@ class rv32_binutils(dep.Provider):
              '--program-prefix=riscv32-elf-',
              '--target=riscv32-elf']).exec()
 
-    make.exec("all")
-    make.exec("install",parallelism=0.0)
-
-    self.OK = True
-    return self.OK
+    OK = make.exec("all")
+    if OK:
+      OK = make.exec("install",parallelism=0.0)
+    return OK

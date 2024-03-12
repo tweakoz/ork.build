@@ -20,8 +20,6 @@ class vst3sdk(dep.Provider):
 
   def __init__(self): ############################################
     super().__init__("vst3sdk")
-    self.manifest = path.manifests()/"vst3sdk"
-    self.OK = self.manifest.exists()
     self.source_root = path.builds()/"vst3sdk"
     self.build_dest = self.source_root/".build"
     self._archlist = ["x86_64"]
@@ -35,7 +33,8 @@ class vst3sdk(dep.Provider):
 
   def build(self): #############################################################
 
-    self.OK = False
+    OK = True
+
     if self.should_force_build:
         os.system("rm -rf %s"%self.source_root)
 
@@ -57,15 +56,11 @@ class vst3sdk(dep.Provider):
     if cmake_ctx.exec()==0:
         if make.exec("all")==0:
           self.manifest.touch()
-          self.OK = True
+          OK = True
 
-    return self.OK
+    return OK
 
   ########
 
   def provide(self): ##########################################################
-
-    if self.should_build:
-      self.OK = self.build()
-    print(self.OK)
-    return self.OK
+    return super()._old_provide()

@@ -12,8 +12,14 @@ class houdini(dep.Provider):
     self.source_root = path.builds()/"houdini"
     self.build_dest = self.source_root
     self.header_dest = path.prefix()/"include"/"houdini"
-    self.manifest = path.manifests()/self.hfs_vers
-    self.OK = True
+
+    #############################
+
+    @property
+    def manifest(self):
+      return self.manifest_dir / self.hfs_vers 
+
+    #############################
 
   def env_init(self):
     if self.hfs_path.exists():

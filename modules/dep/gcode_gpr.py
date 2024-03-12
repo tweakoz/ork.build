@@ -20,11 +20,8 @@ class gcode_gpr(dep.Provider):
 
   def __init__(self): ############################################
     super().__init__("gcode_gpr")
-    self.manifest = path.manifests()/"gcode_gpr"
     self.source_root = path.builds()/"gcode_gpr"
     self.build_dest = self.source_root/".build"
-
-    self.OK = self.manifest.exists()
 
   def __str__(self):
     return "A simple C++ G-code parser"

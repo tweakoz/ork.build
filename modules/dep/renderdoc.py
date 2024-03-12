@@ -11,8 +11,6 @@ class renderdoc(dep.Provider):
     super().__init__("renderdoc")
     rdoc_dir = path.Path("/opt/renderdoc_%s"%VERSION)
     self.rdoc_dir = rdoc_dir
-    self.manifest = path.manifests()/"renderdoc"
-    self.OK = self.manifest.exists()
     self.rdoc_bin = rdoc_dir/"bin"/"qrenderdoc"
     self._oslist = ["Linux"]
     self._archlist = ["x86_64"]

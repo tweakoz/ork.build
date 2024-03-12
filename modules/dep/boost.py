@@ -35,7 +35,6 @@ class boost(dep.Provider):
     self.verurl = self.verurl/"source"/self.fname
     build_dest = path.builds()/"boost"
     self.build_dest = build_dest
-    self.manifest = path.manifests()/"boost"
     self._is_mac_arm = (self._target.identifier == "aarch64-macos")
 
     SUFFIX = ""
@@ -116,8 +115,8 @@ class boost(dep.Provider):
 
     a = Command(cmdlist).exec()
 
-    self.OK = (a==0)
-    assert(self.OK)
+    OK = (a==0)
+    assert(OK)
 
     #########################################
     # for MacM1 (ARM)
@@ -149,8 +148,8 @@ class boost(dep.Provider):
                  "runtime-link=shared",
                  "headers"]).exec()
 
-    self.OK = (b==0)
-    assert(self.OK)
+    OK = (b==0)
+    assert(OK)
 
     #########################################
 
@@ -175,14 +174,15 @@ class boost(dep.Provider):
                  "runtime-link=shared",
                  "install"]).exec()
 
-    self.OK = (c==0)
-    assert(self.OK)
+    OK = (c==0)
+    assert(OK)
 
     #########################################
 
-    if self.OK:
+    if OK:
       self.manifest.touch()
 
+    return OK
     #Fixed it by commenting the following in boost/tools/build/src/tools/darwin.jam
     # - GCC 4.0 and higher in Darwin does not have -fcoalesce-templates.
     #if $(real-version) < "4.0.0"
@@ -288,6 +288,7 @@ class boost(dep.Provider):
   ###########################################################
 
   def provide(self):
+    OK = self.manifest.exists()
     if not self.supports_host:
       print(deco.red("Dependency does not support this host"))
       return False
@@ -300,11 +301,11 @@ class boost(dep.Provider):
       self.download_and_extract()
     ############################
     if self.should_build:
-      self.build()
+      OK = self.build()
     ############################
     self._generate_pkgconfig()
 
-    return self.OK
+    return OK
 
   ###########################################################
 

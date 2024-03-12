@@ -25,9 +25,6 @@ class unittestpp(dep.Provider):
 
     self.source_root = path.builds()/"unittestpp"
     self.build_dest = path.builds()/"unittestpp"/".build"
-    self.manifest = path.manifests()/"unittestpp"
-
-    self.OK = self.manifest.exists()
 
   ########
 
@@ -50,11 +47,4 @@ class unittestpp(dep.Provider):
     return (make.exec("install")==0)
 
   def provide(self): ##########################################################
-
-    if self.should_build:
-
-      self.OK = self.build()
-      if self.OK:
-        self.manifest.touch()
-
-    return self.OK
+    return self._old_provide()

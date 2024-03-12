@@ -48,8 +48,6 @@ class Provider(object):
       self._bin_required_files = []
       self._required_deps = {}
       self._topoindex = -1
-      self.manifest = path.manifests()/name
-      self.OK = self.manifest.exists()
       self._debug = False
       self._must_build_in_tree = False
       if name not in root_dep_list:
@@ -60,6 +58,22 @@ class Provider(object):
         #self.setSourceRoot(path.subspace_builds()/name)
         self._allow_build_in_subspaces = True
       #############################
+    #############################
+    @property
+    def manifest_dir(self):
+      subspace_path = path.subspace_dir()/"manifests"
+      stage_path = path.stage()/"manifests"
+      is_host = subspace.is_host_subspace()
+      is_host = is_host or (self.scope!=ProviderScope.SUBSPACE)
+      return stage_path if is_host else subspace_path 
+    #############################
+    @property
+    def manifest(self):
+      return self.manifest_dir / self._name 
+    #############################
+    @property
+    def OK(self):
+      return self.manifest.exists()
     #############################
     def declareDep(self, named):
       inst = _dep_x.instance(named)
@@ -246,26 +260,39 @@ class Provider(object):
 
     #############################
 
+    def _old_provide(self): 
+      OK = True
+      if not self.manifest.exists():
+        OK = False
+      if not OK:
+        self.download_and_extract()
+        OK = self.build()
+        if OK:
+          self.manifest.touch()
+
+    #############################
+
     def provide(self):
       if not self.supports_host:
         print(deco.red("Dependency does not support this host"))
         return False
       if self.should_wipe:
         self.wipe()
+      OK = True
       if self.should_build:
         with buildtrace.NestedBuildTrace({ "op": "Provider.provide(%s)"%self._name }) as nested:
-          self.OK = self.build()
-          if self.OK:
-            self.OK = self.onPostBuild()
-            if self.OK:
+          OK = self.build()
+          if OK:
+            OK = self.onPostBuild()
+            if OK:
               bins_present=self.areRequiredBinaryFilesPresent()
               if bins_present != None:
-                self.OK = bins_present
+                OK = bins_present
               else:
-                self.OK = True
-              if self.OK:
+                OK = True
+              if OK:
                 self.manifest.touch()
-      return self.OK
+      return OK
 
 
     #############################
@@ -312,8 +339,6 @@ class Provider(object):
 class HomebrewProvider(Provider):
   def __init__(self,name,pkgname):
     super().__init__(pkgname)
-    self.manifest = path.manifests()/name
-    self.OK = self.manifest.exists()
     self.pkgname = pkgname
     self._deps = list()
   ###########################################
@@ -393,20 +418,21 @@ class StdProvider(Provider):
       # build
       #########################################
       print(deco.bright("Building<%s>"%(self._name)))
-      self.OK = self._builder.build(self.build_src,
+      OK = self._builder.build(self.build_src,
                                     self.build_dest,
                                     self.build_working_dir,
                                     self.should_incremental_build)
       #########################################
-      if not self.OK:
+      if not OK:
         print(deco.err("Build <%s> failed!"%self._name))
-      return self.OK
+      return OK
     #########################################
     def install(self):
       return self._builder.install(self.build_dest)
     #########################################
     def provide(self):
       with buildtrace.NestedBuildTrace({ "op": "StdProvider.provide(%s)"%self._name }) as nested:
+       OK = self.manifest.exists()
        #print("self.should_wipe<%d>"%self.should_wipe)
        #print("self.should_build<%d>"%self.should_build)
        self.postinit()
@@ -428,7 +454,7 @@ class StdProvider(Provider):
          fetch_ok = self._fetch()
          if False==fetch_ok:
           print(deco.err("Fetch <%s> failed!"%self._name))
-          self.OK = False
+          OK = False
           return False
 
        #########################################
@@ -436,17 +462,17 @@ class StdProvider(Provider):
        #########################################
 
        if self.should_build:
-        self.OK = self.build()
+        OK = self.build()
 
-        if self.OK:
-          self.OK = self.onPostBuild()
+        if OK:
+          OK = self.onPostBuild()
 
           #########################################
           # INSTALL
           #########################################
 
-          if self.OK:
-            self.OK = self.install()
+          if OK:
+            OK = self.install()
           else:
             return False
 
@@ -454,11 +480,11 @@ class StdProvider(Provider):
        # MANIFEST
        #########################################
 
-       if self.OK:
+       if OK:
         self.manifest.touch()
       
-       assert(self.OK)
+       assert(OK)
       
-       return self.OK
+       return OK
     #########################################
 

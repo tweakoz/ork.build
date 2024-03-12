@@ -24,8 +24,6 @@ class irix65_gcc(dep.Provider):
 
     def __init__(self): ############################################
         super().__init__("irix65_gcc")
-        self.manifest = path.manifests()/"irix65_gcc"
-        self.OK = self.manifest.exists()
         self._archlist = ["x86_64"]
 
 

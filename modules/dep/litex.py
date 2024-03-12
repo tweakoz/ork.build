@@ -11,8 +11,6 @@ class litex(dep.Provider):
     super().__init__("litex")
     build_dest = path.builds()/"litex"
     self.build_dest = build_dest
-    self.manifest = path.manifests()/"litex"
-    self.OK = self.manifest.exists()
     self.python = self.declareDep("python")
     self._oslist = ["Linux"]
     self._archlist = ["x86_64"]

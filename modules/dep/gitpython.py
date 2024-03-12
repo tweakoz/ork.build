@@ -22,8 +22,6 @@ class gitpython(dep.Provider):
 
   def __init__(self): ############################################
     super().__init__("gitpython")
-    self.manifest = path.manifests()/"gitpython"
-    self.OK = self.manifest.exists()
 
   ########
 
@@ -33,9 +31,10 @@ class gitpython(dep.Provider):
   ########
 
   def provide(self): ##########################################################
-    if False==self.OK:
-      self.OK = 0==Command(["pip3","install","gitpython"]).exec()
-    if self.OK:
+    OK = self.manifest.exists()
+    if False==OK:
+      OK = 0==Command(["pip3","install","gitpython"]).exec()
+    if OK:
       self.manifest.touch()
 
-    return self.OK
+    return OK
