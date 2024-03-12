@@ -16,6 +16,8 @@
 
 ## DEFINITIONS  
 
+* Virtual Env - python virtual environment created with python -m venv <venvdir>
+
 * Staging Folder - The container which consists of a top level folder in which all build products go and a set of environment variables
 
 * Module - a python script in OBT or OBT_SEARCH_PATH that describes and implements a subspace, dependency, target and SDK. There are *dep*, *docker*, and *subspace* modules - each providing a different subset of functionality.
@@ -64,38 +66,73 @@
 
 ## USAGE Via PIP (to python user directory)
 
-* Install OBT
+* Create Virtual Environment (Required)
+
+```python -m venv <venvdir>```
+
+replace <venvdir> - with a name of your choice.
+
+* simplify venv launch
+
+```mkdir ~/bin```
+
+create a launch script - it should look something like this
+
+```cat ~/bin/venv-launch-obt```
+
+```#!/usr/bin/env bash
+
+prepend_to_path() {
+  if ! echo "$PATH" | grep -Eq "(^|:)$1($|:)"; then
+    export PATH="$1:$PATH"
+  fi
+}
+prepend_to_python_path() {
+  if ! echo "$PYTHONPATH" | grep -Eq "(^|:)$1($|:)"; then
+    export PYTHONPATH="$1:$PYTHONPATH"
+  fi
+}
+
+prepend_to_python_path ~/<venvdir>/lib/python3.10/site-packages
+
+bash --rcfile <(echo "source ~/<venvdir>/bin/activate")
+```
+
+* launch the venv
+
+```~/bin/venv-launch-obt```
+
+* from within the venv, install OBT
 
 ```bash
-pip3 install --user ork.build
+pip3 install ork.build
 ```
 
 * Install system scoped dependencies (requires sudo)
 * OBT will want to assume several packages are present for baseline operation
 * Some dependencies are outside the scope of python, hence we are not using pip.
 
-### On Ubuntu-x86_64 (20.04,22.04) - sudo **REQUIRED**
+  * On Ubuntu-x86_64 (20.04,22.04) - sudo **REQUIRED**
 
-* Review the script that will be executed if you would like to know what it is doing (especially since sudo is involved)
-* Visit <https://github.com/tweakoz/ork.build/blob/develop/bin_pub/obt.ix.installdeps.ubuntu_x86_64.py>
+  * Review the script that will be executed if you would like to know what it is doing (especially since sudo is involved)
+  * Visit <https://github.com/tweakoz/ork.build/blob/develop/bin_pub/obt.ix.installdeps.ubuntu_x86_64.py>
 
-```bash
-obt.ix.installdeps.ubuntu_x86_64.py # will ask for sudo
-``` 
+  ```bash
+  obt.ix.installdeps.ubuntu_x86_64.py # will ask for sudo
+  ``` 
 
-### On MacOs (Ventura - x86 or arm) - sudo **NOT required**
+  * On MacOs (Ventura - x86 or arm) - sudo **NOT required**
 
-* Install and/or update HomeBrew (https://brew.sh/)
-* Install latest Xcode (Via AppStore)
-* View the OBT system install file if you would like to know what it is doing
-* Visit <https://github.com/tweakoz/ork.build/blob/develop/bin_pub/obt.osx.installdeps.py>
+  * Install and/or update HomeBrew (https://brew.sh/)
+  * Install latest Xcode (Via AppStore)
+  * View the OBT system install file if you would like to know what it is doing
+  * Visit <https://github.com/tweakoz/ork.build/blob/develop/bin_pub/obt.osx.installdeps.py>
 
-```bash
-obt.osx.installdeps.py
-```
+  ```bash
+  obt.osx.installdeps.py
+  ```
 
 ### Common
-
 
 ---------------------------------------------------------------
 
@@ -104,7 +141,7 @@ obt.osx.installdeps.py
 ### Clone it
 
 ```bash
-git clone https://github.com/tweakoz/ork.build 
+git clone https://github.com/tweakoz/ork.build
 ```
 
 ### Install system scoped dependencies
@@ -112,15 +149,25 @@ git clone https://github.com/tweakoz/ork.build
 On Ubuntu 19.04/20.04
 
 ```bash
-obt.ix.installdeps.ubuntu22.py
+ork.build/bin_pub/obt.ix.installdeps.ubuntu22.py
 ``` 
 
 Ubuntu may require a few deps to be installed first, like wget, for example..
 
 or On MacOs (only MacOs Catalina Intel tested, atm...)
 
+```bash 
+ork.build/bin_pub/obt.osx.installdeps.py
+```
+
+create and launch virtual env
+
+from within virtualenv
 ```bash
-obt.osx.installdeps.py
+pip3 install twine
+```
+```bash
+cd ork.build; ./twine/editable.py
 ```
 
 MacOs will require a few deps to be installed first, such as homebrew and macos commandline build tools.
