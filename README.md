@@ -66,6 +66,8 @@
 
 ## USAGE Via PIP (to python venv directory)
 
+* Virtual Environments are required from this point forward because [pep-668](https://peps.python.org/pep-0668/) has been mainlined into new linux distributions and MacOS/Homebrew. Rather than fight it, we have embraced it.
+  
 * Create Virtual Environment (Required)
 
 ```python -m venv <venvdir>```
