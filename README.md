@@ -93,7 +93,7 @@ prepend_to_python_path() {
   fi
 }
 
-prepend_to_python_path ~/<venvdir>/lib/python3.10/site-packages
+prepend_to_python_path ~/<venvdir>/lib/pythonx.xx/site-packages
 
 bash --rcfile <(echo "source ~/<venvdir>/bin/activate")
 ```
