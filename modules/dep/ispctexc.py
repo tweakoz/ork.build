@@ -50,7 +50,7 @@ class ispctexc(dep.StdProvider):
     OK = (r==0)
 
     if OK:
-      install()
+      OK = self.install()
 
     return OK
 
@@ -64,6 +64,7 @@ class ispctexc(dep.StdProvider):
       Command(cmd).exec()
     pathtools.copyfile(self.build_dest/sonam,path.stage()/"lib"/sonam)
     pathtools.copyfile(self.source_root/"ispc_texcomp"/hdrnam,path.stage()/"include"/hdrnam)
+    return True
 
   def areRequiredSourceFilesPresent(self):
     return (self.source_root/"Makefile.linux").exists()

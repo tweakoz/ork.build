@@ -265,10 +265,12 @@ class Provider(object):
       if not self.manifest.exists():
         OK = False
       if not OK:
-        self.download_and_extract()
+        if hasattr(self,"download_and_extract"):
+          self.download_and_extract()
         OK = self.build()
         if OK:
           self.manifest.touch()
+      return OK
 
     #############################
 
@@ -482,9 +484,7 @@ class StdProvider(Provider):
 
        if OK:
         self.manifest.touch()
-      
-       assert(OK)
-      
+            
        return OK
     #########################################
 
