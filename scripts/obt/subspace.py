@@ -85,6 +85,7 @@ def enumerate():
   #######################################
   module_dict = dict()
   module_dirs_list = os.environ["OBT_MODULES_PATH"].split(":")
+  print(module_dirs_list)
   for module_dir in module_dirs_list:
     subspace_path = obt.path.Path(module_dir) / "subspace"
     if subspace_path.exists():

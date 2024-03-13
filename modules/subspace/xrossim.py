@@ -34,7 +34,7 @@ class subspaceinfo:
       super().__init__()
       self._name = "xrossim"
       self._prefix = path.subspace_root()/"xrossim"
-      self._manifest_path = path.manifests()/self._name
+      self._manifest_path = path.manifests_root()/self._name
     ###############################################
     # build the docker image
     ###############################################

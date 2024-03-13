@@ -290,6 +290,9 @@ def pkgconfigdir():
 
 ###############################################################################
 
+def manifests_root():
+  return stage()/"manifests"
+
 def manifests():
   return subspace_dir()/"manifests"
 

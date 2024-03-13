@@ -90,7 +90,7 @@ class subspaceinfo:
       self._name = "ios"
       self._subsrc = this_dir
       self._prefix = PREFIX
-      self._manifest_path = path.manifests()/self._name
+      self._manifest_path = path.manifests_root()/self._name
       self._target = target.descriptor("aarch64","ios")
     ###############################################
     # build the docker image

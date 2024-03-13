@@ -165,7 +165,7 @@ class EnvSetup:
         "root": "${OBT_ROOT}",
         "project": "${OBT_PROJECT_DIR}",
         "deps": "${OBT_ROOT}/modules/dep",
-        "subspace": "${OBT_STAGE}/subspaces/${OBT_SUBSPACE}",
+        #"subspace": "${OBT_STAGE}/subspaces/${OBT_SUBSPACE}",
         "stage": "${OBT_STAGE}",
         "builds": "${OBT_STAGE}/builds",
     }

@@ -641,19 +641,27 @@ def configFromCommandLine(parser_args=None):
     print(os.environ)
     ########################
 
-    # subspace paths
     subspace_dir = _config.stage_dir
-    if _config.subspace!="host":
-      subspace_dir = obt.subspace.descriptor(_config.subspace)._prefix
-    os.environ["OBT_SUBSPACE_DIR"] = str(subspace_dir)
-    os.environ["OBT_SUBSPACE_LIB_DIR"] = str(_config.subspace_lib_dir)
-    os.environ["OBT_SUBSPACE_BIN_DIR"] = str(_config.subspace_bin_dir)
-    os.environ["OBT_BUILDS"] = str(_config.build_dir)
-    os.environ["OBT_SUBSPACE_BUILD_DIR"] = str(_config.subspace_build_dir)
+
+    def updateSUBS():
+      os.environ["OBT_SUBSPACE_DIR"] = str(subspace_dir)
+      os.environ["OBT_SUBSPACE_LIB_DIR"] = str(_config.subspace_lib_dir)
+      os.environ["OBT_SUBSPACE_BIN_DIR"] = str(_config.subspace_bin_dir)
+      os.environ["OBT_BUILDS"] = str(_config.build_dir)
+      os.environ["OBT_SUBSPACE_BUILD_DIR"] = str(_config.subspace_build_dir)
+
+    updateSUBS()
 
     if _config.project_dir!=_config.root_dir:
       _config.dump_env()
       importProject(_config)
+
+    # subspace paths
+    if _config.subspace!="host":
+      subspace_dir = obt.subspace.descriptor(_config.subspace)._prefix
+
+    updateSUBS()
+
 
   #####################################################
   return _config
