@@ -110,6 +110,12 @@ bash --rcfile <(echo "source ~/<venvdir>/bin/activate")
 
 ```~/bin/venv-launch-obt```
 
+* from within the venv, upgrade PIP
+
+```bash
+python3 -m ensurepip --upgrade
+```
+
 * from within the venv, install OBT
 
 ```bash
