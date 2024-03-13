@@ -115,6 +115,9 @@ bash --rcfile <(echo "source ~/<venvdir>/bin/activate")
 ```bash
 python3 -m ensurepip --upgrade
 ```
+```bash
+python3 -m pip install --upgrade pip
+```
 
 * from within the venv, install OBT
 
