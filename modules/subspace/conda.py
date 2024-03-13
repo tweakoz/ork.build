@@ -46,18 +46,18 @@ class subspaceinfo:
       ########################################
       if host.IsLinux:
         if host.IsX86_64:
-          url = "https://repo.anaconda.com/archive/Anaconda3-2022.05-Linux-x86_64.sh"
-          MD5SUM = "a01150aff48fcb6fcd6472381652de04"
+          url = "https://repo.anaconda.com/archive/Anaconda3-2023.03-0-Linux-x86_64.sh"
+          MD5SUM = "b4b52d8c977f4f7fd6079a77bac8641a"
         elif host.IsAARCH64:
-          url = "https://repo.anaconda.com/archive/Anaconda3-2022.05-Linux-aarch64.sh"
-          MD5SUM = "7e822f5622fa306c0aa42430ba884454"
+          url = "https://repo.anaconda.com/archive/Anaconda3-2023.03-0-Linux-aarch64.sh"
+          MD5SUM = "a99ff267712134c74919c498b83e857d"
       elif host.IsOsx:
         if host.IsX86_64:
-          url = "https://repo.anaconda.com/archive/Anaconda3-2022.05-MacOSX-x86_64.sh"
-          MD5SUM = "5319de6536212892dd2da8b70d602ee1"
+          url = "https://repo.anaconda.com/archive/Anaconda3-2023.03-0-MacOSX-x86_64.sh"
+          MD5SUM = "f4a9ee04ab3d053af9aee649f6400442"
         elif host.IsAARCH64:
-          url = "https://repo.anaconda.com/archive/Anaconda3-2022.05-MacOSX-arm64.sh"
-          MD5SUM = "24d985d2d380c51364d4793eb1840d29"
+          url = "https://repo.anaconda.com/archive/Anaconda3-2023.03-0-MacOSX-arm64.sh"
+          MD5SUM = "a4f912a08d429047454c35ccb1d08316"
       ########################################
 
       _archive_path = wget.wget(urls=[url],
@@ -72,6 +72,15 @@ class subspaceinfo:
         command.run(["rm","-rf",self._prefix])
         command.run(["chmod","ugo+x",_archive_path])
         command.run([_archive_path,"-b","-p",self._prefix])
+        ########################################
+        pathtools.ensureDirectoryExists(self._prefix)
+        pathtools.ensureDirectoryExists(self._prefix/"manifests")
+        pathtools.ensureDirectoryExists(self._prefix/"builds")
+        pathtools.ensureDirectoryExists(self._prefix/"include")
+        pathtools.ensureDirectoryExists(self._prefix/"lib")
+        pathtools.ensureDirectoryExists(self._prefix/"bin")
+        pathtools.ensureDirectoryExists(self._prefix/"conan")
+        ########################################
 
         OK = self.launch(conda_cmd="config",
                          launch_args=["--system","--set", "env_prompt", '"({default_env})|"'])==0
@@ -82,13 +91,6 @@ class subspaceinfo:
             pass #OK = self.launch(launch_args=["pip3","install","ork.build"])==0
           if OK:
             self._manifest_path.touch()
-            pathtools.ensureDirectoryExists(self._prefix)
-            pathtools.ensureDirectoryExists(self._prefix/"manifests")
-            pathtools.ensureDirectoryExists(self._prefix/"builds")
-            pathtools.ensureDirectoryExists(self._prefix/"include")
-            pathtools.ensureDirectoryExists(self._prefix/"lib")
-            pathtools.ensureDirectoryExists(self._prefix/"bin")
-            pathtools.ensureDirectoryExists(self._prefix/"conan")
         return OK 
 
     ###############################################

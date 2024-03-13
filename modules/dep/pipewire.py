@@ -60,7 +60,7 @@ class pipewire(dep.StdProvider):
   def _fetcher(self):
     return dep.GithubFetcher(name=pipewire.name,
                              repospec="PipeWire/pipewire",
-                             revision="0.3.83",
+                             revision="1.0.3",
                              recursive=False)
 
   ########################################################################
