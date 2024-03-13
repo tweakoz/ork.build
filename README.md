@@ -85,16 +85,20 @@ create a launch script - it should look something like this
 ```#!/usr/bin/env bash
 
 prepend_to_path() {
-  if ! echo "$PATH" | grep -Eq "(^|:)$1($|:)"; then
+  if [ -z "$PATH" ]; then
+    export PATH="$1"
+  elif ! echo "$PATH" | grep -Eq "(^|:)$1($|:)"; then
     export PATH="$1:$PATH"
   fi
 }
+
 prepend_to_python_path() {
-  if ! echo "$PYTHONPATH" | grep -Eq "(^|:)$1($|:)"; then
+  if [ -z "$PYTHONPATH" ]; then
+    export PYTHONPATH="$1"
+  elif ! echo "$PYTHONPATH" | grep -Eq "(^|:)$1($|:)"; then
     export PYTHONPATH="$1:$PYTHONPATH"
   fi
 }
-
 # we add to PYTHONPATH so that modules in venv available to OBT's built python without reinstalling.
 
 prepend_to_python_path ~/<venvdir>/lib/pythonx.xx/site-packages
