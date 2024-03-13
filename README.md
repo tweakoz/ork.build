@@ -66,7 +66,7 @@
 
 ## USAGE Via PIP (to python venv directory)
 
-* Virtual Environments are required from this point forward because [pep-668](https://peps.python.org/pep-0668/) has been mainlined into new linux distributions and MacOS/Homebrew. Rather than fight it, we have embraced it.
+* Virtual Environments are required from this point forward because [pep-668](https://peps.python.org/pep-0668/) has been mainlined into new linux distributions and MacOS/Homebrew. Rather than fight it, we have embraced it. You should probably make sure there are no straggling ork.build packages sitting in ~/.local (linux) or ~/Library/Python (macos)
   
 * Create Virtual Environment (Required)
 
@@ -85,16 +85,20 @@ create a launch script - it should look something like this
 ```#!/usr/bin/env bash
 
 prepend_to_path() {
-  if ! echo "$PATH" | grep -Eq "(^|:)$1($|:)"; then
+  if [ -z "$PATH" ]; then
+    export PATH="$1"
+  elif ! echo "$PATH" | grep -Eq "(^|:)$1($|:)"; then
     export PATH="$1:$PATH"
   fi
 }
+
 prepend_to_python_path() {
-  if ! echo "$PYTHONPATH" | grep -Eq "(^|:)$1($|:)"; then
+  if [ -z "$PYTHONPATH" ]; then
+    export PYTHONPATH="$1"
+  elif ! echo "$PYTHONPATH" | grep -Eq "(^|:)$1($|:)"; then
     export PYTHONPATH="$1:$PYTHONPATH"
   fi
 }
-
 # we add to PYTHONPATH so that modules in venv available to OBT's built python without reinstalling.
 
 prepend_to_python_path ~/<venvdir>/lib/pythonx.xx/site-packages
@@ -105,6 +109,15 @@ bash --rcfile <(echo "source ~/<venvdir>/bin/activate")
 * launch the venv
 
 ```~/bin/venv-launch-obt```
+
+* from within the venv, upgrade PIP
+
+```bash
+python3 -m ensurepip --upgrade
+```
+```bash
+python3 -m pip install --upgrade pip
+```
 
 * from within the venv, install OBT
 
