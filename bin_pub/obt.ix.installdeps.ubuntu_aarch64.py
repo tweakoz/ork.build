@@ -85,6 +85,7 @@ deplist += ["libdrm-dev","libaudiofile-dev","libsndfile1-dev"]
 deplist += ["gfortran"]
 deplist += ["ocl-icd-opencl-dev"]
 deplist += ["libfmt-dev"]
+deplist += ["meson","ninja-build","libserialport-dev", "libxxhash-dev"]
 
 merged = " ".join(deplist)
 os.system("sudo apt -y install %s" % merged)
