@@ -101,6 +101,7 @@ prepend_to_python_path() {
 }
 # we add to PYTHONPATH so that modules in venv available to OBT's built python without reinstalling.
 
+# replace the .xx in pythonx.xx with the major/minor version number of your python (eg 3.9, 3.10,etc..)
 prepend_to_python_path ~/<venvdir>/lib/pythonx.xx/site-packages
 
 bash --rcfile <(echo "source ~/<venvdir>/bin/activate")
