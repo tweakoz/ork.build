@@ -10,7 +10,7 @@ os.system("sudo update-alternatives --install /usr/bin/python python /usr/bin/py
 deplist = []
 
 if UBUNTU_VERSION >= 2310:
-  deplist =  ["clang-17"]
+  deplist =  ["clang-17","g++-11"]
 elif UBUNTU_VERSION <= 2004:
   deplist =  ["gcc-8","g++-8","python-dev"] # not avail in ub22
 else:
