@@ -20,8 +20,11 @@ class _tbb_from_source(dep.StdProvider):
     }
     
     desc = osrelease.descriptor()
-    
-    if desc.version_id == "23.10" and host.IsLinux:
+
+    use_gcc_11 = desc.version_id == "23.10"
+    use_gcc_11 = use_gcc_11 or (desc.version_id == "24.04")
+
+    if use_gcc_11 and host.IsLinux:
       self._builder._cmakeenv["CMAKE_CXX_COMPILER"] = "g++-11"
       self._builder._cmakeenv["CMAKE_C_COMPILER"] = "gcc-11"
 
