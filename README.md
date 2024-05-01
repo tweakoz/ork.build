@@ -40,10 +40,11 @@
 
 ## SUPPORTED HOSTS
 
-* Linux x86-64 (tested with ubuntu 20.04 and 22.04)
-* Linux arm64 (tested with ubuntu 18.04 and 20.04)
-* MacOs x86-64 (tested with monterey and big sur)
-* MacOs arm64 (tested with monterey)
+* Linux x86-64 (tested with ubuntu 20.04, 22.04, 23.10 and 24.04)
+* Linux arm64 (tested with ubuntu 20.04, 22.04, 23.10 and 24.04)
+* WSL (tested with ubuntu 22.04)
+* MacOs x86-64 (tested with Monterey Big Sur)
+* MacOs arm64 (tested with Monterey, Big Sur, Sonoma)
 
 ---------------------------------------------------------------
 
