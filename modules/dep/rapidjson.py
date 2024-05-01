@@ -29,7 +29,10 @@ class rapidjson(dep.StdProvider):
         })
     else:
       desc = osrelease.descriptor()
-      if desc.version_id == "23.10":
+      use_gcc_10 = desc.version_id == "23.10"
+      use_gcc_10 = use_gcc_10 or (desc.version_id == "24.04")
+  
+      if use_gcc_10:
         self._builder.setCmVar("CMAKE_CXX_COMPILER","g++-10")
         self._builder.setCmVar("CMAKE_CMAKE_C_COMPILER","gcc-10")
         self._builder.setCmVar("RAPIDJSON_BUILD_CXX17","ON")
