@@ -19,9 +19,13 @@ class assimp(dep.StdProvider):
     if host.IsDarwin:
       self._builder.setCmVar("CMAKE_CXX_FLAGS","-Wno-deprecated-declarations")
     else:
-      desc = osrelease.descriptor()
+  
       self._builder.setCmVar("CMAKE_CXX_FLAGS","-Wno-maybe-uninitialized")
-      if desc.version_id == "23.10":
+
+      desc = osrelease.descriptor()
+      use_gcc_11 = desc.version_id == "23.10"
+      use_gcc_11 = use_gcc_11 or (desc.version_id == "24.04")
+      if use_gcc_11:
         self._builder.setCmVar("CMAKE_CXX_COMPILER","g++-11")
         self._builder.setCmVar("CMAKE_CMAKE_C_COMPILER","gcc-11")
   ########################################################################
