@@ -335,7 +335,11 @@ def builds():
 
 
 def orkid():
-  orkroot = Path(os.environ["ORKID_WORKSPACE_DIR"])
+  if "ORKID_WORKSPACE_DIR" in os.environ:
+    orkroot = Path(os.environ["ORKID_WORKSPACE_DIR"])
+  else:
+    orkroot = builds()/"orkid"
+
   return orkroot
 
 ###############################################################################
