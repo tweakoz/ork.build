@@ -92,22 +92,32 @@ def findExecutable(exec_name):
 
 def importProject(config):
 
-  try_project_manifest = config.project_dir/"obt.project"/"obt.manifest"
+  project_dirs = []
+  
+  def do_dir(item):
+    try_project_manifest = item/"obt.project"/"obt.manifest"
 
-  if try_project_manifest.exists():
-    manifest_json = json.load(open(try_project_manifest,"r"))
-    #print(manifest_json)
-    config._project_name = manifest_json["name"]
-    autoexec = manifest_json["autoexec"]
-    autoexec = config.project_dir/"obt.project"/autoexec
-    #print(autoexec)
-    assert(autoexec.exists())
-    # import autoexec as python module
-    spec = importlib.util.spec_from_file_location("autoexec", str(autoexec))
-    init_env = importlib.util.module_from_spec(spec) 
-    spec.loader.exec_module(init_env)
-    init_env.setup()
-
+    if try_project_manifest.exists():
+      manifest_json = json.load(open(try_project_manifest,"r"))
+      #print(manifest_json)
+      config._project_name = manifest_json["name"]
+      autoexec = manifest_json["autoexec"]
+      autoexec = item/"obt.project"/autoexec
+      #print(autoexec)
+      assert(autoexec.exists())
+      # import autoexec as python module
+      spec = importlib.util.spec_from_file_location("autoexec", str(autoexec))
+      init_env = importlib.util.module_from_spec(spec) 
+      spec.loader.exec_module(init_env)
+      init_env.setup()
+          
+  if env_is_set("OBT_PROJECT_DIRS"):
+    project_dirs = os.environ["OBT_PROJECT_DIRS"].split(":")
+    project_dirs = [_genpath(x) for x in project_dirs]
+    for item in project_dirs:
+      do_dir(item)
+  elif env_is_set("OBT_PROJECT_DIR"):
+    do_dir(_genpath(os.environ["OBT_PROJECT_DIR"]))
 
 ###########################################
 # Global OBT process execution configuration
@@ -541,10 +551,16 @@ def configFromCommandLine(parser_args=None):
   if not env_is_set("OBT_PROJECT_DIR"):
     if IS_ARG_SET("project"):
       project_dir = parser_args["project"]
-      project_dir = os.path.realpath(project_dir)
+      if ":" in project_dir:
+        dirs = project_dir.split(":")
+        os.environ["OBT_PROJECT_DIR"] = dirs[0]
+        os.environ["OBT_PROJECT_DIRS"] = ":".join(dirs)
+      else:
+        #project_dir = os.path.realpath(project_dir)
+        os.environ["OBT_PROJECT_DIR"] = str(project_dir)
     else:
       project_dir = _config.root_dir
-    os.environ["OBT_PROJECT_DIR"] = str(project_dir)
+      os.environ["OBT_PROJECT_DIR"] = str(project_dir)
 
   assert(env_is_set("OBT_PROJECT_DIR"))
 

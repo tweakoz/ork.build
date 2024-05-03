@@ -87,9 +87,6 @@ if args["stagedir"]!=None:
     #############
     shell = "bash"
     bashrc = stage_dir/".bashrc"
-    if args["project"]!=None:
-      #envsetup.importProject(Path(item)/"obt.project")
-      pass
     #############
     if args["subspace"]!=None:
         if args["chdir"]!=None:

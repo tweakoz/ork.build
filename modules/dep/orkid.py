@@ -28,8 +28,17 @@ class orkid(dep.StdProvider):
     #  use that as orkid_src_dir
     ################################
 
-    x = path.Path(os.environ["OBT_PROJECT_DIR"])
-    self._userworkingcopy = (x/"orkid.cmake").exists()
+    x = None
+
+    if "OBT_PROJECT_DIRS" in os.environ:
+      for dir in os.environ["OBT_PROJECT_DIRS"].split(":"):
+        if (path.Path(dir)/"orkid.cmake").exists():
+          x = path.Path(dir)
+          self._userworkingcopy = (x/"orkid.cmake").exists()
+          break
+    else:
+      x = path.Path(os.environ["OBT_PROJECT_DIR"])
+      self._userworkingcopy = (x/"orkid.cmake").exists()
       
     if self._userworkingcopy:
       self.orkid_src_dir = x
