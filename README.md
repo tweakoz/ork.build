@@ -67,6 +67,8 @@
 
 ## USAGE Via PIP (to python venv directory)
 
+* Ensure public SSH key added to github so you can use ssh protocol with github, some dependencies will require this.
+
 * Virtual Environments are required from this point forward because [pep-668](https://peps.python.org/pep-0668/) has been mainlined into new linux distributions and MacOS/Homebrew. Rather than fight it, we have embraced it. You should probably make sure there are no straggling ork.build packages sitting in ~/.local (linux) or ~/Library/Python (macos) - also ensure as clean as possible base shell. prefer to use launch scripts to startup development shells.
   
 * Create Virtual Environment (Required)
