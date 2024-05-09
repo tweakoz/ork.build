@@ -36,8 +36,9 @@ class m68k_amiga_gcc(dep.StdProvider):
   ########
 
   def env_init(self):
-    log.marker("registering AmigaGCC SDK")
-    env.append("PATH",self.toolchain_dir/"bin")
+    if (self.toolchain_dir/"bin").exists():
+      log.marker("registering AmigaGCC SDK")
+      env.append("PATH",self.toolchain_dir/"bin")
 
   ########
 

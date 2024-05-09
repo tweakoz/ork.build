@@ -23,7 +23,7 @@ sys.path.append(str(file_dir))
 
 parser = argparse.ArgumentParser(description='obt.build environment creator')
 parser.add_argument('--stagedir', metavar="createdir", help='create staging folder and enter session' )
-parser.add_argument('--project',metavar="project",help='sidechain project directory(with obt manifest)')
+parser.add_argument('--project', action='append', metavar="PROJECTLIST", help='append project directory' )
 parser.add_argument('--inplace', action="store_true" )
 parser.add_argument('--prompt', metavar="prompt", help='prompt suffix' )
 parser.add_argument("--numcores", metavar="numcores", help="numcores for environment")
@@ -44,7 +44,7 @@ if len(sys.argv)==1:
 # parse args and generate config / core environment vars
 ###########################################
 
-from _obt_config import configFromCommandLine, initializeDependencyEnvironments, importProject
+from _obt_config import configFromCommandLine, initializeDependencyEnvironments
 obt_config = configFromCommandLine(args)
       
 ###########################################
@@ -80,7 +80,6 @@ envsetup.genBashRc(obt_config.stage_dir/".bashrc")
 envsetup.genLaunchScript(out_path=obt_config.stage_dir/"obt-launch-env")
 
 initializeDependencyEnvironments(envsetup)
-importProject(obt_config)
 
 ###########################################
 # build mandatory dependencies

@@ -7,7 +7,7 @@
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
 
-import os, sys, argparse, inspect, pathlib, subprocess, multiprocessing, json, importlib
+import os, sys, argparse, inspect, pathlib, subprocess, multiprocessing, json, importlib, site
 Path = pathlib.Path
 
 from obt.deco import Deco 
@@ -90,35 +90,41 @@ def findExecutable(exec_name):
 
 ###########################################
 
-def importProject(config):
+def importProject(item):
 
   project_dirs = []
   
-  def do_dir(item):
-    try_project_manifest = item/"obt.project"/"obt.manifest"
+  try_project_manifest = item/"obt.project"/"obt.manifest"
 
-    if try_project_manifest.exists():
-      manifest_json = json.load(open(try_project_manifest,"r"))
-      #print(manifest_json)
-      config._project_name = manifest_json["name"]
-      autoexec = manifest_json["autoexec"]
-      autoexec = item/"obt.project"/autoexec
-      #print(autoexec)
-      assert(autoexec.exists())
-      # import autoexec as python module
-      spec = importlib.util.spec_from_file_location("autoexec", str(autoexec))
-      init_env = importlib.util.module_from_spec(spec) 
-      spec.loader.exec_module(init_env)
-      init_env.setup()
-          
-  if env_is_set("OBT_PROJECT_DIRS"):
-    project_dirs = os.environ["OBT_PROJECT_DIRS"].split(":")
-    project_dirs = [_genpath(x) for x in project_dirs]
-    for item in project_dirs:
-      do_dir(item)
-  elif env_is_set("OBT_PROJECT_DIR"):
-    do_dir(_genpath(os.environ["OBT_PROJECT_DIR"]))
+  if try_project_manifest.exists():
+    manifest_json = json.load(open(try_project_manifest,"r"))
+    project_name = manifest_json["name"]
+    #print(manifest_json)
+    #config._project_name = manifest_json["name"]
+    autoexec = manifest_json["autoexec"]
+    autoexec = item/"obt.project"/autoexec
+    #print(autoexec)
+    assert(autoexec.exists())
 
+    modules = item/"obt.project"/"modules"
+    if modules.exists():
+      os.environ["OBT_MODULES_PATH"] = os.environ["OBT_MODULES_PATH"] + ":" + str(modules)
+    dep = item/"obt.project"/"modules"/"dep"
+    if dep.exists():
+      os.environ["OBT_DEP_PATH"] = os.environ["OBT_DEP_PATH"] + ":" + str(dep)
+
+    # import autoexec as python module
+    spec = importlib.util.spec_from_file_location("autoexec", str(autoexec))
+    init_env = importlib.util.module_from_spec(spec) 
+    spec.loader.exec_module(init_env)
+    print(deco.orange("############################################################################################"))    
+    print(deco.orange("Initializing Project: %s"%project_name))
+    print(deco.orange("############################################################################################"))    
+    init_env.setup()
+    print(deco.orange("############################################################################################"))    
+    print(deco.orange("Initialized Project: %s"%project_name))
+    print(deco.orange("############################################################################################"))    
+            
 ###########################################
 # Global OBT process execution configuration
 #
@@ -159,6 +165,7 @@ class ObtExecConfig(object):
     self._command = None
     self._disable_syspypath = True
     self._git_ssh_command = None
+    self._project_dirs = []
 
   #####################################################################
   @property 
@@ -240,13 +247,6 @@ class ObtExecConfig(object):
       return None
   #####################################################################
   @property 
-  def project_dir(self):
-    if env_is_set("OBT_PROJECT_DIR"):
-      return _genpath(os.environ["OBT_PROJECT_DIR"])
-    else:
-      return None
-  #####################################################################
-  @property 
   def build_dir(self):
     return self.stage_dir/"builds"
   #####################################################################
@@ -284,6 +284,17 @@ class ObtExecConfig(object):
       return _genpaths(os.environ["OBT_ORIGINAL_PKG_CONFIG_PATH"])
     else:
       return []
+  #####################################################################
+  @property 
+  def obt_scripts_base():
+    if "OBT_SCRIPTS_DIR" in os.environ:
+      return Path(os.environ["OBT_SCRIPTS_DIR"])
+    else:
+      # search sys.path for "obt"
+      for item in sys.path:
+        obt_subfolder_exists = (_genpath(item)/"obt").exists()
+        if obt_subfolder_exists:
+          return Path(item)
   #####################################################################
   @property 
   def modules_path(self):
@@ -349,7 +360,6 @@ class ObtExecConfig(object):
     print( "obtconfig.stack_depth: %s"%self.stack_depth )
     print("##########################################################")
     print( "obtconfig.project_name: %s"%self.project_name )
-    print( "obtconfig.project_dir: %s"%_ppath(self.project_dir ))
     print("##########################################################")
     print( "obtconfig.bin_priv_dir: %s"%_ppath(self.bin_priv_dir ))
     print( "obtconfig.bin_pub_dir: %s"%_ppath(self.bin_pub_dir ))
@@ -388,7 +398,6 @@ class ObtExecConfig(object):
     valid = valid and (self.bin_pub_dir!=None)
     valid = valid and (self.scripts_dir!=None)
     valid = valid and (self.root_dir!=None)
-    valid = valid and (self.project_dir!=None)
     valid = valid and (self.stage_dir!=None)
     return valid
 
@@ -399,6 +408,16 @@ class ObtExecConfig(object):
 
 global _config
 _config = ObtExecConfig() 
+
+def obt_scripts_base():
+  if "OBT_SCRIPTS_DIR" in os.environ:
+    return Path(os.environ["OBT_SCRIPTS_DIR"])
+  else:
+    import importlib.util
+    obt_spec = importlib.util.find_spec("obt")
+    obt_base = Path(obt_spec.submodule_search_locations[0])
+    #print(obt_base)
+    return obt_base
 
 ###########################################
 # (EXPLICIT) initialize from command line arguments
@@ -452,59 +471,29 @@ def configFromCommandLine(parser_args=None):
     else:
       os.environ[b] = ""
 
+  ########################
+  norm_venvpypath = os.path.normpath(str(site.getsitepackages()[0]))
+  norm_pypath = os.path.normpath(str(obt_scripts_base()/".."))
+  os.environ["PYTHONPATH"] = norm_venvpypath + ":" + norm_pypath
+  ########################
+
+  if not env_is_set("OBT_ORIGINAL_PYTHONPATH"):
+    os.environ["OBT_ORIGINAL_PYTHONPATH"] = norm_venvpypath
+  
   if not env_is_set("OBT_ROOT"):
     os.environ["OBT_BIN_PUB_DIR"] = str(_directoryOfInvokingModule())
     os.environ["OBT_ROOT"] = str(_genpath(_config.bin_pub_dir/".."))
 
-  if _config.inplace:
-    scripts_dir = str(_genpath(_config.root_dir/"scripts")) 
-    os.environ["OBT_BIN_PRIV_DIR"] = str(_genpath(_config.root_dir/"bin_priv"))
-    os.environ["OBT_SCRIPTS_DIR"] = scripts_dir     
-    sys.path = [scripts_dir]+sys.path
-    orig_pyth_path = []
-    if "PYTHONPATH" in os.environ:
-      orig_pyth_path = os.environ["PYTHONPATH"].split(":")
-    orig_pyth_paths = [scripts_dir]
-    for x in orig_pyth_path:
-      if x != "":
-        orig_pyth_paths += [x]
-    print(orig_pyth_paths)
-    os.environ["PYTHONPATH"] = ":".join(orig_pyth_paths)
-  else:
-    for item in sys.path:
-      if len(item):
-        p = _genpath(item)
-        try_scripts_dir = p/"obt"
-        print(try_scripts_dir,try_scripts_dir.exists())
-        if try_scripts_dir.exists():
-          os.environ["OBT_SCRIPTS_DIR"] = str(_genpath(try_scripts_dir))
-          #sys.path.append(str(_config.scripts_dir))
-
-    do_path("PYTHONPATH","OBT_ORIGINAL_PYTHONPATH")
-
-    os.environ["OBT_BIN_PRIV_DIR"] = str(_genpath(_config.root_dir/"obt"/"bin_priv"))
-
+  # find obt.scripts dir using python module search
+  if not env_is_set("OBT_SCRIPTS_DIR"):
+    os.environ["OBT_SCRIPTS_DIR"] = str(obt_scripts_base())
+    os.environ["OBT_BIN_PRIV_DIR"] = str(obt_scripts_base()/"_bin_priv")
+   
+    #do_path("PYTHONPATH","OBT_ORIGINAL_PYTHONPATH")
     do_path("PATH","OBT_ORIGINAL_PATH")
     do_path("LD_LIBRARY_PATH","OBT_ORIGINAL_LD_LIBRARY_PATH")
     do_path("PS1","OBT_ORIGINAL_PS1")
-    
-    #################################
-
-
-    pypath = []
-
-    if _config.inplace:
-        ORIG_PYTHONPATHS = _config.original_python_path
-        ORIG_PYTHONPATH0 = str(_config.original_python_path[0])
-        if ORIG_PYTHONPATH0 in sys.path:
-          sys.path.remove(ORIG_PYTHONPATH0)
-    else:
-      pass
-
-    if env_is_set("OBT_ORIGINAL_PYTHONPATH"):
-      pypath += os.environ["OBT_ORIGINAL_PYTHONPATH"].split(":")
-    os.environ["PYTHONPATH"]=_pathlist_to_str(pypath)
-
+          
     #################################
 
     if "PKG_CONFIG" in os.environ:
@@ -525,10 +514,10 @@ def configFromCommandLine(parser_args=None):
     pkg_config_paths = []
     if pkg_config_result.returncode == 0:
       pkg_config_paths = pkg_config_result.stdout.strip().split(':')
-      print(pkg_config_paths)
+      #print(pkg_config_paths)
       os.environ["OBT_ORIGINAL_PKG_CONFIG_PATH"] = ":".join(pkg_config_paths)
       os.environ["PKG_CONFIG_PATH"] = ":".join(pkg_config_paths)
-      print(os.environ)
+      #print(os.environ)
   else:
     do_path("PKG_CONFIG_PATH","OBT_ORIGINAL_PKG_CONFIG_PATH")
 
@@ -542,27 +531,17 @@ def configFromCommandLine(parser_args=None):
   assert(env_is_set("OBT_STAGE"))
 
   ########################
-  # project dir
+  # project dir(s)
   ########################
 
   if not env_is_set("OBT_PROJECT_NAME"):
     os.environ["OBT_PROJECT_NAME"] = "OBT"
 
-  if not env_is_set("OBT_PROJECT_DIR"):
-    if IS_ARG_SET("project"):
-      project_dir = parser_args["project"]
-      if ":" in project_dir:
-        dirs = project_dir.split(":")
-        os.environ["OBT_PROJECT_DIR"] = dirs[0]
-        os.environ["OBT_PROJECT_DIRS"] = ":".join(dirs)
-      else:
-        #project_dir = os.path.realpath(project_dir)
-        os.environ["OBT_PROJECT_DIR"] = str(project_dir)
-    else:
-      project_dir = _config.root_dir
-      os.environ["OBT_PROJECT_DIR"] = str(project_dir)
-
-  assert(env_is_set("OBT_PROJECT_DIR"))
+  if IS_ARG_SET("project"):
+    project_dirs = parser_args["project"]
+    print(project_dirs)
+    _config._project_dirs = _genpaths(":".join(project_dirs))
+    os.environ["OBT_PROJECT_DIRS"] = ":".join(project_dirs)
 
   ########################
   # subspace
@@ -580,10 +559,8 @@ def configFromCommandLine(parser_args=None):
   ########################
 
   if not env_is_set("OBT_MODULES_PATH"):
-    if _config.inplace:
-      os.environ["OBT_MODULES_PATH"] = str(_config.root_dir/"modules")
-    else:
-      os.environ["OBT_MODULES_PATH"] = str(_config.root_dir/"obt"/"modules")
+    scripts_dir = Path(os.environ["OBT_SCRIPTS_DIR"])
+    os.environ["OBT_MODULES_PATH"] = str(scripts_dir/"_builtin_modules")
 
   ########################
 
@@ -612,6 +589,10 @@ def configFromCommandLine(parser_args=None):
   import obt.subspace
 
   ########################
+  print(deco.orange("############################################################################################"))    
+  print(deco.orange("Initializing OBT Base"))
+  print(deco.orange("############################################################################################"))    
+  ########################
 
   obt.env.append("OBT_DEP_PATH",_config.modules_path[0]/"dep")
 
@@ -638,7 +619,7 @@ def configFromCommandLine(parser_args=None):
   #####################################################
 
   if not env_is_set("OBT_SEARCH_EXTLIST"):
-    os.environ["OBT_SEARCH_EXTLIST"] = ".cpp:.c:.cc:.h:.hpp:.inl:.qml:.m:.mm:.py:.txt:.glfx"
+    obt.env.set("OBT_SEARCH_EXTLIST",".cpp:.c:.cc:.h:.hpp:.inl:.qml:.m:.mm:.py:.txt:.glfx")
   if not env_is_set("OBT_SEARCH_PATH"):
     os.environ["OBT_SEARCH_PATH"] = ""
 
@@ -654,27 +635,30 @@ def configFromCommandLine(parser_args=None):
     obt.env.prepend("PKG_CONFIG_PATH",_config.stage_dir/"lib"/"pkgconfig")
     obt.env.prepend("PKG_CONFIG_PATH",_config.stage_dir/"lib64"/"pkgconfig")
     #obt.env.prepend("PYTHONPATH",_config.stage_dir/"lib"/"python")
-    print(os.environ)
+    #print(os.environ)
     ########################
 
+    print(deco.orange("############################################################################################"))    
+    print(deco.orange("Initialized OBT Base"))
+    print(deco.orange("############################################################################################"))    
+
+    for item in _config._project_dirs:
+      if item!=_config.root_dir:
+        importProject(item)
+        #_config.dump_env()
+
     subspace_dir = _config.stage_dir
-
-    def updateSUBS():
-      os.environ["OBT_SUBSPACE_DIR"] = str(subspace_dir)
-      os.environ["OBT_SUBSPACE_LIB_DIR"] = str(_config.subspace_lib_dir)
-      os.environ["OBT_SUBSPACE_BIN_DIR"] = str(_config.subspace_bin_dir)
-      os.environ["OBT_BUILDS"] = str(_config.build_dir)
-      os.environ["OBT_SUBSPACE_BUILD_DIR"] = str(_config.subspace_build_dir)
-
-    updateSUBS()
-
-    if _config.project_dir!=_config.root_dir:
-      _config.dump_env()
-      importProject(_config)
 
     # subspace paths
     if _config.subspace!="host":
       subspace_dir = obt.subspace.descriptor(_config.subspace)._prefix
+
+    def updateSUBS():
+      obt.env.set("OBT_SUBSPACE_DIR",str(subspace_dir))
+      obt.env.set("OBT_SUBSPACE_LIB_DIR",str(_config.subspace_lib_dir))
+      obt.env.set("OBT_SUBSPACE_BIN_DIR",str(_config.subspace_bin_dir))
+      obt.env.set("OBT_BUILDS",str(_config.build_dir))
+      obt.env.set("OBT_SUBSPACE_BUILD_DIR",str(_config.subspace_build_dir))
 
     updateSUBS()
 
@@ -701,6 +685,10 @@ def initializeDependencyEnvironments(envsetup):
   import obt.subspace
 
   ####################################
+  print(deco.orange("############################################################################################"))    
+  print(deco.orange("Initializing Dependencies"))
+  print(deco.orange("############################################################################################"))    
+  ####################################
   hostinfo = obt.host.description()
   if hasattr(hostinfo,"env_init"):
     hostinfo.env_init()
@@ -724,3 +712,6 @@ def initializeDependencyEnvironments(envsetup):
     subitem = subspaceitems[subitemk]
     subitem._module.env_init(envsetup)
   ####################################
+  print(deco.orange("############################################################################################"))    
+  print(deco.orange("Initialized Dependencies"))
+  print(deco.orange("############################################################################################"))    

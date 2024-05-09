@@ -34,6 +34,7 @@ class DepNode:
       self.module_spec = importlib.util.spec_from_file_location(self.name, str(self.module_path))
       self.module = importlib.util.module_from_spec(self.module_spec)
       self.module_spec.loader.exec_module(self.module)
+      #print(self.modules_base )
       if(hasattr(self.module,dep_name)):
         assert(hasattr(self.module,dep_name))
         self.module_class = getattr(self.module,dep_name)

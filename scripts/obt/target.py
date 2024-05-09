@@ -19,7 +19,7 @@ def descriptor(architecture,osname):
   import obt.module
   import obt.path
   identifier = "%s-%s" % (architecture,osname)
-  hi_name = obt.path.modules()/"target"
+  hi_name = obt.path.obt_modules_base()/"target"
   hi_name = hi_name / ("%s.py"%identifier)
   the_module = obt.module.instance(identifier,hi_name)
   if the_module != None:

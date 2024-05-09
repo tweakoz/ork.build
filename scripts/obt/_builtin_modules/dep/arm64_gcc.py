@@ -36,8 +36,9 @@ class arm64_gcc(dep.StdProvider):
   ########
 
   def env_init(self):
-    log.marker("registering Arm64-Gcc SDK")
-    env.append("PATH",self.toolchain_dir/"bin")
+    if self.toolchain_dir.exists():
+      log.marker("registering Arm64-Gcc SDK")
+      env.append("PATH",self.toolchain_dir/"bin")
 
   ########
 

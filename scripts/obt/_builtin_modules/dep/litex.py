@@ -36,14 +36,15 @@ class litex(dep.Provider):
   ########
 
   def env_init(self):
-    log.marker("registering LITEX(%s) SDK"%VERSION)
     LITEX_ROOT = self.build_dest
-    LITEX_BOARDS = LITEX_ROOT/"litex-boards"/"litex_boards"
-    GCC_RISCV = LITEX_ROOT/"riscv64-unknown-elf-gcc-8.3.0-2019.08.0-x86_64-linux-ubuntu14"
-    env.set("LITEX_ROOT",LITEX_ROOT)
-    env.set("LITEX_BOARDS",LITEX_BOARDS)
-    env.append("PATH",LITEX_BOARDS/"targets")
-    env.append("PATH",GCC_RISCV/"bin")
+    if LITEX_ROOT.exists():
+      log.marker("registering LITEX(%s) SDK"%VERSION)
+      LITEX_BOARDS = LITEX_ROOT/"litex-boards"/"litex_boards"
+      GCC_RISCV = LITEX_ROOT/"riscv64-unknown-elf-gcc-8.3.0-2019.08.0-x86_64-linux-ubuntu14"
+      env.set("LITEX_ROOT",LITEX_ROOT)
+      env.set("LITEX_BOARDS",LITEX_BOARDS)
+      env.append("PATH",LITEX_BOARDS/"targets")
+      env.append("PATH",GCC_RISCV/"bin")
 
   def env_goto(self):
     return { "litex": self.build_dest }

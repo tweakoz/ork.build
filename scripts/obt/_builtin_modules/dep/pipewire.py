@@ -33,7 +33,7 @@ class pipewire(dep.StdProvider):
     #meson_args +=configure_pw("pipewire-alsa","enabled")
     meson_args +=configure_pw("libdir",path.stage()/"lib")
     
-    print(meson_args)
+    #print(meson_args)
 
     f2 = command.factory( prefix=["meson","configure",".build"], #
                           wdir=self.source_root #

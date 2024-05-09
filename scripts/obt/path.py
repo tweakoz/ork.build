@@ -142,14 +142,13 @@ def obt_data_base():
       mpath = mpath.parent
       counter+=1
     keep_going = (counter<10)
-  assert(False)
   return None
 
 ##########################################
 
 @lru_cache(maxsize=None)
 def obt_in_tree():
-  return (obt_data_base()/".git").exists()
+  return (obt_scripts_base()/".."/".git").exists()
 
 ##########################################
 
@@ -167,14 +166,27 @@ def obt_module_path():
 ##########################################
 
 @lru_cache(maxsize=None)
+def obt_scripts_base():
+  if "OBT_SCRIPTS_DIR" in os.environ:
+    return Path(os.environ["OBT_SCRIPTS_DIR"])
+  else:
+    # search sys.path for "obt"
+    for item in sys.path:
+      obt_subfolder_exists = (Path(item)/"obt").exists()
+      if obt_subfolder_exists:
+        return Path(item)
+
+##########################################
+
+@lru_cache(maxsize=None)
 def obt_modules_base():
-  return obt_data_base()/"modules"
+  return obt_scripts_base()/"_builtin_modules"
 
 ##########################################
 
 @lru_cache(maxsize=None)
 def obt_bin_priv_base():
-  return obt_data_base()/"bin_priv"
+  return obt_scripts_base()/"_bin_priv"
 
 ##########################################
 
@@ -344,7 +356,7 @@ def orkid():
 
 ###############################################################################
 
-def project_root():
+def project_list():
   return Path(os.environ["OBT_PROJECT_DIR"])
 
 ###############################################################################

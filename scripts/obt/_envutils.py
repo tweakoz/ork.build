@@ -85,7 +85,8 @@ class EnvSetup:
 
     LAUNCHENV += ["--numcores", numcores]
     LAUNCHENV += ["--stagedir", self._config.stage_dir]
-    LAUNCHENV += ["--project", self._config.project_dir]
+    for item in self._config._project_dirs:
+      LAUNCHENV += ["--project", str(item)]
 
     if subspace!= None:
       LAUNCHENV += ["--subspace", subspace]

@@ -33,4 +33,5 @@ if _args["dep"]!=None:
     path_list = depinst.find_paths()
   ########################
   words = _args["keywords"]
-  obt.search.execute_at(words,path_list)
+  rem_root = path_list[0]
+  obt.search.execute_at(words,path_list,remove_root=rem_root)

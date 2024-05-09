@@ -25,7 +25,7 @@ root_dir = Path(par2_dir)
 
 parser = argparse.ArgumentParser(description='obt.build environment launcher')
 parser.add_argument('--stagedir', metavar="stagedir", help='launch from pre-existing folder' )
-parser.add_argument('--project', metavar="project", help='override project directory' )
+parser.add_argument('--project', action='append', metavar="PROJECTLIST", help='append project directory' )
 parser.add_argument('--inplace', action="store_true" )
 parser.add_argument('--prompt', metavar="prompt", help='prompt suffix' )
 parser.add_argument("--numcores", metavar="numcores", help="numcores for environment")
@@ -46,8 +46,9 @@ if len(sys.argv)==1:
 
 ###########################################
 
-from _obt_config import configFromCommandLine, initializeDependencyEnvironments, importProject
+from _obt_config import configFromCommandLine, initializeDependencyEnvironments
 obt_config = configFromCommandLine(args)
+
 ###########################################
 
 if args["obttrace"]==True:
@@ -70,11 +71,7 @@ stage_dir = obt_config.stage_dir
 
 ###########################################
 
-obt_config.dump()
-print(sys.path)
 initializeDependencyEnvironments(envsetup)
-obt_config.dump()
-#importProject(obt_config)
 
 ###########################################
 if args["stagedir"]!=None:

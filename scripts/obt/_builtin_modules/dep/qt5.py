@@ -147,17 +147,18 @@ class qt5(BASE):
     return "QT5"
   ########
   def env_init(self):
-    log.marker("registering QT5(%s) SDK"%self.fullver)
     if host.IsOsx:
       qtdir = Path("/")/"usr"/"local"/"opt"/"qt5"
     else:
       qtdir = path.stage()/"qt5"
-    env.set("QTDIR",qtdir)
-    env.prepend("PATH",qtdir/"bin")
-    env.prepend("LD_LIBRARY_PATH",qtdir/"lib")
-    #env.append("PKG_CONFIG_PATH",qtdir/"lib"/"pkgconfig")
-    env.prepend("PKG_CONFIG_PATH",qtdir/"lib"/"pkgconfig")
-    env.set("QTVER",self.fullver)
+    if qtdir.exists():
+      log.marker("registering QT5(%s) SDK"%self.fullver)
+      env.set("QTDIR",qtdir)
+      env.prepend("PATH",qtdir/"bin")
+      env.prepend("LD_LIBRARY_PATH",qtdir/"lib")
+      #env.append("PKG_CONFIG_PATH",qtdir/"lib"/"pkgconfig")
+      env.prepend("PKG_CONFIG_PATH",qtdir/"lib"/"pkgconfig")
+      env.set("QTVER",self.fullver)
   ########
   @property
   def include_dir(self):

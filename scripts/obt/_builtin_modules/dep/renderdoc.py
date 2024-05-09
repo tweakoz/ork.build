@@ -23,10 +23,11 @@ class renderdoc(dep.Provider):
   ########
 
   def env_init(self):
-    log.marker("registering renderdoc(%s) SDK"%VERSION)
-    env.append("PATH",self.rdoc_dir/"bin")
-    env.set("RENDERDOC_DIR",self.rdoc_dir)
-    env.set("RENDERDOC_VER",VERSION)
+    if self.rdoc_dir.exists():
+      log.marker("registering renderdoc(%s) SDK"%VERSION)
+      env.append("PATH",self.rdoc_dir/"bin")
+      env.set("RENDERDOC_DIR",self.rdoc_dir)
+      env.set("RENDERDOC_VER",VERSION)
 
   ########
 

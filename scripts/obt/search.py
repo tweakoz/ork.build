@@ -107,7 +107,7 @@ def execute(word,path_list = default_pathlist):
 
 #################################################################################
 
-def execute_at(word_list,path_list):
+def execute_at(word_list,path_list,remove_root=None):
   for path in path_list:
    print("/////////////////////////////////////////////////////////////")
    print("// searching path : %s" % path)
@@ -116,10 +116,11 @@ def execute_at(word_list,path_list):
      results = search_at_root(word,str(path))
      have_results = len(results)!=0
      if have_results:
-       root = str(obt.path.project_root())+"/"
        for item in results:
          pathstr = str(item.path)
-         pathstr = pathstr.replace(str(root),"")
+         if remove_root!=None:
+           r_root = str(remove_root)+"/"
+           pathstr = pathstr.replace(str(r_root),"")
          deco_path = "%-*s"%(72,deco.path(pathstr))
          deco_lino = "%s %s"%(deco.magenta("Line"),deco.yellow(item.lineno))
          deco_lino = "%-*s"%(37,deco_lino)

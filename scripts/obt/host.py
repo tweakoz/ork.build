@@ -27,7 +27,7 @@ this_dir = pathlib.Path(os.path.dirname(file_path))
 def description():
   import obt.module
   import obt.path
-  hostinfo_dir = obt.path.modules()/"host"
+  hostinfo_dir = obt.path.obt_modules_base()/"host"
   the_module = None
   if IsOsx:
     machine = platform.machine()

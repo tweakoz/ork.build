@@ -127,9 +127,10 @@ class qt5forpython(dep.StdProvider):
       return self.library_path/("libshiboken2.cpython-38d-x86_64-linux-gnu.so.%s"%self.major_version)
   ##############################################################################
   def env_init(self): ###########################################
-    log.marker("registering qt5forpython SDK")
-    env.append("LD_LIBRARY_PATH",self.pyside_dir)
-    env.append("LD_LIBRARY_PATH",self.library_path)
+    if self.pyside_dir.exists():
+      log.marker("registering qt5forpython SDK")
+      env.append("LD_LIBRARY_PATH",self.pyside_dir)
+      env.append("LD_LIBRARY_PATH",self.library_path)
   ##############################################################################
   def env_goto(self):
     return {
