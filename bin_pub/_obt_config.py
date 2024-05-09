@@ -124,7 +124,10 @@ def importProject(item):
     print(deco.orange("############################################################################################"))    
     print(deco.orange("Initialized Project: %s"%project_name))
     print(deco.orange("############################################################################################"))    
-            
+    if "extend_bashrc" in dir(init_env):
+      BASHEXT = init_env.extend_bashrc()
+      _config.addBashRcLines(BASHEXT)
+
 ###########################################
 # Global OBT process execution configuration
 #
@@ -166,7 +169,10 @@ class ObtExecConfig(object):
     self._disable_syspypath = True
     self._git_ssh_command = None
     self._project_dirs = []
-
+    self._bashrc_lines = []
+  #####################################################################
+  def addBashRcLines(self,lines):
+    self._bashrc_lines += lines
   #####################################################################
   @property 
   def num_cores(self):

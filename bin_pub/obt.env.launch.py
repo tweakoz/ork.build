@@ -77,7 +77,7 @@ initializeDependencyEnvironments(envsetup)
 if args["stagedir"]!=None:
 ###########################################
     envsetup.lazyMakeDirs()
-    envsetup.genBashRc(stage_dir/".bashrc")
+    envsetup.genBashRc(obt_config,stage_dir/".bashrc")
     stage_dir_sh = stage_dir/"obt-launch-env"
     envsetup.log(stage_dir_sh)
     assert(stage_dir_sh.exists())
@@ -115,7 +115,7 @@ if args["stagedir"]!=None:
 elif args["stack"]!=None:
 ###########################################
     envsetup.lazyMakeDirs()
-    envsetup.genBashRc(stage_dir/".bashrc-stack")
+    envsetup.genBashRc(obt_config,stage_dir/".bashrc-stack")
     #############
     if args["chdir"]!=None:
       os.chdir(args["chdir"])

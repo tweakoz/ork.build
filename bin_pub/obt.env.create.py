@@ -76,7 +76,7 @@ import obt.path
 
 obt.path.prefix().mkdir(parents=True,exist_ok=False)
 envsetup.lazyMakeDirs()
-envsetup.genBashRc(obt_config.stage_dir/".bashrc")
+envsetup.genBashRc(obt_config,obt_config.stage_dir/".bashrc")
 envsetup.genLaunchScript(out_path=obt_config.stage_dir/"obt-launch-env")
 
 initializeDependencyEnvironments(envsetup)

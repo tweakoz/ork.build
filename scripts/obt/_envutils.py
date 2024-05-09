@@ -3,7 +3,7 @@ import obt.host
 import obt.path
 import obt.deco
 import obt.command
-import os, sys, re, json
+import os, sys, re, json, site
 
 deco = obt.deco.Deco()
 
@@ -99,7 +99,7 @@ class EnvSetup:
     os.system("chmod ugo+x %s"%str(out_path))
 
   ###########################################
-  def genBashRc(self,out_path=None,override_sysprompt=None):
+  def genBashRc(self,obtconfig,out_path=None,override_sysprompt=None):
     self.log(deco.bright("Generating bashrc override_sysprompt<%s>"%override_sysprompt))
     bdeco = obt.deco.Deco(bash=True)
 
@@ -185,10 +185,21 @@ class EnvSetup:
 
     #########################################
 
+    norm_venvpypath = os.path.normpath(str(site.getsitepackages()[0]))
+
+    BASHRC += "obt.goto.scripts() { cd ${OBT_SCRIPTS_DIR}; };" 
+    BASHRC += "obt.goto.venv() { cd %s; };" % norm_venvpypath 
+
     for k in dirs:
         v = dirs[k]
         BASHRC += "obt.goto.%s() { cd %s; };" % (k,v)
         BASHRC += "obt.push.%s() { pushd %s; };" % (k,v)
+
+
+    #########################################
+
+    for item in obtconfig._bashrc_lines:
+      BASHRC += "%s\n" % item
 
     ################################################
     # add completions.json from ~/.obt-global/completions.json
