@@ -493,7 +493,7 @@ def configFromCommandLine(parser_args=None):
   # find obt.scripts dir using python module search
   if not env_is_set("OBT_SCRIPTS_DIR"):
     os.environ["OBT_SCRIPTS_DIR"] = str(obt_scripts_base())
-    os.environ["OBT_BIN_PRIV_DIR"] = str(obt_scripts_base()/"_bin_priv")
+    os.environ["OBT_BIN_PRIV_DIR"] = str(obt_scripts_base()/"bin_priv")
    
     #do_path("PYTHONPATH","OBT_ORIGINAL_PYTHONPATH")
     do_path("PATH","OBT_ORIGINAL_PATH")
@@ -566,7 +566,7 @@ def configFromCommandLine(parser_args=None):
 
   if not env_is_set("OBT_MODULES_PATH"):
     scripts_dir = Path(os.environ["OBT_SCRIPTS_DIR"])
-    os.environ["OBT_MODULES_PATH"] = str(scripts_dir/"_builtin_modules")
+    os.environ["OBT_MODULES_PATH"] = str(scripts_dir/"builtin_modules")
 
   ########################
 
