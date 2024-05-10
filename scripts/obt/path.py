@@ -405,6 +405,11 @@ def decorate_obt_lib(named):
 ###############################################################################
 
 def __getattr__(name):
+  if name == "pyvenv":
+    pyvenv_dir = builds()
+    if "OBT_PYTHONHOME" in os.environ:
+      pyvenv_dir = Path(os.environ["OBT_PYTHONHOME"])
+    return pyvenv_dir
   if name == "subspace_python_build_dir":
     build_dir = builds()
     if "OBT_PYTHON_SUBSPACE_BUILD_DIR" in os.environ:

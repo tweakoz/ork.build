@@ -87,7 +87,7 @@ deplist += ["libglew-dev"]
 deplist += ["debhelper-compat","findutils","git","libasound2-dev","libavcodec-dev","libavfilter-dev","libavformat-dev"]
 deplist += ["libdbus-1-dev","libbluetooth-dev","libglib2.0-dev","libgstreamer1.0-dev","libgstreamer-plugins-base1.0-dev"]
 deplist += ["libsbc-dev","libsdl2-dev","libudev-dev","libva-dev","libv4l-dev","libx11-dev","meson","ninja-build"]
-deplist += ["pkg-config","python3-docutils","systemd"]
+deplist += ["pkg-config","python3-docutils","systemd","mesa-utils","xvfb"]
 deplist += ["meson","ninja-build","libserialport-dev", "libxxhash-dev"]
 
 
