@@ -3,7 +3,7 @@ from setuptools.command.install import install
 import os
 import stat
 
-version = "0.0.177"
+version = "0.0.178"
 
 # Read the long description from the README file
 with open("README.md", "r", encoding="utf-8") as fh:
@@ -19,23 +19,12 @@ def package_files(directory):
                 data_files.append((dest_dir, [filepath]))
     return data_files
 
+module_files = package_files('modules')
 example_files = package_files('examples')
 test_files = package_files('tests')
 binpub_files = [f[1][0] for f in package_files("bin_pub")]
 binpriv_files = package_files('bin_priv')
-data_files = example_files + test_files + binpriv_files
-
-class PostInstallCommand(install):
-    """Post-installation for setting permissions on specific directories."""
-    def run(self):
-        install.run(self)
-        # Set permissions for the directories
-        directories = ['scripts/obt/bin_priv', 'scripts/obt/obt_modules']
-        for directory in directories:
-            full_path = os.path.join(self.install_lib, 'ork.build', directory)
-            for root, dirs, files in os.walk(full_path):
-                for file in files:
-                    os.chmod(os.path.join(root, file), stat.S_IRWXU | stat.S_IRGRP | stat.S_IROTH)
+data_files = module_files + example_files + test_files + binpriv_files
 
 setup(
     name="ork.build",
@@ -65,8 +54,5 @@ setup(
         "twine",
         "build",
         "conan"
-    ],
-    cmdclass={
-        'install': PostInstallCommand,
-    }
+    ]
 )

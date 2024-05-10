@@ -230,14 +230,14 @@ class python_from_source(dep.Provider):
       os.chdir(str(build_temp))
       obt_python = self.home_dir/"bin"/"python3"
       venv_python = self.virtualenv_dir/"bin"/"python3"
-      Command([obt_python,"-m","pip","install","--upgrade","pip"]).exec()
-      Command([obt_python,"-m","pip","install","virtualenv"]).exec()
+      #Command([obt_python,"-m","pip","install","--upgrade","pip"]).exec()
+      #Command([obt_python,"-m","pip","install","virtualenv"]).exec()
       Command([obt_python,"-m","venv", self.virtualenv_dir]).exec()
-      Command([venv_python,"-m","pip","install","--upgrade","pip"]).exec()
+      #Command([venv_python,"-m","pip","install","--upgrade","pip"]).exec()
 
       modules =  ["yarl","toposort","pytest","os_release","pyyaml", "conan"]
 
-      Command([venv_python,"-m","pip","install"]+modules).exec()
+      #Command([venv_python,"-m","pip","install"]+modules).exec()
 
     ################################
     return OK

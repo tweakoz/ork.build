@@ -179,14 +179,20 @@ def obt_scripts_base():
 ##########################################
 
 @lru_cache(maxsize=None)
+def obt_venv_data():
+  return Path(os.environ["OBT_VENV_DATA"])
+
+##########################################
+
+@lru_cache(maxsize=None)
 def obt_modules_base():
-  return obt_scripts_base()/"obt_modules"
+  return obt_venv_data()/"modules"
 
 ##########################################
 
 @lru_cache(maxsize=None)
 def obt_bin_priv_base():
-  return obt_scripts_base()/"_bin_priv"
+  return obt_venv_data()/"bin_priv"
 
 ##########################################
 
@@ -201,10 +207,7 @@ def running_from_pip():
 
 def modules(provider=None):
   if provider==None:
-    if running_from_pip():
-      return obt_modules_base()
-    else:
-      return root()/"modules"
+    return obt_modules_base()
   else:
     depnode = provider._node
     name = provider._name
