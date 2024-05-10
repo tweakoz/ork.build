@@ -38,9 +38,6 @@ class orkid(dep.StdProvider):
           x = path.Path(dir)
           self._userworkingcopy = (x/"orkid.cmake").exists()
           break
-    else:
-      x = path.Path(os.environ["OBT_PROJECT_DIR"])
-      self._userworkingcopy = (x/"orkid.cmake").exists()
       
     if self._userworkingcopy:
       self.orkid_src_dir = x

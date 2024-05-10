@@ -478,13 +478,13 @@ def configFromCommandLine(parser_args=None):
       os.environ[b] = ""
 
   ########################
-  norm_venvpypath = os.path.normpath(str(site.getsitepackages()[0]))
+  norm_venvpackages = os.path.normpath(str(site.getsitepackages()[0]))
   norm_pypath = os.path.normpath(str(obt_scripts_base()/".."))
-  os.environ["PYTHONPATH"] = norm_venvpypath + ":" + norm_pypath
+  os.environ["PYTHONPATH"] = norm_venvpackages + ":" + norm_pypath
   ########################
 
   if not env_is_set("OBT_ORIGINAL_PYTHONPATH"):
-    os.environ["OBT_ORIGINAL_PYTHONPATH"] = norm_venvpypath
+    os.environ["OBT_ORIGINAL_PYTHONPATH"] = norm_venvpackages
   
   if not env_is_set("OBT_ROOT"):
     os.environ["OBT_BIN_PUB_DIR"] = str(_directoryOfInvokingModule())
@@ -493,7 +493,8 @@ def configFromCommandLine(parser_args=None):
   # find obt.scripts dir using python module search
   if not env_is_set("OBT_SCRIPTS_DIR"):
     os.environ["OBT_SCRIPTS_DIR"] = str(obt_scripts_base())
-    os.environ["OBT_BIN_PRIV_DIR"] = str(obt_scripts_base()/"bin_priv")
+    norm_venvdir = os.path.normpath(sys.executable+"/../..")
+    os.environ["OBT_BIN_PRIV_DIR"] = str(norm_venvdir+"/obt/bin_priv")
    
     #do_path("PYTHONPATH","OBT_ORIGINAL_PYTHONPATH")
     do_path("PATH","OBT_ORIGINAL_PATH")

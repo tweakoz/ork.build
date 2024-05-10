@@ -1,36 +1,41 @@
-from setuptools import setup, find_packages
-import glob, os
-import platform
+from setuptools import setup, find_packages, Command
+from setuptools.command.install import install
+import os
+import stat
 
-version = "0.0.175"
+version = "0.0.177"
 
-###############################################################################
-
+# Read the long description from the README file
 with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
-###############################################################################
-
 def package_files(directory):
-  data_files = []
-  for root, dirs, files in os.walk(directory):
-    for filename in files:
-      if not (filename.endswith('.pyc') or '.egg-info' in root or '__pycache__' in root):
-        filepath = os.path.join(root, filename)
-        dest_dir = os.path.join('obt', root)
-        data_files.append((dest_dir, [filepath]))
-  return data_files
+    data_files = []
+    for root, dirs, files in os.walk(directory):
+        for filename in files:
+            if not (filename.endswith('.pyc') or '.egg-info' in root or '__pycache__' in root):
+                filepath = os.path.join(root, filename)
+                dest_dir = os.path.join('obt', root)
+                data_files.append((dest_dir, [filepath]))
+    return data_files
 
-###############################################################################
-
-#module_files = package_files('modules')
 example_files = package_files('examples')
 test_files = package_files('tests')
 binpub_files = [f[1][0] for f in package_files("bin_pub")]
+binpriv_files = package_files('bin_priv')
+data_files = example_files + test_files + binpriv_files
 
-###############################################################################
-data_files = example_files + test_files
-###############################################################################
+class PostInstallCommand(install):
+    """Post-installation for setting permissions on specific directories."""
+    def run(self):
+        install.run(self)
+        # Set permissions for the directories
+        directories = ['scripts/obt/bin_priv', 'scripts/obt/obt_modules']
+        for directory in directories:
+            full_path = os.path.join(self.install_lib, 'ork.build', directory)
+            for root, dirs, files in os.walk(full_path):
+                for file in files:
+                    os.chmod(os.path.join(root, file), stat.S_IRWXU | stat.S_IRGRP | stat.S_IROTH)
 
 setup(
     name="ork.build",
@@ -42,9 +47,7 @@ setup(
     long_description_content_type='text/markdown',
     url="https://github.com/tweakoz/ork.build",
     packages=find_packages(where="scripts"),
-    package_dir={
-        "": "scripts",
-    },
+    package_dir={"": "scripts"},
     include_package_data=True,
     data_files=data_files,
     scripts=binpub_files,
@@ -63,4 +66,7 @@ setup(
         "build",
         "conan"
     ],
-    )
+    cmdclass={
+        'install': PostInstallCommand,
+    }
+)
