@@ -566,7 +566,7 @@ def configFromCommandLine(parser_args=None):
 
   if not env_is_set("OBT_MODULES_PATH"):
     scripts_dir = Path(os.environ["OBT_SCRIPTS_DIR"])
-    os.environ["OBT_MODULES_PATH"] = str(scripts_dir/"builtin_modules")
+    os.environ["OBT_MODULES_PATH"] = str(scripts_dir/"obt_modules")
 
   ########################
 

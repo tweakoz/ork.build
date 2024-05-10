@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 import glob, os
 import platform
 
-version = "0.0.172"
+version = "0.0.175"
 
 ###############################################################################
 
@@ -23,7 +23,7 @@ def package_files(directory):
 
 ###############################################################################
 
-module_files = package_files('modules')
+#module_files = package_files('modules')
 example_files = package_files('examples')
 test_files = package_files('tests')
 binpub_files = [f[1][0] for f in package_files("bin_pub")]
@@ -45,6 +45,7 @@ setup(
     package_dir={
         "": "scripts",
     },
+    include_package_data=True,
     data_files=data_files,
     scripts=binpub_files,
     classifiers=[

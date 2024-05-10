@@ -1,0 +1,2 @@
+recursive-include scripts/obt/bin_priv **/*
+recursive-include scripts/obt/obt_modules **/*
