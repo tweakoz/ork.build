@@ -3,7 +3,7 @@ from setuptools.command.install import install
 import os
 import stat
 
-version = "0.0.178"
+version = "0.0.180"
 
 # Read the long description from the README file
 with open("README.md", "r", encoding="utf-8") as fh:
@@ -19,12 +19,20 @@ def package_files(directory):
                 data_files.append((dest_dir, [filepath]))
     return data_files
 
-module_files = package_files('modules')
+#########################################
+# these are tricky
+#  bin_priv has to be data so the files can have the x bit set
+#  bin_pub goes in scripts (since they are in the venv's path)
+#########################################
+
+module_files = package_files('modules') 
 example_files = package_files('examples')
 test_files = package_files('tests')
 binpub_files = [f[1][0] for f in package_files("bin_pub")]
 binpriv_files = package_files('bin_priv')
 data_files = module_files + example_files + test_files + binpriv_files
+
+#########################################
 
 setup(
     name="ork.build",
