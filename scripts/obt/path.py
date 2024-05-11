@@ -180,7 +180,14 @@ def obt_scripts_base():
 
 @lru_cache(maxsize=None)
 def obt_venv_data():
-  return Path(os.environ["OBT_VENV_DATA"])
+  if "OBT_VENV_DATA" in os.environ:
+    return Path(os.environ["OBT_VENV_DATA"])
+  elif "VIRTUAL_ENV" in os.environ:
+    p = Path(os.environ["VIRTUAL_ENV"])/"obt"
+    if p.exists():
+      return p
+  assert(False)
+  return None 
 
 ##########################################
 
