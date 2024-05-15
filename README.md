@@ -73,7 +73,7 @@
   
 * Create Virtual Environment (Required)
 
-```python -m venv <venvdir>```
+```python -m venv <VENVDIR>```
 
 replace <venvdir> - with a name of your choice.
 
@@ -105,9 +105,14 @@ prepend_to_python_path() {
 # we add to PYTHONPATH so that modules in venv available to OBT's built python without reinstalling.
 
 # replace the .xx in pythonx.xx with the major/minor version number of your python (eg 3.9, 3.10,etc..)
-prepend_to_python_path ~/<venvdir>/lib/pythonx.xx/site-packages
+prepend_to_python_path ~/<VENVDIR>/lib/pythonx.xx/site-packages
 
-bash --rcfile <(echo "source ~/<venvdir>/bin/activate")
+# if you want to separate venv entry from staging environment entry
+bash --rcfile <(echo "source ~/<VENVDIR>/bin/activate")
+
+# alternatively if you want to couple venv entry with staging environment entry in one command
+bash --rcfile <(echo "source ~/<VENVDIR>/bin/activate") -ci "obt.env.launch.py --numcores <NUMCORES> --stagedir <STAGEDIR> --project <PRJ1DIR> --project <PRJ2DIR> --project <PRJnDIR...>" ;
+
 ```
 
 * launch the venv
