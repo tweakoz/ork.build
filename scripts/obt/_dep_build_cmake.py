@@ -18,6 +18,7 @@ class CMakeBuilder(BaseBuilder):
     super().__init__(name)
     self._minimal = False 
     self._install_prefix = install_prefix
+    self._src_dir_override = None
     ##################################
     # ensure environment cmake present
     ##################################
@@ -103,6 +104,7 @@ class CMakeBuilder(BaseBuilder):
                                 osenv=self._osenv,
                                 builddir=blddir,
                                 working_dir=wrkdir,
+                                sourcedir=self._src_dir_override,
                                 install_prefix=self.install_prefix)
       ok2build = cmake_ctx.exec()==0
     else:
@@ -110,6 +112,7 @@ class CMakeBuilder(BaseBuilder):
       pathtools.chdir(wrkdir)
       cmake_ctx = cmake.context(root=srcdir,
                                 env=self._cmakeenv,
+                                sourcedir=self._src_dir_override,
                                 osenv=self._osenv)
       ok2build = cmake_ctx.exec()==0
 

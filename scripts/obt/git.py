@@ -6,7 +6,7 @@
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
 
-import os, shutil
+import os, shutil, git
 import obt.path
 from pathlib import PosixPath
 from obt.deco import Deco
@@ -158,3 +158,22 @@ def Clone(url,
 
   ##############################################################################
   return False
+
+#####################################################################################
+
+def get_latest_commit(repo_path):
+  try:
+    repo = git.Repo(repo_path)
+    latest_commit = repo.head.commit
+    return {
+         'commit_hash': latest_commit.hexsha,
+         'author': latest_commit.author.name,
+         'author_email': latest_commit.author.email,
+         'date': latest_commit.committed_datetime,
+         'message': latest_commit.message
+    }
+  except git.exc.InvalidGitRepositoryError:
+    return "Invalid Git repository"
+  except Exception as e:
+    return str(e)
+
