@@ -107,11 +107,7 @@ prepend_to_python_path() {
 # replace the .xx in pythonx.xx with the major/minor version number of your python (eg 3.9, 3.10,etc..)
 prepend_to_python_path ~/<VENVDIR>/lib/pythonx.xx/site-packages
 
-# if you want to separate venv entry from staging environment entry
 bash --rcfile <(echo "source ~/<VENVDIR>/bin/activate")
-
-# alternatively if you want to couple venv entry with staging environment entry in one command
-bash --rcfile <(echo "source ~/<VENVDIR>/bin/activate") -ci "obt.env.launch.py --numcores <NUMCORES> --stagedir <STAGEDIR> --project <PRJ1DIR> --project <PRJ2DIR> --project <PRJnDIR...>" ;
 
 ```
 
@@ -158,8 +154,10 @@ pip3 install ork.build
   ```bash
   obt.osx.installdeps.py
   ```
-
-### Common
+ if you want to couple venv entry with staging environment entry in one command, edit ~/bin/venv-launch-obt and edit the launch line (last line) with this:
+ ```
+bash --rcfile <(echo "source ~/<VENVDIR>/bin/activate") -ci "obt.env.launch.py --numcores <NUMCORES> --stagedir <STAGEDIR> --project <PRJ1DIR> --project <PRJ2DIR> --project <PRJnDIR...>" ;
+```
 
 ---------------------------------------------------------------
 
