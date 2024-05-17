@@ -112,6 +112,15 @@ def md5_of_file(fname):
     md5obj.update(data)
     return md5obj.hexdigest()
 
+def md5_of_files(filelist):
+    md5obj = hashlib.md5()
+    for item in filelist:
+      fil = open(str(item),"rb")
+      data = fil.read()
+      fil.close()
+      md5obj.update(data)
+    return md5obj.hexdigest()
+
 ###############################################################################
 
 def globber( folderbase, 
