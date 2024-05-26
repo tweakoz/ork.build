@@ -33,6 +33,8 @@ a = importlib.metadata.distribution("ork.build").metadata
 
 print( "obt-pymodule-path: %s" % obt.path.obt_module_path() )
 print( "obt-data-base: %s" % obt.path.obt_data_base() )
+print( "obt-modules-test: %s" % obt.path.__get_modules() )
+print( "obt-test-inplace: %s" % obt.path.__is_inplace() )
 print( "obt-modules-base: %s" % obt.path.obt_modules_base() )
 print( "running_from_pip: %s" % obt.path.running_from_pip() )
 print( "running_in_tree: %s" % obt.path.obt_in_tree() )

@@ -165,7 +165,7 @@ class EnvSetup:
     dirs = {
         "root": "${OBT_ROOT}",
         "project": "${OBT_PROJECT_DIR}",
-        "deps": "${OBT_ROOT}/modules/dep",
+        "deps": "${OBT_ROOT}/obt/modules/dep",
         #"subspace": "${OBT_STAGE}/subspaces/${OBT_SUBSPACE}",
         "stage": "${OBT_STAGE}",
         "builds": "${OBT_STAGE}/builds",
@@ -188,7 +188,7 @@ class EnvSetup:
     norm_venvpypath = os.path.normpath(str(site.getsitepackages()[0]))
 
     BASHRC += "obt.goto.scripts() { cd ${OBT_SCRIPTS_DIR}; };" 
-    BASHRC += "obt.goto.venv() { cd %s; };" % norm_venvpypath 
+    BASHRC += "obt.goto.venv() { cd ${VIRTUAL_ENV}; };" 
 
     for k in dirs:
         v = dirs[k]

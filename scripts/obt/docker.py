@@ -9,6 +9,7 @@
 import platform, os, pathlib,sys
 from enum import Enum
 import obt.path 
+import obt.command 
 
 ###############################################################################
 
@@ -77,3 +78,22 @@ def enumerate():
             e = EnumItem(item,module_test_path,module)
             module_dict[item] = e
   return module_dict
+
+###############################################################################
+
+def enumerate_all_images():
+  cmdlist = ["docker","images","-aq"]
+  cmd = obt.command.Command(cmdlist)
+  as_str = cmd.capture()
+  as_list = as_str.split("\n")
+  # remove empty items
+  as_list = [ x for x in as_list if x ]
+  return as_list
+
+def enumerate_all_continaers():
+  cmdlist = ["docker","ps","-aq"]
+  cmd = obt.command.Command(cmdlist)
+  as_str = cmd.capture()
+  as_list = as_str.split("\n")
+  as_list = [ x for x in as_list if x ]
+  return as_list

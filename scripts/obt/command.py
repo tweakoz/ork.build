@@ -15,6 +15,20 @@ from obt import log, pathtools, buildtrace
 import obt.path 
 deco = Deco()
 
+###########################################################################
+
+def eval_bash_source_env(sourcefile_path):
+  command = shlex.split("env -i bash --noprofile -c 'source %s && env'" % sourcefile_path)
+  proc = subprocess.Popen(command, stdout = subprocess.PIPE)
+  output_env = dict()
+  for line in proc.stdout:
+    as_str = format(line.decode('utf-8'))
+    (key, _, value) = as_str.partition("=")
+    value = value.replace("\n","")
+    output_env[key] = value
+  proc.communicate()
+  return output_env
+
 ###############################################################################
 
 def procargs(command_list):
@@ -144,7 +158,7 @@ class Command:
         return subprocess.check_output(self.command_list,
                                        universal_newlines=True,
                                        env=self.env )
-
+      
     ###########################################################################
 
     def execr(self):

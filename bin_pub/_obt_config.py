@@ -8,11 +8,42 @@
 ###############################################################################
 
 import os, sys, argparse, inspect, pathlib, subprocess, multiprocessing, json, importlib, site
+import importlib.resources
+from functools import lru_cache
+
 Path = pathlib.Path
 
 from obt.deco import Deco 
 
 deco = Deco()
+
+###########################################
+
+def __get_obt_root():
+ return importlib.resources.files('obt')
+
+def is_inplace():
+  git_folder = __get_obt_root()/".."/".."/".git"
+  return os.path.exists(git_folder)
+
+##########################################
+
+@lru_cache(maxsize=None)
+def obt_data_base():
+  if is_inplace():
+    dbase = __get_obt_root()/".."/".."
+    return Path(os.path.normpath(dbase))
+  else:
+    assert("VIRTUAL_ENV" in os.environ)
+    p = Path(os.environ["VIRTUAL_ENV"])/"obt"
+    assert(p.exists())
+    return p
+ 
+##########################################
+
+def __get_modules():
+  return obt_data_base()/"modules"
+
 ###########################################
 
 def env_is_set(key):
@@ -180,7 +211,7 @@ class ObtExecConfig(object):
   #####################################################################
   @property 
   def inplace(self):
-    return env_is_set("OBT_INPLACE")
+    return is_inplace()
   #####################################################################
   @property 
   def quiet(self):
@@ -426,7 +457,7 @@ def obt_scripts_base():
     return obt_base
 
 ###########################################
-# (EXPLICIT) initialize from command line arguments
+# (EXPLICIT) initialize (bootstrap) from command line arguments
 ###########################################
 
 def configFromCommandLine(parser_args=None):
@@ -441,7 +472,7 @@ def configFromCommandLine(parser_args=None):
   # independent items not attached to directories
   ########################
 
-  if IS_ARG_SET("inplace") and parser_args["inplace"]:
+  if is_inplace():
     os.environ["OBT_INPLACE"] = "1"
     if "OBT_INPLACE" not in os.environ:
       di = _directoryOfInvokingModule()
@@ -481,9 +512,8 @@ def configFromCommandLine(parser_args=None):
   norm_venvpackages = os.path.normpath(str(site.getsitepackages()[0]))
   norm_pypath = os.path.normpath(str(obt_scripts_base()/".."))
   os.environ["PYTHONPATH"] = norm_venvpackages + ":" + norm_pypath
-  norm_venvdir = os.path.normpath(sys.executable+"/../..")
-  os.environ["OBT_VENV_DIR"] = norm_venvdir
-  os.environ["OBT_VENV_DATA"] = str(norm_venvdir+"/obt")
+  os.environ["OBT_VENV_DIR"] = os.environ["VIRTUAL_ENV"]
+  os.environ["OBT_VENV_DATA"] = str(obt_data_base())
   ########################
 
   if not env_is_set("OBT_ORIGINAL_PYTHONPATH"):
@@ -491,12 +521,12 @@ def configFromCommandLine(parser_args=None):
   
   if not env_is_set("OBT_ROOT"):
     os.environ["OBT_BIN_PUB_DIR"] = str(_directoryOfInvokingModule())
-    os.environ["OBT_ROOT"] = str(_genpath(_config.bin_pub_dir/".."))
+    os.environ["OBT_ROOT"] = str(obt_data_base())
 
   # find obt.scripts dir using python module search
   if not env_is_set("OBT_SCRIPTS_DIR"):
     os.environ["OBT_SCRIPTS_DIR"] = str(obt_scripts_base())
-    os.environ["OBT_BIN_PRIV_DIR"] = str(norm_venvdir+"/obt/bin_priv")
+    os.environ["OBT_BIN_PRIV_DIR"] = str(obt_data_base()/"bin_priv")
    
     #do_path("PYTHONPATH","OBT_ORIGINAL_PYTHONPATH")
     do_path("PATH","OBT_ORIGINAL_PATH")
@@ -568,7 +598,7 @@ def configFromCommandLine(parser_args=None):
   ########################
 
   if not env_is_set("OBT_MODULES_PATH"):
-    os.environ["OBT_MODULES_PATH"] = str(norm_venvdir+"/obt/modules")
+    os.environ["OBT_MODULES_PATH"] = str(obt_data_base()/"modules")
 
   ########################
 

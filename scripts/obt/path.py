@@ -7,8 +7,36 @@
 ###############################################################################
 
 import os, inspect, sys, pathlib
+import importlib.resources
 from pathlib import Path as _Path_, PosixPath as _PosixPath_, WindowsPath  as _WindowsPath_
 from functools import lru_cache
+
+###############################################################################
+
+def __get_obt_root():
+ return importlib.resources.files('obt')
+
+def __is_inplace():
+  git_folder = __get_obt_root()/".."/".."/".git"
+  return os.path.exists(git_folder)
+
+##########################################
+
+@lru_cache(maxsize=None)
+def obt_data_base():
+  if __is_inplace():
+    dbase = __get_obt_root()/".."/".."
+    return Path(os.path.normpath(dbase))
+  else:
+    assert("VIRTUAL_ENV" in os.environ)
+    p = Path(os.environ["VIRTUAL_ENV"])/"obt"
+    assert(p.exists())
+    return p
+ 
+##########################################
+
+def __get_modules():
+  return obt_data_base()/"modules"
 
 ###############################################################################
 
@@ -68,7 +96,7 @@ def wrap(a):
 ###############################################################################
 
 def root():
-  root = Path(os.environ["OBT_ROOT"])
+  root = obt_data_base()
   return root
 
 ###############################################################################
@@ -127,28 +155,8 @@ def conan_prefix():
 ##########################################
 
 @lru_cache(maxsize=None)
-def obt_data_base():
-  mpath = obt_module_path()
-  keep_going = True
-  counter = 0
-  while keep_going:
-    p1 = mpath/"modules"/"dep"
-    p2 = mpath/"obt"/"modules"/"dep"
-    if p1.exists():
-      return mpath
-    elif p2.exists():
-      return mpath/"obt"
-    else:
-      mpath = mpath.parent
-      counter+=1
-    keep_going = (counter<10)
-  return None
-
-##########################################
-
-@lru_cache(maxsize=None)
 def obt_in_tree():
-  return (obt_scripts_base()/".."/".git").exists()
+  return __is_inplace()
 
 ##########################################
 
@@ -160,8 +168,7 @@ def pip_obt_data_path(filename):
 
 @lru_cache(maxsize=None)
 def obt_module_path():
-   import obt 
-   return Path(obt.__path__[0])
+   return __get_modules() 
 
 ##########################################
 
@@ -182,24 +189,20 @@ def obt_scripts_base():
 def obt_venv_data():
   if "OBT_VENV_DATA" in os.environ:
     return Path(os.environ["OBT_VENV_DATA"])
-  elif "VIRTUAL_ENV" in os.environ:
-    p = Path(os.environ["VIRTUAL_ENV"])/"obt"
-    if p.exists():
-      return p
-  assert(False)
-  return None 
+  else:
+    return obt_data_base()
 
 ##########################################
 
 @lru_cache(maxsize=None)
 def obt_modules_base():
-  return obt_venv_data()/"modules"
+  return __get_modules()
 
 ##########################################
 
 @lru_cache(maxsize=None)
 def obt_bin_priv_base():
-  return obt_venv_data()/"bin_priv"
+  return obt_data_base()/"bin_priv"
 
 ##########################################
 
