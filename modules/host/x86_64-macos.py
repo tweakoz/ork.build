@@ -46,6 +46,7 @@ class hostinfo:
   def env_init(self):
     #x86_64_macos = sdk.descriptor('x86_64','macos')
     #x86_64_macos.env_init()
+    env.set("OBT_TARGET", "x86_64-macos")
     _xcodesdkstr = command.capture([
       "xcodebuild",
       "-version",
