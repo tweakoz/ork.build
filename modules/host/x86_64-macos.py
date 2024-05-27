@@ -53,6 +53,7 @@ class hostinfo:
       "-sdk","macosx"]).splitlines()
     for l in _xcodesdkstr:
       x = l.split(": ")
+      print(x)
       if x[0]=="Path":
         env.set("OBT_MACOS_SDK_DIR",x[1])
       if x[0]=="PlatformVersion":

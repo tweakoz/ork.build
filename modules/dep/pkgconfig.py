@@ -1,5 +1,5 @@
 import os, tarfile
-from obt import dep, host, path, make, pathtools
+from obt import dep, host, path, make, pathtools, log
 from obt.deco import Deco
 from obt.wget import wget
 from obt.command import Command
@@ -7,7 +7,7 @@ from obt.command import Command
 VER = "0.29.2"
 HASH = "f6e931e319531b736fadc017f470e68a"
 
-class pkgconfig(dep.Provider):
+class _pkgconfig_from_source(dep.Provider):
 
   def __init__(self): ############################################
     super().__init__("pkgconfig")
@@ -19,7 +19,7 @@ class pkgconfig(dep.Provider):
 
   def build(self): ##########################################################
     self.arcpath = dep.downloadAndExtract([self.url],
-                                          "pkg-config-%s" % VER,
+                                          "pkg-config-%s.gz" % VER,
                                           "gz",
                                           HASH,
                                           self.extract_dir)
@@ -28,15 +28,22 @@ class pkgconfig(dep.Provider):
     self.build_dir.mkdir()
     self.build_dir.chdir()
 
+    environ = dict()
+
     conf_cmd = [
       "../configure",
       "--prefix=%s"%path.prefix(),
       "--with-internal-glib"
     ]
+
+    if host.IsDarwin and host.IsX86_64:
+      environ["CC"] = "gcc-13"
+      environ["CXX"] = "g++-13"
+
     if host.IsLinux and host.IsAARCH64:
       conf_cmd += ["--build=aarch64-linux-gnu"]
 
-    OK = (Command(conf_cmd).exec()==0)
+    OK = (Command(conf_cmd,environment=environ).exec()==0)
 
     #assert(False)
 
@@ -59,3 +66,15 @@ class pkgconfig(dep.Provider):
   ########################################################################
   def areRequiredBinaryFilesPresent(self):
     return (path.bin()/"pkg-config").exists()
+###############################################################################
+class _pkgconfig_from_homebrew(dep.HomebrewProvider):
+  def __init__(self,name):
+    super().__init__(name,name)
+    self.VERSION = "homebrew"
+###############################################################################
+class pkgconfig(dep.switch(linux=_pkgconfig_from_source, \
+                           macos=_pkgconfig_from_homebrew)):
+  def __init__(self):
+    super().__init__("pkgconfig")
+  def env_init(self):
+    log.marker("registering pkgconfig SDK(%s)"%self.VERSION)

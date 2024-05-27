@@ -6,7 +6,7 @@
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
 
-VERSION = "v1.2.5"
+VERSION = "v1.2.9"
 
 import os, tarfile
 from obt import dep, host, path, cmake, git, make, command, log, env
