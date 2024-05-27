@@ -6,6 +6,9 @@ from obt.command import Command
 import obt.host
 from collections.abc import Callable
 
+from obt.deco import Deco 
+deco = Deco()
+
 ###############################################################################
 
 class AutoConfBuilder(BaseBuilder):

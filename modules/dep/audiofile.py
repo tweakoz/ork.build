@@ -14,6 +14,7 @@ class _audiofile_from_source(dep.StdProvider):
     self.VERSION = "master"
     self._builder = self.createBuilder(dep.AutoConfBuilder)
     self._builder._needsautogendotsh = True
+    self._builder._options += ["--disable-docs"]
   ########################################################################
   @property
   def _fetcher(self):
@@ -30,6 +31,6 @@ class _audiofile_from_homebrew(dep.HomebrewProvider):
     self.VERSION = "audiofile"
 ###############################################################################
 class audiofile(dep.switch(linux=_audiofile_from_source, \
-                           macos=_audiofile_from_homebrew)):
+                           macos=_audiofile_from_source)):
   def __init__(self):
     super().__init__()

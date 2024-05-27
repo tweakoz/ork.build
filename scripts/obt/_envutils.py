@@ -77,12 +77,7 @@ class EnvSetup:
     if self._config._git_ssh_command!=None:
       LAUNCHENV += ['export GIT_SSH_COMMAND="%s";'%self._config._git_ssh_command]
 
-    if self._config.inplace:
-      LAUNCHENV += [str(self._config.bin_pub_dir/"obt.env.launch.py")]
-      LAUNCHENV += ["--inplace"]
-    else:
-      LAUNCHENV += ["obt.env.launch.py"]
-
+    LAUNCHENV += ["obt.env.launch.py"]
     LAUNCHENV += ["--numcores", numcores]
     LAUNCHENV += ["--stagedir", self._config.stage_dir]
     for item in self._config._project_dirs:

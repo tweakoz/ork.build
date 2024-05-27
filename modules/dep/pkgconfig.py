@@ -9,13 +9,14 @@ HASH = "f6e931e319531b736fadc017f470e68a"
 
 class _pkgconfig_from_source(dep.Provider):
 
-  def __init__(self): ############################################
-    super().__init__("pkgconfig")
+  def __init__(self,name): ############################################
+    super().__init__(name)
     self.scope = dep.ProviderScope.INIT
     self.extract_dir = path.builds()/"pkgconfig"
     self.source_dir = self.extract_dir/("pkg-config-%s" % VER)
     self.build_dir = self.source_dir/".build"
     self.url = "http://pkgconfig.freedesktop.org/releases/pkg-config-%s.tar.gz" % VER
+    self.VERSION = VER
 
   def build(self): ##########################################################
     self.arcpath = dep.downloadAndExtract([self.url],

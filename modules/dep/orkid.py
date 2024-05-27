@@ -152,7 +152,6 @@ class orkid(dep.StdProvider):
     #deplist += ["libsurvive"]
 
     if host.IsX86_64:
-      deplist += ["ispctexc"]
       deplist += ["openvdb"]
 
     #if ork.host.IsOsx: # until moltenvk fixed on big sur
@@ -164,6 +163,7 @@ class orkid(dep.StdProvider):
       deplist += ["pipewire"]
       if host.IsX86_64:
         deplist += ["openvr"]
+        deplist += ["ispctexc"]
         #deplist += ["nvtt"]
     elif host.IsDarwin:
       deplist += ["moltenvk"]
