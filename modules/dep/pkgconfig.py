@@ -10,7 +10,7 @@ HASH = "f6e931e319531b736fadc017f470e68a"
 class _pkgconfig_from_source(dep.Provider):
 
   def __init__(self,name): ############################################
-    super().__init__(name)
+    super().__init__(name,name)
     self.scope = dep.ProviderScope.INIT
     self.extract_dir = path.builds()/"pkgconfig"
     self.source_dir = self.extract_dir/("pkg-config-%s" % VER)
