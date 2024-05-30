@@ -10,7 +10,10 @@ deplist = []
 
 if UBUNTU_VERSION <= 2004:
   deplist +=  ["gcc-8","g++-8","python-dev"] # not avail in ub22
-if UBUNTU_VERSION >= 2304:
+
+if UBUNTU_VERSION >= 2404:
+  deplist += ["clang-18", "g++-11", "g++-10"]
+elif UBUNTU_VERSION >= 2304:
   deplist += ["clang-17", "g++-13", "libstdc++-13-dev"]
 elif UBUNTU_VERSION >= 2204:
   deplist += ["clang-12", "g++-12", "libstdc++-12-dev"]
