@@ -138,24 +138,11 @@ class GithubFetcher(Fetcher): # github specific git fetcher
       ####################################################
       if use_tarball:
       ####################################################
-        curdir = os.getcwd()
-        ghbase = URL("https://github.com")
-        url = ghbase/self._repospec/"tarball"/self._revision
-        print("URL: %s"%url)
-        outfname = self._repospec+("-%s.tar.gz"%self._revision)
-        outfname = outfname.replace("/","_")
-        fetched_path = wget(urls=[url],output_name=outfname,md5val=self._md5val)
-        if fetched_path==None:
-          print(deco.red("url<%s> not fetched!"%url))
-          return False
-        print("dest: %s"%dest)
-        print("dest fetched_path: %s"%fetched_path)
-        if dest.exists():
-          shutil.rmtree(str(dest))
-        run(["mkdir","-p",dest])
-        os.chdir(dest)
-        retc = run(["tar","xvf",fetched_path,"--strip-components","1"])
-        os.chdir(curdir)
+        retc = git.fetch_tarball_from_github(
+           repospec=self._repospec,
+           revision=self._revision,
+           md5val=self._md5val,
+           destdir=dest)
         return retc==0
       ####################################################
       else: # tried and true way

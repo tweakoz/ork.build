@@ -8,7 +8,9 @@
 
 import os, shutil, git
 import obt.path
+from yarl import URL
 from pathlib import PosixPath
+from obt.wget import wget
 from obt.deco import Deco
 from obt.command import run
 
@@ -177,3 +179,25 @@ def get_latest_commit(repo_path):
   except Exception as e:
     return str(e)
 
+#####################################################################################
+
+def fetch_tarball_from_github(repospec=None,revision=None,md5val=None,destdir=None):
+  curdir = os.getcwd()
+  ghbase = URL("https://github.com")
+  url = ghbase/repospec/"tarball"/revision
+  print("URL: %s"%url)
+  outfname = repospec+("-%s.tar.gz"%revision)
+  outfname = outfname.replace("/","_")
+  fetched_path = wget(urls=[url],output_name=outfname,md5val=md5val)
+  if fetched_path==None:
+    print(deco.red("url<%s> not fetched!"%url))
+    return -1
+  print("dest: %s"%destdir)
+  print("destdir fetched_path: %s"%fetched_path)
+  if destdir.exists():
+    shutil.rmtree(str(destdir))
+  run(["mkdir","-p",destdir])
+  os.chdir(destdir)
+  retc = run(["tar","xvf",fetched_path,"--strip-components","1"])
+  os.chdir(curdir)
+  return retc
