@@ -18,6 +18,7 @@ from obt.wget import wget
 from obt import pathtools, cmake, make, path, git, host, _globals, buildtrace
 from obt._dep_dl import downloadAndExtract
 from obt._dep_impl import require 
+from obt import pathtools 
 
 deco = Deco()
 
@@ -32,6 +33,33 @@ class Fetcher:
     for filepath in self._patchdict:
       item_dict = self._patchdict[filepath]
       patch.patch_with_dict(filepath,item_dict)
+
+###############################################################################
+
+class DepotToolsFetcher(Fetcher):
+  def __init__(self,name):
+    super().__init__(name)
+    self._fetch_id = ""
+    self._enable_hooks = False
+  ###########################################
+  def addSubFetcher(self,name):
+    pass
+  ###########################################
+  def fetch(self,dest):
+    p = path.builds()/"depot_tools"
+    cmdlist = [
+      "fetch",
+      "--nohooks",
+      "--no-history",
+      self._fetch_id      
+    ]
+    env = {
+      "PATH": str(p)+":"+os.environ["PATH"]
+    }
+    wd = path.builds()/self._fetch_id
+    pathtools.ensureDirectoryExists(wd)
+    rval = run(cmdlist,environment=env, working_dir=wd,do_log=True)
+    return rval==0
 
 ###############################################################################
 
