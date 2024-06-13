@@ -245,6 +245,10 @@ class NopFetcher(Fetcher):
   def descriptor(self):
     return "%s (%s)" % (self._name,self._revision)
   ###########################################
+  def update(self,source_root):
+    print("NOPFETCHER not updating for <%s> at src_root<%s>" % (self._name, source_root))
+    return True
+  ###########################################
   def fetch(self,dest):
     return True
   ###########################################
