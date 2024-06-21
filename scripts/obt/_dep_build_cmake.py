@@ -14,11 +14,13 @@ class CMakeBuilder(BaseBuilder):
                name,
                static_libs=False,
                macos_defaults=True,
-               install_prefix=None):
+               install_prefix=None,
+               modules_paths=[]):
     super().__init__(name)
     self._minimal = False 
     self._install_prefix = install_prefix
     self._src_dir_override = None
+    self._modules_paths = modules_paths
     ##################################
     # ensure environment cmake present
     ##################################
@@ -105,7 +107,8 @@ class CMakeBuilder(BaseBuilder):
                                 builddir=blddir,
                                 working_dir=wrkdir,
                                 sourcedir=self._src_dir_override,
-                                install_prefix=self.install_prefix)
+                                install_prefix=self.install_prefix,
+                                modules_paths = self._modules_paths)
       ok2build = cmake_ctx.exec()==0
     else:
       pathtools.mkdir(blddir,clean=True,parents=True)

@@ -23,7 +23,8 @@ class context:
                builddir=None,
                working_dir=None,
                xcode=False,
-               install_prefix=None):
+               install_prefix=None,
+               modules_paths=[]):
 
     self.root = root
     self.env = env
@@ -35,6 +36,7 @@ class context:
     self._sourcedir = sourcedir
     self._xcode = xcode
     self._install_prefix = install_prefix
+    self._modules_paths = modules_paths
 
     if builddir!=None:
       self._sourcedir = builddir/".."
@@ -67,7 +69,14 @@ class context:
       cmdlist += ["--verbose"]
 
     cmdlist += ["-DCMAKE_INSTALL_PREFIX=%s"%self.install_prefix]
-    cmdlist += ["-DCMAKE_MODULE_PATH=%s"%(self.install_prefix/"lib"/"cmake")]
+    
+    mpath = [
+      self.install_prefix/"lib"/"cmake"
+    ] + self._modules_paths
+    
+    mpathstr = "-DCMAKE_MODULE_PATH=%s"%":".join([str(p) for p in mpath])
+    
+    cmdlist += [mpathstr]
 
     proc_env = dict()
 
