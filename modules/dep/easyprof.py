@@ -6,7 +6,7 @@
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
 
-VERSION ="v2.1.0"
+VERSION ="toz-obt"
 
 import os, tarfile
 from obt import dep, host, path, git, cmake, make
@@ -25,20 +25,20 @@ class easyprof(dep.StdProvider):
   def __init__(self):
     super().__init__(easyprof.name)
     self.declareDep("cmake")
-
+    qt5 = dep.instance("qt5")
     mpaths = [
-      "/opt/homebrew/Cellar/qt\@5/5.15.13_1/lib/cmake"
+      qt5.basedir/"lib"/"cmake"
     ]
 
     self._builder = self.createBuilder( dep.CMakeBuilder,
                                         modules_paths=mpaths)
 
-    self._builder.setCmVar("CMAKE_PREFIX_PATH","/opt/homebrew/Cellar/qt@5/5.15.13_1/lib/cmake/Qt5Widgets")
+    self._builder.setCmVar("CMAKE_PREFIX_PATH",qt5.basedir/"lib"/"cmake"/"Qt5Widgets")
   ########################################################################
   @property
   def _fetcher(self):
     return dep.GithubFetcher(name=easyprof.name,
-                             repospec="yse/easy_profiler",
+                             repospec="tweakoz/easy_profiler",
                              revision=VERSION,
                              recursive=False)
 

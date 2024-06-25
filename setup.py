@@ -62,6 +62,7 @@ setup(
         "twine",
         "build",
         "conan",
+        "pip>=24.1",
 	"GitPython"
     ]
 )

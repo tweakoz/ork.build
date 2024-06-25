@@ -127,9 +127,9 @@ class _qt5_from_source(dep.Provider):
 class _qt5_from_homebrew(dep.HomebrewProvider):
   def __init__(self):
     super().__init__("qt5","qt5")
-    self.fullver = "5.15.1"
+    self.fullver = "5.15.13_1"
   def install_dir(self):
-    return path.Path("/usr/local/opt/qt5")
+    return path.Path("/opt/homebrew/Cellar/qt\@5/5.15.13_1")
 
 ###############################################################################
 
@@ -146,18 +146,22 @@ class qt5(BASE):
   def __str__(self):
     return "QT5"
   ########
-  def env_init(self):
+  @property
+  def basedir(self):
     if host.IsOsx:
-      qtdir = Path("/")/"usr"/"local"/"opt"/"qt5"
+      qtdir = Path("/")/"opt"/"homebrew"/"Cellar"/"qt@5"/"5.15.13_1"
     else:
       qtdir = path.stage()/"qt5"
-    if qtdir.exists():
+    return qtdir
+  ########
+  def env_init(self):
+    env.set("QTDIR",self.basedir)
+    if self.basedir.exists():
       log.marker("registering QT5(%s) SDK"%self.fullver)
-      env.set("QTDIR",qtdir)
-      env.prepend("PATH",qtdir/"bin")
-      env.prepend("LD_LIBRARY_PATH",qtdir/"lib")
-      #env.append("PKG_CONFIG_PATH",qtdir/"lib"/"pkgconfig")
-      env.prepend("PKG_CONFIG_PATH",qtdir/"lib"/"pkgconfig")
+      env.prepend("PATH",self.basedir/"bin")
+      env.prepend("LD_LIBRARY_PATH",self.basedir/"lib")
+      #env.append("PKG_CONFIG_PATH",self.basedir/"lib"/"pkgconfig")
+      env.prepend("PKG_CONFIG_PATH",self.basedir/"lib"/"pkgconfig")
       env.set("QTVER",self.fullver)
   ########
   @property
