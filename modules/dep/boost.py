@@ -102,9 +102,10 @@ class boost(dep.Provider):
     # giving up on boost-python on mac M1 for now...
     #########################################
 
-    if toolset == "darwin":
+    if True: #toolset == "darwin":
       cmdlist += ["--without-libraries=python,coroutine"]
     else:
+      # broken with python 3.12...
       cmdlist += [
        "--with-python=%s"%PYTHON.executable,
        "--with-python-root=%s"%PYTHON.home_dir,
