@@ -200,7 +200,7 @@ class orkid(dep.StdProvider):
     
   ########
   def find_paths(self):
-    return [self.source_root/"ork.core",self.source_root/"ork.lev2"]
+    return [self.source_root/"ork.core",self.source_root/"ork.lev2",self.source_root/"ork.ecs"]
 
   def areRequiredSourceFilesPresent(self):
     return (self.source_root/"orkid.cmake").exists()

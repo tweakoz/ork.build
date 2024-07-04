@@ -542,6 +542,7 @@ def configFromCommandLine(parser_args=None):
       if orig_pkg_config!=None:
         os.environ["OBT_ORIGINAL_PKG_CONFIG"] = str(orig_pkg_config)
       else:
+        print(deco.err("NO PKG-CONFIG FOUND, is your base shell setup correctly ?"))      
         assert(False)
 
   if("PKG_CONFIG_PATH" not in os.environ):
