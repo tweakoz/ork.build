@@ -28,9 +28,9 @@ class pybind11(dep.StdProvider):
   @property
   def _fetcher(self):
     return dep.GithubFetcher(name=pybind11.name,
-                             repospec="pybind/pybind11",
-                             revision="v2.11.1",
-                             recursive=False)
+                             repospec="tweakoz/pybind11",
+                             revision="toz-2024-pep684",
+                             recursive=True)
   def areRequiredSourceFilesPresent(self):
     return (self.source_root/"CMakeLists.txt").exists()
   def areRequiredBinaryFilesPresent(self):
