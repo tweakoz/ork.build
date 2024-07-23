@@ -21,7 +21,9 @@ class pydefaults(dep.Provider):
                 "mido",
                 "ipython",
                 "traitlets",
-                "imgui_bundle"]
+                "imgui_bundle",
+                "PyGLM",
+                "opencv-contrib-python"]
     modules += ["Pillow","jupyter","plotly","trimesh","asciidoc"]
     if host.IsDarwin == False:
       modules += ["pysqlite3","pyudev"]
