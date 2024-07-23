@@ -12,23 +12,22 @@ class pydefaults(dep.Provider):
 
   def build(self): ############################################################
     #PYTHON = dep.instance("python")
-    pip.install(["pytest",
-                  "numpy","scipy",
-                  "numba","pyopencl",
-                  "matplotlib",
-                  "pyzmq",
-                  #"ork.build" # okay...
-                  ])#,"backports.lzma"])
-
-
-
-    #################
-    modules2 = ["Pillow","jupyter","plotly","trimesh","asciidoc", "pyudev"]
+    modules = [ "numpy",
+                "scipy",
+                "numba",
+                "pyopencl",
+                "matplotlib",
+                "pyzmq",
+                "mido",
+                "ipython",
+                "traitlets",
+                "imgui_bundle"]
+    modules += ["Pillow","jupyter","plotly","trimesh","asciidoc"]
     if host.IsDarwin == False:
-      modules2 += ["pysqlite3"]
+      modules += ["pysqlite3","pyudev"]
     #################
 
-    ret = Command([self.python.executable,"-m","pip","install","--upgrade"]+modules2).exec()
+    ret = Command([self.python.executable,"-m","pip","install","--upgrade"]+modules).exec()
 
     print("pydefaults build ret<%d>"%int(ret))
     return (ret==0)
