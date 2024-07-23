@@ -23,7 +23,9 @@ class pydefaults(dep.Provider):
                 "traitlets",
                 "imgui_bundle",
                 "PyGLM",
-                "opencv-contrib-python"]
+                "opencv-contrib-python",
+                "solidpython2",
+                "cadquery[ipython]" ]
     modules += ["Pillow","jupyter","plotly","trimesh","asciidoc"]
     if host.IsDarwin == False:
       modules += ["pysqlite3","pyudev"]
