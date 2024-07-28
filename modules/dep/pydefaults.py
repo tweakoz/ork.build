@@ -25,7 +25,10 @@ class pydefaults(dep.Provider):
                 "PyGLM",
                 "opencv-contrib-python",
                 "solidpython2",
-                "manifold3d"
+                "manifold3d",
+                "scikit-image",
+                "MDAnalysis",
+                "MDAnalysisData",
                 #"cadquery[ipython]" # does not work on macos/arm64
               ]
     modules += ["Pillow","jupyter","plotly","trimesh","asciidoc"]
