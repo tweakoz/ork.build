@@ -37,7 +37,7 @@ class _qt5_from_source(dep.Provider):
     self.source_base = path.builds()/"qt5"
     self.source_root = self.source_base/self.name
     self.build_dest = path.builds()/"qt5"/"qt5-build"
-    self._archlist = ["x86_64"]
+    self._archlist = ["x86_64","aarch64"]
     self.declareDep("assimp")
   ########
   def env_goto(self):
