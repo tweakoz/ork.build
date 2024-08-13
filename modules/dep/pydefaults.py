@@ -25,7 +25,7 @@ class pydefaults(dep.Provider):
                 "PyGLM",
                 "opencv-contrib-python",
                 "solidpython2",
-                "manifold3d",
+                "manifold3d", # TODO: disable on aarch64/linux
                 "scikit-image",
                 "MDAnalysis",
                 "MDAnalysisData",
