@@ -69,6 +69,8 @@
 
 * Ensure public SSH key added to github so you can use ssh protocol with github, some dependencies will require this.
 
+* ensure you are using Bash for now, Zsh is not yet supported..
+
 * Virtual Environments are required from this point forward because [pep-668](https://peps.python.org/pep-0668/) has been mainlined into new linux distributions and MacOS/Homebrew. Rather than fight it, we have embraced it. You should probably make sure there are no straggling ork.build packages sitting in ~/.local (linux) or ~/Library/Python (macos) - also ensure as clean as possible base shell. prefer to use launch scripts to startup development shells.
   
 * Create Virtual Environment (Required)
@@ -150,6 +152,12 @@ pip3 install ork.build
   * Xcode Select the XCode SDK ```sudo xcode-select -s /Applications/Xcode.app/Contents/Developer```
   * View the OBT system install file if you would like to know what it is doing
   * Visit <https://github.com/tweakoz/ork.build/blob/develop/bin_pub/obt.osx.installdeps.py>
+  * Ensure homebrew's path is enabled on your OBT development shell.
+  * Ensure your OBT development shell is using bash, Zsh is not yet supported.
+  * Whilst it is OK to have some customizations to your base development shell,
+     keep in mind the more customizations you have, the higher the probability of
+     those customizations interacting with OBT.
+  * try to keep your user's local packages to a minimal and conform to <https://peps.python.org/pep-0668> and <https://packaging.python.org/en/latest/specifications/externally-managed-environments/#externally-managed-environments>
 
   ```bash
   obt.osx.installdeps.py
