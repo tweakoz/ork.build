@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+
+echo "dont use me, use obt.pip.install.py from inside an OBT environment"
