@@ -146,7 +146,7 @@ pip3 install ork.build
   * On MacOs (Ventura - x86 or arm) - sudo **NOT required**
 
   * Install and/or update HomeBrew (https://brew.sh/)
-  * Install latest Xcode (Via AppStore)
+  * Install Xcode >= 15.4 (Via AppStore)
   * Xcode Select the XCode SDK ```sudo xcode-select -s /Applications/Xcode.app/Contents/Developer```
   * View the OBT system install file if you would like to know what it is doing
   * Visit <https://github.com/tweakoz/ork.build/blob/develop/bin_pub/obt.osx.installdeps.py>

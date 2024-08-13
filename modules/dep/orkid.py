@@ -167,6 +167,7 @@ class orkid(dep.StdProvider):
         #deplist += ["nvtt"]
     elif host.IsDarwin:
       deplist += ["moltenvk"]
+      deplist += ["audiofile"]
 
     return deplist
 
