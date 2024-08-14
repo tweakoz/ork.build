@@ -134,7 +134,7 @@ def directory(ns_name : str):
   # if a module has methods, enumerate them too
   for ns_path in module_records_by_path:
     colored_path = deco.path(ns_path)
-    print(deco.inf(f'Enumerating contents of namespace package: {colored_path}'))
+    print(deco.val(f'Enumerating contents of namespace package: {colored_path}'))
     for importer, modname, ispkg in pkgutil.iter_modules([str(ns_path)]):
       if ispkg:
         iterate_package_contents(ns_path / modname, 0)
