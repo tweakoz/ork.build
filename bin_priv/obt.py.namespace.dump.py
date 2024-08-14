@@ -1,9 +1,6 @@
 #!/usr/bin/env python3 
 
-import argparse 
-import importlib
-import pkgutil
-import sys, pathlib
+import argparse, importlib, pkgutil, sys, pathlib, ast
 from obt.deco import Deco 
 
 deco = Deco() 
@@ -29,6 +26,11 @@ method_colors = [ # magenta
   (224,192,224),
   (255,224,255)
 ]
+function_colors = [ # yellow-green
+  (128,128,64),
+  (224,224,192),
+  (255,255,224)
+]
 class_colors = [ # cyan
   (64,128,128),
   (192,224,224),
@@ -51,25 +53,39 @@ def iterate_module_contents(item_path : pathlib.Path, level: int):
   # for now, we just print the methods and classes
   #print(item_path)
   dot_py = item_path.with_suffix('.py')
+  visited_functions = set()
   if dot_py.exists() and dot_py.is_file():
-    with open(dot_py, 'r') as f:
-      lines = f.readlines()
-      for line in lines:
-        # remove leading whitespace
-        #print(line)
-        line = line.strip()        
-        if line.startswith('def '):
-          method_name = line.split('(')[0].split(' ')[1]
-          method_color = method_colors[level]
-          colored_method = deco.rgbstr(*method_color,method_name)
-          colored_state = deco.yellow('method')
+    the_ast = ast.parse(open(dot_py).read())
+    # first walk classes, and their methods (recusively)
+    for node in ast.walk(the_ast):
+      is_class = isinstance(node, ast.ClassDef)
+      if is_class:
+        class_name = node.name
+        class_color = class_colors[level]
+        colored_class = deco.rgbstr(*class_color, class_name)
+        colored_state = deco.yellow('class')
+        print(f'{indent}  {colored_class} : {colored_state}')
+        for node in ast.walk(node):
+          is_function = isinstance(node, ast.FunctionDef)
+          if is_function:
+            visited_functions.add(node)
+            method_name = node.name
+            method_color = method_colors[level]
+            colored_method = deco.rgbstr(*method_color, method_name)
+            colored_state = deco.yellow('cfn')
+            print(f'{indent}    {colored_method} : {colored_state}')
+    # now walk the global methods
+    for node in ast.walk(the_ast):
+      is_function = isinstance(node, ast.FunctionDef)
+      if is_function:
+        if node not in visited_functions:
+          fn_name = node.name
+          fn_color = function_colors[level]
+          colored_method = deco.rgbstr(*fn_color, fn_name)
+          colored_state = deco.yellow('gfn')
           print(f'{indent}  {colored_method} : {colored_state}')
-        elif line.startswith('class '):
-          class_name = line.split('(')[0].split(' ')[1]
-          class_color = class_colors[level]
-          colored_class = deco.rgbstr(*class_color,class_name)
-          colored_state = deco.yellow('class')
-          print(f'{indent}  {colored_class} : {colored_state}')
+
+         
 
 ###############################################################################
 
