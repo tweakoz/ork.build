@@ -8,6 +8,7 @@ import sys, os, random, numpy, argparse
 parser = argparse.ArgumentParser(description='assetpak tester')
 parser.add_argument("-o", '--output', type=str, help='output file', required=True)
 parser.add_argument("-i", '--input', type=str, help='input file', required=True)
+parser.add_argument("-s", '--string', type=str, help='string', required=True)
 parser.add_argument("-p", '--passphrase', type=str, help='passphrase', required=True)
 args = vars(parser.parse_args())
 
