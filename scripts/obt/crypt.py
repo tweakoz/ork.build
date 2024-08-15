@@ -1,4 +1,5 @@
 import subprocess
+from obt import path 
 
 def encrypt_string(plain_text, passphrase):
     process = subprocess.Popen(
@@ -62,6 +63,9 @@ def encrypt_file(input_file, output_file, passphrase):
 #encrypt_file(input_file, output_file, passphrase)
 
 def decrypt_file(input_file, output_file, passphrase):
+    p_output = path.Path(output_file)
+    if p_output.exists():
+      p_output.unlink()
     process = subprocess.Popen(
         ['gpg', '--decrypt', '--passphrase', passphrase, '--batch', '--output', output_file],
         stdin=subprocess.PIPE,

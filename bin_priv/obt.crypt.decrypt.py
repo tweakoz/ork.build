@@ -31,7 +31,4 @@ if input_string:
   print(decrypted_string)
   # Write the encoded string to the output file
 else:
-  p_output = path.Path(output)
-  if p_output.exists():
-    p_output.unlink()
   crypt.decrypt_file(input, output, passphrase)
