@@ -89,6 +89,7 @@ deplist += ["gfortran"]
 deplist += ["ocl-icd-opencl-dev"]
 deplist += ["libfmt-dev"]
 deplist += ["meson","ninja-build","libserialport-dev", "libxxhash-dev"]
+deplist += ["libpipewire-0.3-dev", "pipewire"]
 
 merged = " ".join(deplist)
 os.system("sudo apt -y install %s" % merged)
