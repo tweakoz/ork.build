@@ -197,6 +197,10 @@ class python_from_source(dep.Provider):
     env.set("CCFLAGS","-march=%s"%self._target.architecture)
 
     if host.IsOsx:
+      env.set("LIBLZMA_CFLAGS", "-I/opt/homebrew/Cellar/xz/5.6.3/include")
+      env.set("LIBLZMA_LIBS", "-L/opt/homebrew/Cellar/xz/5.6.3/lib -llzma")
+
+    if host.IsOsx:
        from obt import macos, macos_homebrew
        sdkdir = path.osx_sdkdir()
        print(sdkdir)
