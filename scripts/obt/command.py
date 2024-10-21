@@ -155,10 +155,15 @@ class Command:
          "os_env": dict(self.env), 
          "use_shell": False })
 
-        return subprocess.check_output(self.command_list,
-                                       universal_newlines=True,
-                                       env=self.env )
-      
+        rval = ""
+        try:
+          rval = subprocess.check_output(self.command_list,
+                                         universal_newlines=True,
+                                         env=self.env )
+        except:
+          rval = ""
+        return rval
+
     ###########################################################################
 
     def execr(self):
@@ -173,7 +178,12 @@ def run(command_list,
         working_dir=None,
         do_log=False):
   assert(type(command_list)==list)
-  return Command(command_list,environment,do_log=do_log,working_dir=working_dir).exec()
+  rval = -1
+  try:
+    rval = Command(command_list,environment,do_log=do_log,working_dir=working_dir).exec()
+  except:
+    rval = -1
+  return rval
 
 ###############################################################################
 
