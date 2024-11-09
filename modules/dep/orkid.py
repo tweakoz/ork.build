@@ -149,6 +149,8 @@ class orkid(dep.StdProvider):
     deplist += ["igl"]
     deplist += ["dsp"]
     deplist += ["dspstretch"]
+    deplist += ["lz4"]
+    deplist += ["nlohmannjson"]
     #deplist += ["libsurvive"]
 
     if host.IsX86_64:
