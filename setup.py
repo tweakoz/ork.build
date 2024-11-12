@@ -64,5 +64,8 @@ setup(
         "conan",
         "pip>=24.1",
 	"GitPython"
+	# "mdstat", linux only
+	#"zfslib", linux only
+	#"pyudev", linux only
     ]
 )
