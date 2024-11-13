@@ -149,27 +149,22 @@ class orkid(dep.StdProvider):
     deplist += ["igl"]
     deplist += ["dsp"]
     deplist += ["dspstretch"]
-    deplist += ["lz4"]
     deplist += ["nlohmannjson"]
     #deplist += ["libsurvive"]
 
     if host.IsX86_64:
       deplist += ["openvdb"]
-
-    #if ork.host.IsOsx: # until moltenvk fixed on big sur
-    #   ork.dep.require(["moltenvk"])
     
+    deplist += ["vulkan"]
     if host.IsLinux:
-      deplist += ["vulkan"]
       deplist += ["rtmidi"]
-      #deplist += ["pipewire"]
+      deplist += ["pipewire"]
       if host.IsX86_64:
         deplist += ["openvr"]
         deplist += ["ispctexc"]
         #deplist += ["nvtt"]
     elif host.IsDarwin:
-      deplist += ["moltenvk"]
-      #deplist += ["audiofile"]
+      pass
 
     return deplist
 

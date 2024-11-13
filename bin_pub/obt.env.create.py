@@ -88,7 +88,7 @@ print(os.environ)
 print(os.environ["OBT_MODULES_PATH"])
 os.system("ls %s" % os.environ["OBT_MODULES_PATH"])
 
-MANDATORY_DEPS = ["cmake","python","pydefaults"]
+MANDATORY_DEPS = ["cmake","python","pydefaults","vulkan"]
 
 import obt.dep
 for item in MANDATORY_DEPS:

@@ -27,8 +27,8 @@ class cpppeglib(dep.StdProvider):
   def _fetcher(self):
     return dep.GithubFetcher(name=cpppeglib.name,
                              repospec="yhirose/cpp-peglib",
-                             revision="master",
-                             recursive=False)
+                             revision="v1.9.0",
+                             recursive=True)
   def areRequiredSourceFilesPresent(self):
     return (self.source_root/"CMakeLists.txt").exists()
   def areRequiredBinaryFilesPresent(self):

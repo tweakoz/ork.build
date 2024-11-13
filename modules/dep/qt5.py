@@ -37,7 +37,7 @@ class _qt5_from_source(dep.Provider):
     self.source_base = path.builds()/"qt5"
     self.source_root = self.source_base/self.name
     self.build_dest = path.builds()/"qt5"/"qt5-build"
-    self._archlist = ["x86_64","aarch64"]
+    self._archlist = ["x86_64"]
     self.declareDep("assimp")
   ########
   def env_goto(self):
@@ -129,10 +129,7 @@ class _qt5_from_homebrew(dep.HomebrewProvider):
     super().__init__("qt5","qt5")
     self.fullver = "5.15.13_1"
   def install_dir(self):
-    if host.IsAARCH64:
-      return path.Path("/opt/homebrew/Cellar/qt\@5/5.15.13_1")
-    else:
-      return path.Path("/usr/local/Cellar/qt\@5/5.15.13_1")
+    return path.Path("/opt/homebrew/Cellar/qt\@5/5.15.13_1")
 
 ###############################################################################
 
@@ -152,11 +149,7 @@ class qt5(BASE):
   @property
   def basedir(self):
     if host.IsOsx:
-      if host.IsAARCH64:
-        qtdir = Path("/opt/homebrew/Cellar/qt@5/5.15.13_1")
-      else:
-        qtdir = Path("/usr/local/Cellar/qt@5/5.15.13_1")
-
+      qtdir = Path("/")/"opt"/"homebrew"/"Cellar"/"qt@5"/"5.15.13_1"
     else:
       qtdir = path.stage()/"qt5"
     return qtdir

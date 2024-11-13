@@ -6,7 +6,6 @@
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
 
-VERSION = "1.2.198.1"
 MD5 = "c26c3febbf14faef595d7c26715a5472"
 
 import os, tarfile
@@ -19,39 +18,99 @@ deco = Deco()
 
 ###############################################################################
 
+class _vulkan_from_moltenvk(dep.Provider):
+
+  def __init__(self): ############################################
+    super().__init__("moltenvk")
+    self.VERSION = "v1.2.11"
+
+    #print(options)
+    self.source_root = path.builds()/"moltenvk"
+    self.build_dest = path.builds()/"moltenvk"/".build"
+    #self._archlist = ["x86_64"]
+    self._oslist = ["Darwin"]
+    self.sdk_dir = self.source_root/"Package"/"Latest"/"MoltenVK"
+    self.build_lib_dir = self.sdk_dir/"dylib"/"macOS"
+  def __str__(self): ##########################################################
+
+    return "MoltenVK (github-%s)" % self.VERSION
+
+  def wipe(self): #############################################################
+    os.system("rm -rf %s"%self.source_root)
+    os.system("rm -rf %s"%self.build_dest)
+
+  def env_init(self):
+    log.marker("registering Vulkan(%s) <MoltenVK> SDK"%self.VERSION)
+    env.prepend("LD_LIBRARY_PATH",self.sdk_dir/"dylib")
+    #env.append("PATH",self.sdk_dir/"bin")
+    env.set("VULKAN_SDK",self.sdk_dir) # for cmake
+    env.set("OBT_VULKAN_VERSION","MoltenVK-%s"%(self.VERSION)) # for OBT internal
+    env.set("OBT_VULKAN_ROOT",self.sdk_dir) # for OBT internal
+    env.set("VK_ICD_FILENAMES",self.build_lib_dir/"MoltenVK_icd.json")
+
+  def build(self): ##########################################################
+
+    #glfw = dep.require("glfw")
+
+    if not self.source_root.exists():
+      git.Clone("https://github.com/KhronosGroup/MoltenVK",self.source_root,self.VERSION)
+
+    os.chdir(self.source_root)
+
+    command.system(["./fetchDependencies --macos"])
+    cmd = ["xcodebuild", "build", 
+           "-project", '"MoltenVKPackaging.xcodeproj"',
+           "-scheme", '"MoltenVK Package (macOS only)"',
+           "-configuration", '"Debug"']
+    ok = (0 == command.system(cmd))
+    if ok:
+      cmd = ["cp",self.build_lib_dir/"libMoltenVk.dylib",path.libs()/"libMoltenVk.dylib"]
+      ok = (0 == command.system(cmd))
+      if ok:
+        cmd = ["cp","-r","Package/Latest/MoltenVK/include/*",path.includes()]
+        ok = (0 == command.system(cmd))
+        if ok:
+          # moltenvlk does not automatically install shaderc
+          cmd = ["brew","install","--overwrite", "shaderc"]
+          ok = (0 == command.system(cmd))
+    return ok
+
+###############################################################################
+
 class _vulkan_from_lunarg(dep.Provider):
 
   def __init__(self): ############################################
     super().__init__("vulkan")
     #print(options)
-    self.fullver = VERSION
+    self.VERSION = "1.2.198.1"
+    self.fullver = self.VERSION
     self.source_root = path.builds()/"vulkan"
     self.build_dest = path.builds()/"vulkan"/".build"
     #self._archlist = ["x86_64"]
     self._oslist = ["Linux"]
     if host.IsX86_64:
-      self.sdk_dir = self.source_root/VERSION/"x86_64"
+      self.sdk_dir = self.source_root/self.VERSION/"x86_64"
     elif host.IsAARCH64:
-      self.sdk_dir = self.source_root/VERSION/"aarch64"
+      self.sdk_dir = self.source_root/self.VERSION/"aarch64"
 
   def __str__(self): ##########################################################
 
-    return "Vulkan (lunarg-%s)" % VERSION
+    return "Vulkan (lunarg-%s)" % self.VERSION
 
   ########################################################################
   @property
   def download_name(self):
     if host.IsX86_64:
-      nam = "vulkansdk-linux-x86_64-%s.tar.gz"%VERSION
+      nam = "vulkansdk-linux-x86_64-%s.tar.gz"%self.VERSION
     elif host.IsX86_32:
-      nam = "vulkansdk-linux-i386-%s.tar.gz"%VERSION
+      nam = "vulkansdk-linux-i386-%s.tar.gz"%self.VERSION
     elif host.IsAARCH64:
-      nam = "vulkansdk-linux-aarch64-%s.tar.gz"%VERSION
+      nam = "vulkansdk-linux-aarch64-%s.tar.gz"%self.VERSION
     return nam 
   
   @property
   def download_URL(self):
-    return "https://sdk.lunarg.com/sdk/download/%s/linux/%s"%(VERSION,self.download_name)
+    return "https://sdk.lunarg.com/sdk/download/%s/linux/%s"%(self.VERSION,self.download_name)
 
   @property
   def download_MD5(self):
@@ -60,17 +119,17 @@ class _vulkan_from_lunarg(dep.Provider):
   ########################################################################
   @property
   def revision(self):
-    return VERSION
+    return self.VERSION
   #######################################################################
 
   def env_init(self):
     if self.sdk_dir.exists():
-      log.marker("registering Vulkan(%s) SDK"%VERSION)
+      log.marker("registering Vulkan(%s) SDK"%self.VERSION)
       env.prepend("LD_LIBRARY_PATH",self.sdk_dir/"lib")
       env.append("PATH",self.sdk_dir/"bin")
       env.set("VULKAN_SDK",self.sdk_dir) # for cmake
       env.set("VK_LAYER_PATH", self.sdk_dir/"etc"/"vulkan"/"explicit_layer.d")
-      env.set("OBT_VULKAN_VERSION",VERSION) # for OBT internal
+      env.set("OBT_VULKAN_VERSION",self.VERSION) # for OBT internal
       env.set("OBT_VULKAN_ROOT",self.sdk_dir) # for OBT internal
 
   def areRequiredSourceFilesPresent(self):
@@ -89,7 +148,7 @@ class _vulkan_from_lunarg(dep.Provider):
 
     self.source_root.mkdir(parents=True,exist_ok=True)
     os.chdir(self.source_root)
-    ok = (command.system(["rm","-rf",VERSION])==0)
+    ok = (command.system(["rm","-rf",self.VERSION])==0)
     if not ok:
       return False
     ok = (command.system(["tar","xvf",path.downloads()/self.download_name])==0)
@@ -132,7 +191,9 @@ class _vulkan_from_system(dep.StdProvider):
 
 ###############################################################################
 
-if host.IsAARCH64:
+if host.IsDarwin:
+  BASE = _vulkan_from_moltenvk
+elif host.IsAARCH64:
   BASE = _vulkan_from_system
 elif host.IsX86_64 or host.IsX86_32:
   BASE = _vulkan_from_lunarg

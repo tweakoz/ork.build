@@ -12,31 +12,23 @@ class pydefaults(dep.Provider):
 
   def build(self): ############################################################
     #PYTHON = dep.instance("python")
-    modules = [ "numpy",
-                "scipy",
-                "numba",
-                "pyopencl",
-                "matplotlib",
-                "pyzmq",
-                "mido",
-                "ipython",
-                "traitlets",
-                "imgui_bundle",
-                "PyGLM",
-                "opencv-contrib-python",
-                "solidpython2",
-                # "manifold3d", # TODO: disable on aarch64/linux
-                "scikit-image",
-                "MDAnalysis",
-                "MDAnalysisData",
-                #"cadquery[ipython]" # does not work on macos/arm64
-              ]
-    modules += ["Pillow","jupyter","plotly","trimesh","asciidoc"]
+    pip.install(["pytest",
+                  "numpy","scipy",
+                  "numba","pyopencl",
+                  "matplotlib",
+                  "pyzmq",
+                  #"ork.build" # okay...
+                  ])#,"backports.lzma"])
+
+
+
+    #################
+    modules2 = ["Pillow","jupyter","plotly","trimesh","asciidoc", "pyudev"]
     if host.IsDarwin == False:
-      modules += ["pysqlite3","pyudev"]
+      modules2 += ["pysqlite3"]
     #################
 
-    ret = Command([self.python.executable,"-m","pip","install","--upgrade"]+modules).exec()
+    ret = Command([self.python.executable,"-m","pip","install","--upgrade"]+modules2).exec()
 
     print("pydefaults build ret<%d>"%int(ret))
     return (ret==0)
