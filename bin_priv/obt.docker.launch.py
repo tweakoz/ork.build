@@ -83,6 +83,6 @@ if len(mounts)==0:
 
 if unknownargs==None:
   unknownargs = []
-dockermodule.launch(unknownargs,environment=environ,mounts=mounts)
+rval = dockermodule.launch(unknownargs,environment=environ,mounts=mounts)
+sys.exit(rval)
 
-sys.exit(0)
