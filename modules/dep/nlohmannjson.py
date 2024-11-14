@@ -8,7 +8,7 @@
 from obt import dep, command, pathtools, path
 ###############################################################################
 class nlohmannjson(dep.StdProvider):
-  VERSION ="v3.6.1"
+  VERSION ="v3.11.3"
   NAME = "nlohmannjson"
   def __init__(self):
     super().__init__(nlohmannjson.NAME)
