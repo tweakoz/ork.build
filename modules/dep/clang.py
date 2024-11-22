@@ -55,6 +55,7 @@ class clang(dep.StdProvider):
       "jammy": "clang++-12",
       "mantic": "clang++-17",
       "noble": "clang++-18",
+      "bookworm": "clang++-16",
    }
    if host.IsLinux:
       return self.linux_bindir/ub_release[self.hostdesc.codename]
@@ -69,6 +70,7 @@ class clang(dep.StdProvider):
       "jammy": "clang-12",
       "mantic": "clang-17",
       "noble": "clang-18",
+      "bookworm": "clang-16",
    }   
    if host.IsLinux:
      return self.linux_bindir/ub_release[self.hostdesc.codename]
