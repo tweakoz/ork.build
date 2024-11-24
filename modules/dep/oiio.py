@@ -49,7 +49,7 @@ class oiio(dep.StdProvider):
   def _fetcher(self):
     return dep.GithubFetcher(name=oiio.name,
                              repospec="OpenImageIO/oiio",
-                             revision="v2.5.4.0",
+                             revision="v2.5.17.0",
                              recursive=False)
 
   #######################################################################
