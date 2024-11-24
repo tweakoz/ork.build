@@ -41,12 +41,12 @@ class openvdb(dep.StdProvider):
     if host.IsDarwin:
       src_path = self.build_dest/"openvdb"/"openvdb"/"python"
       src_name = f"openvdb.cpython-{vcode}-{platform}.so"
-      dst_name = f"pyopenvdb.so"      
+      dst_name = f"openvdb.so"      
       src_path = src_path/src_name
       dst_path = dst_path/dst_name
     else:
       src_path = st_lib/deconame/"site-packages"
-      src_name = f"pyopenvdb.cpython-{vcode}-{platform}.so"
+      src_name = f"openvdb.cpython-{vcode}-{platform}.so"
       dst_name = src_name
       src_path = src_path/src_name
       dst_path = dst_path/dst_name
