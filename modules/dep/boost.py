@@ -6,8 +6,8 @@
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
 
-VERSION = ["1","86","0"]
-HASH = "2d098ba2e1457708a02de996857c2b10"
+VERSION = ["1","81","0"]
+HASH = "3276c0637d1be8687740c550237ef999"
 
 import os,tarfile
 from obt import path,host,dep, gen_pkgconfig, patch
@@ -102,8 +102,8 @@ class boost(dep.Provider):
     # giving up on boost-python on mac M1 for now...
     #########################################
 
-    if False: #toolset == "darwin":
-      cmdlist += ["--without-libraries=coroutine"]
+    if True: #toolset == "darwin":
+      cmdlist += ["--without-libraries=python,coroutine"]
     else:
       # broken with python 3.12...
       cmdlist += [
@@ -246,8 +246,9 @@ class boost(dep.Provider):
       "CFLAGS":CFLAGS,
     }
 
-    g = gen_pkgconfig.Generator()
-    a = g.apply(replacements,outpath=path.pkgconfigdir()/"boost.pc")
+    if self._target.os != "macos":
+      g = gen_pkgconfig.Generator()
+      a = g.apply(replacements,outpath=path.pkgconfigdir()/"boost.pc")
 
     #############################
     # change install names
