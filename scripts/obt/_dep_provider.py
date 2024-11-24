@@ -303,6 +303,10 @@ class Provider(object):
       return True
 
     #############################
+    def onPostInstall(self):
+      return True
+
+    #############################
 
     def _std_cmake_build(self,srcdir,blddir,cmakeEnv=_std_cmake_vars,parallelism=1.0):
       ok2build = True
@@ -475,6 +479,10 @@ class StdProvider(Provider):
 
           if OK:
             OK = self.install()
+            if OK:
+              OK = self.onPostInstall()
+            else:
+              print(deco.err("Install <%s> failed!"%self._name))
           else:
             return False
 
