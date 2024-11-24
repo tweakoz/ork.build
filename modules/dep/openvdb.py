@@ -55,7 +55,7 @@ class openvdb(dep.StdProvider):
     pathtools.copyfile(src_path,dst_path)
     if host.IsDarwin:
       macos.macho_replace_loadpaths(dst_path,"@executable_path/../lib","@rpath")
-      macos.macho_replace_loadpaths(dst_path,"libboost_iostreams-mt-a64.dylib","@rpath/libboost_iostreams-mt-a64.dylib")
+      macos.macho_replace_loadpaths(dst_path,"libboost_iostreams-mt-a64.dylib","@executable_path/../../lib/libboost_iostreams-mt-a64.dylib")
       macos.macho_dump(dst_path)
     return True
 
