@@ -151,10 +151,7 @@ class orkid(dep.StdProvider):
     deplist += ["dspstretch"]
     deplist += ["nlohmannjson"]
     #deplist += ["libsurvive"]
-
-    if host.IsX86_64:
-      deplist += ["openvdb"]
-    
+    deplist += ["openvdb"]    
     deplist += ["vulkan"]
     if host.IsLinux:
       deplist += ["rtmidi"]
