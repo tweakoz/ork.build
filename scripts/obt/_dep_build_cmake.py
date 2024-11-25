@@ -15,11 +15,12 @@ class CMakeBuilder(BaseBuilder):
                static_libs=False,
                macos_defaults=True,
                install_prefix=None,
+               src_dir_override=None,
                modules_paths=[]):
     super().__init__(name)
     self._minimal = False 
     self._install_prefix = install_prefix
-    self._src_dir_override = None
+    self._src_dir_override = src_dir_override
     self._modules_paths = modules_paths
     ##################################
     # ensure environment cmake present
@@ -93,6 +94,7 @@ class CMakeBuilder(BaseBuilder):
     print("srcdir<%s>"%srcdir)
     print("blddir<%s>"%blddir)
     print("wrkdir<%s>"%wrkdir)
+    print("srcovr<%s>"%self._src_dir_override)
 
     ok2build = require(self._deps)
     if not ok2build:
