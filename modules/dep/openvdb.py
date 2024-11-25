@@ -33,30 +33,34 @@ class openvdb(dep.StdProvider):
     dep_python = dep.instance("python")
     deconame = dep_python._deconame
     st_lib = path.stage()/"lib"
-    dst_path = dep_python.pylib_dir/"site-packages"
+    pyext_dst_path = dep_python.pylib_dir/"site-packages"
     vcode = dep_python.version_major
     vcode = vcode.replace(".","")
     platform = "darwin" if host.IsDarwin else "x86_64-linux-gnu"
     print(vcode)
     if host.IsDarwin:
-      src_path = self.build_dest/"openvdb"/"openvdb"/"python"
+      pyext_src_path = self.build_dest/"openvdb"/"openvdb"/"python"
       src_name = f"openvdb.cpython-{vcode}-{platform}.so"
-      dst_name = f"openvdb.so"      
-      src_path = src_path/src_name
-      dst_path = dst_path/dst_name
+      dst_name = src_name      
+      pyext_src_path = pyext_src_path/src_name
+      pyext_dst_path = pyext_dst_path/dst_name
     else:
-      src_path = st_lib/deconame/"site-packages"
+      pyext_src_path = st_lib/deconame/"site-packages"
       src_name = f"openvdb.cpython-{vcode}-{platform}.so"
       dst_name = src_name
-      src_path = src_path/src_name
-      dst_path = dst_path/dst_name
-    print(src_path)
-    print(dst_path)
-    pathtools.copyfile(src_path,dst_path)
+      pyext_src_path = pyext_src_path/src_name
+      pyext_dst_path = pyext_dst_path/dst_name
+    print(pyext_src_path)
+    print(pyext_dst_path)
+    pathtools.copyfile(pyext_src_path,pyext_dst_path)
     if host.IsDarwin:
-      macos.macho_replace_loadpaths(dst_path,"@executable_path/../lib","@rpath")
-      macos.macho_replace_loadpaths(dst_path,"libboost_iostreams-mt-a64.dylib","@executable_path/../../lib/libboost_iostreams-mt-a64.dylib")
-      macos.macho_dump(dst_path)
+      macos.macho_replace_loadpaths(pyext_dst_path,"@executable_path/../lib","@rpath")
+      macos.macho_replace_loadpaths(pyext_dst_path,"libboost_iostreams-mt-a64.dylib","@rpath/libboost_iostreams-mt-a64.dylib")
+      macos.macho_dump(pyext_dst_path)
+      dll = path.stage()/"lib"/"libopenvdb.dylib"
+      macos.macho_replace_loadpaths(dll,"libboost_iostreams-mt-a64.dylib","@rpath/libboost_iostreams-mt-a64.dylib")
+      macos.macho_dump(dll)
+
     return True
 
   ########################################################################
