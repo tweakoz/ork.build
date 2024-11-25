@@ -237,7 +237,7 @@ class python_from_source(dep.Provider):
 
       modules =  ["yarl","toposort","pytest","os_release","pyyaml", "conan"]
 
-      Command(["ln","-s","../pyvenv/bin/python3.12","python-ork"],working_dir=path.stage()/"bin").exec()
+      Command(["cp","../pyvenv/bin/python3.12","python-ork"],working_dir=path.stage()/"bin").exec()
 
     ################################
     return OK
