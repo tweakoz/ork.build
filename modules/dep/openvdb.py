@@ -16,6 +16,7 @@ class openvdb(dep.StdProvider):
     self.declareDep("boost")
     self.declareDep("tbb")
     self.declareDep("nanobind")
+    self.declareDep("llvm")
     self._builder = self.createBuilder(dep.CMakeBuilder)
     dep_python = dep.instance("python")
     self._builder._cmakeenv = {
