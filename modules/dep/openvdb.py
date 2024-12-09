@@ -72,7 +72,7 @@ class openvdb(dep.StdProvider):
     fetcher = dep.GithubFetcher(name=openvdb.name,
                                 repospec="tweakoz/openvdb",
                                 revision="toz-2024-v12-obt",
-                                recursive=False)
+                                recursive=True)
     return fetcher
   ########################################################################
 
