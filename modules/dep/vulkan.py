@@ -6,7 +6,7 @@
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
 
-MD5 = "c26c3febbf14faef595d7c26715a5472"
+MD5 = "e054826ba9906af783c5109b5b618ec3"
 
 import os, tarfile
 from obt import dep, host, path, cmake, git, make, command, wget, env, log, pathtools
@@ -82,7 +82,7 @@ class _vulkan_from_lunarg(dep.Provider):
   def __init__(self): ############################################
     super().__init__("vulkan")
     #print(options)
-    self.VERSION = "1.2.198.1"
+    self.VERSION = "1.3.296.0"
     self.fullver = self.VERSION
     self.source_root = path.builds()/"vulkan"
     self.build_dest = path.builds()/"vulkan"/".build"
@@ -101,11 +101,11 @@ class _vulkan_from_lunarg(dep.Provider):
   @property
   def download_name(self):
     if host.IsX86_64:
-      nam = "vulkansdk-linux-x86_64-%s.tar.gz"%self.VERSION
+      nam = "vulkansdk-linux-x86_64-%s.tar.xz"%self.VERSION
     elif host.IsX86_32:
-      nam = "vulkansdk-linux-i386-%s.tar.gz"%self.VERSION
+      nam = "vulkansdk-linux-i386-%s.tar.xz"%self.VERSION
     elif host.IsAARCH64:
-      nam = "vulkansdk-linux-aarch64-%s.tar.gz"%self.VERSION
+      nam = "vulkansdk-linux-aarch64-%s.tar.xz"%self.VERSION
     return nam 
   
   @property
