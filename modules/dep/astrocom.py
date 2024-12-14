@@ -40,20 +40,36 @@ class astrocom(dep.StdProvider):
                            output_name=self.share_dir/"starmap_2020_4k.exr",
                            md5val="eac33e4c28e42cfdb8dc26b3b9a7eefb")
 
-      print(deco.yellow("fetching halpha fullsky map"))
+
+      print(deco.yellow("fetching halpha healpix map"))
       halpha_map_1K = wget.wget(urls=["https://faun.rc.fas.harvard.edu/dfink/skymaps/halpha/data/v1_1/healpix/Halpha_fwhm06_1024.fits"],
                                 output_name=self.share_dir/"Halpha_fwhm06_1024.fits",
                                 md5val="7aca800d81a6cf1609dea08850b48c32")
       
-      print(deco.yellow("fetching halpha fullsky mask"))
+      print(deco.yellow("fetching halpha healpix mask"))
       halpha_mask_1K = wget.wget(urls=["https://faun.rc.fas.harvard.edu/dfink/skymaps/halpha/data/v1_1/healpix/Halpha_mask_fwhm06_1024.fits"],
                                  output_name=self.share_dir/"Halpha_mask_fwhm06_1024.fits",
                                  md5val="95a675d45b06cfd03500a7e02e1974fc")
       
-      print(deco.yellow("fetching halpha fullsky error"))
+      print(deco.yellow("fetching halpha healpix error"))
       halpha_error_1K = wget.wget(urls=["https://faun.rc.fas.harvard.edu/dfink/skymaps/halpha/data/v1_1/healpix/Halpha_error_fwhm06_1024.fits"],
                                   output_name=self.share_dir/"Halpha_error_fwhm06_1024.fits",
                                   md5val="612d560c9b3ebe4ea2d8b18f6ef26c1f")
+      
+      print(deco.yellow("fetching halpha fullsky map"))
+      halpha_map_32M = wget.wget(urls=["https://faun.rc.fas.harvard.edu/dfink/skymaps/halpha/data/v1_1/maps/Halpha_map.fits"],
+                                 output_name=self.share_dir/"Halpha_map.fits",
+                                 md5val="c174b17ca83922910ea21a9ead84ef8b")
+      
+      print(deco.yellow("fetching halpha fullsky mask"))
+      halpha_mask_32M = wget.wget(urls=["https://faun.rc.fas.harvard.edu/dfink/skymaps/halpha/data/v1_1/maps/Halpha_mask.fits"],
+                                  output_name=self.share_dir/"Halpha_mask.fits",
+                                  md5val="7a832c8549c3b8f6a6fb36541b255278")
+      
+      print(deco.yellow("fetching halpha fullsky error"))
+      halpha_error_32M = wget.wget(urls=["https://faun.rc.fas.harvard.edu/dfink/skymaps/halpha/data/v1_1/maps/Halpha_error.fits"],
+                                   output_name=self.share_dir/"Halpha_error.fits",
+                                   md5val="679aa35be7f2c7a531859f0f29010f7e")
                       
     cmdlist_incr = []
     cmdlist_incr += [ pathtools.mkdir(self.share_dir)]
