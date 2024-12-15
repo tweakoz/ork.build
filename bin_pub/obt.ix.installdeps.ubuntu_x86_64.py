@@ -90,6 +90,7 @@ deplist += ["libsbc-dev","libsdl2-dev","libudev-dev","libva-dev","libv4l-dev","l
 deplist += ["pkg-config","python3-docutils","systemd","mesa-utils","xvfb"]
 deplist += ["meson","ninja-build","libserialport-dev", "libxxhash-dev"]
 deplist += ["libpipewire-0.3-dev", "pipewire"]
+deplist += ["astap"]
 
 merged = " ".join(deplist)
 os.system("sudo apt -y install %s" % merged)
