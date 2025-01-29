@@ -7,7 +7,7 @@
 ###############################################################################
 
 VERSION = ["1","81","0"]
-HASH = "3276c0637d1be8687740c550237ef999"
+HASH = "ffac94fbdd92d6bc70a897052022eeba"
 
 import os,tarfile
 from obt import path,host,dep, gen_pkgconfig, patch
@@ -28,11 +28,11 @@ class boost(dep.Provider):
   def __init__(self):
     super().__init__("boost")
     self.version = VERSION
-    self.baseurl = URL("https://boostorg.jfrog.io/artifactory/main/release")
-    self.verurl = self.baseurl/("%s.%s.%s"%(VERSION[0],VERSION[1],VERSION[2]))
-    self.fbase = ("boost_%s_%s_%s"%(VERSION[0],VERSION[1],VERSION[2]))
-    self.fname = ("%s.tar.bz2"%(self.fbase))
-    self.verurl = self.verurl/"source"/self.fname
+    self.baseurl = URL("https://github.com/boostorg/boost/releases/download")
+    self.verurl = self.baseurl/("boost-%s.%s.%s"%(VERSION[0],VERSION[1],VERSION[2]))
+    self.fbase = ("boost-%s.%s.%s"%(VERSION[0],VERSION[1],VERSION[2]))
+    self.fname = ("%s.tar.gz"%(self.fbase))
+    self.verurl = self.verurl/self.fname
     build_dest = path.builds()/"boost"
     self.build_dest = build_dest
     self._is_mac_arm = (self._target.identifier == "aarch64-macos")
@@ -61,7 +61,7 @@ class boost(dep.Provider):
 
     self.arcpath = dep.downloadAndExtract([self.verurl],
                                           self.fname,
-                                          "bz2",
+                                          "gz",
                                           HASH,
                                           self.build_dest)
 

@@ -24,6 +24,7 @@ class astrocom(dep.StdProvider):
 
     def grab_starmaps():
       print(deco.yellow("fetching starmap data [2GPixel]"))
+      pathtools.mkdir(self.share_dir)
       smap_2G = wget.wget(urls=["https://svs.gsfc.nasa.gov/vis/a000000/a004800/a004851/starmap_2020_64k.exr"],
                            output_name=self.share_dir/"starmap_2020_64k.exr",
                            md5val="9f49029b21949fa57d6915868295d920")
@@ -72,7 +73,6 @@ class astrocom(dep.StdProvider):
                                    md5val="679aa35be7f2c7a531859f0f29010f7e")
                       
     cmdlist_incr = []
-    cmdlist_incr += [ pathtools.mkdir(self.share_dir)]
     cmdlist_incr += [ dep.CustomStep("grab field", grab_starmaps) ]
 
     self._builder._incrbuildcommands = cmdlist_incr

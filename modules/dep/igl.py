@@ -64,7 +64,7 @@ class igl(dep.StdProvider):
   ########################################################################
   @property
   def revision(self):
-    return "toz-v2.5.0"
+    return "toz-2025-jan23"
   ########################################################################
   @property
   def _fetcher(self):
