@@ -159,6 +159,7 @@ class orkid(dep.StdProvider):
       if host.IsX86_64:
         deplist += ["openvr"]
         deplist += ["ispctexc"]
+        deplist += ["pytorch"]
         #deplist += ["nvtt"]
     elif host.IsDarwin:
       pass
