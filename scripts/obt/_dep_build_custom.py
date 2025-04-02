@@ -44,16 +44,17 @@ class CustomBuilder(BaseBuilder):
     if len(cmdlist)>0:
       for cmd in cmdlist:
         if isinstance(cmd,Command):
+          print("cmd<%s>"%cmd)
           retc = cmd.exec()
           if retc!=0:
-            return False
+            assert(False)
         elif isinstance(cmd,CustomStep):
           retc = cmd._funktor()
           if retc==False:
-            return False
+            assert(False)
         elif isinstance(cmd,Callable):
           if cmd()==False:
-            return False
+            assert(False)
     return True
   ###########################################
   def build(self,srcdir,blddir,wrkdir,incremental=False):

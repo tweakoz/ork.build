@@ -166,6 +166,12 @@ class Command:
 
     ###########################################################################
 
+    def append_args(self, args):
+        assert(type(args)==list)
+        for item in args:
+            self.command_list.append(procargs(item))
+    ###########################################################################
+
     def execr(self):
 
         os.execve(self.command_list[0],self.command_list[1:],self.env)
@@ -286,13 +292,15 @@ def subshell(directory=None,prompt=None,environment=dict()):
 cmd = Command 
 
 class factory:
-  def __init__(self,prefix=[],wdir=None,do_log=True):
+  def __init__(self,prefix=[],environ=dict(),wdir=None,do_log=True):
     self._working_dir = wdir 
     self._do_log = do_log
     self._clprefix = prefix
+    self._environ = environ
   def cmd(self,*args,extra_args=[]):
     return Command( self._clprefix + list(args) + extra_args, #
                     working_dir=self._working_dir, #
+                    environment=self._environ, #
                     do_log=self._do_log )
 
 __all__ =   [ "Command", "cmd","factory" ]
