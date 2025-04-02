@@ -5,18 +5,24 @@ from obt.wget import wget
 from obt.command import Command
 
 VER = "0.29.2"
-HASH = "f6e931e319531b736fadc017f470e68a"
+HASH = "784852a6a3c7325d0dd2a2907d7b8ff7"
 
-class _pkgconfig_from_source(dep.Provider):
+class _pkgconfig_from_source(dep.StdProvider):
 
   def __init__(self,name): ############################################
     super().__init__(name,name)
+    self._builder = self.createBuilder(dep.CustomBuilder)
+
     self.scope = dep.ProviderScope.INIT
-    self.extract_dir = path.builds()/"pkgconfig"
-    self.source_dir = self.extract_dir/("pkg-config-%s" % VER)
-    self.build_dir = self.source_dir/".build"
-    self.url = "http://pkgconfig.freedesktop.org/releases/pkg-config-%s.tar.gz" % VER
+    pw_meson = command.factory(prefix=["meson"],wdir=self.source_root)
     self.VERSION = VER
+
+  @property
+  def _fetcher(self):
+    return dep.GithubFetcher(name=pangolin.name,
+                             repospec="tweakoz/pkg-config",
+                             revision="obt-pkg-config-0.29.2",
+                             recursive=False)
 
   def build(self): ##########################################################
     self.arcpath = dep.downloadAndExtract([self.url],
