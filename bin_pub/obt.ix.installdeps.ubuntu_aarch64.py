@@ -16,7 +16,7 @@ if UBUNTU_VERSION >= 2404:
 elif UBUNTU_VERSION >= 2304:
   deplist += ["clang-17", "g++-13", "libstdc++-13-dev"]
 elif UBUNTU_VERSION >= 2204:
-  deplist += ["clang-12", "g++-12", "libstdc++-12-dev"]
+  deplist += ["clang-15", "g++-12", "libstdc++-12-dev"]
 else:
   deplist += ["clang-10", "g++-10", "libstdc++-10-dev"]
 
