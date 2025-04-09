@@ -194,7 +194,7 @@ class _vulkan_from_system(dep.StdProvider):
 if host.IsDarwin:
   BASE = _vulkan_from_moltenvk
 elif host.IsAARCH64:
-  BASE = _vulkan_from_system
+  BASE = _vulkan_from_lunarg
 elif host.IsX86_64 or host.IsX86_32:
   BASE = _vulkan_from_lunarg
 else:

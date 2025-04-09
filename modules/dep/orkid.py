@@ -156,11 +156,13 @@ class orkid(dep.StdProvider):
     if host.IsLinux:
       deplist += ["rtmidi"]
       deplist += ["pipewire"]
+      deplist += ["pytorch"]
       if host.IsX86_64:
         deplist += ["openvr"]
         deplist += ["ispctexc"]
-        deplist += ["pytorch"]
         #deplist += ["nvtt"]
+      elif host.IsAARCH64:
+        deplist += ["shaderc"] # shaderc provided by vulkan on intel...
     elif host.IsDarwin:
       pass
 

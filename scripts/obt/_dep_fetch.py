@@ -63,16 +63,21 @@ class DepotToolsFetcher(Fetcher):
 
 ###############################################################################
 
-class MultiFetcher(Fetcher):
+class CompositeFetcher(Fetcher):
   def __init__(self,name):
     super().__init__(name)
+    self._subfetchers = []
   ###########################################
-  def addSubFetcher(self,name):
-    pass
+  def addSubFetcher(self,fetcher):
+    self._subfetchers += [fetcher]
   ###########################################
   def fetch(self,dest):
-    pass
-
+    for item in self._subfetchers:
+      rval = item.fetch(dest)
+      if rval==False:
+        print("subfetcher<%s> failed!" % item)
+        return False
+    return True
 ###############################################################################
 
 class GitFetcher(Fetcher):
@@ -115,7 +120,8 @@ class GithubFetcher(Fetcher): # github specific git fetcher
                md5val=None,
                shallow=True,
                disable_tarball=False,
-               patchdict=dict()):
+               patchdict=dict(),
+               dest_dir_override = None):
     super().__init__(name)
     # todo : allow user control over protocols
     #  since ssh requires key setup..
@@ -132,6 +138,7 @@ class GithubFetcher(Fetcher): # github specific git fetcher
     if disable_tarball:
       self._disable_tarball = True
     self._patchdict = patchdict
+    self._dest_dir_override = dest_dir_override
     #print(self._git_url)
   ###########################################
   def descriptor(self):
@@ -151,6 +158,9 @@ class GithubFetcher(Fetcher): # github specific git fetcher
     ####################################################
     #print("UseTarball<%s>"%use_tarball)
     #print(_globals.getOptions())
+
+    if self._dest_dir_override!=None:
+      dest = self._dest_dir_override
 
     use_tarball = not self._disable_tarball
 

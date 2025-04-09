@@ -358,6 +358,10 @@ def builds():
   staging = Path(os.environ["OBT_STAGE"])
   return staging/"builds"
 
+@property 
+def builds_p():
+  return builds()
+
 
 def orkid():
   if "ORKID_WORKSPACE_DIR" in os.environ:
@@ -366,6 +370,10 @@ def orkid():
     orkroot = builds()/"orkid"
 
   return orkroot
+
+@property 
+def orkid_p():
+  return orkid()
 
 ###############################################################################
 

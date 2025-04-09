@@ -169,7 +169,7 @@ class Command:
     def append_args(self, args):
         assert(type(args)==list)
         for item in args:
-            self.command_list.append(procargs(item))
+            self.command_list.append(procargs(item)[0])
     ###########################################################################
 
     def execr(self):
