@@ -34,3 +34,29 @@ def patch_with_dict(filename,item_dict):
     with fileinput.FileInput(str(filename), inplace=True, backup='.bak') as file:
       for line in file:
         print(line.replace(k, v), end='')
+
+
+def patch_with_diffstr(file_path, diff_str):
+    import os
+    import subprocess
+    import tempfile
+    """
+    Applies a unified diff (diff_str) to the specified file_path using the 'patch' command.
+
+    :param diff_str: A string containing the unified diff.
+    :param file_path: The path to the file that the diff should be applied to.
+    :raises subprocess.CalledProcessError: If 'patch' exits with a non-zero status.
+    """
+    # Create a temporary file to store the diff
+    with tempfile.NamedTemporaryFile(mode='w', delete=False) as temp_patch:
+        temp_patch.write(diff_str)
+        temp_patch.flush()
+        temp_patch_path = str(temp_patch.name)
+
+    try:
+        # Call the system 'patch' command
+        subprocess.check_call(["patch", str(file_path), temp_patch_path])
+    finally:
+        # Clean up the temporary file
+        if os.path.exists(temp_patch_path):
+            os.remove(temp_patch_path)
