@@ -26,9 +26,9 @@ class openexr(dep.StdProvider):
   @property
   def _fetcher(self):
     return dep.GithubFetcher(name=openexr.name,
-                             repospec="AcademySoftwareFoundation/openexr",
+                             repospec="tweakoz/openexr",
                              #revision="v2.5.8",
-                             revision="v3.3.2",
+                             revision="obt-v3.2.1",
                              recursive=False)
 
   ########################################################################

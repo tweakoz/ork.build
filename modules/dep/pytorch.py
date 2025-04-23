@@ -37,7 +37,7 @@ class _pytorch_from_homebrew(dep.HomebrewProvider):
 class _pytorch_for_mps(dep.StdProvider):
   def __init__(self):
     super().__init__(NAME,NAME)
-    self.version = "MPS"
+    self.VERSION = "MPS"
     self._builder = self.createBuilder(dep.CustomBuilder)
     #################
     # create patch file

@@ -8,7 +8,7 @@
 from obt import dep, command, pathtools, path
 ###############################################################################
 class nlohmannjson(dep.StdProvider):
-  VERSION ="v3.11.3"
+  VERSION ="v3.12.0"
   NAME = "nlohmannjson"
   def __init__(self):
     super().__init__(nlohmannjson.NAME)
@@ -22,7 +22,7 @@ class nlohmannjson(dep.StdProvider):
   @property
   def _fetcher(self):
     return dep.GithubFetcher(name=nlohmannjson.NAME,
-                             repospec="nlohmann/json",
+                             repospec="tweakoz/json",
                              revision=nlohmannjson.VERSION,
                              recursive=True)
   ########################################################################

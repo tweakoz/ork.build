@@ -21,8 +21,8 @@ class blosc(dep.StdProvider):
   @property
   def _fetcher(self):
     return dep.GithubFetcher(name=blosc.name,
-                             repospec="Blosc/c-blosc",
-                             revision="v1.21.1",
+                             repospec="tweakoz/c-blosc",
+                             revision="v1.21.6",
                              recursive=False)
   ########################################################################
 
