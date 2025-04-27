@@ -378,7 +378,10 @@ def orkid_p():
 ###############################################################################
 
 def project_list():
-  return Path(os.environ["OBT_PROJECT_DIR"])
+  if "OBT_PROJECT_DIR" in os.environ:
+    return Path(os.environ["OBT_PROJECT_DIR"])
+  else:
+    return Path(os.environ["OBT_STAGE"])/"builds"
 
 ###############################################################################
 def osx_sdkdir():

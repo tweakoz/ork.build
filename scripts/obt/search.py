@@ -95,7 +95,7 @@ def execute(word,path_list = default_pathlist):
     print("/////////////////////////////////////////////////////////////")
     print("// path : %s" % path)
     print("/////////")
-    root = str(obt.path.project_root())+"/"
+    root = str(obt.path.project_list())+"/"
     for item in results:
       pathstr = str(item.path)
       pathstr = pathstr.replace(str(root),"")

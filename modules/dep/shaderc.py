@@ -15,6 +15,7 @@ class shaderc(dep.StdProvider):
   name = "shaderc"
   def __init__(self): ############################################
     super().__init__(shaderc.name)
+    self.VERSION = "v2025.1"
     self.declareDep("cmake")
     self._builder = self.createBuilder(dep.CMakeBuilder)
     BUILDS = path.builds()
@@ -30,14 +31,14 @@ class shaderc(dep.StdProvider):
     })
   ########################################################################
   def __str__(self): 
-    return "zeromq (github-%s)" % VERSION
+    return "shaderc (github-%s)" % self.VERSION
   ########################################################################
   @property
   def _fetcher(self):
     f = dep.CompositeFetcher("shaderc-composite")
     f1 = dep.GithubFetcher(name="shaderc",
                            repospec="tweakoz/shaderc",
-                           revision="v2025.1",
+                           revision=self.VERSION,
                            recursive=False,
                            dest_dir_override = self.SHADERC_DIR)
     f2 = dep.GithubFetcher(name="shaderc-spirvtools",
