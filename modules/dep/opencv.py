@@ -14,7 +14,7 @@ from obt.command import Command
 
 deco = Deco()
 
-VERSION = "4.7.0"
+VERSION = "4.11.0"
 ###############################################################################
 
 class opencv(dep.StdProvider):
