@@ -18,7 +18,7 @@
 
 * Virtual Env - python virtual environment created with python -m venv <venvdir>
 
-* Staging Folder - The container which consists of a top level folder in which all build products go and a set of environment variables
+* Staging Env - The container which consists of a top level folder in which all build products go and a set of environment variables which point to it. Implemented with the OBT python package.
 
 * Module - a python script in OBT or OBT_SEARCH_PATH that describes and implements a subspace, dependency, target and SDK. There are *dep*, *docker*, and *subspace* modules - each providing a different subset of functionality.
 
