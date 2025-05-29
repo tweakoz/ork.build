@@ -89,7 +89,7 @@ deplist += ["libdbus-1-dev","libbluetooth-dev","libglib2.0-dev","libgstreamer1.0
 deplist += ["libsbc-dev","libsdl2-dev","libudev-dev","libva-dev","libv4l-dev","libx11-dev","meson","ninja-build"]
 deplist += ["pkg-config","python3-docutils","systemd","mesa-utils","xvfb"]
 deplist += ["meson","ninja-build","libserialport-dev", "libxxhash-dev"]
-deplist += ["libpipewire-0.3-dev", "pipewire"]
+deplist += ["libpipewire-0.3-dev", "pipewire", "gstreamer1.0-libav"]
 deplist += ["astap"]
 
 merged = " ".join(deplist)
