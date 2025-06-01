@@ -211,7 +211,9 @@ class python_from_source(dep.Provider):
        options += ["--with-openssl=%s"%sslpath]
        #options += ["--enable-framework"]
        options += ["--enable-shared"]
-        #export LDFLAGS="-L$(brew --prefix xz)/lib $LDFLAGS";  export CPPFLAGS="-I$(brew --prefix xz)/include $CPPFLAGS";  export PKG_CONFIG_PATH="$(brew --prefix xz)/lib/pkgconfig:$PKG_CONFIG_PATH"
+       # for LZMA (todo find brewonic way to do it)
+       env.prepend("LDFLAGS","-L/opt/homebrew/opt/xz/lib")
+       env.prepend("CFLAGS","-I/opt/homebrew/opt/xz/include")
       
     else:
        options += ["--with-system-ffi"]
