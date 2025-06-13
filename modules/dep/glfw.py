@@ -21,7 +21,7 @@ class glfw(dep.StdProvider):
     class FixOsx(dep.CMakeBuilder):
       def __init__(self,name):
         super().__init__(name)
-        self._cmakeenv["CMAKE_CXX_FLAGS"] = '"-D_GLFW_VULKAN_LIBRARY=MoltenVK"'
+        #self._cmakeenv["CMAKE_CXX_FLAGS"] = '"-D_GLFW_VULKAN_LIBRARY=$OBT_STAGE/lib/MoltenVK"'
       def install(self,blddir):
         success = super().install(blddir)
         if success and host.IsOsx:
@@ -33,13 +33,13 @@ class glfw(dep.StdProvider):
     ###########################################
     builder_class = dep.switch(linux=dep.CMakeBuilder,
                                macos=FixOsx)
-    
+
     if builder_class == dep.CMakeBuilder:
       self.declareDep("cmake")
 
 
     self._builder = builder_class(glfw.name)
-    
+
     def post_install():
       print("post installing GLFW!!")
       glad_srcdir = path.builds()/"glfw"/"deps"/"glad"
@@ -47,17 +47,17 @@ class glfw(dep.StdProvider):
       pathtools.ensureDirectoryExists(glad_dstdir)
       for item in ["gl.h","khrplatform.h","vk_platform.h","vulkan.h"]:
         pathtools.copyfile(glad_srcdir/item,glad_dstdir/item)
-      pass 
+      pass
 
     self._builder._onPostInstall = post_install
-    #self._builder.setCmVar("GLFW_VULKAN_STATIC","TRUE")
+    self._builder.setCmVar("GLFW_VULKAN_STATIC","OFF")
     ###########################################
   ########################################################################
   @property
   def _fetcher(self):
     return dep.GithubFetcher(name=glfw.name,
                              repospec="glfw/glfw",
-                             revision="3.3.8",
+                             revision="3.4",
                              recursive=False)
 
   ########################################################################
