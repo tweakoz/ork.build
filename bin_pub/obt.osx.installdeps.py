@@ -7,6 +7,8 @@ deplist += ["portaudio","m4","bison","flex","xz", "gnupg", "fmt"]
 deplist += ["scons","zlib","tbb", "glew","flac","libsndfile"]
 deplist += ["mpfr","openssl","graphviz","doxygen","swig","tcl-tk"]
 deplist += ["pyqt5","qt5", "gcc@13", "xxhash", "autoconf", "automake" ]
+deplist += ["vulkan-loader", "vulkan-extensionlayer", "vulkan-headers"]
+deplist += ["vulkan-tools", "vulkan-profiles", "vulkan-validationlayers", "vulkan-utility-libraries"]
 
 depliststr = " ".join(deplist)
 print(depliststr)
