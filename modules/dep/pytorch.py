@@ -29,10 +29,10 @@ class _pytorch_from_source(dep.StdProvider):
   def areRequiredBinaryFilesPresent(self):
     return (path.bin()/"pkg-config").exists()
 ###############################################################################
-class _pytorch_from_homebrew(dep.HomebrewProvider):
+class _pytorch_from_pip(dep.StdProvider):
   def __init__(self):
     super().__init__(NAME,NAME)
-    self.VERSION = "homebrew"
+    self.VERSION = "pip"
 ###############################################################################
 class _pytorch_for_mps(dep.StdProvider):
   def __init__(self):
