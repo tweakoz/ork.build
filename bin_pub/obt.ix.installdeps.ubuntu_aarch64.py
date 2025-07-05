@@ -15,8 +15,12 @@ if UBUNTU_VERSION >= 2404:
   deplist += ["clang-18", "g++-11", "g++-10"]
 elif UBUNTU_VERSION >= 2304:
   deplist += ["clang-17", "g++-13", "libstdc++-13-dev"]
-elif UBUNTU_VERSION >= 2204:
-  deplist += ["clang-15", "g++-12", "libstdc++-12-dev"]
+elif UBUNTU_VERSION >= 2204: # probably a jetson
+  deplist += ["clang-12", "g++-12", "libstdc++-12-dev"]
+  deplist += ["clang-15","nvidia-cuda-dev","nvidia-l4t-multimedia-utils"]
+  deplist += ["libvulkan-dev","vulkan-tools"]
+  deplist += ["spirv-tools","spirv-headers","spirv-cross","libspirv-cross-c-shared-dev"]
+  deplist += ["google-mock","libgmock-dev","asciidoctor"]
 else:
   deplist += ["clang-10", "g++-10", "libstdc++-10-dev"]
 

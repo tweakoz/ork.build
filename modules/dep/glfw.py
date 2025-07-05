@@ -33,13 +33,13 @@ class glfw(dep.StdProvider):
     ###########################################
     builder_class = dep.switch(linux=dep.CMakeBuilder,
                                macos=FixOsx)
-
+    
     if builder_class == dep.CMakeBuilder:
       self.declareDep("cmake")
 
 
     self._builder = builder_class(glfw.name)
-
+    
     def post_install():
       print("post installing GLFW!!")
       glad_srcdir = path.builds()/"glfw"/"deps"/"glad"
@@ -47,7 +47,7 @@ class glfw(dep.StdProvider):
       pathtools.ensureDirectoryExists(glad_dstdir)
       for item in ["gl.h","khrplatform.h","vk_platform.h","vulkan.h"]:
         pathtools.copyfile(glad_srcdir/item,glad_dstdir/item)
-      pass
+      pass 
 
     self._builder._onPostInstall = post_install
     self._builder.setCmVar("GLFW_VULKAN_STATIC","OFF")

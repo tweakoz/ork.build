@@ -6,7 +6,7 @@
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
 
-MD5 = "e054826ba9906af783c5109b5b618ec3"
+MD5 = "f054826ba9906af783c5109b5b618ec3"
 
 import os, tarfile
 from obt import dep, host, path, cmake, git, make, command, wget, env, log, pathtools
@@ -22,7 +22,7 @@ class _vulkan_from_moltenvk(dep.Provider):
 
   def __init__(self): ############################################
     super().__init__("moltenvk")
-    self.VERSION = "v1.2.11"
+    self.VERSION = "v1.3.0"
 
     #print(options)
     self.source_root = path.builds()/"moltenvk"
@@ -43,10 +43,10 @@ class _vulkan_from_moltenvk(dep.Provider):
     log.marker("registering Vulkan(%s) <MoltenVK> SDK"%self.VERSION)
     env.prepend("LD_LIBRARY_PATH",self.sdk_dir/"dylib")
     #env.append("PATH",self.sdk_dir/"bin")
-    env.set("VULKAN_SDK",self.sdk_dir) # for cmake
-    env.set("OBT_VULKAN_VERSION","MoltenVK-%s"%(self.VERSION)) # for OBT internal
-    env.set("OBT_VULKAN_ROOT",self.sdk_dir) # for OBT internal
-    env.set("VK_ICD_FILENAMES",self.build_lib_dir/"MoltenVK_icd.json")
+    #env.set("VULKAN_SDK",self.sdk_dir) # for cmake
+    #env.set("OBT_VULKAN_VERSION","MoltenVK-%s"%(self.VERSION)) # for OBT internal
+    #env.set("OBT_VULKAN_ROOT",self.sdk_dir) # for OBT internal
+    #env.set("VK_ICD_FILENAMES",path.stage()/"share"/"vulkan"/"icd.d"/"MoltenVK_icd.json")
 
   def build(self): ##########################################################
 
@@ -125,12 +125,12 @@ class _vulkan_from_lunarg(dep.Provider):
   def env_init(self):
     if self.sdk_dir.exists():
       log.marker("registering Vulkan(%s) SDK"%self.VERSION)
-      env.prepend("LD_LIBRARY_PATH",self.sdk_dir/"lib")
-      env.append("PATH",self.sdk_dir/"bin")
-      env.set("VULKAN_SDK",self.sdk_dir) # for cmake
-      env.set("VK_LAYER_PATH", self.sdk_dir/"etc"/"vulkan"/"explicit_layer.d")
-      env.set("OBT_VULKAN_VERSION",self.VERSION) # for OBT internal
-      env.set("OBT_VULKAN_ROOT",self.sdk_dir) # for OBT internal
+      #env.prepend("LD_LIBRARY_PATH",self.sdk_dir/"lib")
+      #env.append("PATH",self.sdk_dir/"bin")
+      #env.set("VULKAN_SDK",self.sdk_dir) # for cmake
+      #env.set("VK_LAYER_PATH", self.sdk_dir/"etc"/"vulkan"/"explicit_layer.d")
+      #env.set("OBT_VULKAN_VERSION",self.VERSION) # for OBT internal
+      #env.set("OBT_VULKAN_ROOT",self.sdk_dir) # for OBT internal
 
   def areRequiredSourceFilesPresent(self):
     return (self.sdk_dir/".."/"setup-env.sh").exists()
@@ -194,7 +194,7 @@ class _vulkan_from_system(dep.StdProvider):
 if host.IsDarwin:
   BASE = _vulkan_from_moltenvk
 elif host.IsAARCH64:
-  BASE = _vulkan_from_lunarg
+  BASE = _vulkan_from_system
 elif host.IsX86_64 or host.IsX86_32:
   BASE = _vulkan_from_lunarg
 else:
