@@ -1,3 +1,4 @@
+import os 
 from obt._dep_build import BaseBuilder
 from obt._dep_impl import require
 from obt import pathtools, path, _globals
@@ -16,12 +17,14 @@ class CMakeBuilder(BaseBuilder):
                macos_defaults=True,
                install_prefix=None,
                src_dir_override=None,
-               modules_paths=[]):
+               modules_paths=[],
+               os_env=dict()):
     super().__init__(name)
     self._minimal = False 
     self._install_prefix = install_prefix
     self._src_dir_override = src_dir_override
     self._modules_paths = modules_paths
+    self._os_env = os_env
     ##################################
     # ensure environment cmake present
     ##################################
@@ -100,6 +103,10 @@ class CMakeBuilder(BaseBuilder):
     if not ok2build:
       return False
 
+    environ_cached = os.environ.copy()
+
+    os.environ.update(self._os_env)
+    
     if incremental:
       pathtools.mkdir(blddir,clean=False)
       pathtools.chdir(wrkdir)
@@ -125,7 +132,9 @@ class CMakeBuilder(BaseBuilder):
       OK = (make.exec(parallelism=self._parallelism)==0)
       if OK and self._onPostBuild!=None:
         self._onPostBuild()
+        os.environ = environ_cached
       return OK
+    os.environ = environ_cached
     return False
   ###########################################
   def install(self,blddir):

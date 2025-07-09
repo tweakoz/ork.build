@@ -5,17 +5,24 @@
 # The Orkid Build System is published under the GPL 2.0 license
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
-from obt import dep, command, pathtools, path
+import os
+from obt import dep, command, pathtools, path, host
 ###############################################################################
 class notcurses(dep.StdProvider):
-  VERSION ="master"
+  VERSION ="toz-2025-jul08"
   NAME = "notcurses"
   def __init__(self):
     super().__init__(notcurses.NAME)
     self.declareDep("cmake")    
-    self._builder = dep.CMakeBuilder(notcurses.NAME)
+    pre_pkg_config = os.environ.get("PKG_CONFIG_PATH", "")
+    os_env = {}
+    
+    if host.IsOsx:
+      os_env["PKG_CONFIG_PATH"] = "/opt/homebrew/opt/ncurses/lib/pkgconfig:"+pre_pkg_config
+
+    self._builder = dep.CMakeBuilder(notcurses.NAME,os_env=os_env)
     self._builder.setCmVars({
-        "CMAKE_BUILD_TYPE": "RELEASE",
+      "CMAKE_BUILD_TYPE": "RELEASE",
     })
   ########################################################################
   @property
