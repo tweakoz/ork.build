@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  zmq-server:
+    build:
+      context: ./zmq-server
+      dockerfile: Dockerfile
+    container_name: ssltest-zmq-server
+    ports:
+      - "5555:5555"  # ZMQ port
+      - "5556:5556"  # TCP port for stunnel
+    networks:
+      - ssltest-network
+    environment:
+      - PYTHONUNBUFFERED=1
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import socket; s=socket.socket(); s.connect(('localhost', 5555)); s.close()"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  ssl-proxy:
+    build:
+      context: ./ssl-proxy
+      dockerfile: Dockerfile
+    container_name: ssltest-ssl-proxy
+    ports:
+      - "8443:8443"  # SSL proxy port
+    networks:
+      - ssltest-network
+    depends_on:
+      - zmq-server
+    environment:
+      - STUNNEL_CONF=/etc/stunnel/stunnel.conf
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "8443"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+networks:
+  ssltest-network:
+    driver: bridge
+    name: ssltest-network 

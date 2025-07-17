@@ -43,6 +43,18 @@ def docker_dirs():
 
 ###############################################################################
 
+def dir_of_module(dokname):
+  docker_dirs_list = docker_dirs()
+  for docker_dir in docker_dirs_list:
+    try_path = docker_dir/dokname
+    if try_path.exists():
+      try_path2 = try_path/("%s.py"%dokname)
+      if try_path2.exists():
+        return try_path
+  return None
+
+###############################################################################
+
 def descriptor(dokname):
   docker_dirs_list = docker_dirs()
   for docker_dir in docker_dirs_list:
@@ -51,6 +63,7 @@ def descriptor(dokname):
       try_path2 = try_path/("%s.py"%dokname)
       if try_path2.exists():
         return module_class(try_path2,dokname)()
+
 
 ###############################################################################
 

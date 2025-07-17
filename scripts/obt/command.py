@@ -251,6 +251,9 @@ class chain2:
       if self._rval!=0:
         return self._rval 
     return 0
+  @property 
+  def count(self):
+    return len(self._list) 
   def ok(self): # have all commands run succeeded so far ?
     return self._rval==0
 
