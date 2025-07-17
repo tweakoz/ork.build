@@ -103,6 +103,8 @@ def enumerate_all_images():
   as_list = [ x for x in as_list if x ]
   return as_list
 
+###############################################################################
+
 def enumerate_all_continaers():
   cmdlist = ["docker","ps","-aq"]
   cmd = obt.command.Command(cmdlist)
@@ -110,3 +112,15 @@ def enumerate_all_continaers():
   as_list = as_str.split("\n")
   as_list = [ x for x in as_list if x ]
   return as_list
+
+def logged_in():
+  """
+  Check if the user is logged into Docker.
+  Returns True if logged in, False otherwise.
+  """
+  cmdlist = ["docker", "info"]
+  cmd = obt.command.Command(cmdlist)
+  as_str = cmd.capture()
+  if "Username:" in as_str:
+    return True
+  return cmd.ok()
