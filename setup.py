@@ -3,7 +3,7 @@ from setuptools.command.install import install
 import os
 import stat
 
-version = "0.0.269"
+version = "0.0.270"
 
 # Read the long description from the README file
 with open("README.md", "r", encoding="utf-8") as fh:
