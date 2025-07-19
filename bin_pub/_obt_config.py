@@ -138,6 +138,12 @@ def importProject(item):
     assert(autoexec.exists())
 
     modules = item/"obt.project"/"modules"
+    
+    if "OBT_PROJECTS_LIST" in os.environ.keys():
+      os.environ["OBT_PROJECTS_LIST"] = os.environ["OBT_PROJECTS_LIST"] + ":" + str(item)
+    else:
+      os.environ["OBT_PROJECTS_LIST"] = str(item)
+    
     if modules.exists():
       os.environ["OBT_MODULES_PATH"] = os.environ["OBT_MODULES_PATH"] + ":" + str(modules)
     dep = item/"obt.project"/"modules"/"dep"

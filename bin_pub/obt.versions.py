@@ -5,42 +5,70 @@ import sys
 import site
 import obt.path
 import importlib.metadata
+from obt.deco import Deco
+deco = Deco()
 
 def print_env_var(name, default):
     value = os.getenv(name, default)
-    print(f"{name}: {value}")
+    print(f"{deco.key(name)}: {deco.val(value)}")
+
+def print_item(name, value):
+    print(f"{deco.key(name)}: {deco.val(value)}")
 
 print( "######################################################")
 
-print_env_var('PYTHONPATH', sys.path)
-print_env_var('PYTHONHOME', sys.prefix)
-print_env_var('PYTHONSTARTUP', 'Not set')
-print_env_var('PYTHONUSERBASE', site.USER_BASE)
-print_env_var('PYTHONEXECUTABLE', sys.executable)
-print_env_var('PYTHONWARNINGS', 'Not set')
-print_env_var('PYTHONNOUSERSITE', 'Not set (User site directory is added to sys.path)')
-print_env_var('PYTHONUNBUFFERED', 'Not set (Buffered I/O is used for stdout and stderr)')
+print_env_var(f'PYTHONPATH', sys.path)
+print_env_var(f'PYTHONHOME', sys.prefix)
+print_env_var(f'PYTHONSTARTUP', 'Not set')
+print_env_var(f'PYTHONUSERBASE', site.USER_BASE)
+print_env_var(f'PYTHONEXECUTABLE', sys.executable)
+print_env_var(f'PYTHONWARNINGS', 'Not set')
+print_env_var(f'PYTHONNOUSERSITE', 'Not set (User site directory is added to sys.path)')
+print_env_var(f'PYTHONUNBUFFERED', 'Not set (Buffered I/O is used for stdout and stderr)')
 
-print_env_var('site.PREFIXES', site.PREFIXES)
-print_env_var('site.USER_SITE', site.USER_SITE)
-print_env_var('site.USER_BASE', site.USER_BASE)
-print_env_var('sys.prefix', sys.prefix)
-print_env_var('sys.base_prefix', sys.base_prefix)
+print_env_var(f'site.PREFIXES', site.PREFIXES)
+print_env_var(f'site.USER_SITE', site.USER_SITE)
+print_env_var(f'site.USER_BASE', site.USER_BASE)
+print_env_var(f'sys.prefix', sys.prefix)
+print_env_var(f'sys.base_prefix', sys.base_prefix)
 
 print( "######################################################")
 
 a = importlib.metadata.distribution("ork.build").metadata
 
-print( "obt-pymodule-path: %s" % obt.path.obt_module_path() )
-print( "obt-data-base: %s" % obt.path.obt_data_base() )
-print( "obt-modules-test: %s" % obt.path.__get_modules() )
-print( "obt-test-inplace: %s" % obt.path.__is_inplace() )
-print( "obt-modules-base: %s" % obt.path.obt_modules_base() )
-print( "running_from_pip: %s" % obt.path.running_from_pip() )
-print( "running_in_tree: %s" % obt.path.obt_in_tree() )
-print( "obt.distrib.name: %s" % a["Name"] )
-print( "obt.distrib.version: %s" % a["Version"] )
-print( "obt.distrib.author: %s" % a["Author"] )
-print( "obt.distrib.author-email: %s" % a["Author-email"] )
-print( "obt.distrib.summary: %s" % a["Summary"] )
-print( "obt.distrib.homepage: %s" % a["Home-page"] )
+print_item( "obt-pymodule-path",obt.path.obt_module_path() )
+print_item( "obt-data-base",obt.path.obt_data_base() )
+print_item( "obt-modules-test",obt.path.__get_modules() )
+print_item( "obt-test-inplace",obt.path.__is_inplace() )
+print_item( "obt-modules-base",obt.path.obt_modules_base() )
+print_item( "running_from_pip",obt.path.running_from_pip() )
+print_item( "running_in_tree",obt.path.obt_in_tree() )
+print_item( "obt.distrib.name",a["Name"] )
+print_item( "obt.distrib.author",a["Author"] )
+print_item( "obt.distrib.author-email",a["Author-email"] )
+print_item( "obt.distrib.summary",a["Summary"] )
+print_item( "obt.distrib.homepage",a["Home-page"] )
+print( "################################################")
+print_item( "obt.distrib.version",a["Version"] )
+
+
+plist = os.environ.get("OBT_PROJECTS_LIST", "")
+project_list = plist.split(":") if plist else []
+
+def get_git_hash_gitpython():
+  import git
+  try:
+    repo = git.Repo(search_parent_directories=True)
+    return repo.head.object.hexsha
+  except git.InvalidGitRepositoryError:
+    return None
+    
+for item in project_list:
+  item = obt.path.Path(item)
+  if item.exists():
+    os.chdir(item)
+    git_hash = get_git_hash_gitpython()
+    if git_hash:
+      print_item( f"OBTGITPRJ: {item}",f"{git_hash}" )
+    else:
+      print_item( f"OBTGITPRJ: {item}",f"not a repo" )

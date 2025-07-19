@@ -15,7 +15,7 @@ class Session(object):
         "-v", "-t", f"{self.session_name}"]
       self.cmd_select_layout = [
         "tmux", "select-layout",
-        "-t", f"{self.session_name}:0",
+        "-t", f"{self.session_name}",
         "even-vertical"
       ]
     elif self.orientation == "horizontal":
@@ -24,7 +24,7 @@ class Session(object):
         "-h", "-t", f"{self.session_name}"]
       self.cmd_select_layout = [
         "tmux", "select-layout",
-        "-t", f"{self.session_name}:0",
+        "-t", f"{self.session_name}",
         "even-horizontal"
       ]
     self.cmd_attach_session = [

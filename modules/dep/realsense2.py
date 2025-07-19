@@ -36,7 +36,8 @@ class _realsense_from_source(dep.StdProvider):
         "CMAKE_HAVE_THREADS_LIBRARY": "1",
         "CMAKE_USE_WIN32_THREADS_INIT": "0",
         "CMAKE_USE_PTHREADS_INIT": "1",
-        "THREADS_PREFER_PTHREAD_FLAG": "ON"
+        "THREADS_PREFER_PTHREAD_FLAG": "ON",
+        "BUILD_EASYLOGGINGPP": "OFF"
       }
       CMAKE_VARS.update(_vars)
 
