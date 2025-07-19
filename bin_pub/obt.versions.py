@@ -55,20 +55,23 @@ print_item( "obt.distrib.version",a["Version"] )
 plist = os.environ.get("OBT_PROJECTS_LIST", "")
 project_list = plist.split(":") if plist else []
 
-def get_git_hash_gitpython():
+def get_git_info():
   import git
   try:
     repo = git.Repo(search_parent_directories=True)
-    return repo.head.object.hexsha
+    hash = repo.head.object.hexsha
+    is_dirty = repo.is_dirty(untracked_files=True)
+    return hash, is_dirty
   except git.InvalidGitRepositoryError:
-    return None
-    
+    return None, None    
+
 for item in project_list:
   item = obt.path.Path(item)
   if item.exists():
     os.chdir(item)
-    git_hash = get_git_hash_gitpython()
+    git_hash, is_dirty = get_git_info()
     if git_hash:
-      print_item( f"OBTGITPRJ: {item}",f"{git_hash}" )
+      status = "modified" if is_dirty else "clean"
+      print_item(f"OBTGITPRJ: {item}", f"{git_hash[:8]} ({status})")
     else:
-      print_item( f"OBTGITPRJ: {item}",f"not a repo" )
+      print_item(f"OBTGITPRJ: {item}", f"not a repo")
