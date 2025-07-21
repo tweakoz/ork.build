@@ -28,4 +28,4 @@ class msquic(dep.StdProvider):
   def areRequiredSourceFilesPresent(self):
     return (self.source_root/"CMakeLists.txt").exists()
   def areRequiredBinaryFilesPresent(self):
-    return (path.includes()/"msquic"/"msquic.h").exists()
+    return (path.includes()/"msquic.h").exists()
