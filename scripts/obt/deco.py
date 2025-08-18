@@ -56,6 +56,14 @@ class Theme:
   def bright(self,string):
     return self.vrgb256(255,255,255)+str(string)+self.reset()
   ###############################
+  def red(self,string):
+    return self.vrgb256(255,0,0)+str(string)+self.reset()
+  def green(self,string):
+    return self.vrgb256(0,255,0)+str(string)+self.reset()
+  def yellow(self,string):
+    return self.vrgb256(255,255,0)+str(string)+self.reset()
+  def blue(self,string):
+    return self.vrgb256(0,0,255)+str(string)+self.reset()
   def magenta(self,string):
     return self.vrgb256(255,0,255)+str(string)+self.reset()
   def cyan(self,string):
@@ -65,10 +73,6 @@ class Theme:
   def orange(self,string,blink=False):
     bl = self.blink() if blink else ""
     return self.vrgb256(255,128,0)+bl+str(string)+self.reset()
-  def yellow(self,string):
-    return self.vrgb256(255,255,0)+str(string)+self.reset()
-  def red(self,string):
-    return self.vrgb256(255,0,0)+str(string)+self.reset()
   ###############################
   def promptL(self,string):
     return self.vrgb256(255,0,0)+str(string)+self.reset()

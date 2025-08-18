@@ -1,0 +1,195 @@
+<svg width="1400" height="800" viewBox="0 0 1400 800" xmlns="http://www.w3.org/2000/svg">
+  <!-- Definitions matching asset catalog style -->
+  <defs>
+    <!-- Arrow marker -->
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="#6ac"/>
+    </marker>
+    
+    <!-- Gradients for different layers -->
+    <linearGradient id="commandGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#4a5a6a;stop-opacity:1"/>
+      <stop offset="100%" style="stop-color:#3a4a5a;stop-opacity:1"/>
+    </linearGradient>
+    
+    <linearGradient id="configGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#5a4a7a;stop-opacity:1"/>
+      <stop offset="100%" style="stop-color:#4a3a6a;stop-opacity:1"/>
+    </linearGradient>
+    
+    <linearGradient id="moduleGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#4a6a5a;stop-opacity:1"/>
+      <stop offset="100%" style="stop-color:#3a5a4a;stop-opacity:1"/>
+    </linearGradient>
+    
+    <linearGradient id="stagingGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#5a5a4a;stop-opacity:1"/>
+      <stop offset="100%" style="stop-color:#4a4a3a;stop-opacity:1"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="1400" height="800" fill="#2a2a2a"/>
+  
+  <!-- Title -->
+  <text x="700" y="35" font-family="Arial, sans-serif" font-size="22" fill="white" text-anchor="middle" font-weight="bold">OBT Architecture</text>
+  <text x="700" y="55" font-family="Arial, sans-serif" font-size="14" fill="#acd" text-anchor="middle">Orkid Build Tool System Architecture</text>
+  
+  <!-- Command Layer -->
+  <g id="command-layer">
+    <rect x="50" y="80" width="1300" height="120" rx="10" fill="url(#commandGrad)" stroke="#6a7a8a" stroke-width="2"/>
+    <text x="700" y="105" font-family="Arial, sans-serif" font-size="16" fill="white" text-anchor="middle" font-weight="bold">Command Layer</text>
+    
+    <!-- bin_pub commands -->
+    <rect x="80" y="120" width="280" height="60" rx="6" fill="#3a4a4a" stroke="#5a6a6a" stroke-width="1"/>
+    <text x="220" y="140" font-family="Arial, sans-serif" font-size="12" fill="white" text-anchor="middle" font-weight="bold">bin_pub/</text>
+    <text x="220" y="155" font-family="Arial, sans-serif" font-size="10" fill="#acd" text-anchor="middle">obt.env.create.py</text>
+    <text x="220" y="170" font-family="Arial, sans-serif" font-size="10" fill="#acd" text-anchor="middle">obt.env.launch.py</text>
+    
+    <!-- bin_priv commands -->
+    <rect x="380" y="120" width="280" height="60" rx="6" fill="#3a4a4a" stroke="#5a6a6a" stroke-width="1"/>
+    <text x="520" y="140" font-family="Arial, sans-serif" font-size="12" fill="white" text-anchor="middle" font-weight="bold">bin_priv/</text>
+    <text x="520" y="155" font-family="Arial, sans-serif" font-size="10" fill="#acd" text-anchor="middle">obt.dep.build.py</text>
+    <text x="520" y="170" font-family="Arial, sans-serif" font-size="10" fill="#acd" text-anchor="middle">obt.dep.list.py</text>
+    
+    <!-- project bins -->
+    <rect x="680" y="120" width="280" height="60" rx="6" fill="#3a4a4a" stroke="#5a6a6a" stroke-width="1"/>
+    <text x="820" y="140" font-family="Arial, sans-serif" font-size="12" fill="white" text-anchor="middle" font-weight="bold">project/obt.project/bin/</text>
+    <text x="820" y="155" font-family="Arial, sans-serif" font-size="10" fill="#acd" text-anchor="middle">Project-specific commands</text>
+    <text x="820" y="170" font-family="Arial, sans-serif" font-size="10" fill="#acd" text-anchor="middle">Custom tools</text>
+    
+    <!-- shell integration -->
+    <rect x="980" y="120" width="340" height="60" rx="6" fill="#3a4a4a" stroke="#5a6a6a" stroke-width="1"/>
+    <text x="1150" y="140" font-family="Arial, sans-serif" font-size="12" fill="white" text-anchor="middle" font-weight="bold">Shell Integration</text>
+    <text x="1150" y="155" font-family="Arial, sans-serif" font-size="10" fill="#acd" text-anchor="middle">Bash completion</text>
+    <text x="1150" y="170" font-family="Arial, sans-serif" font-size="10" fill="#acd" text-anchor="middle">Custom prompt, obt.goto.* functions</text>
+  </g>
+  
+  <!-- Configuration Layer -->
+  <g id="config-layer">
+    <rect x="50" y="220" width="1300" height="140" rx="10" fill="url(#configGrad)" stroke="#7a6a9a" stroke-width="2"/>
+    <text x="700" y="245" font-family="Arial, sans-serif" font-size="16" fill="white" text-anchor="middle" font-weight="bold">Configuration Layer</text>
+    
+    <!-- ObtExecConfig -->
+    <rect x="80" y="265" width="300" height="75" rx="6" fill="#4a3a5a" stroke="#6a5a7a" stroke-width="1"/>
+    <text x="230" y="285" font-family="Arial, sans-serif" font-size="12" fill="white" text-anchor="middle" font-weight="bold">ObtExecConfig</text>
+    <text x="230" y="300" font-family="Arial, sans-serif" font-size="10" fill="#cad" text-anchor="middle">• Environment variables</text>
+    <text x="230" y="315" font-family="Arial, sans-serif" font-size="10" fill="#cad" text-anchor="middle">• Path management</text>
+    <text x="230" y="330" font-family="Arial, sans-serif" font-size="10" fill="#cad" text-anchor="middle">• Platform detection</text>
+    
+    <!-- Project Discovery -->
+    <rect x="400" y="265" width="300" height="75" rx="6" fill="#4a3a5a" stroke="#6a5a7a" stroke-width="1"/>
+    <text x="550" y="285" font-family="Arial, sans-serif" font-size="12" fill="white" text-anchor="middle" font-weight="bold">Project Discovery</text>
+    <text x="550" y="300" font-family="Arial, sans-serif" font-size="10" fill="#cad" text-anchor="middle">• obt.manifest parsing</text>
+    <text x="550" y="315" font-family="Arial, sans-serif" font-size="10" fill="#cad" text-anchor="middle">• init_env.py execution</text>
+    <text x="550" y="330" font-family="Arial, sans-serif" font-size="10" fill="#cad" text-anchor="middle">• Module path setup</text>
+    
+    <!-- Host Detection -->
+    <rect x="720" y="265" width="280" height="75" rx="6" fill="#4a3a5a" stroke="#6a5a7a" stroke-width="1"/>
+    <text x="860" y="285" font-family="Arial, sans-serif" font-size="12" fill="white" text-anchor="middle" font-weight="bold">Host Detection</text>
+    <text x="860" y="300" font-family="Arial, sans-serif" font-size="10" fill="#cad" text-anchor="middle">• OS/Architecture</text>
+    <text x="860" y="315" font-family="Arial, sans-serif" font-size="10" fill="#cad" text-anchor="middle">• SDK locations</text>
+    <text x="860" y="330" font-family="Arial, sans-serif" font-size="10" fill="#cad" text-anchor="middle">• System capabilities</text>
+    
+    <!-- Environment Setup -->
+    <rect x="1020" y="265" width="300" height="75" rx="6" fill="#4a3a5a" stroke="#6a5a7a" stroke-width="1"/>
+    <text x="1170" y="285" font-family="Arial, sans-serif" font-size="12" fill="white" text-anchor="middle" font-weight="bold">Environment Setup</text>
+    <text x="1170" y="300" font-family="Arial, sans-serif" font-size="10" fill="#cad" text-anchor="middle">• Staging directory init</text>
+    <text x="1170" y="315" font-family="Arial, sans-serif" font-size="10" fill="#cad" text-anchor="middle">• Shell customization</text>
+    <text x="1170" y="330" font-family="Arial, sans-serif" font-size="10" fill="#cad" text-anchor="middle">• Variable export</text>
+  </g>
+  
+  <!-- Module Layer -->
+  <g id="module-layer">
+    <rect x="50" y="380" width="1300" height="180" rx="10" fill="url(#moduleGrad)" stroke="#6a8a7a" stroke-width="2"/>
+    <text x="700" y="405" font-family="Arial, sans-serif" font-size="16" fill="white" text-anchor="middle" font-weight="bold">Module Layer</text>
+    
+    <!-- Dependency Providers -->
+    <rect x="80" y="425" width="380" height="110" rx="6" fill="#3a4a3a" stroke="#5a6a5a" stroke-width="1"/>
+    <text x="270" y="445" font-family="Arial, sans-serif" font-size="12" fill="white" text-anchor="middle" font-weight="bold">Dependency Providers (modules/dep/)</text>
+    <text x="270" y="462" font-family="Arial, sans-serif" font-size="10" fill="#acd" text-anchor="middle">100+ libraries: boost, qt5, opencv, llvm...</text>
+    <text x="270" y="477" font-family="Arial, sans-serif" font-size="10" fill="#8f8" text-anchor="middle">• dep.Provider base class</text>
+    <text x="270" y="492" font-family="Arial, sans-serif" font-size="10" fill="#8f8" text-anchor="middle">• Fetch: git, wget, github releases</text>
+    <text x="270" y="507" font-family="Arial, sans-serif" font-size="10" fill="#8f8" text-anchor="middle">• Build: cmake, autotools, custom</text>
+    <text x="270" y="522" font-family="Arial, sans-serif" font-size="10" fill="#8f8" text-anchor="middle">• Dependency resolution</text>
+    
+    <!-- Docker Modules -->
+    <rect x="480" y="425" width="380" height="110" rx="6" fill="#3a4a3a" stroke="#5a6a5a" stroke-width="1"/>
+    <text x="670" y="445" font-family="Arial, sans-serif" font-size="12" fill="white" text-anchor="middle" font-weight="bold">Docker Modules (modules/docker/)</text>
+    <text x="670" y="462" font-family="Arial, sans-serif" font-size="10" fill="#acd" text-anchor="middle">Containerized environments</text>
+    <text x="670" y="477" font-family="Arial, sans-serif" font-size="10" fill="#8f8" text-anchor="middle">• Development containers</text>
+    <text x="670" y="492" font-family="Arial, sans-serif" font-size="10" fill="#8f8" text-anchor="middle">• Service containers</text>
+    <text x="670" y="507" font-family="Arial, sans-serif" font-size="10" fill="#8f8" text-anchor="middle">• CI/CD support</text>
+    <text x="670" y="522" font-family="Arial, sans-serif" font-size="10" fill="#8f8" text-anchor="middle">• Image building</text>
+    
+    <!-- Subspace Modules -->
+    <rect x="880" y="425" width="440" height="110" rx="6" fill="#3a4a3a" stroke="#5a6a5a" stroke-width="1"/>
+    <text x="1100" y="445" font-family="Arial, sans-serif" font-size="12" fill="white" text-anchor="middle" font-weight="bold">Subspace Modules (modules/subspace/)</text>
+    <text x="1100" y="462" font-family="Arial, sans-serif" font-size="10" fill="#acd" text-anchor="middle">Isolated execution environments</text>
+    <text x="1100" y="477" font-family="Arial, sans-serif" font-size="10" fill="#8f8" text-anchor="middle">• host: Native development</text>
+    <text x="1100" y="492" font-family="Arial, sans-serif" font-size="10" fill="#8f8" text-anchor="middle">• conda: Anaconda Python</text>
+    <text x="1100" y="507" font-family="Arial, sans-serif" font-size="10" fill="#8f8" text-anchor="middle">• ios/xros: Mobile development</text>
+    <text x="1100" y="522" font-family="Arial, sans-serif" font-size="10" fill="#8f8" text-anchor="middle">• Environment isolation</text>
+  </g>
+  
+  <!-- Staging Layer -->
+  <g id="staging-layer">
+    <rect x="50" y="580" width="1300" height="180" rx="10" fill="url(#stagingGrad)" stroke="#6a7a6a" stroke-width="2"/>
+    <text x="700" y="605" font-family="Arial, sans-serif" font-size="16" fill="white" text-anchor="middle" font-weight="bold">Staging Layer (${OBT_STAGE})</text>
+    
+    <!-- Directory Structure -->
+    <rect x="80" y="625" width="200" height="110" rx="6" fill="#3a3a3a" stroke="#5a5a5a" stroke-width="1"/>
+    <text x="180" y="645" font-family="Arial, sans-serif" font-size="12" fill="white" text-anchor="middle" font-weight="bold">Core Directories</text>
+    <text x="180" y="662" font-family="Courier, monospace" font-size="10" fill="#8f8" text-anchor="middle">bin/</text>
+    <text x="180" y="677" font-family="Courier, monospace" font-size="10" fill="#8f8" text-anchor="middle">lib/</text>
+    <text x="180" y="692" font-family="Courier, monospace" font-size="10" fill="#8f8" text-anchor="middle">include/</text>
+    <text x="180" y="707" font-family="Courier, monospace" font-size="10" fill="#8f8" text-anchor="middle">share/</text>
+    <text x="180" y="722" font-family="Courier, monospace" font-size="10" fill="#8f8" text-anchor="middle">python/</text>
+    
+    <!-- Build Directories -->
+    <rect x="300" y="625" width="200" height="110" rx="6" fill="#3a3a3a" stroke="#5a5a5a" stroke-width="1"/>
+    <text x="400" y="645" font-family="Arial, sans-serif" font-size="12" fill="white" text-anchor="middle" font-weight="bold">Build Storage</text>
+    <text x="400" y="662" font-family="Courier, monospace" font-size="10" fill="#8f8" text-anchor="middle">builds/</text>
+    <text x="400" y="677" font-family="Arial, sans-serif" font-size="9" fill="#acd" text-anchor="middle">• Source code</text>
+    <text x="400" y="692" font-family="Arial, sans-serif" font-size="9" fill="#acd" text-anchor="middle">• Build artifacts</text>
+    <text x="400" y="707" font-family="Arial, sans-serif" font-size="9" fill="#acd" text-anchor="middle">• Git repos</text>
+    <text x="400" y="722" font-family="Arial, sans-serif" font-size="9" fill="#acd" text-anchor="middle">• Downloads</text>
+    
+    <!-- Manifests -->
+    <rect x="520" y="625" width="200" height="110" rx="6" fill="#3a3a3a" stroke="#5a5a5a" stroke-width="1"/>
+    <text x="620" y="645" font-family="Arial, sans-serif" font-size="12" fill="white" text-anchor="middle" font-weight="bold">State Tracking</text>
+    <text x="620" y="662" font-family="Courier, monospace" font-size="10" fill="#8f8" text-anchor="middle">manifests/</text>
+    <text x="620" y="677" font-family="Arial, sans-serif" font-size="9" fill="#acd" text-anchor="middle">• Build status</text>
+    <text x="620" y="692" font-family="Arial, sans-serif" font-size="9" fill="#acd" text-anchor="middle">• Version info</text>
+    <text x="620" y="707" font-family="Arial, sans-serif" font-size="9" fill="#acd" text-anchor="middle">• Dependencies</text>
+    <text x="620" y="722" font-family="Arial, sans-serif" font-size="9" fill="#acd" text-anchor="middle">• Timestamps</text>
+    
+    <!-- Subspaces -->
+    <rect x="740" y="625" width="200" height="110" rx="6" fill="#3a3a3a" stroke="#5a5a5a" stroke-width="1"/>
+    <text x="840" y="645" font-family="Arial, sans-serif" font-size="12" fill="white" text-anchor="middle" font-weight="bold">Subspaces</text>
+    <text x="840" y="662" font-family="Courier, monospace" font-size="10" fill="#8f8" text-anchor="middle">subspaces/</text>
+    <text x="840" y="677" font-family="Arial, sans-serif" font-size="9" fill="#acd" text-anchor="middle">• host/</text>
+    <text x="840" y="692" font-family="Arial, sans-serif" font-size="9" fill="#acd" text-anchor="middle">• conda/</text>
+    <text x="840" y="707" font-family="Arial, sans-serif" font-size="9" fill="#acd" text-anchor="middle">• ios/</text>
+    <text x="840" y="722" font-family="Arial, sans-serif" font-size="9" fill="#acd" text-anchor="middle">• xros/</text>
+    
+    <!-- Environment -->
+    <rect x="960" y="625" width="360" height="110" rx="6" fill="#3a3a3a" stroke="#5a5a5a" stroke-width="1"/>
+    <text x="1140" y="645" font-family="Arial, sans-serif" font-size="12" fill="white" text-anchor="middle" font-weight="bold">Environment Config</text>
+    <text x="1140" y="662" font-family="Courier, monospace" font-size="10" fill="#8f8" text-anchor="middle">.bashrc</text>
+    <text x="1140" y="677" font-family="Arial, sans-serif" font-size="9" fill="#acd" text-anchor="middle">• Custom shell configuration</text>
+    <text x="1140" y="692" font-family="Arial, sans-serif" font-size="9" fill="#acd" text-anchor="middle">• Path exports</text>
+    <text x="1140" y="707" font-family="Arial, sans-serif" font-size="9" fill="#acd" text-anchor="middle">• Aliases and functions</text>
+    <text x="1140" y="722" font-family="Arial, sans-serif" font-size="9" fill="#acd" text-anchor="middle">• Prompt customization</text>
+  </g>
+  
+  <!-- Flow arrows -->
+  <g id="flow-arrows">
+    <!-- Command to Config -->
+    <path d="M 700 200 L 700 220" stroke="#6ac" stroke-width="2" marker-end="url(#arrow)"/>
+    <!-- Config to Modules -->
+    <path d="M 700 360 L 700 380" stroke="#6ac" stroke-width="2" marker-end="url(#arrow)"/>
+    <!-- Modules to Staging -->
+    <path d="M 700 560 L 700 580" stroke="#6ac" stroke-width="2" marker-end="url(#arrow)"/>
+  </g>
+</svg>

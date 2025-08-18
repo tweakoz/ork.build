@@ -1,0 +1,160 @@
+<svg width="800" height="300" viewBox="0 0 800 300" xmlns="http://www.w3.org/2000/svg">
+  <!-- Definitions -->
+  <defs>
+    <!-- Gradients matching our theme -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#2a2a3a;stop-opacity:1"/>
+      <stop offset="100%" style="stop-color:#1a1a2a;stop-opacity:1"/>
+    </linearGradient>
+    
+    <linearGradient id="obtGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#6ac;stop-opacity:1"/>
+      <stop offset="100%" style="stop-color:#4a8ab0;stop-opacity:1"/>
+    </linearGradient>
+    
+    <linearGradient id="boxGrad1" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#5a4a7a;stop-opacity:1"/>
+      <stop offset="100%" style="stop-color:#4a3a6a;stop-opacity:1"/>
+    </linearGradient>
+    
+    <linearGradient id="boxGrad2" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#4a6a5a;stop-opacity:1"/>
+      <stop offset="100%" style="stop-color:#3a5a4a;stop-opacity:1"/>
+    </linearGradient>
+    
+    <linearGradient id="boxGrad3" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#5a5a4a;stop-opacity:1"/>
+      <stop offset="100%" style="stop-color:#4a4a3a;stop-opacity:1"/>
+    </linearGradient>
+    
+    <!-- Glow effect -->
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    
+    <!-- Shadow -->
+    <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
+      <feDropShadow dx="2" dy="2" stdDeviation="3" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="800" height="300" fill="url(#bgGrad)"/>
+  
+  <!-- Grid pattern for tech feel -->
+  <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+    <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#3a3a4a" stroke-width="0.5" opacity="0.3"/>
+  </pattern>
+  <rect width="800" height="300" fill="url(#grid)"/>
+  
+  <!-- Central hexagon container -->
+  <g id="logo-container" transform="translate(150, 150)">
+    
+    <!-- Outer hexagon ring -->
+    <polygon points="0,-80 69.3,-40 69.3,40 0,80 -69.3,40 -69.3,-40" 
+             fill="none" 
+             stroke="url(#obtGrad)" 
+             stroke-width="3" 
+             opacity="0.5"/>
+    
+    <!-- Inner hexagon -->
+    <polygon points="0,-60 52,-30 52,30 0,60 -52,30 -52,-30" 
+             fill="url(#boxGrad1)" 
+             stroke="#6ac" 
+             stroke-width="2"
+             filter="url(#shadow)"/>
+    
+    <!-- OBT Letters -->
+    <text x="0" y="10" font-family="Arial, sans-serif" font-size="48" font-weight="bold" 
+          fill="white" text-anchor="middle" filter="url(#glow)">OBT</text>
+    
+    <!-- Orbiting boxes representing projects -->
+    <!-- Top -->
+    <rect x="-15" y="-100" width="30" height="20" rx="3" 
+          fill="url(#boxGrad2)" stroke="#6ac" stroke-width="1" opacity="0.8">
+      <animateTransform attributeName="transform"
+                        attributeType="XML"
+                        type="rotate"
+                        from="0 0 0"
+                        to="360 0 0"
+                        dur="20s"
+                        repeatCount="indefinite"/>
+    </rect>
+    
+    <!-- Bottom left -->
+    <rect x="-85" y="40" width="30" height="20" rx="3" 
+          fill="url(#boxGrad3)" stroke="#6ac" stroke-width="1" opacity="0.8">
+      <animateTransform attributeName="transform"
+                        attributeType="XML"
+                        type="rotate"
+                        from="0 0 0"
+                        to="360 0 0"
+                        dur="25s"
+                        repeatCount="indefinite"/>
+    </rect>
+    
+    <!-- Bottom right -->
+    <rect x="55" y="40" width="30" height="20" rx="3" 
+          fill="url(#boxGrad2)" stroke="#6ac" stroke-width="1" opacity="0.8">
+      <animateTransform attributeName="transform"
+                        attributeType="XML"
+                        type="rotate"
+                        from="0 0 0"
+                        to="360 0 0"
+                        dur="30s"
+                        repeatCount="indefinite"/>
+    </rect>
+    
+    <!-- Connection lines -->
+    <path d="M 0,-60 L 0,-80" stroke="#6ac" stroke-width="1" opacity="0.5"/>
+    <path d="M -52,30 L -69.3,40" stroke="#6ac" stroke-width="1" opacity="0.5"/>
+    <path d="M 52,30 L 69.3,40" stroke="#6ac" stroke-width="1" opacity="0.5"/>
+  </g>
+  
+  <!-- Title Text -->
+  <g id="title" transform="translate(400, 150)">
+    <text x="0" y="-30" font-family="Arial, sans-serif" font-size="42" font-weight="bold" 
+          fill="white" text-anchor="middle">Orkid Build Tool</text>
+    
+    <text x="0" y="10" font-family="Arial, sans-serif" font-size="16" 
+          fill="#acd" text-anchor="middle">Build Environment Orchestrator</text>
+    
+    <!-- Feature bullets -->
+    <g id="features" transform="translate(-120, 50)">
+      <text x="0" y="0" font-family="Arial, sans-serif" font-size="13" fill="#8f8">
+        ✓ Multi-Language Dependencies
+      </text>
+      <text x="0" y="25" font-family="Arial, sans-serif" font-size="13" fill="#8f8">
+        ✓ Project Composition
+      </text>
+      <text x="0" y="50" font-family="Arial, sans-serif" font-size="13" fill="#8f8">
+        ✓ Isolated Staging Environments
+      </text>
+      
+      <text x="240" y="0" font-family="Arial, sans-serif" font-size="13" fill="#8f8">
+        ✓ Cross-Platform
+      </text>
+      <text x="240" y="25" font-family="Arial, sans-serif" font-size="13" fill="#8f8">
+        ✓ 100+ Dependencies
+      </text>
+      <text x="240" y="50" font-family="Arial, sans-serif" font-size="13" fill="#8f8">
+        ✓ Extensible Architecture
+      </text>
+    </g>
+  </g>
+  
+  <!-- Decorative elements -->
+  <g id="decorations">
+    <!-- Top right corner accent -->
+    <path d="M 720,20 L 780,20 L 780,80" 
+          fill="none" stroke="#6ac" stroke-width="2" opacity="0.3"/>
+    
+    <!-- Bottom left corner accent -->
+    <path d="M 20,220 L 20,280 L 80,280" 
+          fill="none" stroke="#6ac" stroke-width="2" opacity="0.3"/>
+  </g>
+</svg>
