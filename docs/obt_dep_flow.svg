@@ -1,0 +1,253 @@
+<svg width="1400" height="1000" viewBox="0 0 1400 1000" xmlns="http://www.w3.org/2000/svg">
+  <!-- Definitions -->
+  <defs>
+    <!-- Arrow marker -->
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="#6ac"/>
+    </marker>
+    
+    <!-- Decision arrow -->
+    <marker id="decisionArrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="#f88"/>
+    </marker>
+    
+    <!-- Gradients -->
+    <linearGradient id="startGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#4a6a5a;stop-opacity:1"/>
+      <stop offset="100%" style="stop-color:#3a5a4a;stop-opacity:1"/>
+    </linearGradient>
+    
+    <linearGradient id="processGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#5a4a7a;stop-opacity:1"/>
+      <stop offset="100%" style="stop-color:#4a3a6a;stop-opacity:1"/>
+    </linearGradient>
+    
+    <linearGradient id="decisionGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#6a5a4a;stop-opacity:1"/>
+      <stop offset="100%" style="stop-color:#5a4a3a;stop-opacity:1"/>
+    </linearGradient>
+    
+    <linearGradient id="actionGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#4a5a6a;stop-opacity:1"/>
+      <stop offset="100%" style="stop-color:#3a4a5a;stop-opacity:1"/>
+    </linearGradient>
+    
+    <!-- Shadow effect -->
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="2" dy="2" stdDeviation="2" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="1400" height="1000" fill="#2a2a2a"/>
+  
+  <!-- Title -->
+  <text x="700" y="35" font-family="Arial, sans-serif" font-size="22" fill="white" text-anchor="middle" font-weight="bold">OBT Dependency Build Flow</text>
+  <text x="700" y="55" font-family="Arial, sans-serif" font-size="14" fill="#acd" text-anchor="middle">Complete lifecycle from request to installation</text>
+  
+  <!-- Start -->
+  <g id="start">
+    <ellipse cx="700" cy="100" rx="80" ry="30" fill="url(#startGrad)" stroke="#6ac" stroke-width="2" filter="url(#shadow)"/>
+    <text x="700" y="105" font-family="Arial, sans-serif" font-size="14" fill="white" text-anchor="middle" font-weight="bold">Start</text>
+    <text x="700" y="120" font-family="Arial, sans-serif" font-size="11" fill="#ccc" text-anchor="middle">obt.dep.build.py</text>
+  </g>
+  
+  <!-- Dependency Resolution -->
+  <g id="resolution">
+    <rect x="550" y="160" width="300" height="80" rx="8" fill="url(#processGrad)" stroke="#7a6a9a" stroke-width="2" filter="url(#shadow)"/>
+    <text x="700" y="185" font-family="Arial, sans-serif" font-size="14" fill="white" text-anchor="middle" font-weight="bold">Dependency Resolution</text>
+    <text x="700" y="205" font-family="Arial, sans-serif" font-size="11" fill="#ddd" text-anchor="middle">• Build dependency graph</text>
+    <text x="700" y="220" font-family="Arial, sans-serif" font-size="11" fill="#ddd" text-anchor="middle">• Topological sort</text>
+    <text x="700" y="235" font-family="Arial, sans-serif" font-size="11" fill="#ddd" text-anchor="middle">• Detect circular dependencies</text>
+  </g>
+  
+  <!-- Check Manifest -->
+  <g id="check-manifest">
+    <polygon points="700,270 800,310 700,350 600,310" fill="url(#decisionGrad)" stroke="#8a7a6a" stroke-width="2" filter="url(#shadow)"/>
+    <text x="700" y="305" font-family="Arial, sans-serif" font-size="13" fill="white" text-anchor="middle" font-weight="bold">Manifest</text>
+    <text x="700" y="320" font-family="Arial, sans-serif" font-size="11" fill="#ddd" text-anchor="middle">Exists?</text>
+    <text x="760" y="295" font-family="Arial, sans-serif" font-size="10" fill="#8f8" text-anchor="middle">Yes</text>
+    <text x="640" y="295" font-family="Arial, sans-serif" font-size="10" fill="#f88" text-anchor="middle">No</text>
+  </g>
+  
+  <!-- Check Force Flag (right branch) -->
+  <g id="check-force">
+    <polygon points="900,310 980,340 900,370 820,340" fill="url(#decisionGrad)" stroke="#8a7a6a" stroke-width="2" filter="url(#shadow)"/>
+    <text x="900" y="335" font-family="Arial, sans-serif" font-size="12" fill="white" text-anchor="middle" font-weight="bold">--force?</text>
+    <text x="950" y="325" font-family="Arial, sans-serif" font-size="10" fill="#f88" text-anchor="middle">Yes</text>
+    <text x="850" y="325" font-family="Arial, sans-serif" font-size="10" fill="#8f8" text-anchor="middle">No</text>
+  </g>
+  
+  <!-- Skip (far right) -->
+  <g id="skip">
+    <ellipse cx="1100" cy="340" rx="60" ry="25" fill="#3a4a3a" stroke="#5a6a5a" stroke-width="2" filter="url(#shadow)"/>
+    <text x="1100" y="345" font-family="Arial, sans-serif" font-size="12" fill="#8f8" text-anchor="middle" font-weight="bold">Skip Build</text>
+  </g>
+  
+  <!-- Check Source -->
+  <g id="check-source">
+    <polygon points="700,400 800,440 700,480 600,440" fill="url(#decisionGrad)" stroke="#8a7a6a" stroke-width="2" filter="url(#shadow)"/>
+    <text x="700" y="435" font-family="Arial, sans-serif" font-size="13" fill="white" text-anchor="middle" font-weight="bold">Source</text>
+    <text x="700" y="450" font-family="Arial, sans-serif" font-size="11" fill="#ddd" text-anchor="middle">Present?</text>
+    <text x="760" y="425" font-family="Arial, sans-serif" font-size="10" fill="#8f8" text-anchor="middle">Yes</text>
+    <text x="640" y="425" font-family="Arial, sans-serif" font-size="10" fill="#f88" text-anchor="middle">No</text>
+  </g>
+  
+  <!-- Fetch Source (left branch) -->
+  <g id="fetch">
+    <rect x="350" y="410" width="200" height="60" rx="8" fill="url(#actionGrad)" stroke="#6a7a8a" stroke-width="2" filter="url(#shadow)"/>
+    <text x="450" y="430" font-family="Arial, sans-serif" font-size="13" fill="white" text-anchor="middle" font-weight="bold">Fetch Source</text>
+    <text x="450" y="448" font-family="Arial, sans-serif" font-size="10" fill="#8cf" text-anchor="middle">GitHub/Git/Wget</text>
+    <text x="450" y="462" font-family="Arial, sans-serif" font-size="10" fill="#8cf" text-anchor="middle">Verify checksums</text>
+  </g>
+  
+  <!-- Check Wipe -->
+  <g id="check-wipe">
+    <polygon points="700,520 800,560 700,600 600,560" fill="url(#decisionGrad)" stroke="#8a7a6a" stroke-width="2" filter="url(#shadow)"/>
+    <text x="700" y="555" font-family="Arial, sans-serif" font-size="13" fill="white" text-anchor="middle" font-weight="bold">--wipe?</text>
+    <text x="760" y="545" font-family="Arial, sans-serif" font-size="10" fill="#f88" text-anchor="middle">Yes</text>
+    <text x="640" y="545" font-family="Arial, sans-serif" font-size="10" fill="#8f8" text-anchor="middle">No</text>
+  </g>
+  
+  <!-- Clean Directories (right branch) -->
+  <g id="clean">
+    <rect x="850" y="530" width="180" height="60" rx="8" fill="url(#actionGrad)" stroke="#6a7a8a" stroke-width="2" filter="url(#shadow)"/>
+    <text x="940" y="550" font-family="Arial, sans-serif" font-size="13" fill="white" text-anchor="middle" font-weight="bold">Clean Build</text>
+    <text x="940" y="568" font-family="Arial, sans-serif" font-size="10" fill="#f88" text-anchor="middle">Remove build dir</text>
+    <text x="940" y="582" font-family="Arial, sans-serif" font-size="10" fill="#f88" text-anchor="middle">Fresh configure</text>
+  </g>
+  
+  <!-- Configure Build -->
+  <g id="configure">
+    <rect x="550" y="640" width="300" height="80" rx="8" fill="url(#processGrad)" stroke="#7a6a9a" stroke-width="2" filter="url(#shadow)"/>
+    <text x="700" y="665" font-family="Arial, sans-serif" font-size="14" fill="white" text-anchor="middle" font-weight="bold">Configure Build</text>
+    <text x="700" y="685" font-family="Arial, sans-serif" font-size="11" fill="#ddd" text-anchor="middle">• Set environment variables</text>
+    <text x="700" y="700" font-family="Arial, sans-serif" font-size="11" fill="#ddd" text-anchor="middle">• Generate build files (CMake/configure)</text>
+    <text x="700" y="715" font-family="Arial, sans-serif" font-size="11" fill="#ddd" text-anchor="middle">• Apply platform-specific settings</text>
+  </g>
+  
+  <!-- Build -->
+  <g id="build">
+    <rect x="550" y="750" width="300" height="80" rx="8" fill="url(#processGrad)" stroke="#7a6a9a" stroke-width="2" filter="url(#shadow)"/>
+    <text x="700" y="775" font-family="Arial, sans-serif" font-size="14" fill="white" text-anchor="middle" font-weight="bold">Build</text>
+    <text x="700" y="795" font-family="Arial, sans-serif" font-size="11" fill="#ddd" text-anchor="middle">• Execute build commands</text>
+    <text x="700" y="810" font-family="Arial, sans-serif" font-size="11" fill="#ddd" text-anchor="middle">• Parallel/serial based on flags</text>
+    <text x="700" y="825" font-family="Arial, sans-serif" font-size="11" fill="#ddd" text-anchor="middle">• Monitor for errors</text>
+  </g>
+  
+  <!-- Install -->
+  <g id="install">
+    <rect x="550" y="860" width="300" height="80" rx="8" fill="url(#processGrad)" stroke="#7a6a9a" stroke-width="2" filter="url(#shadow)"/>
+    <text x="700" y="885" font-family="Arial, sans-serif" font-size="14" fill="white" text-anchor="middle" font-weight="bold">Install</text>
+    <text x="700" y="905" font-family="Arial, sans-serif" font-size="11" fill="#ddd" text-anchor="middle">• Copy to staging directory</text>
+    <text x="700" y="920" font-family="Arial, sans-serif" font-size="11" fill="#ddd" text-anchor="middle">• Fix RPATH/install_name</text>
+    <text x="700" y="935" font-family="Arial, sans-serif" font-size="11" fill="#ddd" text-anchor="middle">• Create pkg-config files</text>
+  </g>
+  
+  <!-- Write Manifest -->
+  <g id="manifest">
+    <rect x="100" y="860" width="200" height="80" rx="8" fill="url(#actionGrad)" stroke="#6a7a8a" stroke-width="2" filter="url(#shadow)"/>
+    <text x="200" y="885" font-family="Arial, sans-serif" font-size="14" fill="white" text-anchor="middle" font-weight="bold">Write Manifest</text>
+    <text x="200" y="905" font-family="Arial, sans-serif" font-size="11" fill="#8cf" text-anchor="middle">Mark as built</text>
+    <text x="200" y="920" font-family="Arial, sans-serif" font-size="11" fill="#8cf" text-anchor="middle">Cache for future</text>
+  </g>
+  
+  <!-- End -->
+  <g id="end">
+    <ellipse cx="700" cy="980" rx="60" ry="25" fill="url(#startGrad)" stroke="#6ac" stroke-width="2" filter="url(#shadow)"/>
+    <text x="700" y="985" font-family="Arial, sans-serif" font-size="14" fill="white" text-anchor="middle" font-weight="bold">Success</text>
+  </g>
+  
+  <!-- Flow arrows -->
+  <g id="arrows">
+    <!-- Main flow -->
+    <path d="M 700 130 L 700 160" stroke="#6ac" stroke-width="2" marker-end="url(#arrow)"/>
+    <path d="M 700 240 L 700 270" stroke="#6ac" stroke-width="2" marker-end="url(#arrow)"/>
+    
+    <!-- Manifest exists -> check force -->
+    <path d="M 750 310 L 850 340" stroke="#6ac" stroke-width="2" marker-end="url(#arrow)"/>
+    
+    <!-- Force no -> skip -->
+    <path d="M 950 340 L 1040 340" stroke="#8f8" stroke-width="2" marker-end="url(#arrow)"/>
+    
+    <!-- Force yes -> check source -->
+    <path d="M 900 370 L 900 440 L 800 440" stroke="#f88" stroke-width="2" marker-end="url(#decisionArrow)"/>
+    
+    <!-- Manifest no -> check source -->
+    <path d="M 650 330 L 650 400" stroke="#f88" stroke-width="2" marker-end="url(#decisionArrow)"/>
+    
+    <!-- Source no -> fetch -->
+    <path d="M 650 460 L 550 440" stroke="#f88" stroke-width="2" marker-end="url(#decisionArrow)"/>
+    
+    <!-- Fetch -> check wipe -->
+    <path d="M 450 470 L 450 560 L 600 560" stroke="#6ac" stroke-width="2" marker-end="url(#arrow)"/>
+    
+    <!-- Source yes -> check wipe -->
+    <path d="M 700 480 L 700 520" stroke="#6ac" stroke-width="2" marker-end="url(#arrow)"/>
+    
+    <!-- Wipe yes -> clean -->
+    <path d="M 750 560 L 850 560" stroke="#f88" stroke-width="2" marker-end="url(#decisionArrow)"/>
+    
+    <!-- Clean -> configure -->
+    <path d="M 940 590 L 940 680 L 850 680" stroke="#6ac" stroke-width="2" marker-end="url(#arrow)"/>
+    
+    <!-- Wipe no -> configure -->
+    <path d="M 700 600 L 700 640" stroke="#6ac" stroke-width="2" marker-end="url(#arrow)"/>
+    
+    <!-- Configure -> build -->
+    <path d="M 700 720 L 700 750" stroke="#6ac" stroke-width="2" marker-end="url(#arrow)"/>
+    
+    <!-- Build -> install -->
+    <path d="M 700 830 L 700 860" stroke="#6ac" stroke-width="2" marker-end="url(#arrow)"/>
+    
+    <!-- Install -> manifest -->
+    <path d="M 550 900 L 300 900" stroke="#6ac" stroke-width="2" marker-end="url(#arrow)"/>
+    
+    <!-- Install -> end -->
+    <path d="M 700 940 L 700 955" stroke="#6ac" stroke-width="2" marker-end="url(#arrow)"/>
+  </g>
+  
+  <!-- Side panels with details -->
+  
+  <!-- Fetcher Types -->
+  <g id="fetcher-types">
+    <rect x="50" y="380" width="250" height="120" rx="6" fill="#3a3a4a" stroke="#5a5a6a" stroke-width="1"/>
+    <text x="175" y="400" font-family="Arial, sans-serif" font-size="12" fill="white" text-anchor="middle" font-weight="bold">Fetcher Types</text>
+    <text x="60" y="420" font-family="Arial, sans-serif" font-size="10" fill="#8cf">• GithubFetcher: GitHub repos</text>
+    <text x="60" y="438" font-family="Arial, sans-serif" font-size="10" fill="#8cf">• GitFetcher: Generic git</text>
+    <text x="60" y="456" font-family="Arial, sans-serif" font-size="10" fill="#8cf">• WgetFetcher: HTTP archives</text>
+    <text x="60" y="474" font-family="Arial, sans-serif" font-size="10" fill="#8cf">• NopFetcher: No remote source</text>
+    <text x="60" y="492" font-family="Arial, sans-serif" font-size="10" fill="#8cf">• SVNFetcher: Subversion repos</text>
+  </g>
+  
+  <!-- Builder Types -->
+  <g id="builder-types">
+    <rect x="1100" y="640" width="250" height="120" rx="6" fill="#3a3a4a" stroke="#5a5a6a" stroke-width="1"/>
+    <text x="1225" y="660" font-family="Arial, sans-serif" font-size="12" fill="white" text-anchor="middle" font-weight="bold">Builder Types</text>
+    <text x="1110" y="680" font-family="Arial, sans-serif" font-size="10" fill="#8cf">• CMakeBuilder: CMake projects</text>
+    <text x="1110" y="698" font-family="Arial, sans-serif" font-size="10" fill="#8cf">• AutoConfBuilder: ./configure</text>
+    <text x="1110" y="716" font-family="Arial, sans-serif" font-size="10" fill="#8cf">• CustomBuilder: Custom scripts</text>
+    <text x="1110" y="734" font-family="Arial, sans-serif" font-size="10" fill="#8cf">• PythonBuilder: setup.py</text>
+    <text x="1110" y="752" font-family="Arial, sans-serif" font-size="10" fill="#8cf">• MakeBuilder: Raw makefiles</text>
+  </g>
+  
+  <!-- Command Options -->
+  <g id="options">
+    <rect x="50" y="150" width="200" height="100" rx="6" fill="#3a3a4a" stroke="#5a5a6a" stroke-width="1"/>
+    <text x="150" y="170" font-family="Arial, sans-serif" font-size="12" fill="white" text-anchor="middle" font-weight="bold">Build Options</text>
+    <text x="60" y="190" font-family="Arial, sans-serif" font-size="10" fill="#f88">--force: Always rebuild</text>
+    <text x="60" y="208" font-family="Arial, sans-serif" font-size="10" fill="#f88">--wipe: Clean directories</text>
+    <text x="60" y="226" font-family="Arial, sans-serif" font-size="10" fill="#8f8">--incremental: Keep state</text>
+    <text x="60" y="244" font-family="Arial, sans-serif" font-size="10" fill="#8cf">--serial: No parallel build</text>
+  </g>
+  
+  <!-- Subspace Info -->
+  <g id="subspace-info">
+    <rect x="1100" y="150" width="250" height="100" rx="6" fill="#3a3a4a" stroke="#5a5a6a" stroke-width="1"/>
+    <text x="1225" y="170" font-family="Arial, sans-serif" font-size="12" fill="white" text-anchor="middle" font-weight="bold">Subspace VIF</text>
+    <text x="1110" y="190" font-family="Arial, sans-serif" font-size="10" fill="#8cf">VIF=1: Container scope</text>
+    <text x="1120" y="208" font-family="Arial, sans-serif" font-size="9" fill="#aaa">  Shared across subspaces</text>
+    <text x="1110" y="226" font-family="Arial, sans-serif" font-size="10" fill="#f8f">VIF=2: Subspace scope</text>
+    <text x="1120" y="244" font-family="Arial, sans-serif" font-size="9" fill="#aaa">  Per-subspace builds</text>
+  </g>
+</svg>

@@ -26,6 +26,7 @@ OBT is a build environment orchestrator designed to manage complex multi-languag
 - **Reproducible Builds**: Locked dependency versions ensure consistency
 - **Project Isolation**: Staging environments prevent system pollution
 - **Language Agnostic**: Supports C++, Python, Rust, JavaScript, and more
+- **Reduced Cognitive Burden**: Automatic path management, consistent interfaces, and smart defaults let developers focus on code
 
 ---
 
@@ -290,5 +291,27 @@ Yes, projects can:
 ### Why does OBT build it's own python ?
 
 Because Orkid based projects build c++ extension modules that want a stable python API. Specifically  3.12 is chosen for subinterpreter functionality, which orkid actually uses in the ECS (entity component system). The OBT managed Python version will be updated periodically.
+
+---
+
+## Design Principles
+
+### Consistency Over Convenience
+Same interface across all platforms, even if platform-specific tools might be more convenient.
+
+### Composition Over Monoliths
+Large projects composed from modular components rather than monolithic build systems. OBT excels at managing massive, complex projects by breaking them into composable parts.
+
+### Wrapping Over Reimplementation
+Wrap existing package managers and build tools rather than reimplementing them.
+
+### Explicit Over Implicit
+Clear environment boundaries and explicit project composition.
+
+### Reproducibility Over Flexibility
+Locked versions and controlled environments over system-wide flexibility.
+
+### Cognitive Burden Reduction
+Automatic organization of build products, consistent interfaces, and smart defaults minimize mental overhead. Developers focus on their actual work rather than build system mechanics. Build artifacts go to predictable locations in staging, dependencies are resolved automatically, and common tasks have sensible defaults.
 
 

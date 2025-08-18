@@ -1,0 +1,234 @@
+<svg width="1400" height="900" viewBox="0 0 1400 900" xmlns="http://www.w3.org/2000/svg">
+  <!-- Definitions -->
+  <defs>
+    <!-- Arrow marker -->
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="#6ac"/>
+    </marker>
+    
+    <!-- Gradients matching theme -->
+    <linearGradient id="hostGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#4a5a6a;stop-opacity:1"/>
+      <stop offset="100%" style="stop-color:#3a4a5a;stop-opacity:1"/>
+    </linearGradient>
+    
+    <linearGradient id="moduleGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#5a4a7a;stop-opacity:1"/>
+      <stop offset="100%" style="stop-color:#4a3a6a;stop-opacity:1"/>
+    </linearGradient>
+    
+    <linearGradient id="dockerGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#4a6a5a;stop-opacity:1"/>
+      <stop offset="100%" style="stop-color:#3a5a4a;stop-opacity:1"/>
+    </linearGradient>
+    
+    <linearGradient id="containerGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#5a5a4a;stop-opacity:1"/>
+      <stop offset="100%" style="stop-color:#4a4a3a;stop-opacity:1"/>
+    </linearGradient>
+    
+    <!-- Shadow effect -->
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="2" dy="2" stdDeviation="2" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="1400" height="900" fill="#2a2a2a"/>
+  
+  <!-- Title -->
+  <text x="700" y="35" font-family="Arial, sans-serif" font-size="22" fill="white" text-anchor="middle" font-weight="bold">OBT Docker Module Architecture</text>
+  <text x="700" y="55" font-family="Arial, sans-serif" font-size="14" fill="#acd" text-anchor="middle">Integration between host OBT environment and containerized toolchains</text>
+  
+  <!-- Host OBT Environment -->
+  <g id="host-layer">
+    <rect x="50" y="80" width="1300" height="200" rx="10" fill="url(#hostGrad)" stroke="#6a7a8a" stroke-width="2" filter="url(#shadow)"/>
+    <text x="700" y="105" font-family="Arial, sans-serif" font-size="16" fill="white" text-anchor="middle" font-weight="bold">Host OBT Environment</text>
+    
+    <!-- OBT Commands -->
+    <rect x="80" y="125" width="250" height="130" rx="6" fill="#3a4a4a" stroke="#5a6a6a" stroke-width="1"/>
+    <text x="205" y="145" font-family="Arial, sans-serif" font-size="12" fill="white" text-anchor="middle" font-weight="bold">OBT Commands</text>
+    <text x="205" y="165" font-family="Courier, monospace" font-size="10" fill="#8f8" text-anchor="middle">obt.docker.build.py</text>
+    <text x="205" y="180" font-family="Courier, monospace" font-size="10" fill="#8f8" text-anchor="middle">obt.docker.launch.py</text>
+    <text x="205" y="195" font-family="Courier, monospace" font-size="10" fill="#8f8" text-anchor="middle">obt.docker.test.py</text>
+    <text x="205" y="210" font-family="Courier, monospace" font-size="10" fill="#8f8" text-anchor="middle">obt.docker.kill.py</text>
+    <text x="205" y="225" font-family="Courier, monospace" font-size="10" fill="#8f8" text-anchor="middle">obt.docker.list.py</text>
+    <text x="205" y="240" font-family="Courier, monospace" font-size="10" fill="#8f8" text-anchor="middle">obt.docker.info.py</text>
+    
+    <!-- Host Filesystem -->
+    <rect x="350" y="125" width="250" height="130" rx="6" fill="#3a4a4a" stroke="#5a6a6a" stroke-width="1"/>
+    <text x="475" y="145" font-family="Arial, sans-serif" font-size="12" fill="white" text-anchor="middle" font-weight="bold">Host Filesystem</text>
+    <text x="475" y="165" font-family="Arial, sans-serif" font-size="10" fill="#acd" text-anchor="middle">${OBT_STAGE}/</text>
+    <text x="475" y="180" font-family="Arial, sans-serif" font-size="10" fill="#acd" text-anchor="middle">${OBT_BUILDS}/</text>
+    <text x="475" y="195" font-family="Arial, sans-serif" font-size="10" fill="#acd" text-anchor="middle">~/.build-out/</text>
+    <text x="475" y="210" font-family="Arial, sans-serif" font-size="10" fill="#acd" text-anchor="middle">Project sources</text>
+    <text x="475" y="225" font-family="Arial, sans-serif" font-size="10" fill="#acd" text-anchor="middle">Config files</text>
+    <text x="475" y="240" font-family="Arial, sans-serif" font-size="10" fill="#acd" text-anchor="middle">~/.ssh (optional)</text>
+    
+    <!-- Module Discovery -->
+    <rect x="620" y="125" width="250" height="130" rx="6" fill="#3a4a4a" stroke="#5a6a6a" stroke-width="1"/>
+    <text x="745" y="145" font-family="Arial, sans-serif" font-size="12" fill="white" text-anchor="middle" font-weight="bold">Module Discovery</text>
+    <text x="745" y="165" font-family="Arial, sans-serif" font-size="10" fill="#acd" text-anchor="middle">OBT_MODULES_PATH scan</text>
+    <text x="745" y="180" font-family="Arial, sans-serif" font-size="10" fill="#acd" text-anchor="middle">modules/docker/*/</text>
+    <text x="745" y="195" font-family="Arial, sans-serif" font-size="10" fill="#acd" text-anchor="middle">Dynamic import</text>
+    <text x="745" y="210" font-family="Arial, sans-serif" font-size="10" fill="#acd" text-anchor="middle">dockerinfo class</text>
+    <text x="745" y="225" font-family="Arial, sans-serif" font-size="10" fill="#acd" text-anchor="middle">Project modules</text>
+    
+    <!-- Environment Variables -->
+    <rect x="890" y="125" width="250" height="130" rx="6" fill="#3a4a4a" stroke="#5a6a6a" stroke-width="1"/>
+    <text x="1015" y="145" font-family="Arial, sans-serif" font-size="12" fill="white" text-anchor="middle" font-weight="bold">Environment</text>
+    <text x="1015" y="165" font-family="Arial, sans-serif" font-size="10" fill="#8f8" text-anchor="middle">OBT_STAGE</text>
+    <text x="1015" y="180" font-family="Arial, sans-serif" font-size="10" fill="#8f8" text-anchor="middle">OBT_BUILDS</text>
+    <text x="1015" y="195" font-family="Arial, sans-serif" font-size="10" fill="#8f8" text-anchor="middle">OBT_MODULES_PATH</text>
+    <text x="1015" y="210" font-family="Arial, sans-serif" font-size="10" fill="#8f8" text-anchor="middle">DISPLAY</text>
+    <text x="1015" y="225" font-family="Arial, sans-serif" font-size="10" fill="#8f8" text-anchor="middle">User UID/GID</text>
+    <text x="1015" y="240" font-family="Arial, sans-serif" font-size="10" fill="#8f8" text-anchor="middle">Custom vars</text>
+    
+    <!-- Test Framework -->
+    <rect x="1160" y="125" width="160" height="130" rx="6" fill="#3a4a4a" stroke="#5a6a6a" stroke-width="1"/>
+    <text x="1240" y="145" font-family="Arial, sans-serif" font-size="12" fill="white" text-anchor="middle" font-weight="bold">Test Framework</text>
+    <text x="1240" y="165" font-family="Arial, sans-serif" font-size="10" fill="#f8f" text-anchor="middle">Test programs</text>
+    <text x="1240" y="180" font-family="Arial, sans-serif" font-size="10" fill="#f8f" text-anchor="middle">Validation</text>
+    <text x="1240" y="195" font-family="Arial, sans-serif" font-size="10" fill="#f8f" text-anchor="middle">Build tests</text>
+    <text x="1240" y="210" font-family="Arial, sans-serif" font-size="10" fill="#f8f" text-anchor="middle">Output verify</text>
+    <text x="1240" y="225" font-family="Arial, sans-serif" font-size="10" fill="#f8f" text-anchor="middle">Benchmarks</text>
+  </g>
+  
+  <!-- Module Interface Layer -->
+  <g id="module-layer">
+    <rect x="50" y="310" width="1300" height="150" rx="10" fill="url(#moduleGrad)" stroke="#7a6a9a" stroke-width="2" filter="url(#shadow)"/>
+    <text x="700" y="335" font-family="Arial, sans-serif" font-size="16" fill="white" text-anchor="middle" font-weight="bold">Docker Module Interface Layer</text>
+    
+    <!-- Module Types -->
+    <rect x="80" y="355" width="200" height="85" rx="6" fill="#4a3a5a" stroke="#6a5a7a" stroke-width="1"/>
+    <text x="180" y="375" font-family="Arial, sans-serif" font-size="12" fill="white" text-anchor="middle" font-weight="bold">Module Types</text>
+    <text x="180" y="395" font-family="Arial, sans-serif" font-size="10" fill="#8cf" text-anchor="middle">SINGLE Container</text>
+    <text x="180" y="410" font-family="Arial, sans-serif" font-size="10" fill="#8cf" text-anchor="middle">COMPOSITE (Compose)</text>
+    <text x="180" y="425" font-family="Arial, sans-serif" font-size="10" fill="#8cf" text-anchor="middle">GPU Enabled</text>
+    
+    <!-- dockerinfo Interface -->
+    <rect x="300" y="355" width="300" height="85" rx="6" fill="#4a3a5a" stroke="#6a5a7a" stroke-width="1"/>
+    <text x="450" y="375" font-family="Arial, sans-serif" font-size="12" fill="white" text-anchor="middle" font-weight="bold">dockerinfo Class Methods</text>
+    <text x="450" y="395" font-family="Courier, monospace" font-size="10" fill="#ddd" text-anchor="middle">build(build_args)</text>
+    <text x="450" y="410" font-family="Courier, monospace" font-size="10" fill="#ddd" text-anchor="middle">launch(args, env, mounts)</text>
+    <text x="450" y="425" font-family="Courier, monospace" font-size="10" fill="#ddd" text-anchor="middle">test() | kill() | info()</text>
+    
+    <!-- Volume Mounting -->
+    <rect x="620" y="355" width="220" height="85" rx="6" fill="#4a3a5a" stroke="#6a5a7a" stroke-width="1"/>
+    <text x="730" y="375" font-family="Arial, sans-serif" font-size="12" fill="white" text-anchor="middle" font-weight="bold">Volume Bridges</text>
+    <text x="730" y="395" font-family="Arial, sans-serif" font-size="10" fill="#acd" text-anchor="middle">Source → Container (RO)</text>
+    <text x="730" y="410" font-family="Arial, sans-serif" font-size="10" fill="#acd" text-anchor="middle">Build ↔ Container (RW)</text>
+    <text x="730" y="425" font-family="Arial, sans-serif" font-size="10" fill="#acd" text-anchor="middle">Config → Container (RO)</text>
+    
+    <!-- Module Examples -->
+    <rect x="860" y="355" width="460" height="85" rx="6" fill="#4a3a5a" stroke="#6a5a7a" stroke-width="1"/>
+    <text x="1090" y="375" font-family="Arial, sans-serif" font-size="12" fill="white" text-anchor="middle" font-weight="bold">Example Modules</text>
+    <text x="970" y="395" font-family="Arial, sans-serif" font-size="10" fill="#f8f" text-anchor="middle">ps1dev</text>
+    <text x="1040" y="395" font-family="Arial, sans-serif" font-size="10" fill="#f8f" text-anchor="middle">androiddev</text>
+    <text x="1120" y="395" font-family="Arial, sans-serif" font-size="10" fill="#f8f" text-anchor="middle">sagemath</text>
+    <text x="1200" y="395" font-family="Arial, sans-serif" font-size="10" fill="#f8f" text-anchor="middle">tflow2gpu</text>
+    <text x="970" y="415" font-family="Arial, sans-serif" font-size="10" fill="#f8f" text-anchor="middle">ub-focal</text>
+    <text x="1040" y="415" font-family="Arial, sans-serif" font-size="10" fill="#f8f" text-anchor="middle">cicd</text>
+    <text x="1120" y="415" font-family="Arial, sans-serif" font-size="10" fill="#f8f" text-anchor="middle">realsense2</text>
+    <text x="1200" y="415" font-family="Arial, sans-serif" font-size="10" fill="#f8f" text-anchor="middle">custom</text>
+  </g>
+  
+  <!-- Docker Layer -->
+  <g id="docker-layer">
+    <rect x="50" y="490" width="1300" height="150" rx="10" fill="url(#dockerGrad)" stroke="#6a8a7a" stroke-width="2" filter="url(#shadow)"/>
+    <text x="700" y="515" font-family="Arial, sans-serif" font-size="16" fill="white" text-anchor="middle" font-weight="bold">Docker Engine Layer</text>
+    
+    <!-- Docker Commands -->
+    <rect x="80" y="535" width="250" height="85" rx="6" fill="#3a4a3a" stroke="#5a6a5a" stroke-width="1"/>
+    <text x="205" y="555" font-family="Arial, sans-serif" font-size="12" fill="white" text-anchor="middle" font-weight="bold">Docker Commands</text>
+    <text x="205" y="575" font-family="Courier, monospace" font-size="10" fill="#8f8" text-anchor="middle">docker build</text>
+    <text x="205" y="590" font-family="Courier, monospace" font-size="10" fill="#8f8" text-anchor="middle">docker run</text>
+    <text x="205" y="605" font-family="Courier, monospace" font-size="10" fill="#8f8" text-anchor="middle">docker-compose up</text>
+    
+    <!-- Image Management -->
+    <rect x="350" y="535" width="250" height="85" rx="6" fill="#3a4a3a" stroke="#5a6a5a" stroke-width="1"/>
+    <text x="475" y="555" font-family="Arial, sans-serif" font-size="12" fill="white" text-anchor="middle" font-weight="bold">Image Management</text>
+    <text x="475" y="575" font-family="Arial, sans-serif" font-size="10" fill="#acd" text-anchor="middle">obt-* naming convention</text>
+    <text x="475" y="590" font-family="Arial, sans-serif" font-size="10" fill="#acd" text-anchor="middle">Multi-stage builds</text>
+    <text x="475" y="605" font-family="Arial, sans-serif" font-size="10" fill="#acd" text-anchor="middle">Layer caching</text>
+    
+    <!-- Container Runtime -->
+    <rect x="620" y="535" width="250" height="85" rx="6" fill="#3a4a3a" stroke="#5a6a5a" stroke-width="1"/>
+    <text x="745" y="555" font-family="Arial, sans-serif" font-size="12" fill="white" text-anchor="middle" font-weight="bold">Container Runtime</text>
+    <text x="745" y="575" font-family="Arial, sans-serif" font-size="10" fill="#acd" text-anchor="middle">User namespace mapping</text>
+    <text x="745" y="590" font-family="Arial, sans-serif" font-size="10" fill="#acd" text-anchor="middle">Network isolation/bridge</text>
+    <text x="745" y="605" font-family="Arial, sans-serif" font-size="10" fill="#acd" text-anchor="middle">Resource limits</text>
+    
+    <!-- Special Features -->
+    <rect x="890" y="535" width="430" height="85" rx="6" fill="#3a4a3a" stroke="#5a6a5a" stroke-width="1"/>
+    <text x="1105" y="555" font-family="Arial, sans-serif" font-size="12" fill="white" text-anchor="middle" font-weight="bold">Special Features</text>
+    <text x="1005" y="575" font-family="Arial, sans-serif" font-size="10" fill="#f8f" text-anchor="middle">GPU passthrough (--gpus all)</text>
+    <text x="1005" y="590" font-family="Arial, sans-serif" font-size="10" fill="#f8f" text-anchor="middle">X11 forwarding (/tmp/.X11-unix)</text>
+    <text x="1005" y="605" font-family="Arial, sans-serif" font-size="10" fill="#f8f" text-anchor="middle">SSH key mapping (--mapssh)</text>
+    <text x="1205" y="575" font-family="Arial, sans-serif" font-size="10" fill="#f8f" text-anchor="middle">Compose orchestration</text>
+    <text x="1205" y="590" font-family="Arial, sans-serif" font-size="10" fill="#f8f" text-anchor="middle">Port mapping</text>
+    <text x="1205" y="605" font-family="Arial, sans-serif" font-size="10" fill="#f8f" text-anchor="middle">Shared memory (--ipc host)</text>
+  </g>
+  
+  <!-- Container Instances -->
+  <g id="container-layer">
+    <rect x="50" y="670" width="1300" height="180" rx="10" fill="url(#containerGrad)" stroke="#6a7a6a" stroke-width="2" filter="url(#shadow)"/>
+    <text x="700" y="695" font-family="Arial, sans-serif" font-size="16" fill="white" text-anchor="middle" font-weight="bold">Container Instances</text>
+    
+    <!-- PS1Dev Container Example -->
+    <rect x="80" y="715" width="300" height="115" rx="6" fill="#3a3a3a" stroke="#5a5a5a" stroke-width="1"/>
+    <text x="230" y="735" font-family="Arial, sans-serif" font-size="12" fill="white" text-anchor="middle" font-weight="bold">PS1Dev Container</text>
+    <text x="230" y="755" font-family="Arial, sans-serif" font-size="10" fill="#8cf" text-anchor="middle">Ubuntu base + MIPS toolchain</text>
+    <text x="230" y="770" font-family="Arial, sans-serif" font-size="10" fill="#acd" text-anchor="middle">Mounts:</text>
+    <text x="230" y="785" font-family="Courier, monospace" font-size="9" fill="#8f8" text-anchor="middle">~/testprograms → /home/ps1dev/testprograms</text>
+    <text x="230" y="800" font-family="Courier, monospace" font-size="9" fill="#8f8" text-anchor="middle">~/.build-out → /home/ps1dev/.build-out</text>
+    <text x="230" y="815" font-family="Courier, monospace" font-size="9" fill="#8f8" text-anchor="middle">Makefile.cfg → /home/ps1dev/Makefile.cfg</text>
+    
+    <!-- Android Container Example -->
+    <rect x="400" y="715" width="300" height="115" rx="6" fill="#3a3a3a" stroke="#5a5a5a" stroke-width="1"/>
+    <text x="550" y="735" font-family="Arial, sans-serif" font-size="12" fill="white" text-anchor="middle" font-weight="bold">AndroidDev Container</text>
+    <text x="550" y="755" font-family="Arial, sans-serif" font-size="10" fill="#8cf" text-anchor="middle">Ubuntu + Android SDK/NDK</text>
+    <text x="550" y="770" font-family="Arial, sans-serif" font-size="10" fill="#acd" text-anchor="middle">Environment:</text>
+    <text x="550" y="785" font-family="Courier, monospace" font-size="9" fill="#8f8" text-anchor="middle">ANDROID_HOME=/opt/android-sdk</text>
+    <text x="550" y="800" font-family="Courier, monospace" font-size="9" fill="#8f8" text-anchor="middle">ANDROID_NDK=/opt/android-ndk</text>
+    <text x="550" y="815" font-family="Courier, monospace" font-size="9" fill="#8f8" text-anchor="middle">Platform tools in PATH</text>
+    
+    <!-- SageMath Container Example -->
+    <rect x="720" y="715" width="300" height="115" rx="6" fill="#3a3a3a" stroke="#5a5a5a" stroke-width="1"/>
+    <text x="870" y="735" font-family="Arial, sans-serif" font-size="12" fill="white" text-anchor="middle" font-weight="bold">SageMath Container</text>
+    <text x="870" y="755" font-family="Arial, sans-serif" font-size="10" fill="#8cf" text-anchor="middle">Jupyter + SageMath kernel</text>
+    <text x="870" y="770" font-family="Arial, sans-serif" font-size="10" fill="#acd" text-anchor="middle">Compose setup:</text>
+    <text x="870" y="785" font-family="Courier, monospace" font-size="9" fill="#8f8" text-anchor="middle">Port 16666:8888 (Jupyter)</text>
+    <text x="870" y="800" font-family="Courier, monospace" font-size="9" fill="#8f8" text-anchor="middle">~/notebooks → /home/sage/notebooks</text>
+    <text x="870" y="815" font-family="Courier, monospace" font-size="9" fill="#8f8" text-anchor="middle">Web interface access</text>
+    
+    <!-- GPU Container Example -->
+    <rect x="1040" y="715" width="280" height="115" rx="6" fill="#3a3a3a" stroke="#5a5a5a" stroke-width="1"/>
+    <text x="1180" y="735" font-family="Arial, sans-serif" font-size="12" fill="white" text-anchor="middle" font-weight="bold">GPU Container</text>
+    <text x="1180" y="755" font-family="Arial, sans-serif" font-size="10" fill="#8cf" text-anchor="middle">CUDA + TensorFlow</text>
+    <text x="1180" y="770" font-family="Arial, sans-serif" font-size="10" fill="#acd" text-anchor="middle">Special flags:</text>
+    <text x="1180" y="785" font-family="Courier, monospace" font-size="9" fill="#f8f" text-anchor="middle">--gpus all</text>
+    <text x="1180" y="800" font-family="Courier, monospace" font-size="9" fill="#f8f" text-anchor="middle">--ipc host (shared memory)</text>
+    <text x="1180" y="815" font-family="Courier, monospace" font-size="9" fill="#f8f" text-anchor="middle">nvidia-container-toolkit</text>
+  </g>
+  
+  <!-- Flow arrows -->
+  <g id="flow-arrows">
+    <!-- Host to Module Interface -->
+    <path d="M 700 280 L 700 310" stroke="#6ac" stroke-width="2" marker-end="url(#arrow)"/>
+    
+    <!-- Module Interface to Docker -->
+    <path d="M 700 460 L 700 490" stroke="#6ac" stroke-width="2" marker-end="url(#arrow)"/>
+    
+    <!-- Docker to Containers -->
+    <path d="M 700 640 L 700 670" stroke="#6ac" stroke-width="2" marker-end="url(#arrow)"/>
+    
+    <!-- Volume mount connections -->
+    <path d="M 475 255 L 475 715" stroke="#8cf" stroke-width="1" stroke-dasharray="5,5" opacity="0.5"/>
+    <text x="485" y="480" font-family="Arial, sans-serif" font-size="10" fill="#8cf" opacity="0.7">Volume Mounts</text>
+    
+    <!-- Environment variable flow -->
+    <path d="M 1015 255 L 1015 715" stroke="#8f8" stroke-width="1" stroke-dasharray="5,5" opacity="0.5"/>
+    <text x="1025" y="480" font-family="Arial, sans-serif" font-size="10" fill="#8f8" opacity="0.7">Env Variables</text>
+  </g>
+</svg>
