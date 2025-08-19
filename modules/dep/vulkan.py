@@ -42,6 +42,13 @@ class _vulkan_from_moltenvk(dep.Provider):
   def env_init(self):
     log.marker("registering Vulkan(%s) <MoltenVK> SDK"%self.VERSION)
     env.prepend("LD_LIBRARY_PATH",self.sdk_dir/"dylib")
+    
+    # TODO: Fix this properly by building the Vulkan loader and layers for macOS
+    # Goal: get off homebrew dependency completely
+    # For now, we need to set DYLD_LIBRARY_PATH to find our MoltenVK and homebrew dependencies
+    env.prepend("DYLD_LIBRARY_PATH", path.libs())  # staging lib dir for our MoltenVK
+    env.append("DYLD_LIBRARY_PATH", "/opt/homebrew/lib")  # for validation layers and other deps
+    
     #env.append("PATH",self.sdk_dir/"bin")
     env.set("VULKAN_SDK",self.sdk_dir) # for cmake
     env.set("OBT_VULKAN_VERSION","MoltenVK-%s"%(self.VERSION)) # for OBT internal

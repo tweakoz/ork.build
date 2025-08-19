@@ -157,7 +157,7 @@ class orkid(dep.StdProvider):
     deplist += ["notcurses"]
     if host.IsLinux:
       deplist += ["rtmidi"]
-      deplist += ["pipewire"]
+      #deplist += ["pipewire"]
       if host.IsX86_64:
         deplist += ["openvr"]
         deplist += ["ispctexc"]
