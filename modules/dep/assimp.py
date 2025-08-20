@@ -9,7 +9,7 @@ from obt import dep, command, pathtools, path, host, osrelease
 ###############################################################################
 class assimp(dep.StdProvider):
   name = "assimp"
-  VERSION ="obt-v5.2.5"
+  VERSION ="obt-v5.3.1"
   def __init__(self):
     super().__init__(assimp.name)
     self.declareDep("cmake")    
