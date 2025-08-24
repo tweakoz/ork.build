@@ -259,7 +259,7 @@ class CppDatabaseV2:
                 -- Track all reads, writes, and calls to entities
                 CREATE TABLE IF NOT EXISTS entity_accesses (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    entity_id INTEGER NOT NULL,           -- The member/function being accessed
+                    entity_id INTEGER,                    -- The member/function being accessed (NULL if unresolved)
                     member_id INTEGER,                    -- If accessing a member of an entity
                     access_type TEXT NOT NULL,            -- 'read', 'write', 'call', 'address_of'
                     file_id INTEGER NOT NULL,             -- Source file where access occurs
@@ -1191,7 +1191,7 @@ class CppDatabaseV2:
             
             return row['preprocessed_source'] if row else None
     
-    def store_entity_access(self, entity_id: int, member_id: Optional[int], access_type: str,
+    def store_entity_access(self, entity_id: Optional[int], member_id: Optional[int], access_type: str,
                            file_id: int, original_line: int, trimmed_line: Optional[int] = None,
                            column_number: int = 0, accessing_function_id: Optional[int] = None,
                            context_snippet: Optional[str] = None, raw_identifier: Optional[str] = None):
@@ -1199,8 +1199,8 @@ class CppDatabaseV2:
         Store an access record for an entity or member.
         
         Args:
-            entity_id: The entity being accessed (class/struct for members, function for calls)
-            member_id: The specific member being accessed (None for function calls)
+            entity_id: The entity being accessed (None if unresolved, class/struct for members, function for calls)
+            member_id: The specific member being accessed (None for function calls or if unresolved)
             access_type: 'read', 'write', 'call', or 'address_of'
             file_id: Source file ID where access occurs
             original_line: Line number in original source
@@ -1244,7 +1244,7 @@ class CppDatabaseV2:
                        em.name as member_name
                 FROM entity_accesses ea
                 JOIN source_files sf ON ea.file_id = sf.id
-                JOIN entities e_accessed ON ea.entity_id = e_accessed.id
+                LEFT JOIN entities e_accessed ON ea.entity_id = e_accessed.id
                 LEFT JOIN entities e_accessor ON ea.accessing_function_id = e_accessor.id
                 LEFT JOIN entity_members em ON ea.member_id = em.id
                 WHERE 1=1
@@ -1258,6 +1258,35 @@ class CppDatabaseV2:
             if member_id is not None:
                 query += " AND ea.member_id = ?"
                 params.append(member_id)
+            
+            if access_type is not None:
+                query += " AND ea.access_type = ?"
+                params.append(access_type)
+            
+            query += " ORDER BY sf.file_path, ea.original_line"
+            
+            return [dict(row) for row in conn.execute(query, params)]
+    
+    def get_unresolved_accesses(self, access_type: Optional[str] = None) -> List[Dict[str, Any]]:
+        """
+        Get access records that couldn't be resolved to entities.
+        
+        Args:
+            access_type: Filter by access type ('read', 'write', 'call')
+            
+        Returns:
+            List of unresolved access records with file info
+        """
+        with self.connect() as conn:
+            query = """
+                SELECT ea.id, ea.raw_identifier, ea.access_type,
+                       ea.original_line as line_number, ea.trimmed_line, ea.column_number,
+                       ea.context_snippet, sf.file_path, sf.relative_path
+                FROM entity_accesses ea
+                JOIN source_files sf ON ea.file_id = sf.id
+                WHERE ea.entity_id IS NULL
+            """
+            params = []
             
             if access_type is not None:
                 query += " AND ea.access_type = ?"

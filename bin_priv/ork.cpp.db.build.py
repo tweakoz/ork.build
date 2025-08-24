@@ -256,26 +256,24 @@ def build_database(db_path, source_paths, verbose=False, show_progress=True, inc
                 # Resolve accesses to database entities
                 resolved_accesses = analyzer.resolve_accesses(accesses)
                 
-                # Store resolved accesses
+                # Store ALL accesses, resolved or not
                 for access in resolved_accesses:
-                    # Only store if we resolved the entity
-                    if access.entity_id:
-                        try:
-                            db.store_entity_access(
-                                entity_id=access.entity_id,
-                                member_id=access.member_id,
-                                access_type=access.access_type.value,  # Convert enum to string
-                                file_id=file_id,
-                                original_line=access.original_line,
-                                trimmed_line=access.trimmed_line,
-                                column_number=access.column,
-                                accessing_function_id=None,  # Could resolve this too
-                                context_snippet=access.context_snippet,
-                                raw_identifier=access.raw_identifier
-                            )
-                            access_count += 1
-                        except Exception as e:
-                            print(f"ERROR storing access: {e}")
+                    try:
+                        db.store_entity_access(
+                            entity_id=access.entity_id,  # Can be None if not resolved
+                            member_id=access.member_id,  # Can be None if not resolved
+                            access_type=access.access_type.value,  # Convert enum to string
+                            file_id=file_id,
+                            original_line=access.original_line,
+                            trimmed_line=access.trimmed_line,
+                            column_number=access.column,
+                            accessing_function_id=None,  # Could resolve this too
+                            context_snippet=access.context_snippet,
+                            raw_identifier=access.raw_identifier  # Always store raw identifier
+                        )
+                        access_count += 1
+                    except Exception as e:
+                        print(f"ERROR storing access: {e}")
                 
                 if show_progress and access_count % 100 == 0:
                     print(f"  Tracked {access_count} accesses...", end='\r')

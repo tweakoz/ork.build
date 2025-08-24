@@ -61,6 +61,7 @@ class AccessType(Enum):
     ADDRESS_OF = "address_of"
     READ_WRITE = "read_write"  # For ++ and +=
     DEF = "def"  # Definition/declaration
+    IMPL = "impl"  # Implementation/instantiation (static members, templates, etc.)
 
 
 @dataclass
@@ -135,17 +136,32 @@ class StackBasedAccessAnalyzer:
             
         
         # Process terminal nodes (actual accesses and declarations)
-        if node.type in ['identifier', 'field_identifier', 'qualified_identifier']:
+        if node.type in ['identifier', 'field_identifier']:
+            # Debug logging for mDisplayModes
+            if node.text and node.text.decode() == 'mDisplayModes':
+                print(f"\nDEBUG _analyze_node: Found mDisplayModes")
+                print(f"  Node type: {node.type}")
+                print(f"  Parent type: {node.parent.type if node.parent else 'None'}")
+                print(f"  File: {self.current_file}")
+                print(f"  Line: {node.start_point[0] + 1}")
+            
             # Check if this is being declared
             if self._is_being_declared(node):
+                if node.text and node.text.decode() == 'mDisplayModes':
+                    print(f"  -> Being declared, tracking as DEF")
                 # Track as definition
                 self._record_access(node, AccessType.DEF)
             else:
                 access_type = self._determine_access_type(node)
+                if node.text and node.text.decode() == 'mDisplayModes':
+                    print(f"  -> Not being declared, access_type = {access_type}")
                 if access_type:  # None means don't track (just navigation)
                     self._record_access(node, access_type)
+                elif node.text and node.text.decode() == 'mDisplayModes':
+                    print(f"  -> NOT RECORDING (access_type is None)")
+        # Note: qualified_identifier is NOT a terminal - its children will be processed by recursion
         
-        # Process children
+        # ALWAYS recurse to children - this is orthogonal to pattern matching
         for child in node.children:
             self._analyze_node(child)
     
@@ -177,17 +193,23 @@ class StackBasedAccessAnalyzer:
         
         # Field expression - could be member access or method call
         if parent.type == 'field_expression':
-            # Check if grandparent is a call
-            if grandparent and grandparent.type == 'call_expression':
-                # Check if we're the field being called (not an argument)
-                if grandparent.children[0] == parent:
-                    return AccessType.CALL
-            # Check if grandparent is assignment
-            if grandparent and grandparent.type == 'assignment_expression':
-                # Check if we're on left side of assignment
-                if grandparent.children[0] == parent:
-                    return AccessType.WRITE
-            return AccessType.READ
+            # Determine if we're the object or the field
+            # In obj.field, obj is children[0], field is children[2] (after the dot)
+            if parent.children[0] == node:
+                # We're the object part - always READ (reading the object to access its member)
+                return AccessType.READ
+            else:
+                # We're the field part - check what's happening to the field
+                if grandparent and grandparent.type == 'call_expression':
+                    # Check if the field_expression is being called
+                    if grandparent.children[0] == parent:
+                        return AccessType.CALL  # The field is a method being called
+                # Check if grandparent is assignment
+                if grandparent and grandparent.type == 'assignment_expression':
+                    # Check if we're on left side of assignment
+                    if grandparent.children[0] == parent:
+                        return AccessType.WRITE  # The field is being written to
+                return AccessType.READ  # The field is being read
         
         # Direct call (function name)
         if parent.type == 'call_expression':
@@ -213,6 +235,31 @@ class StackBasedAccessAnalyzer:
         
         # Binary expressions - operands are read
         if parent.type == 'binary_expression':
+            return AccessType.READ
+        
+        # Subscript expression - array/container access
+        if parent.type == 'subscript_expression':
+            # The array/container is being read
+            if parent.children[0] == node:
+                return AccessType.READ
+            # The index is also being read
+            return AccessType.READ
+        
+        # Qualified identifier - like Class::member
+        if parent.type == 'qualified_identifier':
+            # Check what the qualified identifier is used for
+            grandparent = node.get_ancestor(2)
+            if grandparent:
+                if grandparent.type == 'declaration':
+                    return AccessType.DEF
+                elif grandparent.type == 'assignment_expression':
+                    if grandparent.children[0] == parent:
+                        return AccessType.WRITE
+                    return AccessType.READ
+            return AccessType.READ
+        
+        # Return statement - value is being read
+        if parent.type == 'return_statement':
             return AccessType.READ
         
         # Default
@@ -245,6 +292,12 @@ class StackBasedAccessAnalyzer:
         # Get identifier text
         identifier = node.text.decode() if node.text else ""
         
+        # Debug logging for mDisplayModes
+        if identifier == 'mDisplayModes':
+            print(f"DEBUG _record_access: Recording mDisplayModes as {access_type.value}")
+            print(f"  File: {self.current_file}")
+            print(f"  Line: {node.start_point[0] + 1}")
+        
         # Get line and column
         trimmed_line = node.start_point[0] + 1  # tree-sitter uses 0-based
         column = node.start_point[1]
@@ -270,6 +323,9 @@ class StackBasedAccessAnalyzer:
         )
         
         self.accesses.append(access)
+        
+        if identifier == 'mDisplayModes':
+            print(f"  Added to accesses list. Total accesses so far: {len(self.accesses)}")
     
     def _is_declaration_context(self, node: StackTreeNode) -> bool:
         """
@@ -448,14 +504,14 @@ class StackBasedAccessAnalyzer:
         
         Resolution order:
         1. If contains ::, treat as qualified name
-        2. If starts with _ or m_, check class members (if in class context)
+        2. Check as member of context class (if in class context)
         3. Check local namespace
         4. Check global namespace
         """
         # This is a simplified version - full implementation would be more sophisticated
         
-        # Try to find as a member
-        if context_class and (identifier.startswith('_') or identifier.startswith('m_')):
+        # Try to find as a member of the context class (NO PREFIX ASSUMPTIONS)
+        if context_class:
             # Look for member in context class
             result = cursor.execute("""
                 SELECT em.id, em.entity_id
