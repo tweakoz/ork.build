@@ -3,7 +3,7 @@ from setuptools.command.install import install
 import os
 import stat
 
-version = "0.0.286.dev03"
+version = "0.0.286.dev14"
 
 # Read the long description from the README file
 with open("README.md", "r", encoding="utf-8") as fh:
@@ -63,7 +63,14 @@ setup(
         "build",
         "conan",
         "pip>=24.1",
-	"GitPython"
+        "GitPython",
+        # Code parsing dependencies
+        "tree-sitter==0.21.3",
+        "tree-sitter-cpp==0.22.3",
+        "tree-sitter-python==0.23.2",
+        "tree-sitter-lua==0.2.0",
+        "tree-sitter-glsl==0.2.0",
+        "libclang",
 	# "mdstat", linux only
 	#"zfslib", linux only
 	#"pyudev", linux only

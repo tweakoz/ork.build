@@ -47,6 +47,49 @@ class Path(_Path_) :
  @property
  def norm(self):
    return Path(os.path.normpath(str(self)))
+   
+ @property
+ def sanitized(self):
+   """Return sanitized path with environment variable substitutions"""
+   full_path = str(self.resolve())
+   
+   # Priority order for environment variable matching
+   priority_vars = [
+     "ORKID_WORKSPACE_DIR",
+     "OBT_STAGE",
+     "OBT_PYPKG", 
+     "OBT_DATA",
+     "OBT_ROOT",
+   ]
+   
+   # Check priority vars first for longest match
+   best_match = ""
+   best_var = ""
+   best_length = 0
+   
+   for var in priority_vars:
+     if var in os.environ:
+       value = os.environ[var]
+       if value and full_path.startswith(value):
+         # Keep the longest matching prefix
+         if len(value) > best_length:
+           best_length = len(value)
+           best_var = var
+           best_match = value
+   
+   # If we found a priority match, use it
+   if best_var:
+     if full_path == best_match:
+       return "$" + best_var
+     else:
+       remainder = full_path[len(best_match):]
+       # Ensure we don't double up slashes
+       if remainder and not remainder.startswith('/'):
+         remainder = "/" + remainder
+       return "$" + best_var + remainder
+   
+   # No match found, return original path
+   return full_path
     
 class WindowsPath(_WindowsPath_, Path) :
  pass

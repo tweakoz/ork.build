@@ -9,12 +9,16 @@
 
 import os, sys, string
 import obt.search
+import obt.search_args
 
 #################################################################################
 
 if __name__ == "__main__":
- if not len(sys.argv) == 2:
-  print("usage: word")
-  sys.exit(1)
- word = sys.argv[1]
- obt.search.execute(word)
+ args, ext_set = obt.search_args.parse_search_args(
+     description='Search text in all OBT projects',
+     require_dep=False
+ )
+ 
+ # execute expects a single word, not a list
+ for word in args.keywords:
+     obt.search.execute(word, ext_set=ext_set)

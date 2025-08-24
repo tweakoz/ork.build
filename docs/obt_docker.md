@@ -288,7 +288,7 @@ class dockerinfo:
         # Build products are now in staging area, not scattered in home dirs
         print(f"builddir<{self._unittest_dir}>")
         # Example output:
-        # builddir</Users/michael/.staging-jul17/builds/ps1dev-test1>
+        # builddir<${OBT_STAGE}/builds/ps1dev-test1>
         # total 3264
         # -rw-r--r--  test1.bin (613872 bytes)
         # -rw-r--r--  test1.cue 

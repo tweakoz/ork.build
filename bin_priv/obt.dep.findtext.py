@@ -7,16 +7,17 @@
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
 
-import os, sys, string, argparse
+import os, sys, string
 import obt.search
 import obt.path
 import obt.dep
+import obt.search_args
 
-parser = argparse.ArgumentParser(description='build all box products')
-parser.add_argument('--dep', help='dep to search' )
-parser.add_argument('keywords', metavar='K', type=str, nargs='+', help='search keywords')
-
-_args = vars(parser.parse_args())
+args, ext_set = obt.search_args.parse_search_args(
+    description='Search text in a specific dependency',
+    require_dep=True
+)
+_args = vars(args)
 
 #################################################################################
 
@@ -34,4 +35,15 @@ if _args["dep"]!=None:
   ########################
   words = _args["keywords"]
   rem_root = path_list[0]
-  obt.search.execute_at(words,path_list,remove_root=rem_root)
+  
+  # Pass all search options to execute_at
+  obt.search.execute_at(words, path_list, 
+                       remove_root=rem_root, 
+                       ext_set=ext_set,
+                       case_insensitive=args.case_insensitive,
+                       regex=args.regex,
+                       whole_word=args.whole_word,
+                       invert_match=args.invert_match,
+                       files_only=args.files_only,
+                       before_context=args.before_context,
+                       after_context=args.after_context)
