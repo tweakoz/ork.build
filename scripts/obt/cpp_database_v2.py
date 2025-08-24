@@ -101,6 +101,8 @@ class CppDatabaseV2:
                     file_size INTEGER DEFAULT 0,
                     raw_source TEXT NOT NULL,
                     preprocessed_source TEXT,
+                    trimmed_source TEXT,
+                    line_mapping TEXT,  -- JSON mapping of trimmed line -> original line
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 );
@@ -259,12 +261,14 @@ class CppDatabaseV2:
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     entity_id INTEGER NOT NULL,           -- The member/function being accessed
                     member_id INTEGER,                    -- If accessing a member of an entity
-                    access_type TEXT NOT NULL,            -- 'read', 'write', 'call'
+                    access_type TEXT NOT NULL,            -- 'read', 'write', 'call', 'address_of'
                     file_id INTEGER NOT NULL,             -- Source file where access occurs
-                    line_number INTEGER NOT NULL,
+                    original_line INTEGER NOT NULL,       -- Line number in original source
+                    trimmed_line INTEGER,                  -- Line number in trimmed source
                     column_number INTEGER DEFAULT 0,
                     accessing_function_id INTEGER,        -- The function performing the access
                     context_snippet TEXT,                 -- Optional: small code snippet for context
+                    raw_identifier TEXT,                  -- Unresolved identifier for deferred resolution
                     FOREIGN KEY (entity_id) REFERENCES entities(id) ON DELETE CASCADE,
                     FOREIGN KEY (member_id) REFERENCES entity_members(id) ON DELETE CASCADE,
                     FOREIGN KEY (file_id) REFERENCES source_files(id),
@@ -1188,30 +1192,32 @@ class CppDatabaseV2:
             return row['preprocessed_source'] if row else None
     
     def store_entity_access(self, entity_id: int, member_id: Optional[int], access_type: str,
-                           file_id: int, line_number: int, column_number: int = 0,
-                           accessing_function_id: Optional[int] = None,
-                           context_snippet: Optional[str] = None):
+                           file_id: int, original_line: int, trimmed_line: Optional[int] = None,
+                           column_number: int = 0, accessing_function_id: Optional[int] = None,
+                           context_snippet: Optional[str] = None, raw_identifier: Optional[str] = None):
         """
         Store an access record for an entity or member.
         
         Args:
             entity_id: The entity being accessed (class/struct for members, function for calls)
             member_id: The specific member being accessed (None for function calls)
-            access_type: 'read', 'write', or 'call'
+            access_type: 'read', 'write', 'call', or 'address_of'
             file_id: Source file ID where access occurs
-            line_number: Line number of access
+            original_line: Line number in original source
+            trimmed_line: Line number in trimmed source
             column_number: Column number of access
             accessing_function_id: The function performing the access
             context_snippet: Optional code snippet for context
+            raw_identifier: Unresolved identifier for deferred resolution
         """
         with self.connect() as conn:
             conn.execute("""
                 INSERT INTO entity_accesses 
-                (entity_id, member_id, access_type, file_id, line_number, column_number,
-                 accessing_function_id, context_snippet)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            """, (entity_id, member_id, access_type, file_id, line_number, column_number,
-                  accessing_function_id, context_snippet))
+                (entity_id, member_id, access_type, file_id, original_line, trimmed_line,
+                 column_number, accessing_function_id, context_snippet, raw_identifier)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (entity_id, member_id, access_type, file_id, original_line, trimmed_line,
+                  column_number, accessing_function_id, context_snippet, raw_identifier))
     
     def get_entity_accesses(self, entity_id: Optional[int] = None, 
                            member_id: Optional[int] = None,
@@ -1229,7 +1235,9 @@ class CppDatabaseV2:
         """
         with self.connect() as conn:
             query = """
-                SELECT ea.*, 
+                SELECT ea.id, ea.entity_id, ea.member_id, ea.access_type,
+                       ea.original_line as line_number, ea.trimmed_line, ea.column_number,
+                       ea.accessing_function_id, ea.context_snippet, ea.raw_identifier,
                        sf.file_path, sf.relative_path,
                        e_accessed.canonical_name as accessed_name,
                        e_accessor.canonical_name as accessor_name,
@@ -1255,7 +1263,7 @@ class CppDatabaseV2:
                 query += " AND ea.access_type = ?"
                 params.append(access_type)
             
-            query += " ORDER BY sf.file_path, ea.line_number"
+            query += " ORDER BY sf.file_path, ea.original_line"
             
             return [dict(row) for row in conn.execute(query, params)]
     

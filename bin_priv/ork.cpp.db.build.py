@@ -10,6 +10,7 @@ import sys
 import argparse
 from pathlib import Path
 import time
+import json
 
 # Add obt to path
 import obt.path
@@ -125,15 +126,16 @@ def build_database(db_path, source_paths, verbose=False, show_progress=True, inc
         for item in results['success']:
             conn.execute("""
                 INSERT OR REPLACE INTO source_files 
-                (file_path, file_name, raw_source, preprocessed_source, trimmed_source, file_size)
-                VALUES (?, ?, ?, ?, ?, ?)
+                (file_path, file_name, raw_source, preprocessed_source, trimmed_source, file_size, line_mapping)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
             """, (
                 str(item['path']),
                 item['path'].name,
                 item['raw_source'].decode('utf-8', errors='ignore'),
                 item['preprocessed_source'].decode('utf-8', errors='ignore'),
                 item['trimmed_source'].decode('utf-8', errors='ignore'),
-                item['raw_size']
+                item['raw_size'],
+                json.dumps(item['line_mapping'])  # Store line mapping as JSON
             ))
         conn.commit()
     
@@ -206,21 +208,31 @@ def build_database(db_path, source_paths, verbose=False, show_progress=True, inc
         
         access_start = time.time()
         
-        # Import the access analyzer
-        from obt.cpp_access_analyzer import CppAccessAnalyzer
+        # Clear existing access records before rebuilding
+        with db.connect() as conn:
+            conn.execute("DELETE FROM entity_accesses")
+            conn.commit()
+            if verbose:
+                print(f"{deco.cyan('Cleared existing access records')}")
+        
+        # Import the stack-based access analyzer
+        from obt.cpp_stack_analyzer import StackBasedAccessAnalyzer
         
         # Create analyzer with database connection
-        analyzer = CppAccessAnalyzer(db=db, verbose=False)
+        analyzer = StackBasedAccessAnalyzer(db_path=db_path, track_operators=False)
         
         # Process each file for access tracking
         for item in results['success']:
             file_path = item['path']
             
             try:
-                # Get trimmed source from database
+                # Get trimmed source and line mapping from database
                 with db.connect() as conn:
                     cursor = conn.cursor()
-                    cursor.execute("SELECT id, trimmed_source FROM source_files WHERE file_path = ?", (str(file_path),))
+                    cursor.execute("""
+                        SELECT id, trimmed_source, line_mapping 
+                        FROM source_files WHERE file_path = ?
+                    """, (str(file_path),))
                     file_result = cursor.fetchone()
                     
                     if not file_result or not file_result[1]:
@@ -228,61 +240,38 @@ def build_database(db_path, source_paths, verbose=False, show_progress=True, inc
                     
                     file_id = file_result[0]
                     trimmed_source = file_result[1]
+                    
+                    # Parse line mapping from JSON
+                    line_mapping = {}
+                    if file_result[2]:
+                        line_mapping_raw = json.loads(file_result[2])
+                        # Convert string keys to int
+                        line_mapping = {int(k): v for k, v in line_mapping_raw.items()}
                 
                 # Analyze the trimmed source for accesses
-                accesses = analyzer.analyze_file(file_path, source_code=trimmed_source)
+                accesses = analyzer.analyze_file(file_path, trimmed_source, line_mapping)
                 
                 print(f"FILE {file_path}: Found {len(accesses)} accesses")
                 
-                # Store accesses
-                for access in accesses:
-                    # Try to resolve the entity being accessed
-                    entity_id = None
-                    member_id = None
-                    
-                    # Try to resolve the accessed entity
-                    with db.connect() as conn:
-                        cursor = conn.cursor()
-                        
-                        # First try exact match on short_name for functions/methods
-                        if access.access_type == 'call':
-                            # Could be a function or method
-                            cursor.execute("""
-                                SELECT id FROM entities 
-                                WHERE short_name = ? 
-                                AND entity_type = ?
-                                LIMIT 1
-                            """, (access.accessed_entity, EntityType.FUNCTION.value))
-                            result = cursor.fetchone()
-                            if result:
-                                entity_id = result[0]
-                        
-                        # For member variables, look in entity_members table
-                        if not entity_id and (access.accessed_entity.startswith('_') or 
-                                             access.accessed_entity.startswith('m_')):
-                            # This looks like a member variable
-                            cursor.execute("""
-                                SELECT entity_id, id FROM entity_members 
-                                WHERE name = ?
-                                LIMIT 1
-                            """, (access.accessed_entity,))
-                            result = cursor.fetchone()
-                            if result:
-                                entity_id = result[0]
-                                member_id = result[1]
-                    
-                    # Only store if we resolved something (for now, could be relaxed later)
-                    if entity_id:
+                # Resolve accesses to database entities
+                resolved_accesses = analyzer.resolve_accesses(accesses)
+                
+                # Store resolved accesses
+                for access in resolved_accesses:
+                    # Only store if we resolved the entity
+                    if access.entity_id:
                         try:
                             db.store_entity_access(
-                                entity_id=entity_id,
-                                member_id=member_id,
-                                access_type=access.access_type,
+                                entity_id=access.entity_id,
+                                member_id=access.member_id,
+                                access_type=access.access_type.value,  # Convert enum to string
                                 file_id=file_id,
-                                line_number=access.line_number,
-                                column_number=access.column_number,
+                                original_line=access.original_line,
+                                trimmed_line=access.trimmed_line,
+                                column_number=access.column,
                                 accessing_function_id=None,  # Could resolve this too
-                                context_snippet=access.context_snippet
+                                context_snippet=access.context_snippet,
+                                raw_identifier=access.raw_identifier
                             )
                             access_count += 1
                         except Exception as e:
@@ -335,12 +324,6 @@ def main():
     
     parser.add_argument('--all', action='store_true',
                        help='Index all modules')
-    
-    parser.add_argument('--inc-only', action='store_true',
-                       help='Only index header files in inc directories')
-    
-    parser.add_argument('--src-only', action='store_true',
-                       help='Only index source files in src directories')
     
     # Other options
     parser.add_argument('-v', '--verbose', action='store_true',
@@ -410,9 +393,7 @@ def main():
         modules = args.module
     
     source_paths = ork_cppdb.get_orkid_paths(
-        modules=modules,
-        inc_only=args.inc_only,
-        src_only=args.src_only
+        modules=modules
     )
     
     if not source_paths:
