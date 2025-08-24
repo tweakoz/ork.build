@@ -620,7 +620,10 @@ class RecursiveDescentCppParser:
         if member.name and params is not None:
             param_strs = []
             for param in params:
+                # param.param_type is already composed by compose_type() in unified type system
                 param_str = param.param_type
+                
+                # Add parameter name if present
                 if param.name:
                     param_str += f" {param.name}"
                 if param.default_value:
@@ -668,35 +671,34 @@ class RecursiveDescentCppParser:
         return params
     
     def _parse_parameter_declaration(self, node: Node, source: bytes) -> Optional[Parameter]:
-        """Parse a parameter declaration"""
-        param_type = ""
-        param_name = None
-        is_reference = False
-        is_pointer = False
+        """Parse a parameter declaration using unified type system"""
+        type_info = self._collect_type_info(node, source)
         
-        for child in node.children:
-            if child.type in ['primitive_type', 'type_identifier', 'qualified_identifier']:
-                param_type = self._extract_text(child, source)
-            elif child.type == 'identifier':
-                param_name = self._extract_text(child, source)
-            elif child.type == 'reference_declarator':
-                # Handle reference parameters
-                is_reference = True
-                for ref_child in child.children:
-                    if ref_child.type == 'identifier':
-                        param_name = self._extract_text(ref_child, source)
-            elif child.type == 'pointer_declarator':
-                # Handle pointer parameters
-                is_pointer = True
-                for ptr_child in child.children:
-                    if ptr_child.type == 'identifier':
-                        param_name = self._extract_text(ptr_child, source)
+        # Extract parameter name from nested declarators
+        param_name = self._extract_parameter_name(node, source)
         
-        if param_type:
-            param = Parameter(name=param_name, param_type=param_type)
-            param.is_reference = is_reference
-            param.is_pointer = is_pointer
+        if type_info.base_type:
+            # Use compose_type for authoritative type string generation
+            param_type_str = compose_type(type_info)
+            param = Parameter(name=param_name, param_type=param_type_str)
+            
+            # Store unified type system data for future use
+            param.is_reference = type_info.is_reference
+            param.is_pointer = type_info.pointer_depth > 0
+            param.is_const = type_info.is_const
+            
             return param
+        return None
+    
+    def _extract_parameter_name(self, node: Node, source: bytes) -> Optional[str]:
+        """Extract parameter name from potentially nested declarators"""
+        for child in node.children:
+            if child.type == 'identifier':
+                return self._extract_text(child, source)
+            elif child.type in ['reference_declarator', 'pointer_declarator']:
+                name = self._extract_parameter_name(child, source)
+                if name:
+                    return name
         return None
     
     def _parse_optional_parameter_declaration(self, node: Node, source: bytes) -> Optional[Parameter]:

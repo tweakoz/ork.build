@@ -261,6 +261,7 @@ def main():
     # Database is always in stage directory with fixed name
     import obt.path as obt_path
     db_path = obt_path.stage() / "cpp_db_v2_orkid.db"
+    print(f"Database file: {db_path}")
     
     # If stats only, show stats and exit
     if args.stats_only:
