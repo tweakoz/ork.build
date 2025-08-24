@@ -19,6 +19,7 @@ class TypeInfo:
     is_volatile: bool = False              # volatile T  
     is_constexpr: bool = False             # constexpr T
     is_mutable: bool = False               # mutable T
+    is_static: bool = False                # static T (storage class)
     
     # Pointer/reference semantics
     pointer_depth: int = 0                 # 0=value, 1=*, 2=**, etc.

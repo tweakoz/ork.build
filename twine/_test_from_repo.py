@@ -22,6 +22,10 @@ from pathlib import Path
 # Define files to patch - C++ database related modules and scripts
 CPP_DB_FILES = [
     # Core C++ database modules
+    'scripts/obt/cpp_db_files.py',
+    'scripts/obt/cpp_ingest.py',
+    'scripts/obt/cpp_search_utils.py',
+
     'scripts/obt/cpp_database_v2.py',
     'scripts/obt/cpp_parser_descent.py',
     'scripts/obt/cpp_entities_v2.py',

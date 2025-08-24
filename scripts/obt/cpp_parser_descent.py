@@ -6,7 +6,7 @@ Handles all node types properly including pure virtual methods
 """
 
 from dataclasses import dataclass
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, Union
 from pathlib import Path
 import tree_sitter_cpp as ts_cpp
 from tree_sitter import Language, Parser, Node
@@ -225,9 +225,14 @@ class RecursiveDescentCppParser:
                 
             elif child.type == 'field_declaration':
                 # Regular fields and method declarations
-                member = self._parse_field_declaration(child, source, current_access)
-                if member:
-                    entity.add_member(member)
+                result = self._parse_field_declaration(child, source, current_access)
+                if result:
+                    # Could be a single member or list of members
+                    if isinstance(result, list):
+                        for member in result:
+                            entity.add_member(member)
+                    else:
+                        entity.add_member(result)
                     
             elif child.type == 'function_definition':
                 # Methods with bodies, pure virtual methods, etc.
@@ -285,8 +290,9 @@ class RecursiveDescentCppParser:
     # ============================================================
     
     def _parse_field_declaration(self, node: Node, source: bytes, 
-                                access_level: AccessLevel) -> Optional[Member]:
-        """Parse field_declaration - could be field or method declaration"""
+                                access_level: AccessLevel) -> Optional[Union[Member, List[Member]]]:
+        """Parse field_declaration - could be field or method declaration
+        Returns single Member for methods, or Member/List[Member] for fields"""
         
         if self.verbose:
             print(f"DEBUG: _parse_field_declaration with {len(node.children)} children")
@@ -309,7 +315,8 @@ class RecursiveDescentCppParser:
         if has_function_declarator:
             return self._parse_method_declaration(node, source, access_level)
         else:
-            return self._parse_field_member(node, source, access_level)
+            # Could return multiple members for comma-separated declarations
+            return self._parse_field_members(node, source, access_level)
     
     def _parse_function_definition_member(self, node: Node, source: bytes,
                                          access_level: AccessLevel) -> Optional[Member]:
@@ -492,11 +499,12 @@ class RecursiveDescentCppParser:
         
         return member if member.name else None
     
-    def _parse_field_member(self, node: Node, source: bytes,
-                          access_level: AccessLevel) -> Optional[Member]:
-        """Parse a field member using unified type system"""
-        member = Member(name="", member_type=MemberType.FIELD)
-        member.access_level = access_level
+    def _parse_field_members(self, node: Node, source: bytes,
+                           access_level: AccessLevel) -> Optional[Union[Member, List[Member]]]:
+        """Parse field members - handles comma-separated declarations
+        e.g., static F32 msfR, msfG, msfB, msfA;
+        """
+        members = []
         
         # Check for nested class/struct definition first
         for child in node.children:
@@ -504,8 +512,8 @@ class RecursiveDescentCppParser:
                 # This is a nested type definition
                 type_name = self._extract_nested_type_name(child, source)
                 if type_name:
-                    member.name = type_name
-                    member.member_type = MemberType.NESTED_TYPE
+                    member = Member(name=type_name, member_type=MemberType.NESTED_TYPE)
+                    member.access_level = access_level
                     member.data_type = child.type.replace('_specifier', '')
                     member.line_number = source[:node.start_byte].count(b'\n') + 1
                     return member
@@ -513,89 +521,61 @@ class RecursiveDescentCppParser:
         # Use unified type collection for ALL type information
         type_info = self._collect_type_info(node, source)
         
-        # Extract field name and handle special declarators
-        field_name = None
-        field_value = None
+        # Collect all field names in this declaration
+        field_names = []
         
+        def extract_field_name(node_to_check):
+            """Recursively extract field identifier"""
+            if node_to_check.type == 'field_identifier':
+                return self._extract_text(node_to_check, source)
+            for child in node_to_check.children:
+                name = extract_field_name(child)
+                if name:
+                    return name
+            return None
+        
+        # Parse all declarators and field_identifiers
         for child in node.children:
             if child.type == 'field_identifier':
-                field_name = self._extract_text(child, source)
-                
-            elif child.type == 'init_declarator':
-                # Has an initializer, extract name and value
-                for init_child in child.children:
-                    if init_child.type == 'field_identifier':
-                        field_name = self._extract_text(init_child, source)
-                    elif init_child.type == 'pointer_declarator':
-                        # Field name is nested in pointer declarator
-                        for ptr_child in init_child.children:
-                            if ptr_child.type == 'field_identifier':
-                                field_name = self._extract_text(ptr_child, source)
-                    elif init_child.type == 'array_declarator':
-                        # Field name is nested in array declarator
-                        for arr_child in init_child.children:
-                            if arr_child.type == 'field_identifier':
-                                field_name = self._extract_text(arr_child, source)
-                    elif init_child.type == 'reference_declarator':
-                        # Field name is nested in reference declarator
-                        for ref_child in init_child.children:
-                            if ref_child.type == 'field_identifier':
-                                field_name = self._extract_text(ref_child, source)
-                    elif init_child.type == '=':
-                        # Next sibling is the value
-                        idx = list(child.children).index(init_child)
-                        if idx + 1 < len(child.children):
-                            field_value = self._extract_text(child.children[idx + 1], source)
-                            
-            elif child.type == 'pointer_declarator':
-                # Extract name from pointer declarator
-                for ptr_child in child.children:
-                    if ptr_child.type == 'field_identifier':
-                        field_name = self._extract_text(ptr_child, source)
-                        
-            elif child.type == 'array_declarator':
-                # Extract name from array declarator
-                for arr_child in child.children:
-                    if arr_child.type == 'field_identifier':
-                        field_name = self._extract_text(arr_child, source)
-                        
-            elif child.type == 'reference_declarator':
-                # Extract name from reference declarator
-                for ref_child in child.children:
-                    if ref_child.type == 'field_identifier':
-                        field_name = self._extract_text(ref_child, source)
-                        
-            elif child.type == '=' and not field_value:
-                # Direct initializer at field level
-                idx = list(node.children).index(child)
-                if idx + 1 < len(node.children):
-                    field_value = self._extract_text(node.children[idx + 1], source)
+                field_names.append(self._extract_text(child, source))
+            elif child.type in ['array_declarator', 'pointer_declarator', 'reference_declarator', 'init_declarator']:
+                name = extract_field_name(child)
+                if name:
+                    field_names.append(name)
         
-        # Store collected type information in member
-        member.name = field_name
-        member.value = field_value
+        # Create a member for each field name
+        for field_name in field_names:
+            member = Member(name=field_name, member_type=MemberType.FIELD)
+            member.access_level = access_level
+            
+            # Apply type modifiers from TypeInfo
+            member.is_static = type_info.is_constexpr or type_info.is_static  # constexpr implies static
+            member.is_const = type_info.is_const
+            member.is_volatile = type_info.is_volatile
+            member.is_constexpr = type_info.is_constexpr
+            member.is_mutable = type_info.is_mutable
+            member.is_reference = type_info.is_reference
+            member.is_rvalue_reference = type_info.is_rvalue_reference
+            member.pointer_depth = type_info.pointer_depth
+            member.array_dimensions = ''.join(f'[{d}]' for d in type_info.array_dimensions) if type_info.array_dimensions else None
+            
+            # Compose and store the complete type string
+            member.data_type = compose_type(type_info)
+            
+            # Store type in flyweight registry if available
+            if self.type_registry and type_info.base_type:
+                member.base_type_id = self.type_registry.get_or_create_type(type_info)
+            
+            member.line_number = source[:node.start_byte].count(b'\n') + 1
+            members.append(member)
         
-        # Apply type modifiers from TypeInfo
-        member.is_static = type_info.is_constexpr or member.is_static  # constexpr implies static
-        member.is_const = type_info.is_const
-        member.is_volatile = type_info.is_volatile
-        member.is_constexpr = type_info.is_constexpr
-        member.is_mutable = type_info.is_mutable
-        member.is_reference = type_info.is_reference
-        member.is_rvalue_reference = type_info.is_rvalue_reference
-        member.pointer_depth = type_info.pointer_depth
-        member.array_dimensions = ''.join(f'[{d}]' for d in type_info.array_dimensions) if type_info.array_dimensions else None
-        
-        # Compose and store the complete type string
-        member.data_type = compose_type(type_info)
-        
-        # Store type in flyweight registry if available
-        if self.type_registry and type_info.base_type:
-            member.base_type_id = self.type_registry.get_or_create_type(type_info)
-        
-        member.line_number = source[:node.start_byte].count(b'\n') + 1
-        
-        return member if member.name else None
+        # Return single member or list
+        if len(members) == 1:
+            return members[0]
+        elif len(members) > 1:
+            return members
+        else:
+            return None
     
     def _parse_function_declarator(self, node: Node, source: bytes, member: Member):
         """Parse function_declarator to extract name, parameters, qualifiers"""
@@ -1257,6 +1237,8 @@ class RecursiveDescentCppParser:
                     type_info.is_constexpr = True
                 elif spec == 'mutable':
                     type_info.is_mutable = True
+                elif spec == 'static':
+                    type_info.is_static = True
                     
         # Handle base types
         elif node.type in ['primitive_type', 'type_identifier', 'qualified_identifier', 'auto']:
