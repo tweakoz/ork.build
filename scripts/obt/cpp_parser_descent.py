@@ -354,7 +354,7 @@ class RecursiveDescentCppParser:
                         function_declarator = ptr_child
                         # Collect return type info using unified system
                         if not return_type_info:
-                            return_type_info = self._collect_type_info(node, source)
+                            return_type_info = self._collect_return_type_info(node, source)
                         
             elif child.type == 'reference_declarator':
                 # Function declarator might be inside reference_declarator for reference return types
@@ -363,7 +363,7 @@ class RecursiveDescentCppParser:
                         function_declarator = ref_child
                         # Collect return type info using unified system
                         if not return_type_info:
-                            return_type_info = self._collect_type_info(node, source)
+                            return_type_info = self._collect_return_type_info(node, source)
                 
             elif child.type == 'pure_virtual_clause':
                 # THIS IS THE KEY FIX - detect pure virtual!
@@ -390,6 +390,7 @@ class RecursiveDescentCppParser:
             if self.type_registry:
                 member.base_type_id = self.type_registry.get_or_create_type(return_type_info)
                 # Store type modifiers separately
+                member.pointer_depth = return_type_info.pointer_depth
                 member.is_reference = return_type_info.is_reference
                 member.is_rvalue_reference = return_type_info.is_rvalue_reference
                 member.is_volatile = return_type_info.is_volatile
@@ -460,7 +461,7 @@ class RecursiveDescentCppParser:
                         function_declarator = ptr_child
                         # Collect return type using unified system
                         if not return_type_info:
-                            return_type_info = self._collect_type_info(node, source)
+                            return_type_info = self._collect_return_type_info(node, source)
                 
             elif child.type == 'pure_virtual_clause':
                 member.is_pure_virtual = True
@@ -478,6 +479,7 @@ class RecursiveDescentCppParser:
             if self.type_registry:
                 member.base_type_id = self.type_registry.get_or_create_type(return_type_info)
                 # Store type modifiers separately
+                member.pointer_depth = return_type_info.pointer_depth
                 member.is_reference = return_type_info.is_reference
                 member.is_rvalue_reference = return_type_info.is_rvalue_reference
                 member.is_volatile = return_type_info.is_volatile
