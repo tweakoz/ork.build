@@ -328,8 +328,21 @@ class RecursiveDescentCppParser:
                                          access_level: AccessLevel) -> Optional[Member]:
         """
         Parse function_definition - CRITICAL FOR INLINE METHODS
+        WORKAROUND: Also detects fields with = 0 initializers that are misclassified as function_definition
         Uses unified type system for return type composition.
         """
+        # WORKAROUND FOR TREE-SITTER-CPP GRAMMAR BUG
+        # GitHub Issue: https://github.com/tree-sitter/tree-sitter-cpp/issues/273
+        # Related Fix (not yet in our version): https://github.com/tree-sitter/tree-sitter-cpp/pull/286
+        # 
+        # Problem: tree-sitter-cpp incorrectly parses field declarations with '= 0' initializers
+        # as function_definition nodes with pure_virtual_clause instead of field_declaration nodes.
+        # This affects fields like: size_t _width = 0; int _count = 0; bool _flag = 0;
+        #
+        # This workaround detects these misclassified nodes and properly handles them as fields.
+        if self._is_field_with_zero_initializer(node, source):
+            return self._parse_misclassified_field(node, source, access_level)
+        
         member = Member(name="", member_type=MemberType.METHOD)
         member.member_type = MemberType.METHOD
         member.access_level = access_level
@@ -1371,6 +1384,132 @@ class RecursiveDescentCppParser:
         for child in node.children:
             if child.type == 'type_identifier':
                 return self._extract_text(child, source)
+        return None
+    
+    def _is_field_with_zero_initializer(self, node: Node, source: bytes) -> bool:
+        """
+        Detect if a function_definition node is actually a field with = 0 initializer
+        due to tree-sitter-cpp grammar bug.
+        
+        TREE-SITTER-CPP BUG DETECTION LOGIC
+        GitHub Issue: https://github.com/tree-sitter/tree-sitter-cpp/issues/273
+        
+        The bug causes this AST pattern for fields with '= 0' initializers:
+        
+        Incorrect AST (what we get):
+            function_definition
+              primitive_type 'size_t'
+              field_identifier '_width'
+              pure_virtual_clause '= 0;'
+        
+        Expected AST (what it should be):
+            field_declaration
+              primitive_type 'size_t'
+              field_identifier '_width'
+              init_declarator '= 0'
+        
+        This method detects the incorrect pattern so we can handle it properly.
+        """
+        # Look for the telltale pattern: pure_virtual_clause containing "= 0" 
+        has_pure_virtual = False
+        has_simple_declarator = False
+        has_function_declarator = False
+        
+        for child in node.children:
+            if child.type == 'pure_virtual_clause':
+                # Extract the text of the pure_virtual_clause
+                clause_text = self._extract_text(child, source).strip()
+                
+                # CRITICAL FIX: The pure_virtual_clause includes the trailing semicolon
+                # in the AST, so we get "= 0;" instead of "= 0". We must strip the
+                # semicolon to properly detect the pattern.
+                clause_text = clause_text.rstrip(';')
+                
+                # Check if this is actually a field initializer (= 0) rather than
+                # a real pure virtual method declaration
+                if clause_text in ['= 0', '0']:
+                    has_pure_virtual = True
+            
+            # Check if we have a simple identifier (not a function_declarator)
+            # Fields have simple identifiers like '_width' or 'count'
+            elif child.type in ['identifier', 'field_identifier']:
+                has_simple_declarator = True
+                
+            # If we find a function_declarator, this is likely a real function/method
+            # Real pure virtual methods will have function_declarator nodes
+            elif child.type == 'function_declarator':
+                has_function_declarator = True
+                
+            # Also check nested in pointer_declarator and reference_declarator
+            # for cases like: virtual void* foo() = 0; or virtual int& bar() = 0;
+            elif child.type in ['pointer_declarator', 'reference_declarator']:
+                for nested_child in child.children:
+                    if nested_child.type == 'function_declarator':
+                        has_function_declarator = True
+        
+        # DETECTION LOGIC: It's a misclassified field if:
+        # 1. Has a pure_virtual_clause with "= 0" (not a real pure virtual method)
+        # 2. Has a simple identifier (field name, not a function signature)
+        # 3. Does NOT have a function_declarator (not a real method)
+        return has_pure_virtual and has_simple_declarator and not has_function_declarator
+
+    def _parse_misclassified_field(self, node: Node, source: bytes, 
+                                  access_level: AccessLevel) -> Optional[Member]:
+        """
+        Parse a field that was misclassified as function_definition due to = 0 initializer.
+        
+        TREE-SITTER-CPP BUG RECOVERY LOGIC
+        GitHub Issue: https://github.com/tree-sitter/tree-sitter-cpp/issues/273
+        
+        This method recovers the field information from the incorrectly parsed AST.
+        We extract the field name, type, and initializer value from the misclassified
+        function_definition node and create a proper field Member object.
+        
+        Example recovery:
+            Input AST: function_definition with pure_virtual_clause "= 0;"
+            Output: Field member with name="_width", type="size_t", initializer="0"
+        """
+        member = Member(name="", member_type=MemberType.FIELD)
+        member.access_level = access_level
+        
+        field_name = None
+        field_type_parts = []
+        initializer = None
+        
+        # Extract field information from the misclassified function_definition node
+        for child in node.children:
+            # Extract the field name
+            if child.type in ['identifier', 'field_identifier']:
+                field_name = self._extract_text(child, source)
+                
+            # Extract the field type (may have multiple parts like 'unsigned int')
+            elif child.type in ['primitive_type', 'type_identifier', 'sized_type_specifier']:
+                field_type_parts.append(self._extract_text(child, source))
+                
+            # Extract the initializer value from the pure_virtual_clause
+            elif child.type == 'pure_virtual_clause':
+                # Get the text of the initializer (e.g., "= 0;")
+                initializer_text = self._extract_text(child, source).strip()
+                
+                # CRITICAL FIX: Remove trailing semicolon that's included in the AST
+                # The pure_virtual_clause includes ";", giving us "= 0;" instead of "= 0"
+                initializer_text = initializer_text.rstrip(';')
+                
+                # Extract just the value part (remove the "= " prefix)
+                if initializer_text.startswith('= '):
+                    initializer = initializer_text[2:]  # Get just "0" from "= 0"
+                else:
+                    initializer = initializer_text
+        
+        # Create the field member if we successfully extracted the necessary information
+        if field_name and field_type_parts:
+            member.name = field_name
+            member.data_type = ' '.join(field_type_parts)
+            if initializer:
+                member.initializer = initializer
+            member.line_number = source[:node.start_byte].count(b'\n') + 1
+            return member
+        
         return None
     
     def parse_source(self, source_code: bytes, filepath: str) -> List[Entity]:
