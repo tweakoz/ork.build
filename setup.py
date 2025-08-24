@@ -3,7 +3,7 @@ from setuptools.command.install import install
 import os
 import stat
 
-version = "0.0.286.dev16"
+version = "0.0.286.dev17"
 
 # Read the long description from the README file
 with open("README.md", "r", encoding="utf-8") as fh:
@@ -65,11 +65,6 @@ setup(
         "pip>=24.1",
         "GitPython",
         # Code parsing dependencies
-        "tree-sitter==0.21.3",
-        "tree-sitter-cpp==0.22.3",
-        "tree-sitter-python==0.23.2",
-        "tree-sitter-lua==0.2.0",
-        "tree-sitter-glsl==0.2.0",
         "libclang",
 	# "mdstat", linux only
 	#"zfslib", linux only
