@@ -1,7 +1,7 @@
 #!/usr/bin/env python3 
 from obt import command
 
-cmd = ["ork.python","-m","pip","install"]
+cmd = ["ork.python","-m","pip"]
 
 command.run(cmd + ["install","tree-sitter==0.21.3"])
 command.run(cmd + ["install","tree-sitter-cpp==0.22.3"])
