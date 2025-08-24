@@ -137,28 +137,14 @@ class StackBasedAccessAnalyzer:
         
         # Process terminal nodes (actual accesses and declarations)
         if node.type in ['identifier', 'field_identifier']:
-            # Debug logging for mDisplayModes
-            if node.text and node.text.decode() == 'mDisplayModes':
-                print(f"\nDEBUG _analyze_node: Found mDisplayModes")
-                print(f"  Node type: {node.type}")
-                print(f"  Parent type: {node.parent.type if node.parent else 'None'}")
-                print(f"  File: {self.current_file}")
-                print(f"  Line: {node.start_point[0] + 1}")
-            
             # Check if this is being declared
             if self._is_being_declared(node):
-                if node.text and node.text.decode() == 'mDisplayModes':
-                    print(f"  -> Being declared, tracking as DEF")
                 # Track as definition
                 self._record_access(node, AccessType.DEF)
             else:
                 access_type = self._determine_access_type(node)
-                if node.text and node.text.decode() == 'mDisplayModes':
-                    print(f"  -> Not being declared, access_type = {access_type}")
                 if access_type:  # None means don't track (just navigation)
                     self._record_access(node, access_type)
-                elif node.text and node.text.decode() == 'mDisplayModes':
-                    print(f"  -> NOT RECORDING (access_type is None)")
         # Note: qualified_identifier is NOT a terminal - its children will be processed by recursion
         
         # ALWAYS recurse to children - this is orthogonal to pattern matching
@@ -251,6 +237,10 @@ class StackBasedAccessAnalyzer:
             grandparent = node.get_ancestor(2)
             if grandparent:
                 if grandparent.type == 'declaration':
+                    # If it's a qualified name in a declaration (e.g., Context::mDisplayModes),
+                    # it's implementing/instantiating something already declared
+                    if '::' in parent.text.decode():
+                        return AccessType.IMPL
                     return AccessType.DEF
                 elif grandparent.type == 'assignment_expression':
                     if grandparent.children[0] == parent:
@@ -292,12 +282,6 @@ class StackBasedAccessAnalyzer:
         # Get identifier text
         identifier = node.text.decode() if node.text else ""
         
-        # Debug logging for mDisplayModes
-        if identifier == 'mDisplayModes':
-            print(f"DEBUG _record_access: Recording mDisplayModes as {access_type.value}")
-            print(f"  File: {self.current_file}")
-            print(f"  Line: {node.start_point[0] + 1}")
-        
         # Get line and column
         trimmed_line = node.start_point[0] + 1  # tree-sitter uses 0-based
         column = node.start_point[1]
@@ -323,9 +307,6 @@ class StackBasedAccessAnalyzer:
         )
         
         self.accesses.append(access)
-        
-        if identifier == 'mDisplayModes':
-            print(f"  Added to accesses list. Total accesses so far: {len(self.accesses)}")
     
     def _is_declaration_context(self, node: StackTreeNode) -> bool:
         """

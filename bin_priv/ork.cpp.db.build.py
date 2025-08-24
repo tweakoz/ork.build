@@ -155,6 +155,7 @@ def build_database(db_path, source_paths, verbose=False, show_progress=True, inc
     parsed_count = 0
     entity_count = 0
     error_count = 0
+    last_progress_time = time.time()
     
     with ProcessPoolExecutor(max_workers=host.NumCores) as executor:
         futures = {
@@ -189,15 +190,21 @@ def build_database(db_path, source_paths, verbose=False, show_progress=True, inc
             
             completed += 1
             if show_progress:
-                progress = completed / len(parse_args) * 100
-                # Magenta for "Parsing progress", white for percent, yellow for counter
-                progress_text = f"{deco.magenta('Parsing progress:')} {deco.white(f'{progress:.1f}%')} {deco.yellow(f'({completed}/{len(parse_args)})')}"
-                print(f"\r{progress_text}", end='', flush=True)
+                current_time = time.time()
+                # Only update progress every 2 seconds
+                if current_time - last_progress_time >= 2.0:
+                    progress = completed / len(parse_args) * 100
+                    # Magenta for "Parsing progress", white for percent, yellow for counter
+                    progress_text = f"{deco.magenta('Parsing progress:')} {deco.white(f'{progress:.1f}%')} {deco.yellow(f'({completed}/{len(parse_args)})')}"
+                    print(f"\r{progress_text}", end='', flush=True)
+                    last_progress_time = current_time
     
     parse_time = time.time() - parse_start
     
     if show_progress:
-        print()  # New line after progress
+        # Show final 100% progress
+        progress_text = f"{deco.magenta('Parsing progress:')} {deco.white('100.0%')} {deco.yellow(f'({len(parse_args)}/{len(parse_args)})')}"
+        print(f"\r{progress_text}")  # Final update with newline
     
     # Phase 3: Access Tracking (optional)
     access_time = 0
@@ -222,6 +229,10 @@ def build_database(db_path, source_paths, verbose=False, show_progress=True, inc
         analyzer = StackBasedAccessAnalyzer(db_path=db_path, track_operators=False)
         
         # Process each file for access tracking
+        total_files = len(results['success'])
+        processed_files = 0
+        last_access_progress_time = time.time()
+        
         for item in results['success']:
             file_path = item['path']
             
@@ -251,8 +262,6 @@ def build_database(db_path, source_paths, verbose=False, show_progress=True, inc
                 # Analyze the trimmed source for accesses
                 accesses = analyzer.analyze_file(file_path, trimmed_source, line_mapping)
                 
-                print(f"FILE {file_path}: Found {len(accesses)} accesses")
-                
                 # Resolve accesses to database entities
                 resolved_accesses = analyzer.resolve_accesses(accesses)
                 
@@ -273,10 +282,19 @@ def build_database(db_path, source_paths, verbose=False, show_progress=True, inc
                         )
                         access_count += 1
                     except Exception as e:
-                        print(f"ERROR storing access: {e}")
+                        if verbose:
+                            print(f"ERROR storing access: {e}")
                 
-                if show_progress and access_count % 100 == 0:
-                    print(f"  Tracked {access_count} accesses...", end='\r')
+                processed_files += 1
+                if show_progress:
+                    current_time = time.time()
+                    # Only update progress every 2 seconds
+                    if current_time - last_access_progress_time >= 2.0:
+                        progress = processed_files / total_files * 100
+                        # Use consistent coloring with other phases
+                        progress_text = f"{deco.blue('Access tracking progress:')} {deco.white(f'{progress:.1f}%')} {deco.yellow(f'({processed_files}/{total_files})')}"
+                        print(f"\r{progress_text}", end='', flush=True)
+                        last_access_progress_time = current_time
                     
             except Exception as e:
                 if verbose:
@@ -285,7 +303,9 @@ def build_database(db_path, source_paths, verbose=False, show_progress=True, inc
         access_time = time.time() - access_start
         
         if show_progress:
-            print()  # New line after progress
+            # Show final 100% progress
+            progress_text = f"{deco.blue('Access tracking progress:')} {deco.white('100.0%')} {deco.yellow(f'({total_files}/{total_files})')}"
+            print(f"\r{progress_text}")  # Final update with newline
         
         if verbose:
             print(f"{deco.green(f'Access tracking complete: {access_count} accesses tracked')}")
