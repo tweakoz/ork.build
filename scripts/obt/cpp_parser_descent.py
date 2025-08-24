@@ -311,6 +311,12 @@ class RecursiveDescentCppParser:
                     if ptr_child.type == 'function_declarator':
                         has_function_declarator = True
                         break
+            elif child.type == 'reference_declarator':
+                # Check if reference_declarator contains function_declarator
+                for ref_child in child.children:
+                    if ref_child.type == 'function_declarator':
+                        has_function_declarator = True
+                        break
         
         if has_function_declarator:
             return self._parse_method_declaration(node, source, access_level)
@@ -462,6 +468,15 @@ class RecursiveDescentCppParser:
                         # Collect return type using unified system
                         if not return_type_info:
                             return_type_info = self._collect_return_type_info(node, source)
+                            
+            elif child.type == 'reference_declarator':
+                # Function declarator might be inside reference_declarator for reference return types
+                for ref_child in child.children:
+                    if ref_child.type == 'function_declarator':
+                        function_declarator = ref_child
+                        # Collect return type using unified system
+                        if not return_type_info:
+                            return_type_info = self._collect_return_type_info(node, source)
                 
             elif child.type == 'pure_virtual_clause':
                 member.is_pure_virtual = True
@@ -536,7 +551,9 @@ class RecursiveDescentCppParser:
                     return name
             return None
         
-        # Parse all declarators and field_identifiers
+        # Parse all declarators and field_identifiers  
+        initializers = {}  # field_name -> initializer_value
+        
         for child in node.children:
             if child.type == 'field_identifier':
                 field_names.append(self._extract_text(child, source))
@@ -544,6 +561,28 @@ class RecursiveDescentCppParser:
                 name = extract_field_name(child)
                 if name:
                     field_names.append(name)
+                    
+                    # Check for initializer in init_declarator
+                    if child.type == 'init_declarator':
+                        # Extract initializer value from init_declarator
+                        found_equals = False
+                        for init_child in child.children:
+                            if found_equals and init_child.type not in [';', ' ', '\n', '\t']:
+                                initializers[name] = self._extract_text(init_child, source)
+                                break
+                            if init_child.type == '=':
+                                found_equals = True
+        
+        # Check for direct field initializers (e.g., static const int field = value;)
+        if len(field_names) == 1:
+            field_name = field_names[0]
+            found_equals = False
+            for child in node.children:
+                if found_equals and child.type not in [';', ' ', '\n', '\t']:
+                    initializers[field_name] = self._extract_text(child, source)
+                    break
+                if child.type == '=':
+                    found_equals = True
         
         # Create a member for each field name
         for field_name in field_names:
@@ -568,6 +607,10 @@ class RecursiveDescentCppParser:
             if self.type_registry and type_info.base_type:
                 member.base_type_id = self.type_registry.get_or_create_type(type_info)
             
+            # Apply initializer value if found
+            if field_name in initializers:
+                member.value = initializers[field_name]
+            
             member.line_number = source[:node.start_byte].count(b'\n') + 1
             members.append(member)
         
@@ -591,7 +634,10 @@ class RecursiveDescentCppParser:
         # First pass: collect all information before building signature
         for child in node.children:
             if child.type in ['field_identifier', 'identifier', 'destructor_name', 'operator_name']:
-                member.name = self._extract_text(child, source)
+                if child.type == 'operator_name':
+                    member.name = self._normalize_operator_name(child, source)
+                else:
+                    member.name = self._extract_text(child, source)
                 if self.verbose:
                     print(f"  Found function name: {member.name}")
                 
@@ -856,7 +902,10 @@ class RecursiveDescentCppParser:
             # Extract function name
             for child in function_declarator.children:
                 if child.type in ['identifier', 'qualified_identifier', 'operator_name']:
-                    short_name = self._extract_text(child, source)
+                    if child.type == 'operator_name':
+                        short_name = self._normalize_operator_name(child, source)
+                    else:
+                        short_name = self._extract_text(child, source)
                     break
         
         if short_name:
@@ -1117,6 +1166,13 @@ class RecursiveDescentCppParser:
     def _extract_text(self, node: Node, source: bytes) -> str:
         """Extract text from a node"""
         return source[node.start_byte:node.end_byte].decode('utf-8', errors='ignore')
+    
+    def _normalize_operator_name(self, node: Node, source: bytes) -> str:
+        """Normalize operator name to match Clang format (no spaces around operators)"""
+        operator_text = self._extract_text(node, source)
+        # Remove spaces around operators to match Clang format
+        # e.g., "operator +=" -> "operator+="
+        return operator_text.replace(" ", "")
     
     # ============================================================
     # UNIFIED TYPE SYSTEM METHODS

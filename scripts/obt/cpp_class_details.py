@@ -201,8 +201,12 @@ class ClassDetailsDisplay:
             colored_signature = self._colorize_method_signature(signature)
             parts.append(colored_signature)
             
-            # Add additional modifiers that aren't part of the signature (like override, final, etc.)
+            # Add additional modifiers that aren't part of the signature (like virtual, override, final, etc.)
             modifiers = []
+            if member.is_virtual:
+                modifiers.append("virtual")
+            if member.is_pure_virtual:
+                modifiers.append("= 0")
             if member.is_override:
                 modifiers.append("override")
             if member.is_final:
