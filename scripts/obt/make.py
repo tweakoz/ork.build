@@ -8,7 +8,7 @@
 
 from obt.command import Command
 import obt.host
-import obt.math
+from obt import obt_math
 
 def exec(target=None,parallelism=1.0):
   """
@@ -21,7 +21,7 @@ def exec(target=None,parallelism=1.0):
   cmd = ["make"]
   print("make with parallel<%g>"%parallelism)
   if parallelism!=0.0:
-    p = obt.math.clamp(parallelism,0.0,1.0)
+    p = obt_math.clamp(parallelism,0.0,1.0)
     numcores = int(obt.host.NumCores*p)
     numcores = obt.math.clamp(numcores,1,obt.host.NumCores)
     cmd += ["-j",numcores]
