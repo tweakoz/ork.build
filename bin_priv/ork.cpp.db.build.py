@@ -62,6 +62,80 @@ def parse_single_file_v3(args):
         return file_path, [], parse_time, str(e)
 
 
+def analyze_single_file_worker(args):
+    """
+    Analyze a single file for access tracking (for parallel processing)
+    Returns list of tuples ready for batch insert
+    """
+    file_path, db_path = args
+    
+    try:
+        # Import everything needed in worker process
+        import json
+        from pathlib import Path
+        from obt.cpp_database_v2 import CppDatabaseV2
+        from obt.cpp_stack_analyzer import StackBasedAccessAnalyzer
+        
+        # Create database connection in worker process
+        db = CppDatabaseV2(db_path)
+        
+        with db.connect() as conn:
+            cursor = conn.cursor()
+            
+            # Read trimmed source and line mapping from database
+            cursor.execute("""
+                SELECT id, trimmed_source, line_mapping 
+                FROM source_files WHERE file_path = ?
+            """, (str(file_path),))
+            
+            result = cursor.fetchone()
+            if not result or not result[1]:
+                return None
+                
+            file_id = result[0]
+            trimmed_source = result[1]
+            
+            # Parse line mapping from JSON
+            line_mapping = {}
+            if result[2]:
+                line_mapping_raw = json.loads(result[2])
+                # Convert string keys to int
+                line_mapping = {int(k): v for k, v in line_mapping_raw.items()}
+        
+        # Create analyzer and analyze file
+        analyzer = StackBasedAccessAnalyzer(db_path=db_path, track_operators=False)
+        accesses = analyzer.analyze_file(
+            Path(file_path), 
+            trimmed_source, 
+            line_mapping
+        )
+        
+        # Resolve accesses to database entities
+        resolved_accesses = analyzer.resolve_accesses(accesses)
+        
+        # Convert to tuples for batch insert
+        insert_rows = []
+        for access in resolved_accesses:
+            insert_rows.append((
+                access.entity_id,           # Can be None if not resolved
+                access.member_id,           # Can be None if not resolved
+                access.access_type.value,   # Convert enum to string
+                file_id,
+                access.original_line,
+                access.trimmed_line,
+                access.column,
+                None,                       # accessing_function_id
+                access.context_snippet,
+                access.raw_identifier       # Always store raw identifier
+            ))
+        
+        return insert_rows
+        
+    except Exception as e:
+        # Return error info for debugging
+        return f"ERROR: {file_path}: {str(e)}"
+
+
 def build_database(db_path, source_paths, verbose=False, show_progress=True, incremental=False,
                   defines=None, defines_preset=None, include_paths=None, track_accesses=False):
     """Build the C++ entity database using two-phase approach: ingestion then parsing"""
@@ -211,7 +285,7 @@ def build_database(db_path, source_paths, verbose=False, show_progress=True, inc
     access_count = 0
     if track_accesses:
         if verbose:
-            print(f"{deco.yellow('Phase 3: Access tracking (analyzing entity references)...')}")
+            print(f"{deco.yellow('Phase 3: Parallel access tracking (analyzing entity references)...')}")
         
         access_start = time.time()
         
@@ -222,93 +296,78 @@ def build_database(db_path, source_paths, verbose=False, show_progress=True, inc
             if verbose:
                 print(f"{deco.cyan('Cleared existing access records')}")
         
-        # Import the stack-based access analyzer
-        from obt.cpp_stack_analyzer import StackBasedAccessAnalyzer
+        # Prepare arguments for parallel access tracking
+        access_args = [(str(item['path']), db_path) for item in results['success']]
         
-        # Create analyzer with database connection
-        analyzer = StackBasedAccessAnalyzer(db_path=db_path, track_operators=False)
-        
-        # Process each file for access tracking
-        total_files = len(results['success'])
+        # Process files in parallel
+        all_insert_rows = []
         processed_files = 0
+        access_error_count = 0
         last_access_progress_time = time.time()
         
-        for item in results['success']:
-            file_path = item['path']
+        with ProcessPoolExecutor(max_workers=host.NumCores) as executor:
+            futures = {
+                executor.submit(analyze_single_file_worker, args): args[0]
+                for args in access_args
+            }
             
-            try:
-                # Get trimmed source and line mapping from database
-                with db.connect() as conn:
-                    cursor = conn.cursor()
-                    cursor.execute("""
-                        SELECT id, trimmed_source, line_mapping 
-                        FROM source_files WHERE file_path = ?
-                    """, (str(file_path),))
-                    file_result = cursor.fetchone()
+            for future in as_completed(futures):
+                file_path = futures[future]
+                try:
+                    result = future.result(timeout=30)
                     
-                    if not file_result or not file_result[1]:
-                        continue
-                    
-                    file_id = file_result[0]
-                    trimmed_source = file_result[1]
-                    
-                    # Parse line mapping from JSON
-                    line_mapping = {}
-                    if file_result[2]:
-                        line_mapping_raw = json.loads(file_result[2])
-                        # Convert string keys to int
-                        line_mapping = {int(k): v for k, v in line_mapping_raw.items()}
-                
-                # Analyze the trimmed source for accesses
-                accesses = analyzer.analyze_file(file_path, trimmed_source, line_mapping)
-                
-                # Resolve accesses to database entities
-                resolved_accesses = analyzer.resolve_accesses(accesses)
-                
-                # Store ALL accesses, resolved or not
-                for access in resolved_accesses:
-                    try:
-                        db.store_entity_access(
-                            entity_id=access.entity_id,  # Can be None if not resolved
-                            member_id=access.member_id,  # Can be None if not resolved
-                            access_type=access.access_type.value,  # Convert enum to string
-                            file_id=file_id,
-                            original_line=access.original_line,
-                            trimmed_line=access.trimmed_line,
-                            column_number=access.column,
-                            accessing_function_id=None,  # Could resolve this too
-                            context_snippet=access.context_snippet,
-                            raw_identifier=access.raw_identifier  # Always store raw identifier
-                        )
-                        access_count += 1
-                    except Exception as e:
+                    if result is None:
+                        # File had no trimmed source
+                        pass
+                    elif isinstance(result, str) and result.startswith("ERROR:"):
+                        # Worker returned an error
+                        access_error_count += 1
                         if verbose:
-                            print(f"ERROR storing access: {e}")
+                            print(f"{deco.red(result)}")
+                    else:
+                        # Got valid insert rows
+                        all_insert_rows.extend(result)
+                    
+                except Exception as e:
+                    access_error_count += 1
+                    if verbose:
+                        print(f"{deco.red(f'Error processing {file_path}: {e}')}")
                 
                 processed_files += 1
                 if show_progress:
                     current_time = time.time()
                     # Only update progress every 2 seconds
                     if current_time - last_access_progress_time >= 2.0:
-                        progress = processed_files / total_files * 100
+                        progress = processed_files / len(access_args) * 100
                         # Use consistent coloring with other phases
-                        progress_text = f"{deco.blue('Access tracking progress:')} {deco.white(f'{progress:.1f}%')} {deco.yellow(f'({processed_files}/{total_files})')}"
+                        progress_text = f"{deco.blue('Access tracking progress:')} {deco.white(f'{progress:.1f}%')} {deco.yellow(f'({processed_files}/{len(access_args)})')}"
                         print(f"\r{progress_text}", end='', flush=True)
                         last_access_progress_time = current_time
-                    
-            except Exception as e:
-                if verbose:
-                    print(f"  Error analyzing {file_path}: {e}")
+        
+        # Batch insert all accesses in a single transaction
+        if all_insert_rows:
+            with db.connect() as conn:
+                conn.executemany("""
+                    INSERT INTO entity_accesses 
+                    (entity_id, member_id, access_type, file_id, 
+                     original_line, trimmed_line, column_number,
+                     accessing_function_id, context_snippet, raw_identifier)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """, all_insert_rows)
+                conn.commit()
+                access_count = len(all_insert_rows)
         
         access_time = time.time() - access_start
         
         if show_progress:
             # Show final 100% progress
-            progress_text = f"{deco.blue('Access tracking progress:')} {deco.white('100.0%')} {deco.yellow(f'({total_files}/{total_files})')}"
+            progress_text = f"{deco.blue('Access tracking progress:')} {deco.white('100.0%')} {deco.yellow(f'({len(access_args)}/{len(access_args)})')}"
             print(f"\r{progress_text}")  # Final update with newline
         
         if verbose:
             print(f"{deco.green(f'Access tracking complete: {access_count} accesses tracked')}")
+            if access_error_count > 0:
+                print(f"{deco.yellow(f'Files with access tracking errors: {access_error_count}')}")
     
     # Report summary
     total_time = time.time() - ingestion_start
@@ -368,8 +427,8 @@ def main():
                        help='Include path for preprocessor (can be used multiple times)')
     
     # Access tracking options
-    parser.add_argument('--track-accesses', action='store_true',
-                       help='Enable access tracking (2nd pass analysis for references)')
+    parser.add_argument('--no-track-accesses', action='store_true',
+                       help='Disable access tracking (skips reference analysis phase)')
     
     args = parser.parse_args()
     
@@ -439,7 +498,7 @@ def main():
         defines=args.defines,
         defines_preset=args.defines_preset,
         include_paths=include_paths,
-        track_accesses=args.track_accesses
+        track_accesses=not args.no_track_accesses  # Default to True unless disabled
     )
 
 if __name__ == '__main__':
