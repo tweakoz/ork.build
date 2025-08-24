@@ -50,7 +50,7 @@ def parse_single_file_v3(args):
             trimmed_source = row[0]
             
         # Parse with recursive descent parser, passing db_path for TypeRegistry
-        parser = cpp_parser_descent.CppParser(db_path=db_path)
+        parser = cpp_parser_descent.RecursiveDescentCppParser(db_path=db_path)
         entities = parser.parse_source(trimmed_source.encode('utf-8'), file_path)
         
         parse_time = time.time() - start_time
@@ -62,7 +62,7 @@ def parse_single_file_v3(args):
 
 
 def build_database(db_path, source_paths, verbose=False, show_progress=True, incremental=False,
-                  defines=None, defines_preset=None, include_paths=None):
+                  defines=None, defines_preset=None, include_paths=None, track_accesses=False):
     """Build the C++ entity database using two-phase approach: ingestion then parsing"""
     
     # Delete and recreate database unless incremental
@@ -197,6 +197,112 @@ def build_database(db_path, source_paths, verbose=False, show_progress=True, inc
     if show_progress:
         print()  # New line after progress
     
+    # Phase 3: Access Tracking (optional)
+    access_time = 0
+    access_count = 0
+    if track_accesses:
+        if verbose:
+            print(f"{deco.yellow('Phase 3: Access tracking (analyzing entity references)...')}")
+        
+        access_start = time.time()
+        
+        # Import the access analyzer
+        from obt.cpp_access_analyzer import CppAccessAnalyzer
+        
+        # Create analyzer with database connection
+        analyzer = CppAccessAnalyzer(db=db, verbose=False)
+        
+        # Process each file for access tracking
+        for item in results['success']:
+            file_path = item['path']
+            
+            try:
+                # Get trimmed source from database
+                with db.connect() as conn:
+                    cursor = conn.cursor()
+                    cursor.execute("SELECT id, trimmed_source FROM source_files WHERE file_path = ?", (str(file_path),))
+                    file_result = cursor.fetchone()
+                    
+                    if not file_result or not file_result[1]:
+                        continue
+                    
+                    file_id = file_result[0]
+                    trimmed_source = file_result[1]
+                
+                # Analyze the trimmed source for accesses
+                accesses = analyzer.analyze_file(file_path, source_code=trimmed_source)
+                
+                print(f"FILE {file_path}: Found {len(accesses)} accesses")
+                
+                # Store accesses
+                for access in accesses:
+                    # Try to resolve the entity being accessed
+                    entity_id = None
+                    member_id = None
+                    
+                    # Try to resolve the accessed entity
+                    with db.connect() as conn:
+                        cursor = conn.cursor()
+                        
+                        # First try exact match on short_name for functions/methods
+                        if access.access_type == 'call':
+                            # Could be a function or method
+                            cursor.execute("""
+                                SELECT id FROM entities 
+                                WHERE short_name = ? 
+                                AND entity_type = ?
+                                LIMIT 1
+                            """, (access.accessed_entity, EntityType.FUNCTION.value))
+                            result = cursor.fetchone()
+                            if result:
+                                entity_id = result[0]
+                        
+                        # For member variables, look in entity_members table
+                        if not entity_id and (access.accessed_entity.startswith('_') or 
+                                             access.accessed_entity.startswith('m_')):
+                            # This looks like a member variable
+                            cursor.execute("""
+                                SELECT entity_id, id FROM entity_members 
+                                WHERE name = ?
+                                LIMIT 1
+                            """, (access.accessed_entity,))
+                            result = cursor.fetchone()
+                            if result:
+                                entity_id = result[0]
+                                member_id = result[1]
+                    
+                    # Only store if we resolved something (for now, could be relaxed later)
+                    if entity_id:
+                        try:
+                            db.store_entity_access(
+                                entity_id=entity_id,
+                                member_id=member_id,
+                                access_type=access.access_type,
+                                file_id=file_id,
+                                line_number=access.line_number,
+                                column_number=access.column_number,
+                                accessing_function_id=None,  # Could resolve this too
+                                context_snippet=access.context_snippet
+                            )
+                            access_count += 1
+                        except Exception as e:
+                            print(f"ERROR storing access: {e}")
+                
+                if show_progress and access_count % 100 == 0:
+                    print(f"  Tracked {access_count} accesses...", end='\r')
+                    
+            except Exception as e:
+                if verbose:
+                    print(f"  Error analyzing {file_path}: {e}")
+        
+        access_time = time.time() - access_start
+        
+        if show_progress:
+            print()  # New line after progress
+        
+        if verbose:
+            print(f"{deco.green(f'Access tracking complete: {access_count} accesses tracked')}")
+    
     # Report summary
     total_time = time.time() - ingestion_start
     
@@ -205,10 +311,14 @@ def build_database(db_path, source_paths, verbose=False, show_progress=True, inc
     print(f"  Ingestion: {ingestion_time:.1f}s ({ingestion_time/total_time*100:.0f}%)")
     print(f"  DB storage: {db_store_time:.1f}s ({db_store_time/total_time*100:.0f}%)")
     print(f"  Parsing: {parse_time:.1f}s ({parse_time/total_time*100:.0f}%)")
+    if track_accesses:
+        print(f"  Access tracking: {access_time:.1f}s ({access_time/total_time*100:.0f}%)")
     print(f"Files processed: {parsed_count}/{total_files}")
     if error_count > 0:
         print(f"Files with errors: {error_count}")
     print(f"Entities found: {entity_count}")
+    if track_accesses:
+        print(f"Accesses tracked: {access_count}")
     print(f"Database: {db_path}")
     
     return parsed_count, entity_count
@@ -255,6 +365,10 @@ def main():
     
     parser.add_argument('-I', '--include', action='append', dest='include_paths',
                        help='Include path for preprocessor (can be used multiple times)')
+    
+    # Access tracking options
+    parser.add_argument('--track-accesses', action='store_true',
+                       help='Enable access tracking (2nd pass analysis for references)')
     
     args = parser.parse_args()
     
@@ -325,7 +439,8 @@ def main():
         incremental=args.incremental,
         defines=args.defines,
         defines_preset=args.defines_preset,
-        include_paths=include_paths
+        include_paths=include_paths,
+        track_accesses=args.track_accesses
     )
 
 if __name__ == '__main__':
