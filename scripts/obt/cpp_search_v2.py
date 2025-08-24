@@ -18,6 +18,10 @@ def build_search_parameters(args) -> tuple[Dict[str, Any], List[str]]:
     
     # Entity type filter with function sub-types
     if args.types:
+        # Handle 'objects' alias - expand to 'struct,class'
+        if args.types.lower() == 'objects':
+            args.types = 'struct,class'
+        
         # Check for special 'files' type
         if args.types.lower() == 'files':
             # Signal to use file listing mode
