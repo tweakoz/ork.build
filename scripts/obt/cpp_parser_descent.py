@@ -965,12 +965,29 @@ class RecursiveDescentCppParser:
         short_name = None
         is_enum_class = False
         uses_crc_enum = False
+        base_type = None
         
+        # First pass: identify enum class/struct
+        for child in node.children:
+            if child.type == 'class' or child.type == 'struct':
+                is_enum_class = True
+                break
+        
+        # Second pass: get name and base type
+        found_colon = False
         for child in node.children:
             if child.type == 'type_identifier':
-                short_name = self._extract_text(child, source)
-            elif child.type == 'class' or child.type == 'struct':
-                is_enum_class = True
+                if not short_name and not found_colon:
+                    # First type_identifier before colon is the enum name
+                    short_name = self._extract_text(child, source)
+                elif found_colon:
+                    # Type identifier after colon is the base type
+                    base_type = self._extract_text(child, source)
+            elif child.type == ':':
+                found_colon = True
+        
+        if self.verbose and short_name and 'Buffer' in short_name:
+            print(f"DEBUG: Processing enum {short_name}, is_enum_class={is_enum_class}, base_type={base_type}")
         
         if short_name:
             # Now create entity with required fields
@@ -990,46 +1007,148 @@ class RecursiveDescentCppParser:
                 location_type=LocationType.DEFINITION
             ))
             
-            # Parse enum values
+            # Parse enum values - handle both normal and CrcEnum patterns
+            # First check if this is a CrcEnum-style enum
+            is_crc_enum = False
             for child in node.children:
                 if child.type == 'enumerator_list':
+                    # Check if it contains just CrcEnum identifier
                     for enum_item in child.children:
                         if enum_item.type == 'enumerator':
-                            # Extract enum value name and check for CrcEnum
-                            value_name = None
-                            value_text = None
-                            
                             for enum_child in enum_item.children:
                                 if enum_child.type == 'identifier':
-                                    value_name = self._extract_text(enum_child, source)
-                                elif enum_child.type == 'call_expression':
-                                    # Check if it's a CrcEnum call
-                                    call_text = self._extract_text(enum_child, source)
-                                    if call_text.startswith('CrcEnum'):
+                                    if self._extract_text(enum_child, source) == 'CrcEnum':
+                                        is_crc_enum = True
                                         uses_crc_enum = True
-                                        # Extract the actual enum value from CrcEnum(VALUE)
-                                        import re
-                                        match = re.match(r'CrcEnum\((\w+)\)', call_text)
-                                        if match:
-                                            value_name = match.group(1)
-                                elif enum_child.type == '=':
-                                    # Has explicit value
-                                    next_idx = enum_item.children.index(enum_child) + 1
-                                    if next_idx < len(enum_item.children):
-                                        value_text = self._extract_text(enum_item.children[next_idx], source)
-                            
-                            if value_name:
-                                # Add as enum value member
+                                        break
+            
+            if self.verbose and short_name and 'Buffer' in short_name:
+                print(f"DEBUG: {short_name} is_crc_enum={is_crc_enum}")
+            
+            # Now parse based on enum type
+            if is_crc_enum:
+                # For CrcEnum style, the values appear as siblings after enumerator_list
+                # Look for parenthesized_declarator and function_declarator nodes
+                for child in node.parent.children if node.parent else node.children:
+                    if child.type == 'parenthesized_declarator':
+                        # Extract value like (R8)
+                        for pchild in child.children:
+                            if pchild.type == 'identifier':
+                                value_name = self._extract_text(pchild, source)
                                 member = Member(
                                     name=value_name,
                                     member_type=MemberType.ENUM_VALUE
                                 )
-                                member.access_level = AccessLevel.PUBLIC  # Enum values are always public
+                                member.access_level = AccessLevel.PUBLIC
                                 member.data_type = "enum_value"
-                                if value_text:
-                                    member.value = value_text
-                                member.line_number = source[:enum_item.start_byte].count(b'\n') + 1
+                                member.line_number = source[:child.start_byte].count(b'\n') + 1
                                 entity.members.append(member)
+                                if self.verbose and short_name and 'Buffer' in short_name:
+                                    print(f"  Added CrcEnum value: {value_name}")
+                                
+                    elif child.type == 'function_declarator':
+                        # Extract value like CrcEnum(Y16UI)
+                        for fchild in child.children:
+                            if fchild.type == 'parameter_list':
+                                for param in fchild.children:
+                                    if param.type == 'parameter_declaration':
+                                        for pdecl in param.children:
+                                            if pdecl.type in ['type_identifier', 'identifier']:
+                                                value_name = self._extract_text(pdecl, source)
+                                                member = Member(
+                                                    name=value_name,
+                                                    member_type=MemberType.ENUM_VALUE
+                                                )
+                                                member.access_level = AccessLevel.PUBLIC
+                                                member.data_type = "enum_value"
+                                                member.line_number = source[:child.start_byte].count(b'\n') + 1
+                                                entity.members.append(member)
+                                                if self.verbose and short_name and 'Buffer' in short_name:
+                                                    print(f"  Added CrcEnum value: {value_name}")
+            else:
+                # Normal enum parsing
+                for child in node.children:
+                    if child.type == 'enumerator_list':
+                        # Track if we're in CrcEnum mode
+                        expecting_crc_value = False
+                        
+                        for i, enum_item in enumerate(child.children):
+                            if enum_item.type == 'enumerator':
+                                # Extract enum value name and check for CrcEnum
+                                value_name = None
+                                value_text = None
+                                
+                                for enum_child in enum_item.children:
+                                    if enum_child.type == 'identifier':
+                                        ident_text = self._extract_text(enum_child, source)
+                                        if ident_text == 'CrcEnum':
+                                            uses_crc_enum = True
+                                            expecting_crc_value = True
+                                        else:
+                                            value_name = ident_text
+                                    elif enum_child.type == 'call_expression':
+                                        # Check if it's a CrcEnum call
+                                        call_text = self._extract_text(enum_child, source)
+                                        if call_text.startswith('CrcEnum'):
+                                            uses_crc_enum = True
+                                            # Extract the actual enum value from CrcEnum(VALUE)
+                                            import re
+                                            match = re.match(r'CrcEnum\((\w+)\)', call_text)
+                                            if match:
+                                                value_name = match.group(1)
+                                    elif enum_child.type == '=':
+                                        # Has explicit value
+                                        next_idx = enum_item.children.index(enum_child) + 1
+                                        if next_idx < len(enum_item.children):
+                                            value_text = self._extract_text(enum_item.children[next_idx], source)
+                                
+                                if value_name:
+                                    # Add as enum value member
+                                    member = Member(
+                                        name=value_name,
+                                        member_type=MemberType.ENUM_VALUE
+                                    )
+                                    member.access_level = AccessLevel.PUBLIC  # Enum values are always public
+                                    member.data_type = "enum_value"
+                                    if value_text:
+                                        member.value = value_text
+                                    member.line_number = source[:enum_item.start_byte].count(b'\n') + 1
+                                    entity.members.append(member)
+                        
+                            # Handle malformed AST from CrcEnum - look for parenthesized_declarator or function_declarator after enumerator
+                            elif (expecting_crc_value and 
+                                  (enum_item.type == 'parenthesized_declarator' or enum_item.type == 'function_declarator')):
+                                # Extract the value name from the malformed node
+                                for child_node in enum_item.children:
+                                    if child_node.type == 'identifier':
+                                        value_name = self._extract_text(child_node, source)
+                                        member = Member(
+                                            name=value_name,
+                                            member_type=MemberType.ENUM_VALUE
+                                        )
+                                        member.access_level = AccessLevel.PUBLIC
+                                        member.data_type = "enum_value"
+                                        member.line_number = source[:enum_item.start_byte].count(b'\n') + 1
+                                        entity.members.append(member)
+                                        expecting_crc_value = False
+                                        break
+                                    elif child_node.type == 'parameter_list':
+                                        # For function_declarator with CrcEnum(VALUE)
+                                        for param_child in child_node.children:
+                                            if param_child.type == 'parameter_declaration':
+                                                for pdecl_child in param_child.children:
+                                                    if pdecl_child.type == 'type_identifier' or pdecl_child.type == 'identifier':
+                                                        value_name = self._extract_text(pdecl_child, source)
+                                                        member = Member(
+                                                            name=value_name,
+                                                            member_type=MemberType.ENUM_VALUE
+                                                        )
+                                                        member.access_level = AccessLevel.PUBLIC
+                                                        member.data_type = "enum_value"
+                                                        member.line_number = source[:enum_item.start_byte].count(b'\n') + 1
+                                                        entity.members.append(member)
+                                                        expecting_crc_value = False
+                                                        break
             
             # Store CrcEnum usage info (could add to entity metadata if needed)
             if uses_crc_enum and self.verbose:
@@ -1117,10 +1236,18 @@ class RecursiveDescentCppParser:
     
     def _parse_declaration_top_level(self, node: Node, source: bytes):
         """Parse top-level declaration"""
-        # Could be function declaration, variable, etc.
+        # Could be function declaration, variable, enum inside declaration, etc.
         has_function = any(child.type == 'function_declarator' for child in node.children)
+        has_enum = any(child.type == 'enum_specifier' for child in node.children)
         
-        if has_function:
+        if has_enum:
+            # Enum declaration (like enum struct Foo : base_type { ... };)
+            for child in node.children:
+                if child.type == 'enum_specifier':
+                    entity = self._parse_enum_specifier(child, source)
+                    if entity:
+                        self.entities.append(entity)
+        elif has_function:
             # Function declaration
             namespace = '::'.join(self.current_namespace) if self.current_namespace else None
             short_name = None
