@@ -4,6 +4,7 @@ Display detailed information about C++ classes and structs
 from typing import List, Dict, Set, Optional, Tuple
 from pathlib import Path
 import obt.deco as deco
+from obt.deco import CustomTheme
 import obt.path
 from obt.cpp_database_v2 import CppDatabaseV2
 from obt.cpp_entities_v2 import Entity, EntityType, Member, MemberType, AccessLevel, LocationType
@@ -16,6 +17,87 @@ class ClassDetailsDisplay:
     def __init__(self, db: CppDatabaseV2):
         self.db = db
         self.deco = deco.Deco()
+        self.theme = self._create_cpp_theme()
+    
+    def _create_cpp_theme(self):
+        """Create a custom theme for C++ member display"""
+        theme = CustomTheme("cpp_members")
+        
+        # Headers and sections
+        theme.add_style('section_header', fg='yellow', bold=True)
+        theme.add_style('subsection_header', fg='cyan', bold=True)
+        
+        # Class/struct info
+        theme.add_style('class_name', fg='white', bold=True)
+        theme.add_style('namespace', fg='green')
+        theme.add_style('entity_type', fg='cyan')
+        
+        # Access levels (using shade progression)
+        theme.add_style('public', fg='grn0')      # brightest green
+        theme.add_style('protected', fg='grn1')   # 1 shade darker
+        theme.add_style('private', fg='grn2')     # 2 shades darker
+        
+        # Member types and names by access level
+        # Public members - brightest
+        theme.add_style('public_type', fg='sata0')
+        theme.add_style('public_name', fg='gry0')
+        
+        # Protected members - 1 shade darker
+        theme.add_style('protected_type', fg='satb0')
+        theme.add_style('protected_name', fg='gry1')
+        
+        # Private members - 2 shades darker
+        theme.add_style('private_type', fg='satc0')
+        theme.add_style('private_name', fg='gry2')
+        
+        # Modifiers - with access level variations
+        # Public modifiers - brightest
+        theme.add_style('public_static', fg='mag0')
+        theme.add_style('public_const', fg='red0')
+        theme.add_style('public_virtual', fg='pnk0')
+        theme.add_style('public_override', fg='ora0')
+        theme.add_style('public_final', fg='red0')
+        theme.add_style('public_deleted', fg='red0')
+        theme.add_style('public_default', fg='grn0')
+        
+        # Protected modifiers - 1 shade darker
+        theme.add_style('protected_static', fg='mag1')
+        theme.add_style('protected_const', fg='red1')
+        theme.add_style('protected_virtual', fg='pnk1')
+        theme.add_style('protected_override', fg='ora1')
+        theme.add_style('protected_final', fg='red1')
+        theme.add_style('protected_deleted', fg='red1')
+        theme.add_style('protected_default', fg='grn1')
+        
+        # Private modifiers - 2 shades darker
+        theme.add_style('private_static', fg='mag2')
+        theme.add_style('private_const', fg='red2')
+        theme.add_style('private_virtual', fg='pnk3')
+        theme.add_style('private_override', fg='ora2')
+        theme.add_style('private_final', fg='red2')
+        theme.add_style('private_deleted', fg='red2')
+        theme.add_style('private_default', fg='grn2')
+        
+        # Values and parameters
+        theme.add_style('value', fg='blx0')
+        theme.add_style('parameter', fg='orange')
+        theme.add_style('parameter_name', fg=(255, 165, 0))  # Orange
+        
+        # File locations
+        theme.add_style('file_path', fg='cyan')
+        theme.add_style('line_number', fg='grey12')
+        
+        # Inheritance
+        theme.add_style('base_class', fg='yellow')
+        theme.add_style('inherited_from', fg='grey14', dim=True)
+        theme.add_style('local_members', fg='white')
+        
+        # Special markers
+        theme.add_style('not_found', fg='red')
+        theme.add_style('none', fg='grey10')
+        theme.add_style('count', fg='white')
+        
+        return theme
         
     def display_details(self, class_name: str, show_files: bool = True, root_path: Optional[Path] = None):
         """Display detailed information about a class/struct"""
@@ -146,15 +228,15 @@ class ClassDetailsDisplay:
         
         # Display local members first
         if entity.members:
-            print(f"\n{self.deco.yellow('LOCAL MEMBERS:')}")
+            print(f"\n{self.theme.decorate('section_header', 'LOCAL MEMBERS:')}")
             self._display_members_by_access(entity.members, show_files, root_path, entity)
         else:
-            print(f"\n{self.deco.yellow('LOCAL MEMBERS:')} {self.deco.gray('(none)')}")
+            print(f"\n{self.theme.decorate('section_header', 'LOCAL MEMBERS:')} {self.theme.decorate('none', '(none)')}")
         
         # Display inherited members by base class
         if inherited_members:
             for base_name, base_members in inherited_members:
-                print(f"\n{self.deco.yellow(f'INHERITED FROM {base_name}:')}")
+                print(f"\n{self.theme.decorate('inherited_from', f'INHERITED FROM {base_name}:')}")
                 self._display_members_by_access(base_members, show_files, root_path, entity)
     
     def _collect_inherited_members(self, entity: Entity) -> List[Tuple[str, List[Member]]]:
@@ -199,16 +281,18 @@ class ClassDetailsDisplay:
         private_members = [m for m in members if m.access_level == AccessLevel.PRIVATE]
         
         # Display each access level
-        for access_level, level_members, color_func in [
-            ("PUBLIC", public_members, self.deco.green),
-            ("PROTECTED", protected_members, self.deco.yellow),
-            ("PRIVATE", private_members, self.deco.red)
+        for access_level, level_members, style_name in [
+            ("PUBLIC", public_members, 'public'),
+            ("PROTECTED", protected_members, 'protected'),
+            ("PRIVATE", private_members, 'private')
         ]:
             if level_members:
-                print(f"  {color_func(f'{access_level}:')} ({len(level_members)})")
-                self._display_member_group(level_members, color_func, show_files, root_path, entity)
+                access_text = self.theme.decorate(style_name, f'{access_level}:')
+                count_text = self.theme.decorate('count', f'({len(level_members)})')
+                print(f"  {access_text} {count_text}")
+                self._display_member_group(level_members, style_name, show_files, root_path, entity)
     
-    def _display_member_group(self, members: List[Member], access_color_func, show_files: bool, root_path: Optional[Path], entity: Entity):
+    def _display_member_group(self, members: List[Member], access_style, show_files: bool, root_path: Optional[Path], entity: Entity):
         """Display a group of members with the same access level"""
         # Group by member type
         fields = [m for m in members if m.member_type == MemberType.FIELD]
@@ -230,85 +314,88 @@ class ClassDetailsDisplay:
             ("Typedefs", typedefs)
         ]:
             if group_members:
-                print(f"  {self.deco.cyan(group_name)}:")
+                print(f"  {self.theme.decorate('subsection_header', group_name)}:")
                 for member in sorted(group_members, key=lambda m: m.name):
-                    self._display_member(member, access_color_func, show_files, root_path, entity)
+                    self._display_member(member, access_style, show_files, root_path, entity)
     
-    def _display_member(self, member: Member, access_color_func, show_files: bool, root_path: Optional[Path], entity: Entity):
+    def _display_member(self, member: Member, access_style, show_files: bool, root_path: Optional[Path], entity: Entity):
         """Display a single member"""
         # Build member description
         parts = []
         
+        # Determine the style names based on access level
+        type_style = f"{access_style}_type"
+        name_style = f"{access_style}_name"
+        
         # Handle method signatures with proper coloring
         if member.member_type == MemberType.METHOD and member.signature:
-            # Apply basic coloring to the signature while preserving all content
+            # Apply coloring to the signature using access-level-specific styles
             signature = member.signature
             
-            # Simple approach: colorize based on basic patterns in the signature
-            # This preserves all parameters while adding colors like function view
-            colored_signature = self._colorize_method_signature(signature)
+            # Colorize signature with access-specific styles
+            colored_signature = self._colorize_method_signature_with_access(signature, access_style)
             parts.append(colored_signature)
             
             # Add additional modifiers that aren't part of the signature (like virtual, override, final, etc.)
-            modifiers = []
+            modifier_parts = []
             if member.is_virtual:
-                modifiers.append("virtual")
+                modifier_parts.append(self.theme.decorate(f'{access_style}_virtual', "virtual"))
             if member.is_pure_virtual:
-                modifiers.append("= 0")
+                modifier_parts.append("= 0")
             if member.is_override:
-                modifiers.append("override")
+                modifier_parts.append(self.theme.decorate(f'{access_style}_override', "override"))
             if member.is_final:
-                modifiers.append("final")
+                modifier_parts.append(self.theme.decorate(f'{access_style}_final', "final"))
             if member.is_deleted:
-                modifiers.append("= delete")
+                modifier_parts.append(self.theme.decorate(f'{access_style}_deleted', "= delete"))
             if member.is_default:
-                modifiers.append("= default")
+                modifier_parts.append(self.theme.decorate(f'{access_style}_default', "= default"))
             
-            if modifiers:
-                parts.append(" " + self.deco.magenta(" ".join(modifiers)))
+            if modifier_parts:
+                parts.append(" " + " ".join(modifier_parts))
         else:
             # For non-methods, show modifiers first
-            modifiers = []
+            modifier_parts = []
             if member.is_static:
-                modifiers.append("static")
+                modifier_parts.append(self.theme.decorate(f'{access_style}_static', "static"))
             if member.is_const:
-                modifiers.append("const")
+                modifier_parts.append(self.theme.decorate(f'{access_style}_const', "const"))
             if hasattr(member, 'is_constexpr') and member.is_constexpr:
-                modifiers.append("constexpr")
+                modifier_parts.append(self.theme.decorate(f'{access_style}_const', "constexpr"))
             if member.is_inline:
-                modifiers.append("inline")
+                modifier_parts.append(self.theme.decorate(f'{access_style}_static', "inline"))
             if member.is_explicit:
-                modifiers.append("explicit")
+                modifier_parts.append(self.theme.decorate(f'{access_style}_static', "explicit"))
             
-            if modifiers:
-                parts.append(self.deco.magenta(" ".join(modifiers)))
+            if modifier_parts:
+                parts.append(" ".join(modifier_parts))
             
         # Handle non-method types
         if member.member_type != MemberType.METHOD:
             if member.member_type == MemberType.ENUM_VALUE and member.value:
                 name_display = f"{member.name} = {member.value}"
-                parts.append(self.deco.white(name_display))
+                parts.append(self.theme.decorate(name_style, name_display))
             elif member.member_type == MemberType.FIELD and member.value:
                 # For fields with initialization values
                 if member.data_type:
-                    parts.append(self.deco.cyan(member.data_type))
+                    parts.append(self.theme.decorate(type_style, member.data_type))
                 # Show field name with array dimensions and initialization value
                 name_display = member.name
                 if hasattr(member, 'array_dimensions') and member.array_dimensions:
                     name_display += member.array_dimensions
-                parts.append(self.deco.white(name_display))
+                parts.append(self.theme.decorate(name_style, name_display))
                 parts.append(self.deco.white(" = "))
-                parts.append(self.deco.green(member.value))
+                parts.append(self.theme.decorate("value",member.value))
             else:
                 # For fields and other members without initialization, show type and name
                 if member.data_type:
-                    parts.append(self.deco.cyan(member.data_type))
+                    parts.append(self.theme.decorate(type_style, member.data_type))
                 
                 # Show field name with array dimensions if present
                 name_display = member.name
                 if hasattr(member, 'array_dimensions') and member.array_dimensions:
                     name_display += member.array_dimensions
-                parts.append(self.deco.white(name_display))
+                parts.append(self.theme.decorate(name_style, name_display))
         
         # Line number if available
         if show_files and member.line_number > 0:
@@ -367,6 +454,50 @@ class ClassDetailsDisplay:
         # Trailing modifiers (const, noexcept, etc.) - white
         if trailing:
             result_parts.append(self.deco.white(' ' + trailing.strip()))
+        
+        return ''.join(result_parts)
+    
+    def _colorize_method_signature_with_access(self, signature: str, access_style: str) -> str:
+        """Apply colors to method signature using access-level-specific styles"""
+        import re
+        
+        # Get the style names for this access level
+        type_style = f"{access_style}_type"
+        name_style = f"{access_style}_name"
+        
+        # Pattern to match C++ function signatures
+        # This regex captures: [modifiers] return_type function_name(parameters) [const/noexcept/etc]
+        pattern = r'^((?:virtual\s+|static\s+|inline\s+|explicit\s+)*)(.*?)\s+(\w+)\s*(\([^)]*\))\s*(.*?)$'
+        
+        match = re.match(pattern, signature.strip())
+        if not match:
+            # Fallback: use name style for the whole signature
+            return self.theme.decorate(name_style, signature)
+        
+        modifiers, return_type, func_name, params, trailing = match.groups()
+        
+        result_parts = []
+        
+        # Modifiers (virtual, static, etc.) - use access-specific modifier color
+        if modifiers:
+            result_parts.append(self.theme.decorate(f'{access_style}_static', modifiers))
+        
+        # Return type - use type style for this access level
+        if return_type:
+            result_parts.append(self.theme.decorate(type_style, return_type.strip()))
+            result_parts.append(' ')
+        
+        # Function name - use name style for this access level
+        result_parts.append(self.theme.decorate(name_style, func_name))
+        
+        # Parameters - color them with access-specific styles
+        if params:
+            colored_params = self._colorize_parameters_with_access(params, access_style)
+            result_parts.append(colored_params)
+        
+        # Trailing modifiers (const, noexcept, etc.) - use access-specific modifier color
+        if trailing:
+            result_parts.append(' ' + self.theme.decorate(f'{access_style}_const', trailing.strip()))
         
         return ''.join(result_parts)
     
@@ -438,6 +569,79 @@ class ClassDetailsDisplay:
             result.append(self.deco.orange(name_part))
         
         return ''.join(result) if result else self.deco.white(param)
+    
+    def _colorize_parameters_with_access(self, params_str: str, access_style: str) -> str:
+        """Color parameters using access-level-specific styles"""
+        import re
+        
+        # Handle empty or void parameters
+        if not params_str or params_str.strip() in ['()', '(void)']:
+            return params_str
+        
+        # Extract content inside parentheses
+        if params_str.startswith('(') and params_str.endswith(')'):
+            inner = params_str[1:-1].strip()
+            if not inner or inner == 'void':
+                return params_str
+            
+            # Split parameters by comma
+            param_parts = []
+            current_param = []
+            paren_depth = 0
+            angle_depth = 0
+            
+            for char in inner:
+                if char == '(' :
+                    paren_depth += 1
+                elif char == ')':
+                    paren_depth -= 1
+                elif char == '<':
+                    angle_depth += 1
+                elif char == '>':
+                    angle_depth -= 1
+                elif char == ',' and paren_depth == 0 and angle_depth == 0:
+                    param_parts.append(''.join(current_param).strip())
+                    current_param = []
+                    continue
+                current_param.append(char)
+            
+            if current_param:
+                param_parts.append(''.join(current_param).strip())
+            
+            # Color each parameter with access-specific styles
+            colored_params = []
+            for param in param_parts:
+                colored_params.append(self._colorize_single_parameter_with_access(param.strip(), access_style))
+            
+            return '(' + ', '.join(colored_params) + ')'
+        
+        return params_str
+    
+    def _colorize_single_parameter_with_access(self, param: str, access_style: str) -> str:
+        """Color a single parameter using access-level-specific styles"""
+        import re
+        
+        # Get the style names for this access level
+        type_style = f"{access_style}_type"
+        name_style = f"{access_style}_name"
+        
+        # Pattern to match type and optional name
+        # This handles cases like: "int x", "const char* name", "std::vector<int> vec", "Context"
+        match = re.match(r'^(.*?)(\s+\w+)?$', param.strip())
+        if not match:
+            return param
+        
+        type_part = match.group(1).strip()
+        name_part = match.group(2)
+        
+        result = []
+        if type_part:
+            result.append(self.theme.decorate(type_style, type_part))
+        
+        if name_part:
+            result.append(self.theme.decorate(name_style, name_part))
+        
+        return ''.join(result) if result else param
     
     def _display_method_implementations(self, entity: Entity, root_path: Optional[Path]):
         """Display method implementation locations in a separate section, grouped by signature"""

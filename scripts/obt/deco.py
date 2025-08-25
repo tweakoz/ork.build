@@ -59,6 +59,121 @@ COLOR_DB = {
     'grey22': 254,   # RGB(228,228,228)
     'grey23': 255,   # RGB(238,238,238)
     
+    # Color shades (0=brightest, 4=darkest)
+    # Reds
+    'red0': 196,   # bright red
+    'red1': 160,   # red
+    'red2': 124,   # dark red
+    'red3': 88,    # darker red
+    'red4': 52,    # darkest red
+    
+    # Greens
+    'grn0': 46,    # bright green
+    'grn1': 40,    # lime green
+    'grn2': 34,    # green
+    'grn3': 28,    # forest green
+    'grn4': 22,    # dark green
+    
+    # Blues
+    'blu0': 21,    # bright blue
+    'blu1': 20,    # blue
+    'blu2': 19,    # navy blue
+    'blu3': 18,    # dark blue
+    'blu4': 17,    # midnight blue
+    
+    # AltBlue
+    'blx0': 110,   
+    'blx1': 67,    
+    'blx2': 68,    
+    'blx3': 69,    
+    'blx4': 62,    
+
+    # Cyans
+    'cyn0': 51,    # bright cyan
+    'cyn1': 45,    # cyan
+    'cyn2': 38,    # teal
+    'cyn3': 30,    # dark cyan
+    'cyn4': 23,    # darker cyan
+    
+    # Yellows
+    'yel0': 226,   # bright yellow
+    'yel1': 220,   # gold
+    'yel2': 214,   # orange yellow
+    'yel3': 178,   # khaki
+    'yel4': 142,   # tan
+    
+    # Magentas
+    'mag0': 201,   # bright magenta
+    'mag1': 200,   # magenta
+    'mag2': 164,   # purple magenta
+    'mag3': 128,   # purple
+    'mag4': 91,    # dark magenta
+    
+    # Oranges
+    'ora0': 208,   # bright orange
+    'ora1': 202,   # orange
+    'ora2': 166,   # dark orange
+    'ora3': 130,   # burnt orange
+    'ora4': 94,    # brown orange
+    
+    # Additional color families with 5+ shades
+    'pnk0': 218,   # bright pink
+    'pnk1': 212,   # medium-bright pink
+    'pnk2': 206,   # medium pink
+    'pnk3': 200,   # medium-dark pink
+    'pnk4': 164,   # dark pink
+    
+    'pur0': 141,   # bright purple
+    'pur1': 135,   # medium-bright purple
+    'pur2': 99,    # medium purple
+    'pur3': 63,    # medium-dark purple
+    'pur4': 54,    # dark purple
+    
+    'gry0': 255,   # white
+    'gry1': 252,   # very light gray
+    'gry2': 249,   # light gray
+    'gry3': 246,   # medium-light gray
+    'gry4': 243,   # medium gray
+    'gry5': 240,   # medium-dark gray
+    'gry6': 237,   # dark gray
+    'gry7': 234,   # very dark gray
+    
+    'brn0': 215,   # light brown/tan
+    'brn1': 179,   # medium-light brown
+    'brn2': 137,   # medium brown
+    'brn3': 101,   # medium-dark brown
+    'brn4': 95,    # dark brown
+    
+    'teal0': 49,   # bright teal
+    'teal1': 43,   # medium-bright teal
+    'teal2': 37,   # medium teal
+    'teal3': 31,   # medium-dark teal
+    'teal4': 23,   # dark teal
+
+    'sata0': 230,   # sat series a
+    'sata1': 194,   # sat series a
+    'sata2': 195,   # sat series a
+    'sata3': 189,   # sat series a
+    'sata4': 225,   # sat series a
+
+    'satb0': 187,   # sat series b
+    'satb1': 151,   # sat series b
+    'satb2': 152,   # sat series b
+    'satb3': 146,   # sat series b
+    'satb4': 182,   # sat series b
+    
+    'satc0': 144,   # sat series c
+    'satc1': 108,   # sat series c
+    'satc2': 109,   # sat series c
+    'satc3': 103,   # sat series c
+    'satc4': 139,   # sat series c
+
+    'satd0': 101,   # sat series d
+    'satd1': 65,   # sat series d
+    'satd2': 66,   # sat series d
+    'satd3': 60,   # sat series d
+    'satd4': 96,   # sat series d
+
     # Aliases
     'gray': (128, 128, 128),
     'gray0': (32, 32, 32),
@@ -231,6 +346,140 @@ class MonoTheme(Theme):
   ###############################
   def reset(self):
     return ""
+
+###############################################################################
+
+class CustomTheme:
+    """
+    A flexible theme system that allows custom styling for named elements.
+    Each element can have foreground color, background color, and text effects.
+    """
+    
+    def __init__(self, name="custom", bash=False):
+        self.name = name
+        self.bash = bash
+        self.styles = {}  # Dictionary of element_name -> style_dict
+        
+    def add_style(self, element_name, fg=None, bg=None, reverse=False, blink=False, bold=False, dim=False, underline=False):
+        """
+        Add or update a style for a named element.
+        
+        Args:
+            element_name: Name of the element to style (e.g., 'class_name', 'method_signature')
+            fg: Foreground color name from COLOR_DB or RGB tuple or 256-color index
+            bg: Background color name from COLOR_DB or RGB tuple or 256-color index
+            reverse: Apply reverse video
+            blink: Apply blinking effect
+            bold: Apply bold effect
+            dim: Apply dim effect
+            underline: Apply underline effect
+        """
+        self.styles[element_name] = {
+            'fg': fg,
+            'bg': bg,
+            'reverse': reverse,
+            'blink': blink,
+            'bold': bold,
+            'dim': dim,
+            'underline': underline
+        }
+        
+    def _get_color_code(self, color, is_bg=False):
+        """Convert a color specification to ANSI escape code."""
+        if color is None:
+            return ""
+            
+        # Check if it's a named color in COLOR_DB
+        if isinstance(color, str) and color in COLOR_DB:
+            color_val = COLOR_DB[color]
+            if isinstance(color_val, int):
+                # It's a 256-color index (like grey0-grey23)
+                if is_bg:
+                    return f"\033[48;5;{color_val}m"
+                else:
+                    return f"\033[38;5;{color_val}m"
+            else:
+                # It's an RGB tuple
+                color = color_val
+                
+        # Handle direct 256-color index
+        if isinstance(color, int):
+            if is_bg:
+                return f"\033[48;5;{color}m"
+            else:
+                return f"\033[38;5;{color}m"
+                
+        # Handle RGB tuple
+        if isinstance(color, (list, tuple)) and len(color) == 3:
+            r, g, b = color
+            # Convert to 256-color approximation
+            r = int((r * 5) / 255)
+            g = int((g * 5) / 255)
+            b = int((b * 5) / 255)
+            color_index = 16 + 36 * r + 6 * g + b
+            if is_bg:
+                return f"\033[48;5;{color_index}m"
+            else:
+                return f"\033[38;5;{color_index}m"
+                
+        return ""
+        
+    def decorate(self, element_name, text):
+        """
+        Apply the style for the named element to the given text.
+        
+        Args:
+            element_name: Name of the element style to apply
+            text: Text to decorate
+            
+        Returns:
+            Decorated text with ANSI escape codes
+        """
+        if element_name not in self.styles:
+            return str(text)  # No style defined, return as-is
+            
+        style = self.styles[element_name]
+        codes = []
+        
+        # Add text effects
+        if style.get('bold'):
+            codes.append("\033[1m")
+        if style.get('dim'):
+            codes.append("\033[2m")
+        if style.get('underline'):
+            codes.append("\033[4m")
+        if style.get('blink'):
+            codes.append("\033[5m")
+        if style.get('reverse'):
+            codes.append("\033[7m")
+            
+        # Add colors
+        fg_code = self._get_color_code(style.get('fg'), is_bg=False)
+        if fg_code:
+            codes.append(fg_code)
+        bg_code = self._get_color_code(style.get('bg'), is_bg=True)
+        if bg_code:
+            codes.append(bg_code)
+            
+        if not codes:
+            return str(text)
+            
+        # Apply bash escaping if needed
+        prefix = "".join(codes)
+        if self.bash:
+            prefix = "\\[" + prefix + "\\]"
+            
+        reset = "\033[m"
+        if self.bash:
+            reset = "\\[" + reset + "\\]"
+            
+        return prefix + str(text) + reset
+        
+    def clone(self):
+        """Create a copy of this theme."""
+        new_theme = CustomTheme(self.name, self.bash)
+        new_theme.styles = self.styles.copy()
+        return new_theme
 
 ###############################################################################
 
