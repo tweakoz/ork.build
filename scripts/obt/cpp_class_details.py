@@ -140,25 +140,73 @@ class ClassDetailsDisplay:
             print(f"  Specialized from: {self.deco.magenta(entity.specialized_from)}")
     
     def _display_members(self, entity: Entity, show_files: bool, root_path: Optional[Path]):
-        """Display class members organized by access level"""
-        if not entity.members:
-            print(f"\n{self.deco.yellow('MEMBERS:')} {self.deco.gray('(none found)')}")
-            return
+        """Display class members organized by inheritance, access level, and name"""
+        # Collect all inherited members
+        inherited_members = self._collect_inherited_members(entity)
         
+        # Display local members first
+        if entity.members:
+            print(f"\n{self.deco.yellow('LOCAL MEMBERS:')}")
+            self._display_members_by_access(entity.members, show_files, root_path, entity)
+        else:
+            print(f"\n{self.deco.yellow('LOCAL MEMBERS:')} {self.deco.gray('(none)')}")
+        
+        # Display inherited members by base class
+        if inherited_members:
+            for base_name, base_members in inherited_members:
+                print(f"\n{self.deco.yellow(f'INHERITED FROM {base_name}:')}")
+                self._display_members_by_access(base_members, show_files, root_path, entity)
+    
+    def _collect_inherited_members(self, entity: Entity) -> List[Tuple[str, List[Member]]]:
+        """Recursively collect members from all base classes"""
+        inherited = []
+        
+        if not entity.base_classes:
+            return inherited
+        
+        for base in entity.base_classes:
+            # Clean up base class name
+            base_clean = base.replace('public ', '').replace('private ', '').replace('protected ', '').strip()
+            
+            # Find base class in database
+            base_entities = []
+            for entity_type in ['class', 'struct']:
+                found = self.db.search_entities(entity_type=entity_type, name=base_clean)
+                base_entities.extend(found)
+            
+            if base_entities:
+                base_entity = base_entities[0]
+                # Add this base's members
+                if base_entity.members:
+                    inherited.append((base_clean, base_entity.members))
+                # Recursively get members from base's bases
+                sub_inherited = self._collect_inherited_members(base_entity)
+                for sub_base_name, sub_members in sub_inherited:
+                    # Add indication of inheritance chain
+                    chain_name = f"{base_clean} → {sub_base_name}"
+                    inherited.append((chain_name, sub_members))
+            else:
+                # Base class not found in database - can't show inherited members
+                pass
+        
+        return inherited
+    
+    def _display_members_by_access(self, members: List[Member], show_files: bool, root_path: Optional[Path], entity: Entity):
+        """Display members grouped by access level"""
         # Group members by access level
-        public_members = entity.get_members_by_access(AccessLevel.PUBLIC)
-        protected_members = entity.get_members_by_access(AccessLevel.PROTECTED)
-        private_members = entity.get_members_by_access(AccessLevel.PRIVATE)
+        public_members = [m for m in members if m.access_level == AccessLevel.PUBLIC]
+        protected_members = [m for m in members if m.access_level == AccessLevel.PROTECTED]
+        private_members = [m for m in members if m.access_level == AccessLevel.PRIVATE]
         
         # Display each access level
-        for access_level, members, color_func in [
+        for access_level, level_members, color_func in [
             ("PUBLIC", public_members, self.deco.green),
             ("PROTECTED", protected_members, self.deco.yellow),
             ("PRIVATE", private_members, self.deco.red)
         ]:
-            if members:
-                print(f"\n{self.deco.yellow(f'{access_level} MEMBERS:')} ({len(members)})")
-                self._display_member_group(members, color_func, show_files, root_path, entity)
+            if level_members:
+                print(f"  {color_func(f'{access_level}:')} ({len(level_members)})")
+                self._display_member_group(level_members, color_func, show_files, root_path, entity)
     
     def _display_member_group(self, members: List[Member], access_color_func, show_files: bool, root_path: Optional[Path], entity: Entity):
         """Display a group of members with the same access level"""
