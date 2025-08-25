@@ -191,11 +191,8 @@ class ClassDetailsDisplay:
             "summary": {}
         }
         
-        # Find entities
-        entities = []
-        for entity_type in ['class', 'struct']:
-            found = self.db.search_entities(entity_type=entity_type, name=class_name)
-            entities.extend(found)
+        # Find entities - use same method as display_details for consistency
+        entities = find_entities_by_name(self.db, class_name)
         
         if not entities:
             return json.dumps({"error": f"No class or struct named '{class_name}' found"}, indent=2)
