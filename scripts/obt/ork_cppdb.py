@@ -8,6 +8,7 @@ from typing import List, Optional, Set
 
 # Available Orkid modules
 ORKID_MODULES = {
+    'all': ['ork.core','ork.lev2','ork.ecs'],
     'core': ['ork.core'],
     'lev2': ['ork.lev2'],
     'ecs': ['ork.ecs'],
