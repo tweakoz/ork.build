@@ -48,24 +48,64 @@ class InheritanceTreeDisplay:
                         }
                     tree['parents'].append(parent_tree)
         
-        # Get children (derived classes) - only look for classes in same namespace
-        namespace = entity.namespace
-        derived = self.db.find_derived_classes(entity.short_name)
+        # Get children (derived classes) - check both short name and canonical name
+        derived = self.db.find_derived_classes(entity.canonical_name)
+        # Also check short name if different
+        if entity.short_name != entity.canonical_name:
+            derived.extend(self.db.find_derived_classes(entity.short_name))
+            # Remove duplicates
+            seen = set()
+            unique_derived = []
+            for d in derived:
+                if d.canonical_name not in seen:
+                    seen.add(d.canonical_name)
+                    unique_derived.append(d)
+            derived = unique_derived
+        
         for child_entity in derived:
-            # Only include derived classes from the same namespace to avoid mixing hierarchies
-            if child_entity.namespace == namespace:
+            child_tree = {
+                'name': child_entity.short_name,
+                'entity': child_entity,
+                'parents': [],  # Don't recurse up from children
+                'children': []   # Optionally recurse down
+            }
+            # Recursively get grandchildren (no namespace filtering)
+            child_tree['children'] = self._get_children_trees(
+                child_entity, {entity.canonical_name, child_entity.canonical_name})
+            tree['children'].append(child_tree)
+        
+        return tree
+    
+    def _get_children_trees(self, entity: Entity, visited: Set[str]) -> List[Dict]:
+        """Recursively get children, avoiding cycles"""
+        if entity.canonical_name in visited:
+            return []
+        visited.add(entity.canonical_name)
+        
+        children = []
+        # Check both canonical and short names
+        derived = self.db.find_derived_classes(entity.canonical_name)
+        if entity.short_name != entity.canonical_name:
+            derived.extend(self.db.find_derived_classes(entity.short_name))
+            # Remove duplicates
+            seen = set()
+            unique_derived = []
+            for d in derived:
+                if d.canonical_name not in seen:
+                    seen.add(d.canonical_name)
+                    unique_derived.append(d)
+            derived = unique_derived
+            
+        for child_entity in derived:
+            if child_entity.canonical_name not in visited:
                 child_tree = {
                     'name': child_entity.short_name,
                     'entity': child_entity,
-                    'parents': [],  # Don't recurse up from children
-                    'children': []   # Optionally recurse down
+                    'parents': [],
+                    'children': self._get_children_trees(child_entity, visited.copy())
                 }
-                # Recursively get grandchildren (with namespace filtering)
-                child_tree['children'] = self._get_children_trees_filtered(
-                    child_entity.short_name, {entity.short_name}, namespace)
-                tree['children'].append(child_tree)
-        
-        return tree
+                children.append(child_tree)
+        return children
     
     def _get_children_trees_filtered(self, class_name: str, visited: Set[str], namespace: str) -> List[Dict]:
         """Recursively get children, avoiding cycles and filtering by namespace"""

@@ -322,67 +322,85 @@ class CppDatabaseV2:
             
             if existing:
                 entity_id = existing['id']
-                # Update entity with new information
+                # Merge entity with new information - preserve existing rich data
                 conn.execute("""
                     UPDATE entities SET
-                        short_name = ?,
-                        entity_type = ?,
-                        namespace = ?,
-                        is_template = ?,
-                        template_params = ?,
-                        is_template_specialization = ?,
-                        specialized_from = ?,
-                        is_abstract = ?,
-                        is_final = ?,
-                        is_pod = ?,
-                        base_classes = ?,
-                        return_type = ?,
-                        parameters = ?,
-                        is_method = ?,
-                        is_virtual = ?,
-                        is_static = ?,
-                        is_const = ?,
-                        is_inline = ?,
-                        is_constexpr = ?,
-                        is_noexcept = ?,
-                        is_deleted = ?,
-                        is_default = ?,
-                        is_override = ?,
-                        is_final_method = ?,
-                        underlying_type = ?,
-                        is_enum_class = ?,
-                        aliased_type = ?,
-                        is_using_alias = ?
+                        short_name = COALESCE(?, short_name),
+                        entity_type = COALESCE(?, entity_type),
+                        namespace = COALESCE(?, namespace),
+                        is_template = COALESCE(?, is_template),
+                        template_params = CASE 
+                            WHEN ? IS NOT NULL AND ? != '' THEN ? 
+                            ELSE COALESCE(template_params, ?)
+                        END,
+                        is_template_specialization = COALESCE(?, is_template_specialization),
+                        specialized_from = COALESCE(?, specialized_from),
+                        is_abstract = CASE WHEN ? IS NOT NULL THEN ? ELSE is_abstract END,
+                        is_final = CASE WHEN ? IS NOT NULL THEN ? ELSE is_final END,
+                        is_pod = CASE WHEN ? IS NOT NULL THEN ? ELSE is_pod END,
+                        base_classes = CASE 
+                            WHEN ? IS NOT NULL AND ? != '[]' AND ? != '' THEN ?
+                            ELSE COALESCE(base_classes, ?)
+                        END,
+                        return_type = CASE 
+                            WHEN ? IS NOT NULL AND ? != '' THEN ?
+                            ELSE COALESCE(return_type, ?)
+                        END,
+                        parameters = CASE 
+                            WHEN ? IS NOT NULL AND ? != '[]' THEN ?
+                            ELSE COALESCE(parameters, ?)
+                        END,
+                        is_method = CASE WHEN ? IS NOT NULL THEN ? ELSE is_method END,
+                        is_virtual = CASE WHEN ? IS NOT NULL THEN ? ELSE is_virtual END,
+                        is_static = CASE WHEN ? IS NOT NULL THEN ? ELSE is_static END,
+                        is_const = CASE WHEN ? IS NOT NULL THEN ? ELSE is_const END,
+                        is_inline = CASE WHEN ? IS NOT NULL THEN ? ELSE is_inline END,
+                        is_constexpr = CASE WHEN ? IS NOT NULL THEN ? ELSE is_constexpr END,
+                        is_noexcept = CASE WHEN ? IS NOT NULL THEN ? ELSE is_noexcept END,
+                        is_deleted = CASE WHEN ? IS NOT NULL THEN ? ELSE is_deleted END,
+                        is_default = CASE WHEN ? IS NOT NULL THEN ? ELSE is_default END,
+                        is_override = CASE WHEN ? IS NOT NULL THEN ? ELSE is_override END,
+                        is_final_method = CASE WHEN ? IS NOT NULL THEN ? ELSE is_final_method END,
+                        underlying_type = CASE 
+                            WHEN ? IS NOT NULL AND ? != '' THEN ?
+                            ELSE COALESCE(underlying_type, ?)
+                        END,
+                        is_enum_class = CASE WHEN ? IS NOT NULL THEN ? ELSE is_enum_class END,
+                        aliased_type = CASE 
+                            WHEN ? IS NOT NULL AND ? != '' THEN ?
+                            ELSE COALESCE(aliased_type, ?)
+                        END,
+                        is_using_alias = CASE WHEN ? IS NOT NULL THEN ? ELSE is_using_alias END
                     WHERE id = ?
                 """, (
                     entity.short_name,
                     entity.entity_type.value,
                     entity.namespace,
                     entity.is_template,
-                    entity.template_params,
+                    entity.template_params, entity.template_params, entity.template_params, entity.template_params,
                     entity.is_template_specialization,
                     entity.specialized_from,
-                    entity.is_abstract,
-                    entity.is_final,
-                    entity.is_pod,
-                    base_classes_json,
-                    entity.return_type,
-                    parameters_json,
-                    entity.is_method,
-                    entity.is_virtual,
-                    entity.is_static,
-                    entity.is_const,
-                    entity.is_inline,
-                    entity.is_constexpr,
-                    entity.is_noexcept,
-                    entity.is_deleted,
-                    entity.is_default,
-                    entity.is_override,
-                    entity.is_final_method,
-                    entity.underlying_type,
-                    entity.is_enum_class,
-                    entity.aliased_type,
-                    entity.is_using_alias,
+                    entity.is_abstract, entity.is_abstract,
+                    entity.is_final, entity.is_final,
+                    entity.is_pod, entity.is_pod,
+                    base_classes_json, base_classes_json, base_classes_json, base_classes_json, base_classes_json,
+                    entity.return_type, entity.return_type, entity.return_type, entity.return_type,
+                    parameters_json, parameters_json, parameters_json, parameters_json,
+                    entity.is_method, entity.is_method,
+                    entity.is_virtual, entity.is_virtual,
+                    entity.is_static, entity.is_static,
+                    entity.is_const, entity.is_const,
+                    entity.is_inline, entity.is_inline,
+                    entity.is_constexpr, entity.is_constexpr,
+                    entity.is_noexcept, entity.is_noexcept,
+                    entity.is_deleted, entity.is_deleted,
+                    entity.is_default, entity.is_default,
+                    entity.is_override, entity.is_override,
+                    entity.is_final_method, entity.is_final_method,
+                    entity.underlying_type, entity.underlying_type, entity.underlying_type, entity.underlying_type,
+                    entity.is_enum_class, entity.is_enum_class,
+                    entity.aliased_type, entity.aliased_type, entity.aliased_type, entity.aliased_type,
+                    entity.is_using_alias, entity.is_using_alias,
                     entity_id
                 ))
             else:
