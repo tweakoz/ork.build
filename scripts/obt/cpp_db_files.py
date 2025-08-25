@@ -26,7 +26,9 @@ def list_files(db: CppDatabaseV2, limit: int = None) -> None:
     
     for file_info in files:
         size_kb = file_info['file_size'] / 1024 if file_info['file_size'] else 0
-        print(f"{file_info['relative_path']:<50} {size_kb:>8.1f} KB  {file_info['updated_at']}")
+        updated = file_info['updated_at'] if file_info['updated_at'] else 'N/A'
+        path = file_info['relative_path'] if file_info['relative_path'] else file_info.get('file_path', 'Unknown')
+        print(f"{path:<50} {size_kb:>8.1f} KB  {updated}")
 
 
 def search_files(db: CppDatabaseV2, pattern: str) -> None:
@@ -42,7 +44,9 @@ def search_files(db: CppDatabaseV2, pattern: str) -> None:
     
     for file_info in files:
         size_kb = file_info['file_size'] / 1024 if file_info['file_size'] else 0
-        print(f"{file_info['relative_path']:<50} {size_kb:>8.1f} KB  {file_info['updated_at']}")
+        updated = file_info['updated_at'] if file_info['updated_at'] else 'N/A'
+        path = file_info['relative_path'] if file_info['relative_path'] else file_info.get('file_path', 'Unknown')
+        print(f"{path:<50} {size_kb:>8.1f} KB  {updated}")
 
 
 def get_file_by_name(db: CppDatabaseV2, filename: str) -> None:
@@ -57,7 +61,8 @@ def get_file_by_name(db: CppDatabaseV2, filename: str) -> None:
         file_info = files[0]
         print(f"File: {file_info['file_path']}")
         print(f"Size: {file_info['file_size']} bytes")
-        print(f"Updated: {file_info['updated_at']}")
+        updated = file_info['updated_at'] if file_info['updated_at'] else 'N/A'
+        print(f"Updated: {updated}")
         print("=" * 80)
     else:
         print(f"Found {len(files)} files with name '{filename}':")
@@ -65,7 +70,8 @@ def get_file_by_name(db: CppDatabaseV2, filename: str) -> None:
         for i, file_info in enumerate(files, 1):
             size_kb = file_info['file_size'] / 1024 if file_info['file_size'] else 0
             print(f"{i}. {file_info['file_path']}")
-            print(f"   Size: {size_kb:.1f} KB, Updated: {file_info['updated_at']}")
+            updated = file_info['updated_at'] if file_info['updated_at'] else 'N/A'
+            print(f"   Size: {size_kb:.1f} KB, Updated: {updated}")
 
 
 def show_file_content(db: CppDatabaseV2, file_path: str, show_raw: bool = True, 
@@ -73,12 +79,27 @@ def show_file_content(db: CppDatabaseV2, file_path: str, show_raw: bool = True,
     """Show file content"""
     file_info = db.get_source_file(file_path)
     
+    # If not found by full path, try by filename
+    if not file_info:
+        files = db.get_source_file_by_name(file_path)
+        if files:
+            if len(files) == 1:
+                # Use the full path from the found file
+                file_info = db.get_source_file(files[0]['file_path'])
+            else:
+                print(f"Multiple files found with name '{file_path}':")
+                for i, f in enumerate(files, 1):
+                    print(f"  {i}. {f['file_path']}")
+                print("Please specify the full path.")
+                return
+    
     if not file_info:
         print(f"File not found in database: {file_path}")
         return
     
     if show_raw:
-        print(f"=== RAW SOURCE: {file_info['relative_path']} ===")
+        display_path = file_info['relative_path'] if file_info['relative_path'] else file_info.get('file_path', 'Unknown')
+        print(f"=== RAW SOURCE: {display_path} ===")
         content = file_info['raw_source']
         if line_numbers:
             for i, line in enumerate(content.split('\n'), 1):
@@ -87,7 +108,8 @@ def show_file_content(db: CppDatabaseV2, file_path: str, show_raw: bool = True,
             print(content)
     
     if show_preprocessed and file_info['preprocessed_source']:
-        print(f"\n=== PREPROCESSED SOURCE: {file_info['relative_path']} ===")
+        display_path = file_info['relative_path'] if file_info['relative_path'] else file_info.get('file_path', 'Unknown')
+        print(f"\n=== PREPROCESSED SOURCE: {display_path} ===")
         content = file_info['preprocessed_source']
         if line_numbers:
             for i, line in enumerate(content.split('\n'), 1):

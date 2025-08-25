@@ -24,10 +24,11 @@ class CppIngestor:
         self.defines_preset = defines_preset
         self.deco = obt.deco.Deco()
         
-    def preprocess_file(self, filepath: Path) -> tuple[Path, bytes, bytes, bytes, float]:
+    def preprocess_file(self, filepath: Path) -> tuple[Path, bytes, bytes, bytes, Dict[int, int], float]:
         """
         Preprocess a single file and trim to target file content only
-        Returns: (filepath, raw_source, preprocessed_source, trimmed_source, preprocess_time)
+        Returns: (filepath, raw_source, preprocessed_source, trimmed_source, line_mapping, preprocess_time)
+        where line_mapping maps trimmed line numbers to original line numbers
         """
         import time
         start_time = time.perf_counter()
@@ -70,17 +71,18 @@ class CppIngestor:
             print(f"Warning: Preprocessing error for {filepath}: {e}")
             preprocessed = raw_source
             
-        # Trim to target file content only
-        trimmed = self._trim_to_target_file(preprocessed, filepath)
+        # Trim to target file content only and get line mapping
+        trimmed, line_mapping = self._trim_to_target_file(preprocessed, filepath)
         
         preprocess_time = time.perf_counter() - start_time
             
-        return filepath, raw_source, preprocessed, trimmed, preprocess_time
+        return filepath, raw_source, preprocessed, trimmed, line_mapping, preprocess_time
     
-    def _trim_to_target_file(self, source_code: bytes, target_file: Path) -> bytes:
+    def _trim_to_target_file(self, source_code: bytes, target_file: Path) -> tuple[bytes, Dict[int, int]]:
         """
         Remove all content from included files, keeping only the target file's content.
         This dramatically reduces the amount of code to parse.
+        Returns: (trimmed_source, line_mapping) where line_mapping maps trimmed line numbers to original line numbers
         """
         import re
         
@@ -92,19 +94,24 @@ class CppIngestor:
         line_directive_pattern = re.compile(rb'^#\s+(\d+)\s+"([^"]+)".*?$', re.MULTILINE)
         
         result = []
+        line_mapping = {}  # Maps trimmed line number to original line number
         lines = source_code.split(b'\n')
         current_file = target_file_str
         keep_lines = True
+        current_original_line = 1
+        trimmed_line_num = 1
         
         for line in lines:
             match = line_directive_pattern.match(line)
             if match:
                 # This is a line directive
+                line_num = int(match.group(1))
                 filename = match.group(2).decode('utf-8', errors='ignore')
                 
                 # Check if we're entering or leaving the target file
                 if filename == target_file_str or filename.endswith('/' + target_file_name) or filename == target_file_name:
                     keep_lines = True
+                    current_original_line = line_num
                 else:
                     keep_lines = False
                 
@@ -114,8 +121,12 @@ class CppIngestor:
             # Only keep lines from the target file
             if keep_lines:
                 result.append(line)
+                # Map trimmed line number to original line number
+                line_mapping[trimmed_line_num] = current_original_line
+                trimmed_line_num += 1
+                current_original_line += 1
         
-        return b'\n'.join(result)
+        return b'\n'.join(result), line_mapping
     
     def ingest_files_parallel(self, filepaths: List[Path], 
                             max_workers: Optional[int] = None) -> Dict:
@@ -152,7 +163,7 @@ class CppIngestor:
             for future in as_completed(futures):
                 filepath = futures[future]
                 try:
-                    path, raw, preprocessed, trimmed, preprocess_time = future.result()
+                    path, raw, preprocessed, trimmed, line_mapping, preprocess_time = future.result()
                     results['success'].append({
                         'path': path,
                         'raw_size': len(raw),
@@ -161,6 +172,7 @@ class CppIngestor:
                         'raw_source': raw,
                         'preprocessed_source': preprocessed,
                         'trimmed_source': trimmed,
+                        'line_mapping': line_mapping,
                         'preprocess_time': preprocess_time
                     })
                     results['stats']['total_raw_bytes'] += len(raw)
@@ -207,16 +219,20 @@ def ingest_to_database(files: List[Path], db_path: Path,
     
     with db.connect() as conn:
         for item in results['success']:
-            # Store source file
+            # Store source file with trimmed source and line mapping
+            import json
             conn.execute("""
                 INSERT OR REPLACE INTO source_files 
-                (file_path, file_name, raw_source, preprocessed_source, file_size)
-                VALUES (?, ?, ?, ?, ?)
+                (file_path, file_name, raw_source, preprocessed_source, trimmed_source, 
+                 line_mapping, file_size)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
             """, (
                 str(item['path']),
                 item['path'].name,
                 item['raw_source'].decode('utf-8', errors='ignore'),
                 item['preprocessed_source'].decode('utf-8', errors='ignore'),
+                item['trimmed_source'].decode('utf-8', errors='ignore'),
+                json.dumps(item['line_mapping']),  # Store mapping as JSON
                 item['raw_size']
             ))
         conn.commit()
