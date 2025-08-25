@@ -963,11 +963,14 @@ class RecursiveDescentCppParser:
         """Parse enum definition"""
         namespace = '::'.join(self.current_namespace) if self.current_namespace else None
         short_name = None
+        is_enum_class = False
+        uses_crc_enum = False
         
         for child in node.children:
             if child.type == 'type_identifier':
                 short_name = self._extract_text(child, source)
-                break
+            elif child.type == 'class' or child.type == 'struct':
+                is_enum_class = True
         
         if short_name:
             # Now create entity with required fields
@@ -978,6 +981,7 @@ class RecursiveDescentCppParser:
                 entity_type=EntityType.ENUM
             )
             entity.namespace = namespace
+            entity.is_enum_class = is_enum_class
             
             entity.locations.append(Location(
                 file_path=str(self.current_file),
@@ -985,6 +989,52 @@ class RecursiveDescentCppParser:
                 column_number=node.start_point[1] + 1,
                 location_type=LocationType.DEFINITION
             ))
+            
+            # Parse enum values
+            for child in node.children:
+                if child.type == 'enumerator_list':
+                    for enum_item in child.children:
+                        if enum_item.type == 'enumerator':
+                            # Extract enum value name and check for CrcEnum
+                            value_name = None
+                            value_text = None
+                            
+                            for enum_child in enum_item.children:
+                                if enum_child.type == 'identifier':
+                                    value_name = self._extract_text(enum_child, source)
+                                elif enum_child.type == 'call_expression':
+                                    # Check if it's a CrcEnum call
+                                    call_text = self._extract_text(enum_child, source)
+                                    if call_text.startswith('CrcEnum'):
+                                        uses_crc_enum = True
+                                        # Extract the actual enum value from CrcEnum(VALUE)
+                                        import re
+                                        match = re.match(r'CrcEnum\((\w+)\)', call_text)
+                                        if match:
+                                            value_name = match.group(1)
+                                elif enum_child.type == '=':
+                                    # Has explicit value
+                                    next_idx = enum_item.children.index(enum_child) + 1
+                                    if next_idx < len(enum_item.children):
+                                        value_text = self._extract_text(enum_item.children[next_idx], source)
+                            
+                            if value_name:
+                                # Add as enum value member
+                                member = Member(
+                                    name=value_name,
+                                    member_type=MemberType.ENUM_VALUE
+                                )
+                                member.access_level = AccessLevel.PUBLIC  # Enum values are always public
+                                member.data_type = "enum_value"
+                                if value_text:
+                                    member.value = value_text
+                                member.line_number = source[:enum_item.start_byte].count(b'\n') + 1
+                                entity.members.append(member)
+            
+            # Store CrcEnum usage info (could add to entity metadata if needed)
+            if uses_crc_enum and self.verbose:
+                print(f"Enum {short_name} uses CrcEnum macro")
+            
             return entity
         
         return None
