@@ -1025,11 +1025,23 @@ class RecursiveDescentCppParser:
         """Parse top-level type alias"""
         namespace = '::'.join(self.current_namespace) if self.current_namespace else None
         short_name = None
+        aliased_type = None
         
+        # Keep original logic for finding name
         for child in node.children:
             if child.type == 'type_identifier':
                 short_name = self._extract_text(child, source)
                 break
+        
+        # Additionally, find what it aliases to (after =)
+        found_equals = False
+        for child in node.children:
+            if child.type == '=':
+                found_equals = True
+            elif found_equals and child.type != ';':
+                # Everything after = and before ; is the aliased type
+                if aliased_type is None:
+                    aliased_type = self._extract_text(child, source)
         
         if short_name:
             # Now create entity with required fields
@@ -1040,6 +1052,8 @@ class RecursiveDescentCppParser:
                 entity_type=EntityType.TYPEDEF  # Treat as typedef
             )
             entity.namespace = namespace
+            entity.aliased_type = aliased_type
+            entity.is_using_alias = True
             
             entity.locations.append(Location(
                 file_path=str(self.current_file),
