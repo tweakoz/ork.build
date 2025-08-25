@@ -40,48 +40,60 @@ class ClassDetailsDisplay:
         
         # Member types and names by access level
         # Public members - brightest
-        theme.add_style('public_type', fg='sata0')
-        theme.add_style('public_std_type', fg='ora0')  # std:: types
-        theme.add_style('public_template_type', fg='cyn0')  # template types (non-std)
+        theme.add_style('public_type', fg='yel0')
+        theme.add_style('public_std_type', fg='sata2')  # std:: non-template types (std::string)
+        theme.add_style('public_std_template_type', fg='sata3')  # std:: template types (std::vector)
+        theme.add_style('public_template_type', fg='blx0')  # template types (non-std)
+        theme.add_style('public_int_type', fg='sata1')  # integer types
+        theme.add_style('public_float_type', fg='sata2')  # floating point types
+        theme.add_style('public_void_bool_type', fg='sata3')  # void/bool types
         theme.add_style('public_name', fg='gry0')
         
         # Protected members - 1 shade darker
-        theme.add_style('protected_type', fg='satb0')
-        theme.add_style('protected_std_type', fg='ora1')  # std:: types
-        theme.add_style('protected_template_type', fg='cyn1')  # template types (non-std)
+        theme.add_style('protected_type', fg='yel1')
+        theme.add_style('protected_std_type', fg='ora1')  # std:: non-template types
+        theme.add_style('protected_std_template_type', fg='satb3')  # std:: template types
+        theme.add_style('protected_template_type', fg='blx1')  # template types (non-std)
+        theme.add_style('protected_int_type', fg='satb1')  # integer types
+        theme.add_style('protected_float_type', fg='satb2')  # floating point types
+        theme.add_style('protected_void_bool_type', fg='satb3')  # void/bool types
         theme.add_style('protected_name', fg='gry1')
         
         # Private members - 2 shades darker
-        theme.add_style('private_type', fg='satc0')
-        theme.add_style('private_std_type', fg='ora2')  # std:: types
+        theme.add_style('private_type', fg='yel2')
+        theme.add_style('private_std_type', fg='ora2')  # std:: non-template types
+        theme.add_style('private_std_template_type', fg='satc1')  # std:: template types
         theme.add_style('private_template_type', fg='cyn2')  # template types (non-std)
+        theme.add_style('private_int_type', fg='grn2')  # integer types
+        theme.add_style('private_float_type', fg='yel2')  # floating point types
+        theme.add_style('private_void_bool_type', fg='mag2')  # void/bool types
         theme.add_style('private_name', fg='gry2')
         
         # Modifiers - with access level variations
         # Public modifiers - brightest
         theme.add_style('public_static', fg='mag0')
         theme.add_style('public_const', fg='red0')
-        theme.add_style('public_virtual', fg='blx0')
-        theme.add_style('public_override', fg='blx0')
-        theme.add_style('public_final', fg='blx0')
+        theme.add_style('public_virtual', fg='teal0')
+        theme.add_style('public_override', fg='teal0')
+        theme.add_style('public_final', fg='teal0')
         theme.add_style('public_deleted', fg='red0')
         theme.add_style('public_default', fg='grn0')
         
         # Protected modifiers - 1 shade darker
         theme.add_style('protected_static', fg='mag1')
         theme.add_style('protected_const', fg='red1')
-        theme.add_style('protected_virtual', fg='blx0')
-        theme.add_style('protected_override', fg='blx0')
-        theme.add_style('protected_final', fg='blx0')
+        theme.add_style('protected_virtual', fg='teal0')
+        theme.add_style('protected_override', fg='teal0')
+        theme.add_style('protected_final', fg='teal0')
         theme.add_style('protected_deleted', fg='red1')
         theme.add_style('protected_default', fg='grn1')
         
         # Private modifiers - 2 shades darker
         theme.add_style('private_static', fg='mag2')
         theme.add_style('private_const', fg='red2')
-        theme.add_style('private_virtual', fg='blx0')
-        theme.add_style('private_override', fg='blx0')
-        theme.add_style('private_final', fg='blx0')
+        theme.add_style('private_virtual', fg='teal2')
+        theme.add_style('private_override', fg='teal2')
+        theme.add_style('private_final', fg='teal2')
         theme.add_style('private_deleted', fg='red2')
         theme.add_style('private_default', fg='grn2')
         
@@ -90,7 +102,7 @@ class ClassDetailsDisplay:
         
         # Method/function arguments with access level variations
         # Public arguments
-        theme.add_style('public_arg_type', fg='sata0')
+        theme.add_style('public_arg_type', fg='yel0')
         theme.add_style('public_arg_identifier', fg='pnk0')
         theme.add_style('public_arg_const', fg='red0')
         
@@ -486,14 +498,18 @@ class ClassDetailsDisplay:
                 for token, token_type, level in tokens:
                     if token_type == 'std_type':
                         result_parts.append(self.theme.decorate(f'{access_style}_std_type', token))
+                    elif token_type == 'std_template_type':
+                        result_parts.append(self.theme.decorate(f'{access_style}_std_template_type', token))
                     elif token_type == 'template_type':
                         result_parts.append(self.theme.decorate(f'{access_style}_template_type', token))
-                    elif token_type == 'type':
+                    elif token_type in ['type', 'int_type', 'float_type', 'void_bool_type']:
                         # Check if token is a modifier
                         if token in ['const', 'volatile', 'mutable']:
                             result_parts.append(self.theme.decorate(f'{access_style}_const', token))
                         else:
-                            result_parts.append(self.theme.decorate(type_style, token))
+                            # Use specific style for primitive types
+                            style = f"{access_style}_{token_type}" if token_type != 'type' else type_style
+                            result_parts.append(self.theme.decorate(style, token))
                     else:
                         # Delimiters and separators - no coloring
                         result_parts.append(token)
@@ -501,13 +517,20 @@ class ClassDetailsDisplay:
                 result_parts.append(self.theme.decorate(f'{access_style}_std_type', return_type))
             else:
                 # Simple type - might have modifiers
+                from obt.cpp_type_system import classify_primitive_type
                 tokens = return_type.split()
                 for token in tokens:
                     if token in ['const', 'volatile', 'mutable']:
                         result_parts.append(self.theme.decorate(f'{access_style}_const', token))
                         result_parts.append(' ')
                     else:
-                        result_parts.append(self.theme.decorate(type_style, token))
+                        # Check if it's a primitive type
+                        prim_type = classify_primitive_type(token)
+                        if prim_type != 'type':
+                            style = f"{access_style}_{prim_type}"
+                        else:
+                            style = type_style
+                        result_parts.append(self.theme.decorate(style, token))
                         result_parts.append(' ')
             result_parts.append(' ')
         
@@ -745,8 +768,16 @@ class ClassDetailsDisplay:
                 std_type_style = f"{access_style}_std_type"
                 result_parts.append(self.theme.decorate(std_type_style, token))
             else:
-                # Part of the type
-                result_parts.append(self.theme.decorate(type_style, token))
+                # Check if it's a primitive type
+                from obt.cpp_type_system import classify_primitive_type
+                prim_type = classify_primitive_type(token)
+                if prim_type != 'type':
+                    # Use primitive-specific style
+                    prim_style = f"{access_style}_{prim_type}"
+                    result_parts.append(self.theme.decorate(prim_style, token))
+                else:
+                    # Regular type
+                    result_parts.append(self.theme.decorate(type_style, token))
         
         # Add identifier if found
         if identifier:

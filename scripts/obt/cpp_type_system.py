@@ -61,6 +61,42 @@ class TypeInfo:
         return None
 
 
+def classify_primitive_type(type_name: str) -> str:
+    """
+    Classify a type as a primitive category or regular type.
+    Returns: 'int_type', 'float_type', 'void_bool_type', or 'type'
+    """
+    # Strip any namespace prefix for primitive check
+    base_type = type_name.split('::')[-1]
+    
+    # Integer types
+    int_types = {
+        'int', 'unsigned', 'signed', 'char', 'short', 'long',
+        'int8_t', 'int16_t', 'int32_t', 'int64_t',
+        'uint8_t', 'uint16_t', 'uint32_t', 'uint64_t',
+        'size_t', 'ssize_t', 'ptrdiff_t', 'intptr_t', 'uintptr_t',
+        'S8', 'U8', 'S16', 'U16', 'S32', 'U32', 'S64', 'U64'  # Common aliases
+    }
+    
+    # Float types
+    float_types = {
+        'float', 'double', 'F32', 'F64', 'real'
+    }
+    
+    # Void/bool types
+    void_bool_types = {
+        'void', 'bool'
+    }
+    
+    if base_type in int_types:
+        return 'int_type'
+    elif base_type in float_types:
+        return 'float_type'
+    elif base_type in void_bool_types:
+        return 'void_bool_type'
+    else:
+        return 'type'
+
 def parse_template_type(type_str: str) -> list:
     """
     Parse a template type string into structured tokens.
@@ -91,11 +127,13 @@ def parse_template_type(type_str: str) -> list:
                 if token_str:
                     # Check if this is a template (has < after it)
                     if token_str.startswith('std::'):
-                        token_type = 'std_type'
+                        # std:: template type (like std::vector)
+                        token_type = 'std_template_type'
                     elif nesting_level == 0:  # Top-level template name
                         token_type = 'template_type'
                     else:
-                        token_type = 'type'
+                        # Check if it's a primitive type
+                        token_type = classify_primitive_type(token_str)
                     tokens.append((token_str, token_type, nesting_level))
                 current_token = []
             # Add delimiter
@@ -107,7 +145,10 @@ def parse_template_type(type_str: str) -> list:
             if current_token:
                 token_str = ''.join(current_token).strip()
                 if token_str:
-                    token_type = 'std_type' if token_str.startswith('std::') else 'type'
+                    if token_str.startswith('std::'):
+                        token_type = 'std_type'
+                    else:
+                        token_type = classify_primitive_type(token_str)
                     tokens.append((token_str, token_type, nesting_level))
                 current_token = []
             # Add delimiter
@@ -119,7 +160,10 @@ def parse_template_type(type_str: str) -> list:
             if current_token:
                 token_str = ''.join(current_token).strip()
                 if token_str:
-                    token_type = 'std_type' if token_str.startswith('std::') else 'type'
+                    if token_str.startswith('std::'):
+                        token_type = 'std_type'
+                    else:
+                        token_type = classify_primitive_type(token_str)
                     tokens.append((token_str, token_type, nesting_level))
                 current_token = []
             # Add separator
@@ -150,7 +194,11 @@ def parse_template_type(type_str: str) -> list:
     if current_token:
         token_str = ''.join(current_token).strip()
         if token_str:
-            token_type = 'std_type' if token_str.startswith('std::') else 'type'
+            # For final token, std:: without template is just std_type
+            if token_str.startswith('std::'):
+                token_type = 'std_type'
+            else:
+                token_type = classify_primitive_type(token_str)
             tokens.append((token_str, token_type, nesting_level))
     
     return tokens
@@ -181,6 +229,7 @@ def compose_type_with_theme(type_info: TypeInfo, theme, access_style: str) -> st
     # Base type - may contain embedded modifiers and templates
     type_style = f"{access_style}_type"
     std_type_style = f"{access_style}_std_type"
+    std_template_type_style = f"{access_style}_std_template_type"
     template_type_style = f"{access_style}_template_type"
     if type_info.base_type:
         # Check if it's a template type
@@ -191,14 +240,18 @@ def compose_type_with_theme(type_info: TypeInfo, theme, access_style: str) -> st
             for token, token_type, level in tokens:
                 if token_type == 'std_type':
                     base_parts.append(theme.decorate(std_type_style, token))
+                elif token_type == 'std_template_type':
+                    base_parts.append(theme.decorate(std_template_type_style, token))
                 elif token_type == 'template_type':
                     base_parts.append(theme.decorate(template_type_style, token))
-                elif token_type == 'type':
+                elif token_type in ['type', 'int_type', 'float_type', 'void_bool_type']:
                     # Check if token is a modifier
                     if token in ['const', 'volatile', 'mutable', 'static', 'constexpr']:
                         base_parts.append(theme.decorate(f'{access_style}_const', token))
                     else:
-                        base_parts.append(theme.decorate(type_style, token))
+                        # Use specific style for primitive types
+                        style = f"{access_style}_{token_type}" if token_type != 'type' else type_style
+                        base_parts.append(theme.decorate(style, token))
                 else:
                     # Delimiters and separators - no coloring
                     base_parts.append(token)
@@ -213,7 +266,13 @@ def compose_type_with_theme(type_info: TypeInfo, theme, access_style: str) -> st
                 elif token.startswith('std::'):
                     base_parts.append(theme.decorate(std_type_style, token))
                 else:
-                    base_parts.append(theme.decorate(type_style, token))
+                    # Check if it's a primitive type
+                    prim_type = classify_primitive_type(token)
+                    if prim_type != 'type':
+                        style = f"{access_style}_{prim_type}"
+                    else:
+                        style = type_style
+                    base_parts.append(theme.decorate(style, token))
             parts.append(' '.join(base_parts))
     
     # Pointer/reference (no special coloring)
