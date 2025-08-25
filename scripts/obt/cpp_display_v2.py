@@ -180,6 +180,10 @@ class CppEntityDisplayV2:
                     identifier = entity.short_name
                     if entity.is_template and entity.template_params:
                         identifier = f"template{entity.template_params} {identifier}"
+                    # Add aliased type for typedefs with color
+                    if entity.entity_type == EntityType.TYPEDEF and entity.aliased_type:
+                        # Keep the typedef name white, make the aliased type cyan
+                        identifier = f"{identifier} = {self.deco.cyan(entity.aliased_type)}"
                     
                     # Add inheritance info if requested
                     if show_base_class and entity.base_classes:
