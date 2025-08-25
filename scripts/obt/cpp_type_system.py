@@ -61,6 +61,100 @@ class TypeInfo:
         return None
 
 
+def parse_template_type(type_str: str) -> list:
+    """
+    Parse a template type string into structured tokens.
+    
+    Returns a list of tuples: (token, token_type, nesting_level)
+    where token_type is one of: 'type', 'std_type', 'template_type', 'delimiter', 'separator'
+    
+    Example: "std::vector<int, float>" returns:
+    [('std::vector', 'std_type', 0),
+     ('<', 'delimiter', 0),
+     ('int', 'type', 1),
+     (',', 'separator', 1),
+     ('float', 'type', 1),
+     ('>', 'delimiter', 0)]
+    """
+    tokens = []
+    current_token = []
+    nesting_level = 0
+    i = 0
+    
+    while i < len(type_str):
+        char = type_str[i]
+        
+        if char == '<':
+            # Finish current token
+            if current_token:
+                token_str = ''.join(current_token).strip()
+                if token_str:
+                    # Check if this is a template (has < after it)
+                    if token_str.startswith('std::'):
+                        token_type = 'std_type'
+                    elif nesting_level == 0:  # Top-level template name
+                        token_type = 'template_type'
+                    else:
+                        token_type = 'type'
+                    tokens.append((token_str, token_type, nesting_level))
+                current_token = []
+            # Add delimiter
+            tokens.append(('<', 'delimiter', nesting_level))
+            nesting_level += 1
+            
+        elif char == '>':
+            # Finish current token
+            if current_token:
+                token_str = ''.join(current_token).strip()
+                if token_str:
+                    token_type = 'std_type' if token_str.startswith('std::') else 'type'
+                    tokens.append((token_str, token_type, nesting_level))
+                current_token = []
+            # Add delimiter
+            nesting_level -= 1
+            tokens.append(('>', 'delimiter', nesting_level))
+            
+        elif char == ',':
+            # Finish current token
+            if current_token:
+                token_str = ''.join(current_token).strip()
+                if token_str:
+                    token_type = 'std_type' if token_str.startswith('std::') else 'type'
+                    tokens.append((token_str, token_type, nesting_level))
+                current_token = []
+            # Add separator
+            tokens.append((',', 'separator', nesting_level))
+            
+        elif char in ' \t':
+            # Space might be part of type or separator
+            if current_token and ''.join(current_token).strip():
+                # Check if next non-space char is alphanumeric (part of multi-word type)
+                j = i + 1
+                while j < len(type_str) and type_str[j] in ' \t':
+                    j += 1
+                if j < len(type_str) and (type_str[j].isalnum() or type_str[j] in ':_'):
+                    current_token.append(char)
+                else:
+                    # End of token
+                    token_str = ''.join(current_token).strip()
+                    if token_str:
+                        token_type = 'std_type' if token_str.startswith('std::') else 'type'
+                        tokens.append((token_str, token_type, nesting_level))
+                    current_token = []
+        else:
+            current_token.append(char)
+        
+        i += 1
+    
+    # Finish any remaining token
+    if current_token:
+        token_str = ''.join(current_token).strip()
+        if token_str:
+            token_type = 'std_type' if token_str.startswith('std::') else 'type'
+            tokens.append((token_str, token_type, nesting_level))
+    
+    return tokens
+
 def compose_type_with_theme(type_info: TypeInfo, theme, access_style: str) -> str:
     """
     Compose type string with themed modifiers for display.
@@ -84,18 +178,43 @@ def compose_type_with_theme(type_info: TypeInfo, theme, access_style: str) -> st
     if type_info.is_volatile:
         parts.append(theme.decorate(f'{access_style}_const', "volatile"))
     
-    # Base type - may contain embedded modifiers like "const std::string"
+    # Base type - may contain embedded modifiers and templates
     type_style = f"{access_style}_type"
+    std_type_style = f"{access_style}_std_type"
+    template_type_style = f"{access_style}_template_type"
     if type_info.base_type:
-        # Split and theme each token in the base type
-        base_tokens = type_info.base_type.split()
-        base_parts = []
-        for token in base_tokens:
-            if token in ['const', 'volatile', 'mutable', 'static', 'constexpr']:
-                base_parts.append(theme.decorate(f'{access_style}_const', token))
-            else:
-                base_parts.append(theme.decorate(type_style, token))
-        parts.append(' '.join(base_parts))
+        # Check if it's a template type
+        if '<' in type_info.base_type:
+            # Parse template structure
+            tokens = parse_template_type(type_info.base_type)
+            base_parts = []
+            for token, token_type, level in tokens:
+                if token_type == 'std_type':
+                    base_parts.append(theme.decorate(std_type_style, token))
+                elif token_type == 'template_type':
+                    base_parts.append(theme.decorate(template_type_style, token))
+                elif token_type == 'type':
+                    # Check if token is a modifier
+                    if token in ['const', 'volatile', 'mutable', 'static', 'constexpr']:
+                        base_parts.append(theme.decorate(f'{access_style}_const', token))
+                    else:
+                        base_parts.append(theme.decorate(type_style, token))
+                else:
+                    # Delimiters and separators - no coloring
+                    base_parts.append(token)
+            parts.append(''.join(base_parts))
+        else:
+            # Non-template type - use simple tokenization
+            base_tokens = type_info.base_type.split()
+            base_parts = []
+            for token in base_tokens:
+                if token in ['const', 'volatile', 'mutable', 'static', 'constexpr']:
+                    base_parts.append(theme.decorate(f'{access_style}_const', token))
+                elif token.startswith('std::'):
+                    base_parts.append(theme.decorate(std_type_style, token))
+                else:
+                    base_parts.append(theme.decorate(type_style, token))
+            parts.append(' '.join(base_parts))
     
     # Pointer/reference (no special coloring)
     ptr_ref = ""

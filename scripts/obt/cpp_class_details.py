@@ -41,14 +41,20 @@ class ClassDetailsDisplay:
         # Member types and names by access level
         # Public members - brightest
         theme.add_style('public_type', fg='sata0')
+        theme.add_style('public_std_type', fg='ora0')  # std:: types
+        theme.add_style('public_template_type', fg='cyn0')  # template types (non-std)
         theme.add_style('public_name', fg='gry0')
         
         # Protected members - 1 shade darker
         theme.add_style('protected_type', fg='satb0')
+        theme.add_style('protected_std_type', fg='ora1')  # std:: types
+        theme.add_style('protected_template_type', fg='cyn1')  # template types (non-std)
         theme.add_style('protected_name', fg='gry1')
         
         # Private members - 2 shades darker
         theme.add_style('private_type', fg='satc0')
+        theme.add_style('private_std_type', fg='ora2')  # std:: types
+        theme.add_style('private_template_type', fg='cyn2')  # template types (non-std)
         theme.add_style('private_name', fg='gry2')
         
         # Modifiers - with access level variations
@@ -470,9 +476,39 @@ class ClassDetailsDisplay:
         if modifiers:
             result_parts.append(self.theme.decorate(f'{access_style}_static', modifiers))
         
-        # Return type - use type style for this access level
+        # Return type - use template parser if it contains templates
         if return_type:
-            result_parts.append(self.theme.decorate(type_style, return_type.strip()))
+            return_type = return_type.strip()
+            if '<' in return_type:
+                # Import at function level to avoid circular dependency
+                from obt.cpp_type_system import parse_template_type
+                tokens = parse_template_type(return_type)
+                for token, token_type, level in tokens:
+                    if token_type == 'std_type':
+                        result_parts.append(self.theme.decorate(f'{access_style}_std_type', token))
+                    elif token_type == 'template_type':
+                        result_parts.append(self.theme.decorate(f'{access_style}_template_type', token))
+                    elif token_type == 'type':
+                        # Check if token is a modifier
+                        if token in ['const', 'volatile', 'mutable']:
+                            result_parts.append(self.theme.decorate(f'{access_style}_const', token))
+                        else:
+                            result_parts.append(self.theme.decorate(type_style, token))
+                    else:
+                        # Delimiters and separators - no coloring
+                        result_parts.append(token)
+            elif return_type.startswith('std::'):
+                result_parts.append(self.theme.decorate(f'{access_style}_std_type', return_type))
+            else:
+                # Simple type - might have modifiers
+                tokens = return_type.split()
+                for token in tokens:
+                    if token in ['const', 'volatile', 'mutable']:
+                        result_parts.append(self.theme.decorate(f'{access_style}_const', token))
+                        result_parts.append(' ')
+                    else:
+                        result_parts.append(self.theme.decorate(type_style, token))
+                        result_parts.append(' ')
             result_parts.append(' ')
         
         # Function name - use name style for this access level
@@ -704,6 +740,10 @@ class ClassDetailsDisplay:
             elif i == len(tokens) - 1 and not any(c in token for c in ['*', '&', '<', '>', ':', '[']):
                 # Last token without special chars is likely the identifier
                 identifier = token
+            elif token.startswith('std::'):
+                # std:: types get special color
+                std_type_style = f"{access_style}_std_type"
+                result_parts.append(self.theme.decorate(std_type_style, token))
             else:
                 # Part of the type
                 result_parts.append(self.theme.decorate(type_style, token))
