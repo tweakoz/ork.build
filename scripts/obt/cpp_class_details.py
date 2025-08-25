@@ -1,8 +1,9 @@
 """
 Display detailed information about C++ classes and structs
 """
-from typing import List, Dict, Set, Optional, Tuple
+from typing import List, Dict, Set, Optional, Tuple, Any
 from pathlib import Path
+import json
 import obt.deco as deco
 from obt.deco import CustomTheme
 import obt.path
@@ -132,6 +133,215 @@ class ClassDetailsDisplay:
         
         return theme
         
+    def to_json(self, class_name: str, filters: Optional[Dict[str, Any]] = None) -> str:
+        """
+        Convert class details to JSON format optimized for AI readability.
+        
+        Schema:
+        {
+            "entity": {
+                "name": "fully::qualified::ClassName",
+                "short_name": "ClassName",
+                "type": "class|struct",
+                "file": "/path/to/file.h",
+                "line": 123,
+                "namespace": "fully::qualified",
+                "is_template": bool,
+                "template_params": "template<typename T>",
+                "base_classes": ["Base1", "public Base2"],
+                "derived_classes": ["Derived1", "Derived2"]
+            },
+            "members": {
+                "public": {
+                    "fields": [...],
+                    "methods": [...],
+                    "constructors": [...],
+                    "destructors": [...],
+                    "nested_types": [...],
+                    "typedefs": [...]
+                },
+                "protected": {...},
+                "private": {...}
+            },
+            "summary": {
+                "total_members": 42,
+                "public_count": 20,
+                "protected_count": 10,
+                "private_count": 12,
+                "has_virtual_methods": bool,
+                "is_abstract": bool
+            }
+        }
+        
+        Filters can include:
+        - access_level: "public"|"protected"|"private"|["public","protected"]
+        - member_type: "field"|"method"|"constructor"|etc or list
+        - is_static: true|false
+        - is_virtual: true|false
+        - is_const: true|false
+        - name_pattern: "regex pattern"
+        """
+        result = {
+            "entity": {},
+            "members": {
+                "public": {},
+                "protected": {},
+                "private": {}
+            },
+            "summary": {}
+        }
+        
+        # Find entities
+        entities = []
+        for entity_type in ['class', 'struct']:
+            found = self.db.search_entities(entity_type=entity_type, name=class_name)
+            entities.extend(found)
+        
+        if not entities:
+            return json.dumps({"error": f"No class or struct named '{class_name}' found"}, indent=2)
+        
+        entity = entities[0]
+        
+        # Entity info
+        result["entity"] = {
+            "name": entity.canonical_name,
+            "short_name": entity.short_name,
+            "type": entity.entity_type.value,
+            "file": getattr(entity, 'file_path', ''),
+            "line": getattr(entity, 'line_number', 0),
+            "namespace": entity.namespace or "",
+            "is_template": entity.is_template,
+            "template_params": entity.template_params or "",
+            "base_classes": entity.base_classes or [],
+            "derived_classes": [e.canonical_name for e in self.db.find_derived_classes(entity.canonical_name)]
+        }
+        
+        # Process members with filtering
+        if entity.members:
+            members_by_access = self._group_members_for_json(entity.members, filters)
+            result["members"] = members_by_access
+        
+        # Summary statistics
+        total = 0
+        public_count = 0
+        protected_count = 0
+        private_count = 0
+        has_virtual = False
+        
+        for member in (entity.members or []):
+            if self._should_include_member(member, filters):
+                total += 1
+                if member.access_level == AccessLevel.PUBLIC:
+                    public_count += 1
+                elif member.access_level == AccessLevel.PROTECTED:
+                    protected_count += 1
+                else:
+                    private_count += 1
+                if member.is_virtual:
+                    has_virtual = True
+        
+        result["summary"] = {
+            "total_members": total,
+            "public_count": public_count,
+            "protected_count": protected_count,
+            "private_count": private_count,
+            "has_virtual_methods": has_virtual,
+            "is_abstract": entity.is_abstract
+        }
+        
+        return json.dumps(result, indent=2, default=str)
+    
+    def _should_include_member(self, member: Member, filters: Optional[Dict[str, Any]]) -> bool:
+        """Check if member passes all filters"""
+        if not filters:
+            return True
+        
+        # Access level filter
+        if 'access_level' in filters:
+            allowed_access = filters['access_level']
+            if isinstance(allowed_access, str):
+                allowed_access = [allowed_access]
+            if member.access_level.name.lower() not in [a.lower() for a in allowed_access]:
+                return False
+        
+        # Member type filter
+        if 'member_type' in filters:
+            allowed_types = filters['member_type']
+            if isinstance(allowed_types, str):
+                allowed_types = [allowed_types]
+            if member.member_type.value not in allowed_types:
+                return False
+        
+        # Boolean filters
+        for attr in ['is_static', 'is_virtual', 'is_const']:
+            if attr in filters:
+                if getattr(member, attr, False) != filters[attr]:
+                    return False
+        
+        # Name pattern filter (regex)
+        if 'name_pattern' in filters:
+            import re
+            if not re.search(filters['name_pattern'], member.name):
+                return False
+        
+        return True
+    
+    def _group_members_for_json(self, members: List[Member], filters: Optional[Dict[str, Any]]) -> Dict:
+        """Group members by access level and type for JSON output"""
+        result = {
+            "public": {},
+            "protected": {},
+            "private": {}
+        }
+        
+        for member in members:
+            if not self._should_include_member(member, filters):
+                continue
+            
+            access_key = member.access_level.name.lower()
+            type_key = self._get_member_type_key(member.member_type)
+            
+            if type_key not in result[access_key]:
+                result[access_key][type_key] = []
+            
+            result[access_key][type_key].append(self._member_to_dict(member))
+        
+        return result
+    
+    def _get_member_type_key(self, member_type: MemberType) -> str:
+        """Get JSON key for member type"""
+        type_map = {
+            MemberType.FIELD: "fields",
+            MemberType.METHOD: "methods",
+            MemberType.CONSTRUCTOR: "constructors",
+            MemberType.DESTRUCTOR: "destructors",
+            MemberType.NESTED_TYPE: "nested_types",
+            MemberType.TYPEDEF: "typedefs",
+            MemberType.ENUM_VALUE: "enums"
+        }
+        return type_map.get(member_type, "other")
+    
+    def _member_to_dict(self, member: Member) -> Dict:
+        """Convert member to dictionary for JSON"""
+        return {
+            "name": member.name,
+            "type": member.data_type or "",
+            "signature": member.signature or "",
+            "line": member.line_number,
+            "is_static": member.is_static,
+            "is_const": member.is_const,
+            "is_virtual": member.is_virtual,
+            "is_pure_virtual": member.is_pure_virtual,
+            "is_override": member.is_override,
+            "is_final": member.is_final,
+            "is_inline": member.is_inline,
+            "is_explicit": member.is_explicit,
+            "is_deleted": member.is_deleted,
+            "is_default": member.is_default,
+            "value": member.value or "",
+            "array_dims": member.array_dimensions or ""
+        }
+    
     def display_details(self, class_name: str, show_files: bool = True, root_path: Optional[Path] = None):
         """Display detailed information about a class/struct"""
         # Find all entities with this name (handles both short and canonical names)
