@@ -114,7 +114,7 @@ def main():
             # Use display functionality
             from obt.cpp_display_v2 import CppEntityDisplayV2
             display = CppEntityDisplayV2()
-            display.display_search_results(results, args.verbose)
+            display.display_entities(results)
             
     except Exception as e:
         print(f"{deco.red(f'Error: {e}')}")
