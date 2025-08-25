@@ -315,7 +315,7 @@ class ClassDetailsDisplay:
         ]:
             if group_members:
                 print(f"  {self.theme.decorate('subsection_header', group_name)}:")
-                for member in sorted(group_members, key=lambda m: m.name):
+                for member in sorted(group_members, key=lambda m: m.name.lower()):
                     self._display_member(member, access_style, show_files, root_path, entity)
     
     def _display_member(self, member: Member, access_style, show_files: bool, root_path: Optional[Path], entity: Entity):
