@@ -1,6 +1,29 @@
 """
 Stack-based C++ Access Analyzer
 Implements context-aware AST traversal to track entity accesses
+
+TODO: Type-Aware Method Call Tracking
+--------------------------------------
+Current limitation: When tracking method calls like `ctx->SetDisplayMode(mode)`, 
+we record the access to the method name but cannot determine:
+1. The actual type of `ctx` (could be Context* or ContextGL*)
+2. Which overload of SetDisplayMode is being called (depends on type of `mode`)
+3. The correct method entity in the inheritance hierarchy
+
+Future enhancement: Integrate libclang for type-aware access tracking
+- Use libclang to get exact types of variables and expressions
+- Resolve method calls to specific overloads based on argument types  
+- Track both the object being called AND the specific method entity
+- Handle virtual dispatch correctly
+
+Implementation approach:
+1. Keep tree-sitter for fast structural parsing
+2. Add optional libclang pass for type resolution when compile_commands.json available
+3. For each method call, record TWO accesses:
+   - READ access to the object variable (if it's a member)
+   - CALL access to the specific method entity (with correct overload)
+
+See test_class_parsing_validation_clang.py for existing libclang integration example.
 """
 
 from dataclasses import dataclass
@@ -189,6 +212,12 @@ class StackBasedAccessAnalyzer:
                 if grandparent and grandparent.type == 'call_expression':
                     # Check if the field_expression is being called
                     if grandparent.children[0] == parent:
+                        # TODO: This records CALL access to just the method NAME, not the actual method entity
+                        # For proper tracking, we need to:
+                        # 1. Determine the type of the object (children[0])
+                        # 2. Find the method entity in that class with matching signature
+                        # 3. Record CALL access to that specific method entity
+                        # This requires type resolution - see file header TODO for libclang integration
                         return AccessType.CALL  # The field is a method being called
                 # Check if grandparent is assignment
                 if grandparent and grandparent.type == 'assignment_expression':
