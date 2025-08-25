@@ -16,12 +16,12 @@ from obt.deco import Deco
 deco = Deco()
 
 
-class TreeCommand(CppCommandBase):
+class InhTreeCommand(CppCommandBase):
     """Command for displaying inheritance trees"""
     
     def __init__(self):
         super().__init__(
-            "obt.cpp.tree",
+            "obt.cpp.inhtree",
             "Display inheritance tree for C++ classes/structs"
         )
     
@@ -78,7 +78,7 @@ class TreeCommand(CppCommandBase):
 
 def main():
     """Main entry point"""
-    cmd = TreeCommand()
+    cmd = InhTreeCommand()
     parser = cmd.create_parser()
     args = parser.parse_args()
     cmd.run(args)

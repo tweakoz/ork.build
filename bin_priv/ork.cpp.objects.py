@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """
-Display inheritance tree for Orkid C++ classes/structs.
+Search for C++ classes and structs (objects) in Orkid database.
+Shortcut for search with -t class,struct
 Wrapper that uses the default Orkid database.
 """
 
@@ -31,7 +32,7 @@ def main():
     # Run the obt variant as subprocess
     import subprocess
     import os
-    script_path = Path(__file__).parent / 'obt.cpp.tree.py'
+    script_path = Path(__file__).parent / 'obt.cpp.objects.py'
     result = subprocess.run([sys.executable, str(script_path)] + sys.argv[1:], env=os.environ)
     sys.exit(result.returncode)
 
