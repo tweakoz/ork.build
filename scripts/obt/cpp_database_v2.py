@@ -763,14 +763,22 @@ class CppDatabaseV2:
         
         # Load locations
         for loc_row in conn.execute(
-            """SELECT * FROM entity_locations 
-               WHERE entity_id = ? 
-               ORDER BY location_type DESC, line_number""",
+            """SELECT el.*, sf.line_mapping 
+               FROM entity_locations el
+               JOIN source_files sf ON el.file_path = sf.file_path
+               WHERE el.entity_id = ? 
+               ORDER BY el.location_type DESC, el.line_number""",
             (row['id'],)
         ):
+            # Remap line number using line_mapping
+            display_line = loc_row['line_number']
+            if loc_row['line_mapping']:
+                mapping = json.loads(loc_row['line_mapping'])
+                display_line = mapping.get(str(loc_row['line_number']), loc_row['line_number'])
+            
             location = Location(
                 file_path=loc_row['file_path'],
-                line_number=loc_row['line_number'],
+                line_number=display_line,  # Use remapped line
                 column_number=loc_row['column_number'],
                 location_type=LocationType(loc_row['location_type']),
                 has_body=bool(loc_row['has_body']),
