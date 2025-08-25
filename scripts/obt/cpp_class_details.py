@@ -55,34 +55,48 @@ class ClassDetailsDisplay:
         # Public modifiers - brightest
         theme.add_style('public_static', fg='mag0')
         theme.add_style('public_const', fg='red0')
-        theme.add_style('public_virtual', fg='pnk0')
-        theme.add_style('public_override', fg='ora0')
-        theme.add_style('public_final', fg='red0')
+        theme.add_style('public_virtual', fg='blx0')
+        theme.add_style('public_override', fg='blx0')
+        theme.add_style('public_final', fg='blx0')
         theme.add_style('public_deleted', fg='red0')
         theme.add_style('public_default', fg='grn0')
         
         # Protected modifiers - 1 shade darker
         theme.add_style('protected_static', fg='mag1')
         theme.add_style('protected_const', fg='red1')
-        theme.add_style('protected_virtual', fg='pnk1')
-        theme.add_style('protected_override', fg='ora1')
-        theme.add_style('protected_final', fg='red1')
+        theme.add_style('protected_virtual', fg='blx0')
+        theme.add_style('protected_override', fg='blx0')
+        theme.add_style('protected_final', fg='blx0')
         theme.add_style('protected_deleted', fg='red1')
         theme.add_style('protected_default', fg='grn1')
         
         # Private modifiers - 2 shades darker
         theme.add_style('private_static', fg='mag2')
         theme.add_style('private_const', fg='red2')
-        theme.add_style('private_virtual', fg='pnk3')
-        theme.add_style('private_override', fg='ora2')
-        theme.add_style('private_final', fg='red2')
+        theme.add_style('private_virtual', fg='blx0')
+        theme.add_style('private_override', fg='blx0')
+        theme.add_style('private_final', fg='blx0')
         theme.add_style('private_deleted', fg='red2')
         theme.add_style('private_default', fg='grn2')
         
         # Values and parameters
-        theme.add_style('value', fg='blx0')
-        theme.add_style('parameter', fg='orange')
-        theme.add_style('parameter_name', fg=(255, 165, 0))  # Orange
+        theme.add_style('value', fg='grn0')
+        
+        # Method/function arguments with access level variations
+        # Public arguments
+        theme.add_style('public_arg_type', fg='sata0')
+        theme.add_style('public_arg_identifier', fg='pnk0')
+        theme.add_style('public_arg_const', fg='red0')
+        
+        # Protected arguments - 1 shade darker
+        theme.add_style('protected_arg_type', fg='sata1')
+        theme.add_style('protected_arg_identifier', fg='pnk1')
+        theme.add_style('protected_arg_const', fg='red1')
+        
+        # Private arguments - 2 shades darker
+        theme.add_style('private_arg_type', fg='sata2')
+        theme.add_style('private_arg_identifier', fg='pnk2')
+        theme.add_style('private_arg_const', fg='red2')
         
         # File locations
         theme.add_style('file_path', fg='cyan')
@@ -469,9 +483,22 @@ class ClassDetailsDisplay:
             colored_params = self._colorize_parameters_with_access(params, access_style)
             result_parts.append(colored_params)
         
-        # Trailing modifiers (const, noexcept, etc.) - use access-specific modifier color
+        # Trailing modifiers (const, noexcept, final, etc.) - parse and apply appropriate colors
         if trailing:
-            result_parts.append(' ' + self.theme.decorate(f'{access_style}_const', trailing.strip()))
+            trailing_parts = []
+            for token in trailing.strip().split():
+                if token == 'final':
+                    trailing_parts.append(self.theme.decorate(f'{access_style}_final', token))
+                elif token == 'override':
+                    trailing_parts.append(self.theme.decorate(f'{access_style}_override', token))
+                elif token in ['const', 'noexcept', 'volatile']:
+                    trailing_parts.append(self.theme.decorate(f'{access_style}_const', token))
+                elif token in ['=', 'delete', 'default', '0']:
+                    # Handle = delete, = default, = 0
+                    trailing_parts.append(token)
+                else:
+                    trailing_parts.append(self.theme.decorate(f'{access_style}_const', token))
+            result_parts.append(' ' + ' '.join(trailing_parts))
         
         return ''.join(result_parts)
     
@@ -650,27 +677,42 @@ class ClassDetailsDisplay:
         """Color a single parameter using access-level-specific styles"""
         import re
         
-        # Get the style names for this access level
-        type_style = f"{access_style}_type"
-        name_style = f"{access_style}_name"
+        # Style names for this access level
+        type_style = f"{access_style}_arg_type"
+        name_style = f"{access_style}_arg_identifier"
+        const_style = f"{access_style}_arg_const"
         
-        # Pattern to match type and optional name
-        # This handles cases like: "int x", "const char* name", "std::vector<int> vec", "Context"
-        match = re.match(r'^(.*?)(\s+\w+)?$', param.strip())
-        if not match:
+        # Parse the parameter more carefully
+        # Handle patterns like: "const Type* name", "Type&& name", "const Type& name"
+        param = param.strip()
+        
+        # Split into tokens and process each
+        tokens = param.split()
+        if not tokens:
             return param
+            
+        result_parts = []
+        type_tokens = []
+        identifier = None
         
-        type_part = match.group(1).strip()
-        name_part = match.group(2)
+        # Process tokens - everything except last token is usually type
+        # unless last token has special chars like * or &
+        for i, token in enumerate(tokens):
+            # Check if this token is a modifier
+            if token in ['const', 'volatile', 'mutable']:
+                result_parts.append(self.theme.decorate(const_style, token))
+            elif i == len(tokens) - 1 and not any(c in token for c in ['*', '&', '<', '>', ':', '[']):
+                # Last token without special chars is likely the identifier
+                identifier = token
+            else:
+                # Part of the type
+                result_parts.append(self.theme.decorate(type_style, token))
         
-        result = []
-        if type_part:
-            result.append(self.theme.decorate(type_style, type_part))
-        
-        if name_part:
-            result.append(self.theme.decorate(name_style, name_part))
-        
-        return ''.join(result) if result else param
+        # Add identifier if found
+        if identifier:
+            result_parts.append(self.theme.decorate(name_style, identifier))
+            
+        return ' '.join(result_parts)
     
     def _display_method_implementations(self, entity: Entity, root_path: Optional[Path]):
         """Display method implementation locations in a separate section, grouped by signature"""

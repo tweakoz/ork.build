@@ -72,7 +72,7 @@ def compose_type_with_theme(type_info: TypeInfo, theme, access_style: str) -> st
     """
     parts = []
     
-    # Leading qualifiers with theme colors
+    # Leading qualifiers with theme colors (from TypeInfo flags)
     if type_info.is_static:
         parts.append(theme.decorate(f'{access_style}_static', "static"))
     if type_info.is_constexpr:
@@ -84,20 +84,33 @@ def compose_type_with_theme(type_info: TypeInfo, theme, access_style: str) -> st
     if type_info.is_volatile:
         parts.append(theme.decorate(f'{access_style}_const', "volatile"))
     
-    # Base type with theme color
+    # Base type - may contain embedded modifiers like "const std::string"
     type_style = f"{access_style}_type"
-    parts.append(theme.decorate(type_style, type_info.base_type))
+    if type_info.base_type:
+        # Split and theme each token in the base type
+        base_tokens = type_info.base_type.split()
+        base_parts = []
+        for token in base_tokens:
+            if token in ['const', 'volatile', 'mutable', 'static', 'constexpr']:
+                base_parts.append(theme.decorate(f'{access_style}_const', token))
+            else:
+                base_parts.append(theme.decorate(type_style, token))
+        parts.append(' '.join(base_parts))
     
     # Pointer/reference (no special coloring)
+    ptr_ref = ""
     if type_info.pointer_depth > 0:
-        parts.append("*" * type_info.pointer_depth)
+        ptr_ref += "*" * type_info.pointer_depth
     
     if type_info.is_rvalue_reference:
-        parts.append("&&")
+        ptr_ref += "&&"
     elif type_info.is_reference:
-        parts.append("&")
+        ptr_ref += "&"
     
-    # Join with appropriate spacing
+    if ptr_ref:
+        parts.append(ptr_ref)
+    
+    # Join parts with appropriate spacing
     result = " ".join(parts)
     
     # Array dimensions
