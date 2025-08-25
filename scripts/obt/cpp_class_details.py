@@ -8,6 +8,7 @@ from obt.deco import CustomTheme
 import obt.path
 from obt.cpp_database_v2 import CppDatabaseV2
 from obt.cpp_entities_v2 import Entity, EntityType, Member, MemberType, AccessLevel, LocationType
+from obt.cpp_type_system import TypeInfo, compose_type_with_theme
 from obt.cpp_formatter import CppFormatter
 from obt.cpp_search_utils import find_entities_by_name, group_entities_by_namespace
 
@@ -336,39 +337,10 @@ class ClassDetailsDisplay:
             colored_signature = self._colorize_method_signature_with_access(signature, access_style)
             parts.append(colored_signature)
             
-            # Add additional modifiers that aren't part of the signature (like virtual, override, final, etc.)
-            modifier_parts = []
-            if member.is_virtual:
-                modifier_parts.append(self.theme.decorate(f'{access_style}_virtual', "virtual"))
-            if member.is_pure_virtual:
-                modifier_parts.append("= 0")
-            if member.is_override:
-                modifier_parts.append(self.theme.decorate(f'{access_style}_override', "override"))
-            if member.is_final:
-                modifier_parts.append(self.theme.decorate(f'{access_style}_final', "final"))
-            if member.is_deleted:
-                modifier_parts.append(self.theme.decorate(f'{access_style}_deleted', "= delete"))
-            if member.is_default:
-                modifier_parts.append(self.theme.decorate(f'{access_style}_default', "= default"))
-            
-            if modifier_parts:
-                parts.append(" " + " ".join(modifier_parts))
+            # Don't add modifiers - they should already be in the signature
         else:
-            # For non-methods, show modifiers first
-            modifier_parts = []
-            if member.is_static:
-                modifier_parts.append(self.theme.decorate(f'{access_style}_static', "static"))
-            if member.is_const:
-                modifier_parts.append(self.theme.decorate(f'{access_style}_const', "const"))
-            if hasattr(member, 'is_constexpr') and member.is_constexpr:
-                modifier_parts.append(self.theme.decorate(f'{access_style}_const', "constexpr"))
-            if member.is_inline:
-                modifier_parts.append(self.theme.decorate(f'{access_style}_static', "inline"))
-            if member.is_explicit:
-                modifier_parts.append(self.theme.decorate(f'{access_style}_static', "explicit"))
-            
-            if modifier_parts:
-                parts.append(" ".join(modifier_parts))
+            # Don't add modifiers - they should already be in data_type
+            pass
             
         # Handle non-method types
         if member.member_type != MemberType.METHOD:
@@ -378,7 +350,8 @@ class ClassDetailsDisplay:
             elif member.member_type == MemberType.FIELD and member.value:
                 # For fields with initialization values
                 if member.data_type:
-                    parts.append(self.theme.decorate(type_style, member.data_type))
+                    type_info = self._member_to_type_info(member)
+                    parts.append(compose_type_with_theme(type_info, self.theme, access_style))
                 # Show field name with array dimensions and initialization value
                 name_display = member.name
                 if hasattr(member, 'array_dimensions') and member.array_dimensions:
@@ -389,7 +362,8 @@ class ClassDetailsDisplay:
             else:
                 # For fields and other members without initialization, show type and name
                 if member.data_type:
-                    parts.append(self.theme.decorate(type_style, member.data_type))
+                    type_info = self._member_to_type_info(member)
+                    parts.append(compose_type_with_theme(type_info, self.theme, access_style))
                 
                 # Show field name with array dimensions if present
                 name_display = member.name
@@ -616,6 +590,61 @@ class ClassDetailsDisplay:
             return '(' + ', '.join(colored_params) + ')'
         
         return params_str
+    
+    def _member_to_type_info(self, member: Member) -> TypeInfo:
+        """Reconstruct TypeInfo from Member fields"""
+        # Extract base type from data_type by removing modifiers
+        # For now, use data_type as base, but ideally this should come from base_type_id
+        base_type = member.data_type or ""
+        
+        # Remove known modifiers from the beginning to get clean base type
+        modifiers = ['static', 'const', 'constexpr', 'volatile', 'mutable', 'inline', 'explicit']
+        tokens = base_type.split()
+        base_tokens = []
+        for token in tokens:
+            if token not in modifiers:
+                base_tokens.append(token)
+        base_type = ' '.join(base_tokens) if base_tokens else base_type
+        
+        return TypeInfo(
+            base_type=base_type,
+            is_static=member.is_static,
+            is_const=member.is_const,
+            is_volatile=member.is_volatile,
+            is_constexpr=getattr(member, 'is_constexpr', False),
+            is_mutable=getattr(member, 'is_mutable', False),
+            pointer_depth=member.pointer_depth,
+            is_reference=member.is_reference,
+            is_rvalue_reference=member.is_rvalue_reference,
+            array_dimensions=[]  # TODO: parse from member.array_dimensions
+        )
+    
+    def _theme_type_string(self, type_str: str, access_style: str) -> str:
+        """
+        Apply theme colors to a complete type string.
+        Recognizes and themes modifiers like static, const, etc.
+        """
+        import re
+        
+        # Split type into tokens while preserving spacing
+        tokens = type_str.split()
+        themed_tokens = []
+        
+        # Known modifiers to theme
+        modifiers = {'static', 'const', 'constexpr', 'volatile', 'mutable', 'inline', 'explicit'}
+        
+        for token in tokens:
+            if token in modifiers:
+                # Apply modifier-specific theme
+                if token == 'static' or token == 'inline' or token == 'explicit':
+                    themed_tokens.append(self.theme.decorate(f'{access_style}_static', token))
+                elif token == 'const' or token == 'constexpr' or token == 'volatile' or token == 'mutable':
+                    themed_tokens.append(self.theme.decorate(f'{access_style}_const', token))
+            else:
+                # It's the actual type - apply type theme
+                themed_tokens.append(self.theme.decorate(f'{access_style}_type', token))
+        
+        return ' '.join(themed_tokens)
     
     def _colorize_single_parameter_with_access(self, param: str, access_style: str) -> str:
         """Color a single parameter using access-level-specific styles"""

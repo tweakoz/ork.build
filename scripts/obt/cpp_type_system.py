@@ -61,6 +61,52 @@ class TypeInfo:
         return None
 
 
+def compose_type_with_theme(type_info: TypeInfo, theme, access_style: str) -> str:
+    """
+    Compose type string with themed modifiers for display.
+    
+    Args:
+        type_info: Type metadata
+        theme: Theme object with decorate() method
+        access_style: 'public', 'protected', or 'private'
+    """
+    parts = []
+    
+    # Leading qualifiers with theme colors
+    if type_info.is_static:
+        parts.append(theme.decorate(f'{access_style}_static', "static"))
+    if type_info.is_constexpr:
+        parts.append(theme.decorate(f'{access_style}_const', "constexpr"))
+    if type_info.is_mutable:
+        parts.append(theme.decorate(f'{access_style}_const', "mutable"))
+    if type_info.is_const:
+        parts.append(theme.decorate(f'{access_style}_const', "const"))
+    if type_info.is_volatile:
+        parts.append(theme.decorate(f'{access_style}_const', "volatile"))
+    
+    # Base type with theme color
+    type_style = f"{access_style}_type"
+    parts.append(theme.decorate(type_style, type_info.base_type))
+    
+    # Pointer/reference (no special coloring)
+    if type_info.pointer_depth > 0:
+        parts.append("*" * type_info.pointer_depth)
+    
+    if type_info.is_rvalue_reference:
+        parts.append("&&")
+    elif type_info.is_reference:
+        parts.append("&")
+    
+    # Join with appropriate spacing
+    result = " ".join(parts)
+    
+    # Array dimensions
+    if type_info.array_dimensions:
+        for dim in type_info.array_dimensions:
+            result += f"[{dim}]"
+    
+    return result
+
 def compose_type(type_info: TypeInfo) -> str:
     """
     THE single authoritative type composition function.
@@ -76,6 +122,8 @@ def compose_type(type_info: TypeInfo) -> str:
     
     # Leading qualifiers (order matters for C++)
     qualifiers = []
+    if type_info.is_static:
+        qualifiers.append("static")
     if type_info.is_constexpr:
         qualifiers.append("constexpr")
     if type_info.is_mutable:
