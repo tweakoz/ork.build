@@ -72,11 +72,6 @@ class SearchCommand(CppCommandBase):
             help='Output results as JSON'
         )
         
-        parser.add_argument(
-            '--show-inheritance',
-            action='store_true',
-            help='Show base classes for each result'
-        )
         
         parser.add_argument(
             '--show-type',

@@ -190,8 +190,6 @@ def format_json_results(results: List[Entity]) -> List[Dict]:
         if entity.entity_type == EntityType.TYPEDEF:
             json_obj['aliased_type'] = entity.aliased_type
         
-        if entity.base_classes:
-            json_obj['base_classes'] = entity.base_classes
         
         json_results.append(json_obj)
     
