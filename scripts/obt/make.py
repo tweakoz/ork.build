@@ -23,7 +23,7 @@ def exec(target=None,parallelism=1.0):
   if parallelism!=0.0:
     p = obt_math.clamp(parallelism,0.0,1.0)
     numcores = int(obt.host.NumCores*p)
-    numcores = obt.math.clamp(numcores,1,obt.host.NumCores)
+    numcores = obt_math.clamp(numcores,1,obt.host.NumCores)
     cmd += ["-j",numcores]
   if target!=None:
     cmd += [target]

@@ -143,6 +143,9 @@ class EnvSetup:
     if (os.path.exists("~/.bashrc")):
       BASHRC += 'source $HOME/.bashrc;\n' # source users's bash setup
 
+    if (os.path.exists("~/.obt-global/.bashrc")):
+      BASHRC += 'source $HOME/.obt-global/.bashrc;\n'
+
     ################################################
 
     BASHRC += 'parse_git_branch() { git branch 2> /dev/null | grep "*" | sed -e "s/*//";};\n'
