@@ -3,12 +3,13 @@
 import os, distro
 
 UBUNTU_VERSION = int(float(distro.version())*100.0)
+is_bookworm = (UBUNTU_VERSION==1200)
 
 os.system("sudo update-alternatives --install /usr/bin/python python /usr/bin/python3 1")
 
 deplist = []
 
-if UBUNTU_VERSION <= 2004:
+if UBUNTU_VERSION <= 2004 and (not is_bookworm):
   deplist +=  ["gcc-8","g++-8","python-dev"] # not avail in ub22
 
 if UBUNTU_VERSION >= 2404:
@@ -21,7 +22,7 @@ elif UBUNTU_VERSION >= 2204:
   deplist += ["libvulkan-dev","vulkan-tools"]
   deplist += ["spirv-tools","spirv-headers","spirv-cross","libspirv-cross-c-shared-dev"]
   deplist += ["google-mock","libgmock-dev","asciidoctor"]
-else:
+elif (not is_bookworm):
   deplist += ["clang-10", "g++-10", "libstdc++-10-dev"]
 
 os.system("sudo update-alternatives --install /usr/bin/python python /usr/bin/python3 1")
