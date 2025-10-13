@@ -438,7 +438,7 @@ def osx_sdkdir():
 
 ###############################################################################
 
-def osx_brewdir():
+def _osx_brewdir():
   result = "/usr/local"
   if "HOMEBREW_PREFIX" in os.environ:
     result = os.environ["HOMEBREW_PREFIX"]
@@ -446,13 +446,23 @@ def osx_brewdir():
 
 ###############################################################################
 
-def osx_brewopt():
-  return osx_brewdir()/"opt"
+def _osx_brewopt():
+  return _osx_brewdir()/"opt"
 
 ###############################################################################
 
-def osx_brewcellar():
-  return osx_brewdir()/"Cellar"
+def _osx_brewcellar():
+  return _osx_brewdir()/"Cellar"
+
+###############################################################################
+
+def _osx_brewlib():
+  return _osx_brewdir()/"lib"
+
+###############################################################################
+
+def _osx_brewinclude():
+  return _osx_brewdir()/"include"
 
 ###############################################################################
 
@@ -492,6 +502,16 @@ def __getattr__(name):
     if "OBT_SUBSPACE_BIN_DIR" in os.environ:
       bin_dir = Path(os.environ["OBT_SUBSPACE_BIN_DIR"])
     return bin_dir
+  if name == "macos_brew_dir":
+    return _osx_brewdir()
+  if name == "macos_brew_opt":
+    return _osx_brewopt()
+  if name == "macos_brew_lib":
+    return _osx_brewlib()
+  if name == "macos_brew_include":
+    return _osx_brewinclude()
+  if name == "macos_brew_cellar":
+    return _osx_brewcellar()
   else:
     raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
   return None
