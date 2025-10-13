@@ -43,5 +43,3 @@ source = dep.switch(linux=_notcurses_from_source,macos=_notcurses_from_homebrew)
 class notcurses(source):
   def __init__(self):
     super().__init__()
-  def env_init(self):
-    super().env_init()
