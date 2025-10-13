@@ -212,8 +212,8 @@ class python_from_source(dep.Provider):
        #options += ["--enable-framework"]
        options += ["--enable-shared"]
        # for LZMA (todo find brewonic way to do it)
-       env.prepend("LDFLAGS","-L/opt/homebrew/opt/xz/lib")
-       env.prepend("CFLAGS","-I/opt/homebrew/opt/xz/include")
+       env.prepend("LDFLAGS",f"-L{path.macos_brew_opt}/xz/lib")
+       env.prepend("CFLAGS",f"-I{path.macos_brew_opt}/xz/include")
       
     else:
        options += ["--with-system-ffi"]
