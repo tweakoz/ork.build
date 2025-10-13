@@ -13,8 +13,8 @@ class opendb(dep.StdProvider):
     super().__init__(opendb.name)
     self._builder = self.createBuilder(dep.CMakeBuilder)
     if host.IsOsx:
-      self._builder.setCmVar("TCL_LIBRARY",path.osx_brewopt()/"tcl-tk"/"lib"/"libtcl8.6.dylib")
-      self._builder.setCmVar("TK_LIBRARY",path.osx_brewopt()/"tcl-tk"/"lib"/"libk8.6.dylib")
+      self._builder.setCmVar("TCL_LIBRARY",path.macos_brew_opt/"tcl-tk"/"lib"/"libtcl8.6.dylib")
+      self._builder.setCmVar("TK_LIBRARY",path.macos_brew_opt/"tcl-tk"/"lib"/"libk8.6.dylib")
     #self._builder.requires(["eigen","lemongraph"])
   ########################################################################
   @property
