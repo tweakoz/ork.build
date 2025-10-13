@@ -47,7 +47,7 @@ class _vulkan_from_moltenvk(dep.Provider):
     # Goal: get off homebrew dependency completely
     # For now, we need to set DYLD_LIBRARY_PATH to find our MoltenVK and homebrew dependencies
     env.prepend("DYLD_LIBRARY_PATH", path.libs())  # staging lib dir for our MoltenVK
-    env.append("DYLD_LIBRARY_PATH", "/opt/homebrew/lib")  # for validation layers and other deps
+    env.append("DYLD_LIBRARY_PATH", path.macos_brew_lib)  # for validation layers and other deps
     
     #env.append("PATH",self.sdk_dir/"bin")
     env.set("VULKAN_SDK",self.sdk_dir) # for cmake
