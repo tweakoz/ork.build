@@ -52,7 +52,7 @@ def main():
         subprocess.run(
             ["brew", "bundle", "install", "--file", str(brewfile), "--cleanup"],
             env=env,
-            check=True
+            check=False
         )
 
     # Create symlink for python3
@@ -100,6 +100,14 @@ def main():
     if cert_pem.exists():
         pip_config.write_text(f"[global]\ncert = {cert_pem}\n")
         print(f"Writing to {pip_config}")
+
+    # rerun brew install after certs fixed
+    
+    subprocess.run(
+        ["brew", "bundle", "install", "--file", str(brewfile), "--cleanup"],
+        env=env,
+        check=True
+    )
 
     # Create virtual environment in <root>/.venv using brew's python
     venv_dir = root_dir / ".venv"
