@@ -17,7 +17,7 @@ class openroad(dep.StdProvider):
     self._builder = self.createBuilder(dep.CMakeBuilder)
     self._builder.requires(["eigen","lemongraph"])
     if host.IsOsx:
-      self._builder.setCmVar("TCL_LIBRARY",path.osx_brewopt()/"tcl-tk"/"lib"/"libtcl8.6.dylib")
+      self._builder.setCmVar("TCL_LIBRARY",path.macos_brew_opt/"tcl-tk"/"lib"/"libtcl8.6.dylib")
   ########################################################################
   @property
   def _fetcher(self):
