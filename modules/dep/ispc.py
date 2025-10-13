@@ -24,7 +24,7 @@ class _ispc_from_source(dep.StdProvider):
     self._builder = self.createBuilder(dep.CMakeBuilder)
     self._builder.requires([self.llvm])
     if host.IsOsx:
-      self._builder.setCmVar("BISON_EXECUTABLE",path.osx_brewopt()/"bison"/"bin"/"bison")
+      self._builder.setCmVar("BISON_EXECUTABLE",path.macos_brew_opt/"bison"/"bin"/"bison")
   ########################################################################
   @property
   def _fetcher(self):
