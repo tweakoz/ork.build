@@ -2,6 +2,15 @@ import sys, os, re, json, argparse, re, shutil
 import xml.etree.ElementTree as ET
 from xml.dom import minidom
 
+INSTRUMENTS_TEMPLATES = {
+    "time_profiler": "com.apple.dt.Instruments.TimeProfiler",
+    "allocations": "com.apple.dt.Instruments.Allocations", 
+    "leaks": "com.apple.dt.Instruments.Leaks",
+    "system_trace": "com.apple.dt.Instruments.SystemTrace",
+    "metal_system_trace": "com.apple.dt.Instruments.MetalSystemTrace",
+    "game_performance": "com.apple.dt.Instruments.GamePerformance",
+}
+
 ####################################################################
 
 def find_executable(exec_name):
@@ -107,6 +116,22 @@ def create_xcode_structure(workspace_path, dap, env_vars, working_dir=None):
     [ET.Element("CommandLineArgument", argument=arg, isEnabled="YES") for arg in exec_args]
   )
 
+  profile_action = ET.SubElement(scheme_content, "ProfileAction",
+                                 buildConfiguration="Release",  # Usually Release for profiling
+                                 shouldUseLaunchSchemeArgsEnv="YES",  # Inherit args/env from launch
+                                 savedToolIdentifier="",
+                                 useCustomWorkingDirectory="YES" if working_dir else "NO",
+                                 debugDocumentVersioning="YES")
+  
+  if working_dir!=None:
+    profile_action.set('customWorkingDirectory', working_dir)
+  
+  # Add the path runnable for profiling
+  profile_path_runnable = ET.SubElement(profile_action, "PathRunnable", 
+                                        runnableDebuggingMode="0", 
+                                        FilePath=bin_path)
+
+  #profile_action.set('savedToolIdentifier', INSTRUMENTS_TEMPLATES['time_profiler'])
   with open(scheme_file, 'w') as f:
     f.write(xml_prettify(scheme_content))
 
