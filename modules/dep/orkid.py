@@ -153,8 +153,10 @@ class orkid(dep.StdProvider):
     #deplist += ["libsurvive"]
     deplist += ["openvdb"]    
     deplist += ["vulkan"]
-    #deplist += ["pytorch"]
-    deplist += ["notcurses"]
+    deplist += ["pytorch"]
+    #deplist += ["notcurses"]
+    deplist += ["lz4"]
+    deplist += ["curlpp"]
     if host.IsLinux:
       deplist += ["rtmidi"]
       #deplist += ["pipewire"]

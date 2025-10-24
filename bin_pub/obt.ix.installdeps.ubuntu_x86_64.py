@@ -24,7 +24,7 @@ deplist += ["libglfw3-dev","libflac++-dev","scons","git"]
 deplist += ["rapidjson-dev","graphviz","doxygen","libtiff-dev"]
 deplist += ["portaudio19-dev", "pybind11-dev"]
 deplist += ["libpng-dev"]
-deplist += ["iverilog","nvidia-cg-dev","nvidia-cuda-dev", "nvidia-cuda-toolkit"]
+deplist += ["iverilog","nvidia-opencl-dev"]
 deplist += ["libopenblas-dev"]
 deplist += ["librtmidi-dev"]
 deplist += ["texinfo","xmlto"]
@@ -90,7 +90,7 @@ deplist += ["libsbc-dev","libsdl2-dev","libudev-dev","libva-dev","libv4l-dev","l
 deplist += ["pkg-config","python3-docutils","systemd","mesa-utils","xvfb"]
 deplist += ["meson","ninja-build","libserialport-dev", "libxxhash-dev"]
 deplist += ["libpipewire-0.3-dev", "pipewire", "gstreamer1.0-libav"]
-deplist += ["astap"]
+deplist += ["astap","libnotcurses++-dev","libsodium-dev","libtar-dev"]
 
 merged = " ".join(deplist)
 os.system("sudo apt -y install %s" % merged)
