@@ -55,12 +55,12 @@ def main():
             shutil.rmtree(dest_folder)
         shutil.copytree(src_folder, dest_folder)
 
-        # Run inithb.sh
+        # Run inithb.py
         os.chdir(dest_folder)
-        init_script = Path("inithb.sh")
+        init_script = Path("inithb.py")
         init_script.chmod(0o755)
 
-        subprocess.run(["./inithb.sh"], check=True)
+        subprocess.run(["python3", "./inithb.py"], check=True)
 
     print("Setup complete!")
 
