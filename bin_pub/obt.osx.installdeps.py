@@ -14,6 +14,7 @@ deplist += ["pandoc", "doctest","ncurses","curlpp","libtar", "libsodium"]
 depliststr = " ".join(deplist)
 print(depliststr)
 os.system("brew install %s" % depliststr)
-#os.system("brew remove boost")
+# remove to avoid conflicts with ork.build's ffmpeg
+os.system("brew remove ffmpeg gstreamer notcurses") 
 
 os.system("python3 -m pip install --upgrade setuptools")
