@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import sys
+import argparse
 import subprocess
 import os
 from pathlib import Path
@@ -13,8 +14,19 @@ def run(cmd, cwd=None, check=True, shell=False):
     return subprocess.run(cmd, cwd=cwd, check=check, shell=shell)
 
 def main():
-    # Get brew root from argument or use default
-    brew_root = Path(sys.argv[1] if len(sys.argv) > 1 else ".brew").resolve()
+    parser = argparse.ArgumentParser(description='Initialize Homebrew in a custom root directory')
+    parser.add_argument('--root', type=str, required=True,
+                        help='Root directory where .brew (and later .venv, .staging) will be created')
+    args = parser.parse_args()
+
+    # Create root directory and set up brew inside it
+    root_dir = Path(args.root).resolve()
+    root_dir.mkdir(parents=True, exist_ok=True)
+    brew_root = root_dir / ".brew"
+
+    print(f"Using root directory: {root_dir}")
+    print(f"Homebrew will be installed at: {brew_root}")
+
     script_dir = Path(__file__).parent.resolve()
     brewfile = script_dir / "Brewfile"
 
@@ -41,7 +53,7 @@ def main():
         subprocess.run(
             ["brew", "bundle", "install", "--file", str(brewfile), "--cleanup"],
             env=env,
-            check=True
+            check=False
         )
 
     # Create symlink for python3
@@ -89,6 +101,31 @@ def main():
     if cert_pem.exists():
         pip_config.write_text(f"[global]\ncert = {cert_pem}\n")
         print(f"Writing to {pip_config}")
+
+    # rerun brew install after certs fixed
+    
+    subprocess.run(
+        ["brew", "bundle", "install", "--file", str(brewfile), "--cleanup"],
+        env=env,
+        check=True
+    )
+
+    # Create virtual environment in <root>/.venv using brew's python
+    venv_dir = root_dir / ".venv"
+    python_bin = brew_root / "bin" / "python3"
+
+    if python_bin.exists():
+        if not venv_dir.exists():
+            print(f"Creating virtual environment at: {venv_dir}")
+            subprocess.run(
+                [str(python_bin), "-m", "venv", str(venv_dir)],
+                check=True
+            )
+            print(f"Virtual environment created at {venv_dir}")
+        else:
+            print(f"Virtual environment already exists at {venv_dir}")
+    else:
+        print(f"Warning: Python not found at {python_bin}, skipping venv creation")
 
     print("Setup complete!")
 

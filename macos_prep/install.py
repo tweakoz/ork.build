@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import sys
+import argparse
 import subprocess
 import tempfile
 import shutil
@@ -10,8 +10,15 @@ REPO = "tweakoz/ork.build"
 FOLDER = "macos_prep"
 
 def main():
-    # Get branch from env var, command line arg, or use default
-    branch = os.environ.get("BRANCH") or (sys.argv[1] if len(sys.argv) > 1 else "toz-2025-dev287")
+    parser = argparse.ArgumentParser(description='Download and install macos_prep from GitHub')
+    parser.add_argument('--root', type=str, required=True,
+                        help='Root directory where .brew and .venv will be created')
+    parser.add_argument('--branch', type=str, default=None,
+                        help='Git branch to download from (default: env var BRANCH or toz-2025-dev287)')
+    args = parser.parse_args()
+
+    # Get branch from command line arg, env var, or use default
+    branch = args.branch or os.environ.get("BRANCH") or "toz-2025-dev287"
 
     print(f"Downloading {FOLDER} from {REPO}@{branch}...")
 
@@ -19,12 +26,6 @@ def main():
     with tempfile.TemporaryDirectory() as tmpdir:
         # Download and extract the branch tarball
         tarball_url = f"https://github.com/{REPO}/archive/refs/heads/{branch}.tar.gz"
-
-        subprocess.run(
-            ["curl", "-fsSL", tarball_url],
-            stdout=subprocess.PIPE,
-            check=True
-        )
 
         # Download and extract in one go
         curl_proc = subprocess.Popen(
@@ -55,12 +56,12 @@ def main():
             shutil.rmtree(dest_folder)
         shutil.copytree(src_folder, dest_folder)
 
-        # Run inithb.py
+        # Run inithb.py with --root argument
         os.chdir(dest_folder)
         init_script = Path("inithb.py")
         init_script.chmod(0o755)
 
-        subprocess.run(["python3", "./inithb.py"], check=True)
+        subprocess.run(["python3", "./inithb.py", "--root", args.root], check=True)
 
     print("Setup complete!")
 
