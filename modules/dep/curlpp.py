@@ -32,7 +32,7 @@ class curlpp(dep.StdProvider):
   def _fetcher(self):
     return dep.GithubFetcher(name=curlpp.name,
                              repospec="tweakoz/curlpp",
-                             revision="v0.8.1",
+                             revision="toz-2025-nov03",
                              recursive=False)
   ########################################################################
   def areRequiredSourceFilesPresent(self):
