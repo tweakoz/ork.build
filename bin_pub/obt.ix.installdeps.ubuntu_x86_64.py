@@ -91,6 +91,7 @@ deplist += ["pkg-config","python3-docutils","systemd","mesa-utils","xvfb"]
 deplist += ["meson","ninja-build","libserialport-dev", "libxxhash-dev"]
 deplist += ["libpipewire-0.3-dev", "pipewire", "gstreamer1.0-libav"]
 deplist += ["astap","libnotcurses++-dev","libsodium-dev","libtar-dev"]
+deplist += ["vulkan-tools"]
 deplist += ["libffmpeg-nvenc-dev"]
 
 merged = " ".join(deplist)
