@@ -18,6 +18,8 @@ class openblas(dep.StdProvider):
         "CMAKE_BUILD_TYPE": "RELEASE",
         "BUILD_EXAMPLES": "ON"
     })
+    if host.IsX86_64:
+      self._builder.setCmVar("TARGET", "HASWELL") # todo try newer cpu targets
     if host.IsOsx:
      def postInstall():
        from obt import macos

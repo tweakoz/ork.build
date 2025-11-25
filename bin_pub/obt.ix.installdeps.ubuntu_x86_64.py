@@ -91,8 +91,11 @@ deplist += ["pkg-config","python3-docutils","systemd","mesa-utils","xvfb"]
 deplist += ["meson","ninja-build","libserialport-dev", "libxxhash-dev"]
 deplist += ["libpipewire-0.3-dev", "pipewire", "gstreamer1.0-libav"]
 deplist += ["astap","libnotcurses++-dev","libsodium-dev","libtar-dev"]
-deplist += ["vulkan-tools"]
+deplist += ["vulkan-tools","vulkan-validationlayers"]
 deplist += ["libffmpeg-nvenc-dev"]
+deplist += ["libshaderc-dev"]
+deplist += ["libinput-dev"]
+
 
 merged = " ".join(deplist)
 os.system("sudo apt -y install %s" % merged)
