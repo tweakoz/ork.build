@@ -111,6 +111,140 @@ class DylibReference(object):
   def __init__(self):
     self.references = set()
 
+##############################################################################
+
+def is_macho_binary(file_path):
+  """Check if a file is a Mach-O binary."""
+  try:
+    result = subprocess.run(['file', str(file_path)], capture_output=True, text=True)
+    return 'Mach-O' in result.stdout
+  except:
+    return False
+
+##############################################################################
+
+def framework_enumerate_binaries(framework_path):
+  """
+  Find all Mach-O binaries in a framework.
+  Returns list of paths to binaries (dylibs, main binary, .cti files, etc.)
+  """
+  binaries = []
+  framework_path = path.Path(framework_path)
+
+  # Walk the framework directory
+  for root, dirs, files in os.walk(str(framework_path)):
+    # Skip dSYM directories (debug symbols)
+    dirs[:] = [d for d in dirs if not d.endswith('.dSYM')]
+
+    for fname in files:
+      fpath = os.path.join(root, fname)
+      # Check common extensions and verify it's actually Mach-O
+      if fname.endswith(('.dylib', '.cti', '.so')) or (
+          '.' not in fname and os.path.isfile(fpath) and is_macho_binary(fpath)):
+        if is_macho_binary(fpath):
+          binaries.append(path.Path(fpath))
+
+  return binaries
+
+##############################################################################
+
+def install_framework_to_stage(src_framework_path, framework_name=None, stage_lib_dir=None, force=False):
+  """
+  Copy a macOS framework to the staging lib directory and fix all install names.
+
+  Changes hardcoded /Library/Frameworks/xxx.framework/... paths to
+  @rpath/xxx.framework/... so consumers only need staging lib in their RPATH.
+
+  Args:
+    src_framework_path: Path to source framework (e.g., /path/to/xxx.framework)
+    framework_name: Name of framework (derived from path if not provided)
+    stage_lib_dir: Destination lib directory (defaults to path.libs())
+    force: If True, reinstall even if framework already exists
+
+  Returns:
+    Path to installed framework
+  """
+  assert host.IsOsx, "install_framework_to_stage only works on macOS"
+
+  src_framework_path = path.Path(src_framework_path)
+
+  # Derive framework name from path if not provided
+  if framework_name is None:
+    framework_name = src_framework_path.name
+    if framework_name.endswith('.framework'):
+      framework_name = framework_name[:-10]  # Remove .framework suffix
+
+  # Default to staging lib directory
+  if stage_lib_dir is None:
+    stage_lib_dir = path.libs()
+  else:
+    stage_lib_dir = path.Path(stage_lib_dir)
+
+  dest_framework_path = stage_lib_dir / f"{framework_name}.framework"
+
+  # Skip if already installed (unless force=True)
+  if dest_framework_path.exists() and not force:
+    print(deco.val(f"Framework {framework_name} already installed at {dest_framework_path}"))
+    return dest_framework_path
+
+  print(deco.val(f"Installing framework: {framework_name}"))
+  print(deco.val(f"  Source: {src_framework_path}"))
+  print(deco.val(f"  Dest:   {dest_framework_path}"))
+
+  # Copy framework to staging
+  pathtools.mkdir(stage_lib_dir, parents=True)
+  pathtools.copydir(src_framework_path, dest_framework_path)
+
+  # Find all Mach-O binaries in the installed framework
+  binaries = framework_enumerate_binaries(dest_framework_path)
+
+  # The old prefix we're replacing
+  old_prefix = f"/Library/Frameworks/{framework_name}.framework"
+  # The new prefix using @rpath
+  new_prefix = f"@rpath/{framework_name}.framework"
+
+  for binary in binaries:
+    print(deco.val(f"  Fixing: {binary.name}"))
+
+    # Get current install name ID
+    current_id = macho_get_id(str(binary)).strip().split('\n')[-1].strip()
+
+    # Fix the install name ID if it contains the old prefix
+    if old_prefix in current_id:
+      new_id = current_id.replace(old_prefix, new_prefix)
+      print(deco.val(f"    ID: {current_id} -> {new_id}"))
+      macho_change_id(str(binary), new_id)
+
+    # Fix load commands that reference the old prefix
+    macho_replace_loadpaths(str(binary), old_prefix, new_prefix)
+
+  # Re-sign with ad-hoc signature (required after install_name_tool modifications)
+  # Sign in proper order: nested libraries first, then main binary, then framework bundle
+  print(deco.val(f"  Re-signing framework (ad-hoc)..."))
+
+  # Sign nested libraries first
+  libraries_dir = dest_framework_path / "Versions" / "Current" / "Libraries"
+  if libraries_dir.exists():
+    for lib in libraries_dir.iterdir():
+      if lib.is_file() and is_macho_binary(str(lib)):
+        print(deco.val(f"    Signing: {lib.name}"))
+        run(["codesign", "-s", "-", "--force", str(lib)], do_log=True)
+
+  # Sign main binary
+  main_binary = dest_framework_path / "Versions" / "Current" / framework_name
+  if main_binary.exists():
+    print(deco.val(f"    Signing: {framework_name} (main binary)"))
+    run(["codesign", "-s", "-", "--force", str(main_binary)], do_log=True)
+
+  # Sign the framework bundle
+  print(deco.val(f"    Signing: {framework_name}.framework (bundle)"))
+  run(["codesign", "-s", "-", "--force", str(dest_framework_path)], do_log=True)
+
+  print(deco.val(f"  Framework installed successfully"))
+  return dest_framework_path
+
+##############################################################################
+
 class DylibReferenceDatabase(object):
   def __init__(self):
     self.referencers = dict()
