@@ -195,6 +195,10 @@ def install_framework_to_stage(src_framework_path, framework_name=None, stage_li
   pathtools.mkdir(stage_lib_dir, parents=True)
   pathtools.copydir(src_framework_path, dest_framework_path)
 
+  # Remove quarantine extended attribute (required for frameworks from git/network)
+  print(deco.val(f"  Removing quarantine attribute..."))
+  run(["xattr", "-rd", "com.apple.quarantine", str(dest_framework_path)], do_log=True)
+
   # Find all Mach-O binaries in the installed framework
   binaries = framework_enumerate_binaries(dest_framework_path)
 
