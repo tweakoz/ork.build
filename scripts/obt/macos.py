@@ -191,12 +191,16 @@ def install_framework_to_stage(src_framework_path, framework_name=None, stage_li
   print(deco.val(f"  Source: {src_framework_path}"))
   print(deco.val(f"  Dest:   {dest_framework_path}"))
 
+  # Remove quarantine from source first (in case it was cloned/downloaded)
+  print(deco.val(f"  Removing quarantine attribute from source..."))
+  run(["xattr", "-rd", "com.apple.quarantine", str(src_framework_path)], do_log=True)
+
   # Copy framework to staging
   pathtools.mkdir(stage_lib_dir, parents=True)
   pathtools.copydir(src_framework_path, dest_framework_path)
 
-  # Remove quarantine extended attribute (required for frameworks from git/network)
-  print(deco.val(f"  Removing quarantine attribute..."))
+  # Remove quarantine extended attribute from destination as well
+  print(deco.val(f"  Removing quarantine attribute from destination..."))
   run(["xattr", "-rd", "com.apple.quarantine", str(dest_framework_path)], do_log=True)
 
   # Find all Mach-O binaries in the installed framework
@@ -224,7 +228,10 @@ def install_framework_to_stage(src_framework_path, framework_name=None, stage_li
 
   # Re-sign with ad-hoc signature (required after install_name_tool modifications)
   # Sign in proper order: nested libraries first, then main binary, then framework bundle
-  print(deco.val(f"  Re-signing framework (ad-hoc)..."))
+  # Use hardened runtime for better Gatekeeper compatibility
+  print(deco.val(f"  Re-signing framework (ad-hoc with hardened runtime)..."))
+
+  sign_args = ["codesign", "-s", "-", "--force", "--options", "runtime"]
 
   # Sign nested libraries first
   libraries_dir = dest_framework_path / "Versions" / "Current" / "Libraries"
@@ -232,17 +239,17 @@ def install_framework_to_stage(src_framework_path, framework_name=None, stage_li
     for lib in libraries_dir.iterdir():
       if lib.is_file() and is_macho_binary(str(lib)):
         print(deco.val(f"    Signing: {lib.name}"))
-        run(["codesign", "-s", "-", "--force", str(lib)], do_log=True)
+        run(sign_args + [str(lib)], do_log=True)
 
   # Sign main binary
   main_binary = dest_framework_path / "Versions" / "Current" / framework_name
   if main_binary.exists():
     print(deco.val(f"    Signing: {framework_name} (main binary)"))
-    run(["codesign", "-s", "-", "--force", str(main_binary)], do_log=True)
+    run(sign_args + [str(main_binary)], do_log=True)
 
   # Sign the framework bundle
   print(deco.val(f"    Signing: {framework_name}.framework (bundle)"))
-  run(["codesign", "-s", "-", "--force", str(dest_framework_path)], do_log=True)
+  run(sign_args + [str(dest_framework_path)], do_log=True)
 
   print(deco.val(f"  Framework installed successfully"))
   return dest_framework_path
