@@ -195,9 +195,13 @@ def install_framework_to_stage(src_framework_path, framework_name=None, stage_li
   print(deco.val(f"  Removing quarantine attribute from source..."))
   run(["xattr", "-rd", "com.apple.quarantine", str(src_framework_path)], do_log=True)
 
-  # Copy framework to staging
+  # Copy framework to staging (preserve symlinks with -a)
   pathtools.mkdir(stage_lib_dir, parents=True)
-  pathtools.copydir(src_framework_path, dest_framework_path)
+  # Don't use pathtools.copydir - it uses cp -r which dereferences symlinks
+  # Use cp -a to preserve symlinks, which is critical for framework structure
+  if dest_framework_path.exists():
+    run(["rm", "-rf", str(dest_framework_path)], do_log=True)
+  run(["cp", "-a", str(src_framework_path), str(dest_framework_path)], do_log=True)
 
   # Remove quarantine extended attribute from destination as well
   print(deco.val(f"  Removing quarantine attribute from destination..."))
@@ -229,23 +233,33 @@ def install_framework_to_stage(src_framework_path, framework_name=None, stage_li
   # Re-sign with ad-hoc signature (required after install_name_tool modifications)
   # Sign in proper order: nested libraries first, then main binary, then framework bundle
   # Use hardened runtime for better Gatekeeper compatibility
+  # IMPORTANT: Must sign actual files, not symlinks - use resolve() to follow symlinks
   print(deco.val(f"  Re-signing framework (ad-hoc with hardened runtime)..."))
 
   sign_args = ["codesign", "-s", "-", "--force", "--options", "runtime"]
 
-  # Sign nested libraries first
-  libraries_dir = dest_framework_path / "Versions" / "Current" / "Libraries"
+  # Find the actual Versions directory (follow Current symlink)
+  versions_current = dest_framework_path / "Versions" / "Current"
+  if versions_current.is_symlink():
+    actual_version_dir = versions_current.resolve()
+  else:
+    actual_version_dir = versions_current
+
+  # Sign nested libraries first (use actual paths, not symlinks)
+  libraries_dir = actual_version_dir / "Libraries"
   if libraries_dir.exists():
     for lib in libraries_dir.iterdir():
-      if lib.is_file() and is_macho_binary(str(lib)):
+      real_lib = lib.resolve() if lib.is_symlink() else lib
+      if real_lib.is_file() and is_macho_binary(str(real_lib)):
         print(deco.val(f"    Signing: {lib.name}"))
-        run(sign_args + [str(lib)], do_log=True)
+        run(sign_args + [str(real_lib)], do_log=True)
 
-  # Sign main binary
-  main_binary = dest_framework_path / "Versions" / "Current" / framework_name
+  # Sign main binary (use actual path, not symlink)
+  main_binary = actual_version_dir / framework_name
   if main_binary.exists():
+    real_main = main_binary.resolve() if main_binary.is_symlink() else main_binary
     print(deco.val(f"    Signing: {framework_name} (main binary)"))
-    run(sign_args + [str(main_binary)], do_log=True)
+    run(sign_args + [str(real_main)], do_log=True)
 
   # Sign the framework bundle
   print(deco.val(f"    Signing: {framework_name}.framework (bundle)"))
