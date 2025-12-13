@@ -20,7 +20,11 @@ class rnnoise(dep.StdProvider):
     return dep.GithubFetcher(name=rnnoise.name,
                              repospec="xiph/rnnoise",
                              revision=self.VERSION,
-                             recursive=False,
-                             disable_tarball=True)
+                             recursive=False)
   ########################################################################
+  def areRequiredSourceFilesPresent(self):
+    return (self.source_root/"configure.ac").exists()
+
+  def areRequiredBinaryFilesPresent(self):
+    return (path.libs()/"librnnoise.a").exists()
 ###############################################################################

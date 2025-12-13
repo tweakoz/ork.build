@@ -72,9 +72,18 @@ class _pytorch_for_mps(dep.StdProvider):
         [ "patch", "-p0", "-i", str(diff_file), str(serpy_file) ]
       ),
     ]
+  ########################################################################
   @property
   def _fetcher(self):
     return dep.NopFetcher(name="pytorch_for_mps")
+  ########################################################################
+  def areRequiredSourceFilesPresent(self):
+    return self.areRequiredBinaryFilesPresent()
+  ########################################################################
+  def areRequiredBinaryFilesPresent(self):
+    PYTHON = dep.instance("python")
+    TORCHDIR = PYTHON.site_packages_dir/"torch"
+    return TORCHDIR.exists()
 
 ###############################################################################
 class pytorch(dep.switch(linux=_pytorch_from_source, \
