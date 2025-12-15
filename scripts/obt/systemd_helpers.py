@@ -11,8 +11,8 @@ import obt.docker
 
 def parse_obt_launch_env():
     """
-    Parse ${OBT_STAGE}/obt-launch-env and extract uncommented export statements.
-    Returns a dictionary of environment variables.
+    Parse ${OBT_STAGE}/obt-launch-env and extract uncommented export statements and project list.
+    Returns a tuple of (env_vars dict, projects list, numcores int or None).
     """
     obt_stage = os.environ.get("OBT_STAGE")
     if not obt_stage:
@@ -23,6 +23,8 @@ def parse_obt_launch_env():
         raise RuntimeError(f"obt-launch-env file not found at {launch_env_file}")
 
     env_vars = {}
+    projects = []
+    numcores = None
     export_pattern = re.compile(r'^\s*export\s+([A-Z_][A-Z0-9_]*)\s*=\s*(.+)$')
 
     with open(launch_env_file, 'r') as f:
@@ -30,6 +32,17 @@ def parse_obt_launch_env():
             line = line.strip()
             # Skip empty lines and comments
             if not line or line.startswith('#'):
+                continue
+
+            # Check for obt.env.launch.py line with --project and --numcores args
+            if 'obt.env.launch.py' in line:
+                # Extract all --project arguments
+                parts = line.split()
+                for i, part in enumerate(parts):
+                    if part == '--project' and i + 1 < len(parts):
+                        projects.append(parts[i + 1])
+                    elif part == '--numcores' and i + 1 < len(parts):
+                        numcores = int(parts[i + 1])
                 continue
 
             match = export_pattern.match(line)
@@ -40,7 +53,7 @@ def parse_obt_launch_env():
                 var_value = var_value.strip('"').strip("'")
                 env_vars[var_name] = var_value
 
-    return env_vars
+    return env_vars, projects, numcores
 
 def realize_dependencies(service_name, requires_deps, requires_dockers, requires_pips):
     """
@@ -160,8 +173,8 @@ def create_systemd_service(service_name, dest_folder, command_str, **kwargs):
     dest_path = path.Path(dest_folder)
     dest_path.mkdir(parents=True, exist_ok=True)
 
-    # Parse environment from obt-launch-env
-    env_vars = parse_obt_launch_env()
+    # Parse environment and projects from obt-launch-env
+    env_vars, projects, numcores = parse_obt_launch_env()
 
     # Add critical OBT environment variables
     if "VIRTUAL_ENV" in os.environ:
@@ -178,6 +191,9 @@ def create_systemd_service(service_name, dest_folder, command_str, **kwargs):
         raise RuntimeError("obt.env.launch.py not found in PATH")
 
     # Resolve the command path and handle Python scripts
+    # First expand any environment variables in the command string
+    command_str = os.path.expandvars(command_str)
+
     # Extract just the command name (first word before any arguments)
     command_parts = command_str.split(None, 1)  # Split on whitespace, max 1 split
     command_name = command_parts[0]
@@ -265,7 +281,18 @@ def create_systemd_service(service_name, dest_folder, command_str, **kwargs):
         service_content += f'Environment="{var_name}={var_value}"\n'
 
     # Add ExecStart with obt.env.launch.py wrapper (always needs --stagedir)
-    service_content += f'\nExecStart={obt_env_launch} --stagedir {obt_stage} --command "{full_command}"\n'
+    # Build arguments from parsed obt-launch-env
+    launch_args = f"--stagedir {obt_stage}"
+
+    if numcores is not None:
+        launch_args += f" --numcores {numcores}"
+
+    for project in projects:
+        # Expand ~ to full path for systemd compatibility
+        expanded_project = str(path.Path(project).expanduser())
+        launch_args += f" --project {expanded_project}"
+
+    service_content += f'\nExecStart={obt_env_launch} {launch_args} --command "{full_command}"\n'
     service_content += """Restart=on-failure
 RestartSec=5
 
