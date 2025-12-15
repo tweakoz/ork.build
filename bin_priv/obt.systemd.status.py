@@ -15,9 +15,15 @@ def main():
     try:
         # Verify service module exists
         svc = systemd.requires(args.service_name)
+        info = svc.info()
 
         print(deco.inf(f"Status of service: {args.service_name}"))
-        command.run(["systemctl", "--user", "status", f"{args.service_name}.service"])
+
+        # Use sudo systemctl for system services, systemctl --user for user services
+        if info.get('as_system_service', False):
+            command.run(["sudo", "systemctl", "status", f"{args.service_name}.service"])
+        else:
+            command.run(["systemctl", "--user", "status", f"{args.service_name}.service"])
 
     except RuntimeError as e:
         print(deco.err(str(e)))

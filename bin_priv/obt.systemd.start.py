@@ -57,11 +57,18 @@ def main():
         else:
             # Just start (restart) the service
             print(deco.inf(f"Starting service: {args.service_name}"))
-            command.run(["systemctl", "--user", "restart", f"{args.service_name}.service"])
 
-            if args.enable:
-                print(deco.inf(f"Enabling service: {args.service_name}"))
-                command.run(["systemctl", "--user", "enable", f"{args.service_name}.service"])
+            # Use sudo systemctl for system services, systemctl --user for user services
+            if info.get('as_system_service', False):
+                command.run(["sudo", "systemctl", "restart", f"{args.service_name}.service"])
+                if args.enable:
+                    print(deco.inf(f"Enabling service: {args.service_name}"))
+                    command.run(["sudo", "systemctl", "enable", f"{args.service_name}.service"])
+            else:
+                command.run(["systemctl", "--user", "restart", f"{args.service_name}.service"])
+                if args.enable:
+                    print(deco.inf(f"Enabling service: {args.service_name}"))
+                    command.run(["systemctl", "--user", "enable", f"{args.service_name}.service"])
 
     except RuntimeError as e:
         print(deco.err(str(e)))

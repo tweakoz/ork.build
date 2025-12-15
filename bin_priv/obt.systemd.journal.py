@@ -17,11 +17,18 @@ def main():
     try:
         # Verify service module exists
         svc = systemd.requires(args.service_name)
+        info = svc.info()
 
         print(deco.inf(f"Journal logs for service: {args.service_name}"))
 
-        # Build journalctl command
-        journal_cmd = ["journalctl", "--user", "-u", f"{args.service_name}.service"]
+        # Build journalctl command based on service type
+        journal_cmd = ["journalctl"]
+
+        # Add --user flag only if NOT a system service
+        if not info.get('as_system_service', False):
+            journal_cmd.append("--user")
+
+        journal_cmd.extend(["-u", f"{args.service_name}.service"])
 
         if args.follow:
             journal_cmd.append("-f")
