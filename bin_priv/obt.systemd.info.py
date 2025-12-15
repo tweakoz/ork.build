@@ -37,6 +37,9 @@ def main():
             print(f"  {deco.key('Requires Dockers')}: {deco.val(', '.join(info['requires_dockers']))}")
         if info.get('requires_pips'):
             print(f"  {deco.key('Requires Pips')}: {deco.val(', '.join(info['requires_pips']))}")
+        if info.get('requires_tty') is not None:
+            tty_num = info['requires_tty']
+            print(f"  {deco.key('Requires TTY')}: {deco.val(f'tty{tty_num}')}")
 
     except RuntimeError as e:
         print(deco.err(str(e)))

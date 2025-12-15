@@ -50,7 +50,9 @@ def main():
                 before=info.get('before', []),
                 requires_deps=info.get('requires_deps', []),
                 requires_dockers=info.get('requires_dockers', []),
-                requires_pips=info.get('requires_pips', [])
+                requires_pips=info.get('requires_pips', []),
+                requires_tty=info.get('requires_tty', None),
+                as_system_service=info.get('as_system_service', False)
             )
         else:
             # Just start (restart) the service

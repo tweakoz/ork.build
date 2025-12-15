@@ -22,6 +22,8 @@ class serviceinfo:
         self._requires_deps = []     # OBT dep modules to realize (e.g., ["lua", "vulkan"])
         self._requires_dockers = []  # Docker modules to build (e.g., ["postgres_dev"])
         self._requires_pips = []     # Python packages to pip install (e.g., ["flask", "redis"])
+        self._requires_tty = None    # TTY number for graphical daemons (e.g., 7 for /dev/tty7)
+        self._as_system_service = False  # Run as system service (requires sudo to install)
 
     def info(self):
         """
@@ -38,4 +40,6 @@ class serviceinfo:
             "requires_deps": self._requires_deps,
             "requires_dockers": self._requires_dockers,
             "requires_pips": self._requires_pips,
+            "requires_tty": self._requires_tty,
+            "as_system_service": self._as_system_service,
         }
