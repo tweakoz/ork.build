@@ -244,7 +244,7 @@ WantedBy=default.target
     # Deploy if requested
     if deploy:
         user_systemd_folder = path.home() / ".config" / "systemd" / "user"
-        pathtools.ensureDirectoryExists(user_systemd_folder)
+        user_systemd_folder.mkdir(parents=True, exist_ok=True)
 
         deployed_service_file = user_systemd_folder / f"{service_name}.service"
         shutil.copy(service_file, deployed_service_file)
