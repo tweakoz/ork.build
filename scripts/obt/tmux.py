@@ -128,6 +128,7 @@ class Session(object):
     
   #########################################
   def execute(self):
+    import sys
     self.bind_zoom_panes()
     ########################
     if self.kill_first:
@@ -137,7 +138,14 @@ class Session(object):
       self.cmd_chain.add(item)
     ########################
     self.select_layout()
-    self.attach_session()
+
+    # Only attach to session if we have a TTY (interactive mode)
+    # When running as systemd service (no TTY), leave session detached
+    if sys.stdin.isatty():
+      self.attach_session()
+    else:
+      print(f"No TTY detected - tmux session '{self.session_name}' created in detached mode")
+      print(f"Attach with: tmux attach-session -t {self.session_name}")
     ########################
     OK = (self.cmd_chain.execute() == 0)
     return OK

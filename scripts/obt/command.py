@@ -8,12 +8,18 @@
 
 import os,io,sys, platform, subprocess, threading
 import shlex, errno, pty, select, signal, time
+from concurrent.futures import Future
 
 from obt.deco import Deco
 from obt import log, pathtools, buildtrace
 
-import obt.path 
+import obt.path
 deco = Deco()
+
+# Global registry of async command threads (prevents premature GC)
+_async_threads = {}
+_async_thread_counter = 0
+_async_thread_lock = threading.Lock()
 
 ###########################################################################
 
@@ -179,7 +185,7 @@ class Command:
 
 ###############################################################################
 
-def run(command_list, 
+def run(command_list,
         environment=dict(),
         working_dir=None,
         do_log=False):
@@ -190,6 +196,48 @@ def run(command_list,
   except:
     rval = -1
   return rval
+
+###############################################################################
+
+def runasync(command_list,
+             environment=dict(),
+             working_dir=None,
+             do_log=False):
+  """
+  Run a command asynchronously in a background thread.
+  Returns a Future where future.result() will return the exit code.
+  Thread is retained in global registry to prevent premature garbage collection.
+  """
+  assert(type(command_list)==list)
+  global _async_thread_counter
+
+  future = Future()
+
+  # Get unique thread ID
+  with _async_thread_lock:
+    thread_id = _async_thread_counter
+    _async_thread_counter += 1
+
+  def _run_in_thread():
+    try:
+      rval = Command(command_list, environment, do_log=do_log, working_dir=working_dir).exec()
+      future.set_result(rval)
+    except Exception as e:
+      future.set_exception(e)
+    finally:
+      # Clean up thread from registry when done
+      with _async_thread_lock:
+        _async_threads.pop(thread_id, None)
+
+  thread = threading.Thread(target=_run_in_thread, daemon=True, name=f"cmd_async_{thread_id}")
+
+  # Register thread before starting (prevents GC)
+  with _async_thread_lock:
+    _async_threads[thread_id] = thread
+
+  thread.start()
+
+  return future
 
 ###############################################################################
 
