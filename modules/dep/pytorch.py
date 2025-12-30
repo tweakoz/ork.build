@@ -78,7 +78,7 @@ class _pytorch_for_mps(dep.StdProvider):
     return dep.NopFetcher(name="pytorch_for_mps")
   ########################################################################
   def areRequiredSourceFilesPresent(self):
-    return self.areRequiredBinaryFilesPresent()
+    return True
   ########################################################################
   def areRequiredBinaryFilesPresent(self):
     PYTHON = dep.instance("python")

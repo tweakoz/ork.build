@@ -6,7 +6,7 @@
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
 
-MD5 = "e054826ba9906af783c5109b5b618ec3"
+LINUX_MD5 = "e054826ba9906af783c5109b5b618ec3"
 
 import os, tarfile
 from obt import dep, host, path, cmake, git, make, command, wget, env, log, pathtools
@@ -21,8 +21,8 @@ deco = Deco()
 class _vulkan_from_moltenvk(dep.Provider):
 
   def __init__(self): ############################################
-    super().__init__("moltenvk")
-    self.VERSION = "v1.2.11"
+    super().__init__("vulkan")
+    self.VERSION = "v1.4.1"
 
     #print(options)
     self.source_root = path.builds()/"moltenvk"
@@ -121,7 +121,7 @@ class _vulkan_from_lunarg(dep.Provider):
 
   @property
   def download_MD5(self):
-    return MD5
+    return LINUX_MD5
 
   ########################################################################
   @property
@@ -147,7 +147,7 @@ class _vulkan_from_lunarg(dep.Provider):
   def build(self): ##########################################################
 
     url = self.download_URL
-    ok = wget(urls=[url],output_name=self.download_name,md5val=MD5)
+    ok = wget(urls=[url],output_name=self.download_name,md5val=LINUX_MD5)
 
     print(ok)
     if not ok:
