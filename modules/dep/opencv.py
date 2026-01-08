@@ -44,6 +44,7 @@ class opencv(dep.StdProvider):
       "WITH_CAROTENE": "OFF",
       "WITH_FFMPEG": "OFF",
       "WITH_GSTREAMER": "OFF",
+      "WITH_FREETYPE":"OFF",
       "OPENCV_EXTRA_MODULES_PATH": "../../opencv_contrib/modules",
       "WITH_OPENEXR": "OFF",
       "BUILD_opencv_gapi":"OFF", # fails to build on ub22-aarch64
