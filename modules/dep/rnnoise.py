@@ -5,7 +5,9 @@
 # The Orkid Build System is published under the GPL 2.0 license
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
-from obt import dep,path
+from obt import dep
+from obt import path as obt_path
+
 ###############################################################################
 class rnnoise(dep.StdProvider):
   name = "rnnoise"
@@ -26,5 +28,5 @@ class rnnoise(dep.StdProvider):
     return (self.source_root/"configure.ac").exists()
 
   def areRequiredBinaryFilesPresent(self):
-    return (path.libs()/"librnnoise.a").exists()
+    return (obt_path.libs()/"librnnoise.a").exists()
 ###############################################################################
