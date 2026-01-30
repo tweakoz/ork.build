@@ -214,7 +214,9 @@ class python_from_source(dep.Provider):
        # for LZMA (todo find brewonic way to do it)
        env.prepend("LDFLAGS",f"-L{path.macos_brew_opt}/xz/lib")
        env.prepend("CFLAGS",f"-I{path.macos_brew_opt}/xz/include")
-      
+       # disable NLS/libintl - not needed and causes link errors on some systems
+       options += ["ac_cv_header_libintl_h=no"]
+
     else:
        options += ["--with-system-ffi"]
        options += ["--with-openssl=/usr"]
