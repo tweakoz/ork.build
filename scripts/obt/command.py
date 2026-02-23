@@ -185,6 +185,101 @@ class Command:
 
 ###############################################################################
 
+class CommandAsync:
+  """Handle for an asynchronously running command with PID and kill support."""
+
+  def __init__(self, process, future):
+    self.process = process   # subprocess.Popen
+    self.future = future     # concurrent.futures.Future
+
+  @property
+  def pid(self):
+    return self.process.pid if self.process else None
+
+  @property
+  def returncode(self):
+    return self.process.returncode if self.process else None
+
+  def is_running(self):
+    return self.process is not None and self.process.poll() is None
+
+  def kill(self):
+    """Kill the process and its entire process group."""
+    if self.process and self.process.poll() is None:
+      try:
+        os.killpg(os.getpgid(self.process.pid), signal.SIGTERM)
+      except (ProcessLookupError, PermissionError):
+        try:
+          self.process.terminate()
+        except ProcessLookupError:
+          pass
+
+###############################################################################
+
+def runasync2(command_list,
+              environment=dict(),
+              working_dir=None,
+              do_log=False):
+  """Run a command asynchronously, returning a CommandAsync with .pid, .future, .kill().
+
+  Unlike runasync(), the subprocess is created immediately so the PID is
+  available right away, and start_new_session=True enables process-group
+  killing via CommandAsync.kill().
+  """
+  assert(type(command_list)==list)
+  global _async_thread_counter
+
+  command_list = procargs(command_list)
+
+  env = dict(os.environ)
+  for k, v in environment.items():
+    env[k] = str(v)
+
+  if do_log:
+    log.output("cmdexec(async2): %s" % deco.bright(command_list))
+
+  buildtrace.buildTrace({
+    "op": "command(runasync2)",
+    "working_dir": working_dir,
+    "arglist": command_list,
+    "os_env": env,
+    "use_shell": False })
+
+  child_process = subprocess.Popen(
+    command_list,
+    universal_newlines=True,
+    env=env,
+    cwd=str(working_dir) if working_dir else None,
+    start_new_session=True)
+
+  future = Future()
+
+  with _async_thread_lock:
+    thread_id = _async_thread_counter
+    _async_thread_counter += 1
+
+  def _wait_thread():
+    try:
+      child_process.communicate()
+      child_process.wait()
+      future.set_result(child_process.returncode)
+    except Exception as e:
+      future.set_exception(e)
+    finally:
+      with _async_thread_lock:
+        _async_threads.pop(thread_id, None)
+
+  thread = threading.Thread(target=_wait_thread, daemon=True, name=f"cmd_async2_{thread_id}")
+
+  with _async_thread_lock:
+    _async_threads[thread_id] = thread
+
+  thread.start()
+
+  return CommandAsync(child_process, future)
+
+###############################################################################
+
 def run(command_list,
         environment=dict(),
         working_dir=None,
