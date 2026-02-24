@@ -157,6 +157,15 @@ class python_from_source(dep.Provider):
     return self.home_dir/"include"/self._deconame_d
   ########
   @property
+  def numpy_include_dir(self):
+    import subprocess
+    result = subprocess.check_output(
+        [str(self.executable), "-c", "import numpy; print(numpy.get_include())"],
+        text=True
+    ).strip()
+    return path.Path(result)
+  ########
+  @property
   def executable(self):
     return self.virtualenv_dir/"bin"/"python3"
   ########

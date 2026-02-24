@@ -50,6 +50,7 @@ class opencv(dep.StdProvider):
       "BUILD_opencv_gapi":"OFF", # fails to build on ub22-aarch64
       "BUILD_opencv_python2":"OFF", # fails to build on ub22-aarch64
       "BUILD_EXAMPLES": "OFF",
+      "PYTHON3_NUMPY_INCLUDE_DIRS": self.python_dep.numpy_include_dir,
       #"OPENEXR_ROOT": path.stage(),
       # todo get internal python3 working
       # todo get internal openexr working
