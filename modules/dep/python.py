@@ -158,12 +158,11 @@ class python_from_source(dep.Provider):
   ########
   @property
   def numpy_include_dir(self):
-    import subprocess
-    result = subprocess.check_output(
-        [str(self.executable), "-c", "import numpy; print(numpy.get_include())"],
-        text=True
-    ).strip()
-    return path.Path(result)
+    # numpy 2.x moved headers from core/ to _core/
+    p = self.site_packages_dir/"numpy"/"_core"/"include"
+    if not p.exists():
+      p = self.site_packages_dir/"numpy"/"core"/"include"
+    return p
   ########
   @property
   def executable(self):
