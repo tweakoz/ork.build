@@ -47,6 +47,9 @@ class hostinfo:
     #x86_64_macos = sdk.descriptor('x86_64','macos')
     #x86_64_macos.env_init()
     env.set("OBT_TARGET", "x86_64-macos")
+    import obt.path
+    if obt.path.has_deployment_marker:
+      return
     _xcodesdkstr = command.capture([
       "xcodebuild",
       "-version",

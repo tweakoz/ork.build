@@ -12,6 +12,9 @@ class sdkinfo:
   # env_init invoked once at container startup time
   #################################################
   def env_init(self):
+    import obt.path
+    if obt.path.has_deployment_marker:
+      return
     _xcodesdkstr = obt.command.capture([
       "xcodebuild",
       "-version",
