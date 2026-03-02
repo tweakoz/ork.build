@@ -157,6 +157,14 @@ class python_from_source(dep.Provider):
     return self.home_dir/"include"/self._deconame_d
   ########
   @property
+  def numpy_include_dir(self):
+    # numpy 2.x moved headers from core/ to _core/
+    p = self.site_packages_dir/"numpy"/"_core"/"include"
+    if not p.exists():
+      p = self.site_packages_dir/"numpy"/"core"/"include"
+    return p
+  ########
+  @property
   def executable(self):
     return self.virtualenv_dir/"bin"/"python3"
   ########
