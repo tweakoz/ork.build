@@ -275,6 +275,9 @@ class Provider(object):
     #############################
 
     def provide(self):
+      import obt.path
+      if obt.path.has_deployment_marker:
+        return True
       if not self.supports_host:
         print(deco.red("Dependency does not support this host"))
         return False
@@ -437,6 +440,9 @@ class StdProvider(Provider):
       return self._builder.install(self.build_dest)
     #########################################
     def provide(self):
+      import obt.path
+      if obt.path.has_deployment_marker:
+        return True
       with buildtrace.NestedBuildTrace({ "op": "StdProvider.provide(%s)"%self._name }) as nested:
        OK = self.manifest.exists()
        #print("self.should_wipe<%d>"%self.should_wipe)
