@@ -260,6 +260,25 @@ class python_from_source(dep.Provider):
   def areRequiredBinaryFilesPresent(self):
     return (self.executable).exists()
 
+  ########################################################################
+
+  def deployment_fixup(self, deploy_root):
+    """Fix pyvenv python binary's hardcoded libpython reference to @rpath."""
+    import subprocess, glob
+    for pybin in glob.glob(f"{deploy_root}/pyvenv/bin/python3.[0-9]*"):
+      if os.path.islink(pybin) or pybin.endswith("-config"):
+        continue
+      otool = subprocess.run(["otool", "-L", pybin], capture_output=True, text=True).stdout
+      for line in otool.splitlines()[1:]:
+        ref = line.strip().split(" (")[0]
+        if "libpython" in ref and not ref.startswith("@rpath"):
+          lib = os.path.basename(ref)
+          subprocess.run(["install_name_tool", "-change", ref, f"@rpath/{lib}", pybin])
+          for rp in [f"{deploy_root}/pyvenv/lib", f"{deploy_root}/lib"]:
+            subprocess.run(["install_name_tool", "-add_rpath", rp, pybin], capture_output=True)
+          subprocess.run(["codesign", "--force", "--sign", "-", pybin], capture_output=True)
+          break
+
 
 python = python_from_source
 
