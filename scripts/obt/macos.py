@@ -363,7 +363,7 @@ def discover_macho_files(root_dir, skip_dirs=None):
       if not os.path.isfile(fpath):
         continue
       _, ext = os.path.splitext(fname)
-      if ext in _MACHO_EXTENSIONS or ext == '':
+      if ext in _MACHO_EXTENSIONS or ext == '' or (ext and ext[1:].isdigit()):
         if is_macho_binary(fpath):
           result.append(path.Path(fpath))
   # Also scan frameworks separately (since we skip .framework dirs above)
