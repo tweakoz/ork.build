@@ -28,7 +28,7 @@ class lz4(dep.StdProvider):
     self._builder = dep.CustomBuilder(lz4.name)
     bdir = self.source_root
 
-    cmdlist = ["make","-j",host.NumCores]
+    cmdlist = ["make","-j",host.NumCores,"PREFIX=%s"%path.prefix()]
 
     if obt.host.IsOsx:
         cmdlist += ["MACOSX_DEPLOYMENT_TARGET=10.15"]
@@ -48,14 +48,10 @@ class lz4(dep.StdProvider):
   ########################################################################
   @property
   def _fetcher(self):
-    makefile_items = dict()
-    makefile_items["export PREFIX= /usr/local"]="export PREFIX=%s"%path.prefix()
-    patch_dict = { self.source_root/"Makefile": makefile_items }
     return dep.GithubFetcher(name=lz4.name,
                              repospec="lz4/lz4",
                              revision=VERSION,
-                             recursive=False,
-                             patchdict=patch_dict)
+                             recursive=False)
 
   ########
 
