@@ -47,7 +47,6 @@ deplist += ["m4","bison","flex"]
 deplist += ["libcurl4-openssl-dev","libusb-1.0-0-dev", "libbz2-dev"]
 deplist += ["libreadline-dev"]
 deplist += ["libsqlite3-dev"]
-deplist += ["libtbb-dev"]
 deplist += ["openctm-tools"] # ctmviewer
 deplist += ["openscad"] # for trimesh
 deplist += ["libclang-dev"]
