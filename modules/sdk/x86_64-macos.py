@@ -10,6 +10,9 @@ class sdkinfo:
     self.supports_host = ["x86_64-macos","aarch64-macos"]
 
   def env_init(self):
+    import obt.path
+    if obt.path.has_deployment_marker:
+      return
     _xcodesdkstr = obt.command.capture([
       "xcodebuild",
       "-version",

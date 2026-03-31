@@ -80,3 +80,21 @@ class opencv(dep.StdProvider):
 
   def areRequiredBinaryFilesPresent(self):
     return (path.includes()/"opencv4"/"opencv2"/"core.hpp").exists()
+
+  ########################################################################
+
+  def deployment_fixup(self, deploy_root):
+    """Rewrite cv2 config files to use relative paths."""
+    import glob
+    for cv2_dir in glob.glob(f"{deploy_root}/pyvenv/lib/python*/site-packages/cv2"):
+      p = path.Path(cv2_dir)
+      # config.py: BINARIES_PATHS → .staging/lib (5 parents up from cv2/)
+      (p/"config.py").write_text(
+        "import pathlib\n"
+        "BINARIES_PATHS = [str(pathlib.Path(__file__).parents[5] / 'lib')] + BINARIES_PATHS\n")
+      # config-X.Y.py: PYTHON_EXTENSIONS_PATHS → cv2/python-X.Y/
+      for cfg in p.glob("config-*.py"):
+        pydir = cfg.stem.replace("config-", "python-")
+        cfg.write_text(
+          "import pathlib\n"
+          f"PYTHON_EXTENSIONS_PATHS = [str(pathlib.Path(__file__).parent / '{pydir}')] + PYTHON_EXTENSIONS_PATHS\n")

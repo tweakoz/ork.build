@@ -64,10 +64,13 @@ class Command:
                  use_shell=False):
         #print(command_list)
         assert(type(command_list)==list)
-        self.env = os.environ
+        self.env = dict(os.environ)
         self.working_dir = working_dir
         for k in environment.keys():
-            self.env[k]=str(environment[k])
+            if environment[k] is None:
+                self.env.pop(k, None)
+            else:
+                self.env[k]=str(environment[k])
         self.command_list = procargs(command_list)
         #print(self.command_list)
         self._do_log = do_log
@@ -233,7 +236,10 @@ def runasync2(command_list,
 
   env = dict(os.environ)
   for k, v in environment.items():
-    env[k] = str(v)
+    if v is None:
+      env.pop(k, None)
+    else:
+      env[k] = str(v)
 
   if do_log:
     log.output("cmdexec(async2): %s" % deco.bright(command_list))

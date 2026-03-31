@@ -479,6 +479,8 @@ def decorate_obt_lib(named):
 ###############################################################################
 
 def __getattr__(name):
+  if name == "has_deployment_marker":
+    return (stage()/".is_deploy").exists()
   if name == "pyvenv":
     pyvenv_dir = builds()
     if "OBT_PYTHONHOME" in os.environ:
