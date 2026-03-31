@@ -439,10 +439,12 @@ def osx_sdkdir():
 ###############################################################################
 
 def _osx_brewdir():
-  result = "/usr/local"
   if "HOMEBREW_PREFIX" in os.environ:
-    result = os.environ["HOMEBREW_PREFIX"]
-  return Path(result)
+    return Path(os.environ["HOMEBREW_PREFIX"])
+  import platform
+  if platform.machine() == "arm64":
+    return Path("/opt/homebrew")
+  return Path("/usr/local")
 
 ###############################################################################
 
