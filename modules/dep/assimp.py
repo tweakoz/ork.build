@@ -52,4 +52,4 @@ class assimp(dep.StdProvider):
   def areRequiredSourceFilesPresent(self):
     return (self.source_root/"CMakeLists.txt").exists()
   def areRequiredBinaryFilesPresent(self):
-    return (path.libs()/"libassimp.so").exists()
+    return (path.libs()/f"libassimp.{self.shlib_extension}").exists()
