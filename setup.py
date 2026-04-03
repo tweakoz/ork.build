@@ -3,7 +3,7 @@ from setuptools.command.install import install
 import os
 import stat
 
-version = "0.0.298dev02"
+version = "0.0.299"
 
 # Read the long description from the README file
 with open("README.md", "r", encoding="utf-8") as fh:
@@ -25,12 +25,13 @@ def package_files(directory):
 #  bin_pub goes in scripts (since they are in the venv's path)
 #########################################
 
-module_files = package_files('modules') 
+module_files = package_files('modules')
 example_files = package_files('examples')
 test_files = package_files('tests')
 binpub_files = [f[1][0] for f in package_files("bin_pub")]
 binpriv_files = package_files('bin_priv')
-data_files = module_files + example_files + test_files + binpriv_files
+claude_files = package_files('claude_skills')
+data_files = module_files + example_files + test_files + binpriv_files + claude_files
 
 #########################################
 

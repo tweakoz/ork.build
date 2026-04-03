@@ -24,15 +24,20 @@ class pydefaults(dep.Provider):
 
 
     #################
-    modules2 = ["Pillow","jupyter","plotly","trimesh","asciidoc", "pyudev"]
+    modules2 = ["Pillow","jupyter","plotly","trimesh","asciidoc", "pyudev", "playwright"]
     if host.IsDarwin == False:
       modules2 += ["pysqlite3"]
     #################
 
     ret = Command([self.python.executable,"-m","pip","install","--upgrade"]+modules2).exec()
+    if ret != 0:
+      print("pydefaults build ret<%d>"%int(ret))
+      return False
 
-    print("pydefaults build ret<%d>"%int(ret))
-    return (ret==0)
+    # playwright requires a separate browser install step
+    ret2 = Command([self.python.executable,"-m","playwright","install","chromium"]).exec()
+    print("pydefaults build ret<%d> playwright-install<%d>"%(int(ret),int(ret2)))
+    return (ret2==0)
 
   def areRequiredSourceFilesPresent(self):
     return (self.python.site_packages_dir/"numpy"/"_globals.py").exists()
