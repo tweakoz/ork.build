@@ -124,7 +124,8 @@ class mydep(dep.Provider):
 - `path.manifests()` — `$OBT_STAGE/manifests/`
 - `pip.install([...])` — pip install wrapper
 - `Command([...]).exec()` — run shell command, returns exit code
-- `host.IsDarwin` / `host.IsLinux` — platform detection
+- `host.IsDarwin` / `host.IsLinux` / `host.IsOsx` / `host.IsIx` — platform detection
+- `self.shlib_extension` — `"dylib"` on macOS, `"so"` on Linux (use in `areRequiredBinaryFilesPresent`)
 - Build scopes: CONTAINER, INIT, HOST, SUBSPACE
 
 **Module search path** (`$OBT_MODULES_PATH`):
