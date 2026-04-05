@@ -17,7 +17,8 @@ class glm(dep.StdProvider):
     if host.IsDarwin:
       self._builder.setCmVars({
         "CMAKE_CXX_FLAGS": "-Wno-deprecated-declarations -Wno-poison-system-directories",
-        "CMAKE_CXX_STANDARD": "17" 
+        "CMAKE_CXX_STANDARD": "17",
+        "BUILD_TESTING": "OFF"
       })
     #self._builder.requires(["lapack"])
 

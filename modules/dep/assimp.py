@@ -17,7 +17,7 @@ class assimp(dep.StdProvider):
     self._builder.setCmVar("ASSIMP_BUILD_ASSIMP_TOOLS","TRUE")
     self._builder.setCmVar("ASSIMP_BUILD_ASSIMP_VIEW","TRUE")
     if host.IsDarwin:
-      self._builder.setCmVar("CMAKE_CXX_FLAGS","-Wno-deprecated-declarations")
+      self._builder.setCmVar("CMAKE_CXX_FLAGS","-Wno-deprecated-declarations -Wno-nontrivial-memcall")
     else:
   
       self._builder.setCmVar("CMAKE_CXX_FLAGS","-Wno-maybe-uninitialized")

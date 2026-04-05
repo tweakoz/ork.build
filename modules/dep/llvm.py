@@ -32,6 +32,8 @@ class _llvm_from_source(dep.StdProvider):
         "LLVM_INSTALL_UTILS": "ON",
         "LLVM_ENABLE_DUMP": "ON",
         #"LLVM_ENABLE_PROJECTS": "clang;libcxx;libcxxabi"
+        "LLVM_TOOL_SANCOV_BUILD": "OFF",
+        "LLVM_INCLUDE_TESTS": "OFF",
     })
     # arm64-apple-darwin24.1.0
     if host.IsAARCH64:
