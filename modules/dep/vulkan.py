@@ -77,12 +77,22 @@ class _vulkan_from_moltenvk(dep.Provider):
     else:
       command.run(["git","checkout",tag], working_dir=str(loader_src))
 
+    # cmake-install Vulkan-Headers so find_package(VulkanHeaders) works
+    headers_build = headers_dir/".build"
+    headers_build.mkdir(parents=True, exist_ok=True)
+    headers_install = headers_dir/".install"
+    command.run([
+      "cmake", str(headers_dir),
+      "-DCMAKE_INSTALL_PREFIX=%s" % headers_install,
+    ], working_dir=str(headers_build))
+    command.run(["make","install"], working_dir=str(headers_build))
+
     loader_build.mkdir(parents=True, exist_ok=True)
 
     command.run([
       "cmake", str(loader_src),
       "-DCMAKE_BUILD_TYPE=Release",
-      "-DVULKAN_HEADERS_INSTALL_DIR=%s" % headers_dir,
+      "-DCMAKE_PREFIX_PATH=%s" % headers_install,
       "-DCMAKE_INSTALL_PREFIX=%s" % path.stage(),
       "-DBUILD_TESTS=OFF",
     ], working_dir=str(loader_build))
