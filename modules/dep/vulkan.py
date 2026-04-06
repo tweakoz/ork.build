@@ -8,7 +8,7 @@
 
 LINUX_MD5 = "e054826ba9906af783c5109b5b618ec3"
 
-import os, tarfile
+import os, tarfile, glob
 from obt import dep, host, path, cmake, git, make, command, wget, env, log, pathtools
 from obt.deco import Deco
 from obt.wget import wget
@@ -135,7 +135,16 @@ class _vulkan_from_lunarg(dep.Provider):
       env.prepend("LD_LIBRARY_PATH",self.sdk_dir/"lib")
       env.append("PATH",self.sdk_dir/"bin")
       env.set("VULKAN_SDK",self.sdk_dir) # for cmake
-      env.set("VK_LAYER_PATH", self.sdk_dir/"etc"/"vulkan"/"explicit_layer.d")
+      env.set("VK_LAYER_PATH", self.sdk_dir/"share"/"vulkan"/"explicit_layer.d")
+      # restrict ICD to only the active GPU driver to avoid crashes
+      # from unused ICDs pulling in libLLVM during dlopen
+      _icd_dir = "/usr/share/vulkan/icd.d"
+      _nvidia_icd = os.path.join(_icd_dir, "nvidia_icd.json")
+      _radeon_icd = os.path.join(_icd_dir, "radeon_icd.x86_64.json")
+      if os.path.exists(_nvidia_icd):
+        env.set("VK_DRIVER_FILES", _nvidia_icd)
+      elif os.path.exists(_radeon_icd):
+        env.set("VK_DRIVER_FILES", _radeon_icd)
       env.set("OBT_VULKAN_VERSION",self.VERSION) # for OBT internal
       env.set("OBT_VULKAN_ROOT",self.sdk_dir) # for OBT internal
 
