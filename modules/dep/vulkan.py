@@ -61,11 +61,13 @@ class _vulkan_from_moltenvk(dep.Provider):
     to build libvulkan.1.dylib — the Vulkan loader that discovers MoltenVK
     via the ICD mechanism. This eliminates the homebrew vulkan-loader dependency.
     """
+    import subprocess, shutil
+
     headers_dir = self.source_root/"External"/"Vulkan-Headers"
     # determine the headers version tag for a matching loader checkout
-    os.chdir(headers_dir)
-    import subprocess
-    tag = subprocess.check_output(["git","describe","--tags"]).decode().strip()
+    tag = subprocess.check_output(
+      ["git","describe","--tags"],
+      cwd=str(headers_dir)).decode().strip()
     log.marker("Building Vulkan-Loader %s to match MoltenVK headers" % tag)
 
     loader_src = path.builds()/"vulkan-loader"
@@ -73,28 +75,23 @@ class _vulkan_from_moltenvk(dep.Provider):
     if not loader_src.exists():
       git.Clone("https://github.com/KhronosGroup/Vulkan-Loader", loader_src, tag)
     else:
-      os.chdir(loader_src)
-      command.system(["git","checkout",tag])
+      command.run(["git","checkout",tag], working_dir=str(loader_src))
 
     loader_build.mkdir(parents=True, exist_ok=True)
-    os.chdir(loader_build)
 
-    ok = cmake.build(
-      srcdir = loader_src,
-      blddir = loader_build,
-      wantclean = False,
-      install = False,
-      cmakeenv = {
-        "CMAKE_BUILD_TYPE": "Release",
-        "VULKAN_HEADERS_INSTALL_DIR": str(headers_dir),
-        "CMAKE_INSTALL_PREFIX": str(path.stage()),
-        "BUILD_TESTS": "OFF",
-      })
-    if not ok:
-      return False
+    command.run([
+      "cmake", str(loader_src),
+      "-DCMAKE_BUILD_TYPE=Release",
+      "-DVULKAN_HEADERS_INSTALL_DIR=%s" % headers_dir,
+      "-DCMAKE_INSTALL_PREFIX=%s" % path.stage(),
+      "-DBUILD_TESTS=OFF",
+    ], working_dir=str(loader_build))
+
+    command.run([
+      "make", "-j%d" % os.cpu_count(),
+    ], working_dir=str(loader_build))
 
     # install libvulkan.1.dylib + symlinks into staging lib
-    import shutil
     for f in sorted(loader_build.glob("loader/libvulkan*")):
       dst = path.libs()/f.name
       if f.is_symlink():
