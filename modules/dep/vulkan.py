@@ -42,18 +42,69 @@ class _vulkan_from_moltenvk(dep.Provider):
   def env_init(self):
     log.marker("registering Vulkan(%s) <MoltenVK> SDK"%self.VERSION)
     env.prepend("LD_LIBRARY_PATH",self.sdk_dir/"dylib")
-    
-    # TODO: Fix this properly by building the Vulkan loader and layers for macOS
-    # Goal: get off homebrew dependency completely
-    # For now, we need to set DYLD_LIBRARY_PATH to find our MoltenVK and homebrew dependencies
-    env.prepend("DYLD_LIBRARY_PATH", path.libs())  # staging lib dir for our MoltenVK
+
+    # DYLD_LIBRARY_PATH is still useful for ork.python-wrapped processes,
+    # but C++ exes use glfwInitVulkanLoader() with an absolute dlopen of
+    # $OBT_STAGE/lib/libvulkan.1.dylib to bypass SIP stripping.
+    env.prepend("DYLD_LIBRARY_PATH", path.libs())
     env.append("DYLD_LIBRARY_PATH", path.macos_brew_lib)  # for validation layers and other deps
-    
-    #env.append("PATH",self.sdk_dir/"bin")
+
     env.set("VULKAN_SDK",self.sdk_dir) # for cmake
     env.set("OBT_VULKAN_VERSION","MoltenVK-%s"%(self.VERSION)) # for OBT internal
     env.set("OBT_VULKAN_ROOT",self.sdk_dir) # for OBT internal
     env.set("VK_ICD_FILENAMES",self.build_lib_dir/"MoltenVK_icd.json")
+
+  def _build_vulkan_loader(self):
+    """Build the Khronos Vulkan-Loader from source.
+
+    Uses the Vulkan-Headers already fetched by MoltenVK (in External/)
+    to build libvulkan.1.dylib — the Vulkan loader that discovers MoltenVK
+    via the ICD mechanism. This eliminates the homebrew vulkan-loader dependency.
+    """
+    headers_dir = self.source_root/"External"/"Vulkan-Headers"
+    # determine the headers version tag for a matching loader checkout
+    os.chdir(headers_dir)
+    import subprocess
+    tag = subprocess.check_output(["git","describe","--tags"]).decode().strip()
+    log.marker("Building Vulkan-Loader %s to match MoltenVK headers" % tag)
+
+    loader_src = path.builds()/"vulkan-loader"
+    loader_build = loader_src/"build"
+    if not loader_src.exists():
+      git.Clone("https://github.com/KhronosGroup/Vulkan-Loader", loader_src, tag)
+    else:
+      os.chdir(loader_src)
+      command.system(["git","checkout",tag])
+
+    loader_build.mkdir(parents=True, exist_ok=True)
+    os.chdir(loader_build)
+
+    ok = cmake.build(
+      srcdir = loader_src,
+      blddir = loader_build,
+      wantclean = False,
+      install = False,
+      cmakeenv = {
+        "CMAKE_BUILD_TYPE": "Release",
+        "VULKAN_HEADERS_INSTALL_DIR": str(headers_dir),
+        "CMAKE_INSTALL_PREFIX": str(path.stage()),
+        "BUILD_TESTS": "OFF",
+      })
+    if not ok:
+      return False
+
+    # install libvulkan.1.dylib + symlinks into staging lib
+    import shutil
+    for f in sorted(loader_build.glob("loader/libvulkan*")):
+      dst = path.libs()/f.name
+      if f.is_symlink():
+        link_target = os.readlink(str(f))
+        if dst.exists() or dst.is_symlink():
+          dst.unlink()
+        os.symlink(link_target, str(dst))
+      else:
+        shutil.copy2(str(f), str(dst))
+    return True
 
   def build(self): ##########################################################
 
@@ -65,7 +116,7 @@ class _vulkan_from_moltenvk(dep.Provider):
     os.chdir(self.source_root)
 
     command.system(["./fetchDependencies --macos"])
-    cmd = ["xcodebuild", "build", 
+    cmd = ["xcodebuild", "build",
            "-project", '"MoltenVKPackaging.xcodeproj"',
            "-scheme", '"MoltenVK Package (macOS only)"',
            "-configuration", '"Debug"']
@@ -80,6 +131,8 @@ class _vulkan_from_moltenvk(dep.Provider):
           # moltenvlk does not automatically install shaderc
           cmd = ["brew","install","--overwrite", "shaderc"]
           ok = (0 == command.system(cmd))
+        if ok:
+          ok = self._build_vulkan_loader()
     return ok
 
 ###############################################################################
