@@ -49,6 +49,23 @@ class Path(_Path_) :
    return Path(os.path.normpath(str(self)))
    
  @property
+ def expanded(self):
+   out_path = str(self)
+   if "$" in out_path:
+     out_path = os.path.expandvars(out_path)
+   if "<" in out_path and ">" in out_path:
+     # Handle <VAR> syntax
+     import re
+     pattern = re.compile(r'<([^>]+)>')
+     def replace_var(match):
+       var_name = match.group(1)
+       if var_name == "assetcache":
+         return str(stage()/"assetcache")
+     out_path = pattern.sub(replace_var, out_path)
+     
+   return Path(out_path)
+
+ @property
  def sanitized(self):
    """Return sanitized path with environment variable substitutions"""
    full_path = str(self.resolve())
