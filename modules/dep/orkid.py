@@ -159,6 +159,7 @@ class orkid(dep.StdProvider):
     deplist += ["curlpp"]
     deplist += ["libarchive"]
     deplist += ["rnnoise"]
+    deplist += ["lunasvg"]
     if host.IsLinux:
       deplist += ["rtmidi"]
       #deplist += ["pipewire"]
