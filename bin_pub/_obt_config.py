@@ -515,7 +515,16 @@ def configFromCommandLine(parser_args=None):
       os.environ[b] = ""
 
   ########################
-  norm_venvpackages = os.path.normpath(str(site.getsitepackages()[0]))
+  # Resolve the running venv's own site-packages explicitly from VIRTUAL_ENV
+  # rather than via site.getsitepackages()[0]. The latter reads from
+  # site.PREFIXES, which a Homebrew sitecustomize.py (copied verbatim into
+  # the venv during stdlib internalization) may hijack to include
+  # /opt/homebrew — leaking a Homebrew site-packages dir into PYTHONPATH,
+  # which is then inherited by the 3.12 child venv via ork.python and
+  # causes ABI-mismatched numpy .so loads.
+  _venv_root = Path(os.environ["VIRTUAL_ENV"])
+  _pyver_xy  = f"python{sys.version_info.major}.{sys.version_info.minor}"
+  norm_venvpackages = os.path.normpath(str(_venv_root/"lib"/_pyver_xy/"site-packages"))
   norm_pypath = os.path.normpath(str(obt_scripts_base()/".."))
   os.environ["PYTHONPATH"] = norm_venvpackages + ":" + norm_pypath
   os.environ["OBT_VENV_DIR"] = os.environ["VIRTUAL_ENV"]
