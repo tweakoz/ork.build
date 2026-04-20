@@ -43,8 +43,8 @@ class _llvm_from_source(dep.StdProvider):
   @property
   def _fetcher(self):
     fetcher = dep.GithubFetcher(name=_llvm_from_source.name,
-                                repospec="llvm/llvm-project",
-                                revision="llvmorg-15.0.7",
+                                repospec="tweakoz/llvm-project",
+                                revision="toz-apr20",
                                 recursive=False)
     return fetcher
   ########################################################################
