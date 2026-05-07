@@ -16,16 +16,17 @@ class libcurl(dep.StdProvider):
     super().__init__(libcurl.name)
     src_root = self.source_root
     #################################################
+    self.declareDep("cmake")
+    self.declareDep("openssl")
     self._builder = self.createBuilder(dep.CMakeBuilder)
     if host.IsOsx:
-      import obt.macos_homebrew
-      sslroot = obt.macos_homebrew.prefix_for_package("openssl")
-      print(sslroot)
-      self._builder.setCmVar("OPENSSL_ROOT_DIR",sslroot)
+      # Use OBT-built openssl (3.5.6 LTS), not /opt/homebrew/opt/openssl@3.
+      self._builder.setCmVar("OPENSSL_ROOT_DIR", str(path.prefix()))
       self._builder.setCmVar("USE_ZLIB","ON")
-    #################################################
-    self.declareDep("pkgconfig")
-    self.declareDep("cmake")
+    # No OBT libssh2 dep — disable SCP/SFTP support so curl doesn't pull
+    # /opt/homebrew/opt/libssh2. orkid only uses HTTP(S).
+    self._builder.setCmVar("CURL_USE_LIBSSH2", "OFF")
+    self._builder.setCmVar("CURL_USE_LIBSSH",  "OFF")
   ########################################################################
   @property
   def _fetcher(self):

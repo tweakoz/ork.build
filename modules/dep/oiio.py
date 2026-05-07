@@ -15,11 +15,17 @@ class oiio(dep.StdProvider):
   def __init__(self): ############################################
     super().__init__(oiio.name)
     self.declareDep("cmake")
-    self.declareDep("pkgconfig")
     self.declareDep("jpegturbo")
     self.declareDep("openexr")
+    self.declareDep("imath")
     self.declareDep("giflib")
     self.declareDep("ffmpeg")
+    self.declareDep("fmt")
+    self.declareDep("freetype")
+    self.declareDep("libpng")
+    self.declareDep("libtiff")
+    self.declareDep("libwebp")
+    self.declareDep("tbb")
     BOOST = self.declareDep("boost")
     self.createBuilder(dep.CMakeBuilder)
 
@@ -27,13 +33,17 @@ class oiio(dep.StdProvider):
       "CMAKE_CXX_FLAGS": "-Wno-error=deprecated -Wno-error=ignored-attributes",
       "USE_NUKE": "OFF",
       "USE_PYTHON": "OFF",
-      #"OIIO_PYTHON_VERSION": "3.8.1",
-      #"pybind11_ROOT": path.stage(),
       "OIIO_BUILD_TOOLS": "ON",
       "OIIO_BUILD_TESTS": "ON",
       "JPEG_INCLUDE_DIR": path.includes(),
-      "OpenCV_INCLUDE_DIR": "/dev/null", 
+      "OpenCV_INCLUDE_DIR": "/dev/null",
       "GIF_INCLUDE_DIR": path.includes(),
+      # oiio's cmake uses vanilla find_package/find_library which on macOS
+      # prefer /opt/homebrew. Force OBT staging to win, and blacklist
+      # /opt/homebrew so we never silently pick up brew copies of
+      # fmt, libpng, libtiff, libwebp, freetype, tbb, giflib, etc.
+      "CMAKE_PREFIX_PATH": str(path.prefix()),
+      "CMAKE_IGNORE_PATH": "/opt/homebrew;/opt/homebrew/lib;/opt/homebrew/include",
     }
     #if host.IsLinux:
     #  self._builder.setCmVar("CMAKE_CXX_COMPILER","g++")

@@ -38,13 +38,19 @@ if _args["orklibs"]!=False:
 if _args["orkpymods"]!=False:
   PYTHON = dep.instance("python")
 
-  for item in macos.enumerateOrkPyMods(PYTHON.site_packages_dir/"orkengine"/"core"):
-    macos.macho_replace_loadpaths(item,"@executable_path/../lib","@rpath")
-    macos.macho_dump(item)
-
-  for item in macos.enumerateOrkPyMods(PYTHON.site_packages_dir/"orkengine"/"lev2"):
-    macos.macho_replace_loadpaths(item,"@executable_path/../lib","@rpath")
-    macos.macho_dump(item)
+  # Walk every orkengine subpackage that may carry C-extensions, not just
+  # core+lev2. ecs and ecssim were silently slipping through the fixup —
+  # _ecs.so kept @executable_path/.. install_names which work for the
+  # ork.python wrapper but fail when the venv python imports orkengine.ecs
+  # directly (executable_path resolves to .../pyvenv/bin/, not staging/bin/).
+  ork_subpkgs = ["core", "lev2", "ecs", "ecssim"]
+  for sub in ork_subpkgs:
+    pkgdir = PYTHON.site_packages_dir/"orkengine"/sub
+    if not pkgdir.exists():
+      continue
+    for item in macos.enumerateOrkPyMods(pkgdir):
+      macos.macho_replace_loadpaths(item,"@executable_path/../lib","@rpath")
+      macos.macho_dump(item)
 
 if _args["boost"]!=False:
   do_boost()

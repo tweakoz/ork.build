@@ -135,12 +135,34 @@ class _vulkan_from_moltenvk(dep.Provider):
         cmd = ["cp","-r","Package/Latest/MoltenVK/include/*",path.includes()]
         ok = (0 == command.system(cmd))
         if ok:
-          # moltenvlk does not automatically install shaderc
-          cmd = ["brew","install","--overwrite", "shaderc"]
-          ok = (0 == command.system(cmd))
-        if ok:
           ok = self._build_vulkan_loader()
+        if ok:
+          # vk_enum_string_helper.h moved out of Vulkan-Headers into
+          # Vulkan-Utility-Libraries in newer Vulkan SDKs. orkid still
+          # includes it via <vulkan/vk_enum_string_helper.h>. Drop it in.
+          ok = self._install_vk_enum_string_helper()
     return ok
+
+  def _install_vk_enum_string_helper(self):
+    """Fetch vk_enum_string_helper.h and install it to $OBT_STAGE/include/vulkan/.
+
+    The helper file moved out of Vulkan-Headers into Vulkan-Utility-Libraries
+    in newer Vulkan SDKs. We fetch the file at a tag that matches our
+    MoltenVK-bundled Vulkan-Headers version, otherwise the helper references
+    enum symbols that don't exist in our headers."""
+    import subprocess
+    headers_dir = self.source_root/"External"/"Vulkan-Headers"
+    tag = subprocess.check_output(
+      ["git","describe","--tags"],
+      cwd=str(headers_dir)).decode().strip()
+    url = ("https://raw.githubusercontent.com/KhronosGroup/Vulkan-Utility-Libraries/"
+           "%s/include/vulkan/vk_enum_string_helper.h" % tag)
+    dst_dir = path.includes()/"vulkan"
+    pathtools.ensureDirectoryExists(dst_dir)
+    dst = dst_dir/"vk_enum_string_helper.h"
+    log.marker("fetching vk_enum_string_helper.h @ %s" % tag)
+    rc = command.run(["curl","-fsSL","-o",str(dst),url])
+    return rc == 0
 
 ###############################################################################
 

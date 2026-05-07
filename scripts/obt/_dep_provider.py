@@ -19,7 +19,7 @@ from enum import Enum
 
 deco = Deco()
 
-root_dep_list = ["root", "python", "pydefaults"]
+root_dep_list = ["root", "python", "pydefaults", "openssl", "xz"]
 
 class ProviderScope(Enum):
   CONTAINER = 1 # dependency is scoped to the container

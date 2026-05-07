@@ -124,6 +124,7 @@ class orkid(dep.StdProvider):
 
     deplist += ["cmake"]
     deplist += ["pydefaults"]
+    deplist += ["opencv_python"]  # cv2 from tweakoz fork (cp314t-no-homebrew)
     deplist += ["python"]
     deplist += ["pybind11"]
     deplist += ["openexr"]
@@ -160,6 +161,13 @@ class orkid(dep.StdProvider):
     deplist += ["libarchive"]
     deplist += ["rnnoise"]
     deplist += ["lunasvg"]
+    # Replacements for what ork.core/ork.lev2 used to pull from /opt/homebrew:
+    deplist += ["libsodium"]   # ork.core
+    deplist += ["xxhash"]      # ork.core
+    deplist += ["gmp"]         # ork.lev2
+    deplist += ["mpfr"]        # ork.lev2 (also depends on gmp)
+    deplist += ["libsndfile"]  # ork.lev2 (sndfile)
+    deplist += ["shaderc"]     # ork.lev2 (shaderc_shared)
     if host.IsLinux:
       deplist += ["rtmidi"]
       #deplist += ["pipewire"]
@@ -167,8 +175,6 @@ class orkid(dep.StdProvider):
         deplist += ["openvr"]
         deplist += ["ispctexc"]
         #deplist += ["nvtt"]
-      elif host.IsAARCH64:
-        deplist += ["shaderc"] # shaderc provided by vulkan on intel...
     elif host.IsDarwin:
       pass
 
