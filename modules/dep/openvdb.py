@@ -30,6 +30,13 @@ class openvdb(dep.StdProvider):
       "Python_FIND_STRATEGY": "LOCATION",
       "Python_ROOT_DIR": path.pyvenv,
       "VDB_PYTHON_INSTALL_DIRECTORY": path.pyvenv/"lib"/dep_python._deconame/"site-packages",
+      # openvdb's FindTBB walks default paths and grabs /opt/homebrew first.
+      # Force it to use OBT's TBB (2022.0.0, INTERFACE_VERSION 12140) by
+      # prefix-pinning + blacklisting brew. Without this, openvdb's
+      # Threading.h sees TBB_INTERFACE_VERSION undefined and tries to
+      # compile the legacy `tbb::task::self()` branch.
+      "CMAKE_PREFIX_PATH": str(path.prefix()),
+      "CMAKE_IGNORE_PATH": "/opt/homebrew;/opt/homebrew/lib;/opt/homebrew/include",
     }
 
   def onPostInstall(self):
@@ -72,7 +79,7 @@ class openvdb(dep.StdProvider):
     fetcher = dep.GithubFetcher(name=openvdb.name,
                                 repospec="tweakoz/openvdb",
                                 revision="toz-2024-v12-obt",
-                                recursive=True)
+                                recursive=False)
     return fetcher
   ########################################################################
 

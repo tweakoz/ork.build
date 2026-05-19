@@ -23,10 +23,15 @@ class opencv(dep.StdProvider):
     super().__init__(opencv.name)
     self.declareDeps(["pkgconfig","pybind11","opencv_contrib"])
     self.EXR = self.declareDep("openexr")
-    self.python_dep = dep.require("python")
+    # dep.instance() is a passive lookup (returns None if python isn't
+    # available); dep.require() would actively .provide() it — which is
+    # fatal here because __init__ is called during dep enumeration
+    # (DepNode.FindWithMethod), triggering a full python+openssl+xz
+    # build chain BEFORE obt.env.create.py reaches its --pipeline branch.
+    self.python_dep = self.declareDep("python")
 
     if self.python_dep == None:
-      return None 
+      return None
 
     self._builder = self.createBuilder(dep.CMakeBuilder)
 

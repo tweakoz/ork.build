@@ -6,7 +6,7 @@
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
 
-import os, tarfile
+import os, shutil, tarfile
 from obt import dep, host, path, pathtools, git, cmake, make, command
 from obt.deco import Deco
 from obt.wget import wget
@@ -35,23 +35,27 @@ class fluidsynth(dep.Provider):
 
     self.OK = False
 
-    os.system("rm -rf %s"%self.source_root)
+    if self.source_root.exists():
+      shutil.rmtree(str(self.source_root), ignore_errors=True)
 
     git.Clone("https://github.com/FluidSynth/fluidsynth",
               self.source_root,
               VERSION)
 
     pathtools.mkdir(self.build_dest,clean=True)
-    pathtools.chdir(self.build_dest)
 
     cmakeEnv = {
         "CMAKE_BUILD_TYPE": "RELEASE",
         "BUILD_SHARED_LIBS": "ON",
     }
 
-    cmake_ctx = cmake.context(root="..",env=cmakeEnv)
+    # Explicit sourcedir + builddir + working_dir — no chdir.
+    cmake_ctx = cmake.context(sourcedir=self.source_root,
+                              builddir=self.build_dest,
+                              working_dir=self.build_dest,
+                              env=cmakeEnv)
     if cmake_ctx.exec()==0:
-        if make.exec("install")==0:
+        if make.exec("install", working_dir=self.build_dest)==0:
             self.manifest.touch()
             self.OK = True
 

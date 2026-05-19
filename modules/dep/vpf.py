@@ -8,7 +8,7 @@
 
 VERSION = "master"
 
-import os, tarfile
+import os, shutil, tarfile
 from obt import dep, host, path, cmake, git, make, pathtools
 from obt.deco import Deco
 from obt.wget import wget
@@ -33,7 +33,8 @@ class vpf(dep.Provider):
     return "VPF (github-%s)" % VERSION
 
   def wipe(self): #############################################################
-    os.system("rm -rf %s"%self.source_root)
+    if self.source_root.exists():
+      shutil.rmtree(str(self.source_root), ignore_errors=True)
 
   def build(self): ##########################################################
 
@@ -59,11 +60,10 @@ class vpf(dep.Provider):
 
     ok2build = True
     if self.should_incremental_build:
-        os.chdir(self.build_dest)
+        pass  # no chdir; make.exec below uses working_dir
     else:
 
         pathtools.mkdir(self.build_dest,clean=True)
-        os.chdir(self.build_dest)
 
         cmakeEnv = {
             "CMAKE_BUILD_TYPE": "RELEASE",
@@ -71,7 +71,10 @@ class vpf(dep.Provider):
             "GENERATE_PYTHON_BINDINGS": True
         }
 
-        cmake_ctx = cmake.context("..",env=cmakeEnv)
+        cmake_ctx = cmake.context(sourcedir=self.source_root,
+                                  builddir=self.build_dest,
+                                  working_dir=self.build_dest,
+                                  env=cmakeEnv)
         ok2build = cmake_ctx.exec()==0
 
     #########################################
@@ -80,7 +83,7 @@ class vpf(dep.Provider):
 
     OK = True
     if ok2build:
-        OK = (make.exec("install")==0)
+        OK = (make.exec("install", working_dir=self.build_dest)==0)
     return OK
 
   def linkenv(self): ##########################################################

@@ -8,7 +8,7 @@
 
 VERSION = "master"
 
-import os, tarfile
+import os, shutil, tarfile
 from obt import dep, host, path, git, make, cmake
 from obt.deco import Deco
 from obt.wget import wget
@@ -37,14 +37,15 @@ class unittestpp(dep.Provider):
 
     git.Clone("https://github.com/tweakoz/unittestpp",self.source_root,VERSION)
 
-    os.system("rm -rf %s"%self.build_dest)
+    if self.build_dest.exists():
+      shutil.rmtree(str(self.build_dest), ignore_errors=True)
     os.mkdir(self.build_dest)
-    os.chdir(self.build_dest)
-    cmake_ctx = cmake.context("..",env={
-        "BUILD_SHARED_LIBS": "ON"
-    })
+    cmake_ctx = cmake.context(sourcedir=self.source_root,
+                              builddir=self.build_dest,
+                              working_dir=self.build_dest,
+                              env={"BUILD_SHARED_LIBS": "ON"})
     cmake_ctx.exec()
-    return (make.exec("install")==0)
+    return (make.exec("install", working_dir=self.build_dest)==0)
 
   def provide(self): ##########################################################
     return self._old_provide()

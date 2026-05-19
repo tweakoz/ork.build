@@ -18,9 +18,14 @@ class pybind11(dep.StdProvider):
     self.declareDep("cmake")
     PYTHON = dep.instance("python")
     self._builder = self.createBuilder(dep.CMakeBuilder)
-    #self._builder.setCmVar("Python3_FIND_STRATEGY","LOCATION")
-    #self._builder.setCmVar("Python3_ROOT_DIR",PYTHON.home_dir)
     self._builder.setCmVar("PYTHON_EXECUTABLE",PYTHON.executable)
+    # Install headers to $OBT_STAGE/include/obt.pybind11/pybind11/ instead of
+    # the default $OBT_STAGE/include/pybind11/. Single, explicit, orkid-owned
+    # location — consumers point a -I at $OBT_STAGE/include/obt.pybind11 and
+    # nothing else can shadow it (in particular, pytorch's bundled pybind11
+    # which lives under $OBT_PYPKG/torch/include/pybind11/ is invisible to
+    # orkid because we copy torch headers to obt.torch/ excluding pybind11).
+    self._builder.setCmVar("CMAKE_INSTALL_INCLUDEDIR","include/obt.pybind11")
     self._builder.requires(["python"])
     self._debug = True
     self._fetcher._debug = True
@@ -29,9 +34,9 @@ class pybind11(dep.StdProvider):
   def _fetcher(self):
     return dep.GithubFetcher(name=pybind11.name,
                              repospec="pybind/pybind11",
-                             revision="v2.11.1",
+                             revision="v3.0.4",   # Python 3.14 + subinterpreter support
                              recursive=False)
   def areRequiredSourceFilesPresent(self):
     return (self.source_root/"CMakeLists.txt").exists()
   def areRequiredBinaryFilesPresent(self):
-    return (path.includes()/"pybind11"/"attr.h").exists()
+    return (path.includes()/"obt.pybind11"/"pybind11"/"attr.h").exists()

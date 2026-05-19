@@ -39,7 +39,6 @@ class pillar(dep.Provider):
 
     if False==self.OK:
       obt.git.Clone(self.url,self.source_root,"master")
-      os.chdir(self.source_root)
 
       # install deps
       obt.pip.install([ "raven",
@@ -53,9 +52,9 @@ class pillar(dep.Provider):
       patcher = obt.patch.patcher("pillar")
       patcher.patch_list([[self.source_root/"pillar","markdown.py"]])
 
-      # install
-
-      Command(["python3","setup.py", "install"]).exec()
+      # install — working_dir explicit, no chdir.
+      Command(["python3","setup.py", "install"],
+              working_dir=self.source_root).exec()
 
       self.manifest.touch()
 

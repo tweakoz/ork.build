@@ -22,7 +22,7 @@ class msquic(dep.StdProvider):
   @property
   def _fetcher(self):
     return dep.GithubFetcher(name=msquic.name,
-                             repospec="microsoft/msquic",
+                             repospec="tweakoz/msquic",
                              revision="v2.5.0",
                              recursive=True)
   def areRequiredSourceFilesPresent(self):

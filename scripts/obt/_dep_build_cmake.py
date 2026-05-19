@@ -107,9 +107,13 @@ class CMakeBuilder(BaseBuilder):
 
     os.environ.update(self._os_env)
     
+    # NOTE: we used to pathtools.chdir(wrkdir) here before invoking cmake/make.
+    # That's a process-global mutation, so two parallel workers would clobber
+    # each other's cwd and cause "make: *** No rule to make target install"
+    # / "Cannot build <X> missing files" failures. cmake.context and make.exec
+    # both accept a working_dir / builddir param now; pass it through.
     if incremental:
       pathtools.mkdir(blddir,clean=False)
-      pathtools.chdir(wrkdir)
       cmake_ctx = cmake.context(root=srcdir,
                                 env=self._cmakeenv,
                                 osenv=self._osenv,
@@ -121,15 +125,16 @@ class CMakeBuilder(BaseBuilder):
       ok2build = cmake_ctx.exec()==0
     else:
       pathtools.mkdir(blddir,clean=True,parents=True)
-      pathtools.chdir(wrkdir)
       cmake_ctx = cmake.context(root=srcdir,
                                 env=self._cmakeenv,
+                                builddir=blddir,
+                                working_dir=wrkdir,
                                 sourcedir=self._src_dir_override,
                                 osenv=self._osenv)
       ok2build = cmake_ctx.exec()==0
 
     if ok2build:
-      OK = (make.exec(parallelism=self._parallelism)==0)
+      OK = (make.exec(parallelism=self._parallelism,working_dir=blddir)==0)
       if OK and self._onPostBuild!=None:
         self._onPostBuild()
         os.environ = environ_cached
@@ -138,8 +143,7 @@ class CMakeBuilder(BaseBuilder):
     return False
   ###########################################
   def install(self,blddir):
-    pathtools.chdir(blddir)
-    OK = (make.exec("install",parallelism=0.0)==0)
+    OK = (make.exec("install",parallelism=0.0,working_dir=blddir)==0)
     if OK and self._onPostInstall!=None:
        self._onPostInstall()
     return OK

@@ -35,26 +35,33 @@ class calf(dep.Provider):
     dep.require("fluidsynth")
     self.OK = False
 
-
-    os.system("rm -rf %s"%self.source_root)
+    import shutil as _sh
+    if self.source_root.exists():
+      _sh.rmtree(str(self.source_root), ignore_errors=True)
 
     git.Clone("https://github.com/calf-studio-gear/calf",
               self.source_root,
               VERSION)
 
-    pathtools.chdir(self.source_root)
-
-    os.system("aclocal --force")
-    os.system("libtoolize --force --automake --copy")
-    os.system("autoheader --force")
-    os.system("autoconf --force")
-    os.system("automake -a --copy")
+    # No chdir; each Command/make.exec runs in self.source_root via
+    # working_dir. The autotools steps below previously used os.system
+    # which inherits parent fd 1/2 (TUI leak) and process cwd (race).
+    for autotools_cmd in (
+        ["aclocal", "--force"],
+        ["libtoolize", "--force", "--automake", "--copy"],
+        ["autoheader", "--force"],
+        ["autoconf", "--force"],
+        ["automake", "-a", "--copy"],
+    ):
+      if command.Command(autotools_cmd, working_dir=self.source_root).exec() != 0:
+        print(deco.red("calf: %s failed" % " ".join(autotools_cmd)))
+        return False
 
     if command.Command(['./configure',
                         '--prefix=%s'%path.prefix(),
-                       ]).exec()==0:
-      if make.exec("all")==0:
-        if make.exec("install",parallelism=0.0)==0:
+                       ], working_dir=self.source_root).exec()==0:
+      if make.exec("all", working_dir=self.source_root)==0:
+        if make.exec("install",parallelism=0.0,working_dir=self.source_root)==0:
           self.OK = True
           self.manifest.touch()
 

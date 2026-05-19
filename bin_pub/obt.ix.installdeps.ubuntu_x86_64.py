@@ -24,7 +24,10 @@ deplist += ["libglfw3-dev","libflac++-dev","scons","git"]
 deplist += ["rapidjson-dev","graphviz","doxygen","libtiff-dev"]
 deplist += ["portaudio19-dev", "pybind11-dev"]
 deplist += ["libpng-dev"]
-deplist += ["iverilog","nvidia-opencl-dev"]
+deplist += ["iverilog"]
+deplist += ["patchelf"]  # pytorch.py: cherrypick_torch_assets uses patchelf
+                         # to rewrite SONAME on the renamed libobt.torch.*
+                         # dylibs (Linux equivalent of install_name_tool).
 deplist += ["libopenblas-dev"]
 deplist += ["librtmidi-dev"]
 deplist += ["texinfo","xmlto"]
@@ -100,3 +103,26 @@ merged = " ".join(deplist)
 os.system("sudo apt -y install %s" % merged)
 
 os.system("pip3 install os_release")
+
+###############################################################################
+# CUDA toolkit
+#
+# Old: Ubuntu's distro-packaged `nvidia-cuda-toolkit` ships CUDA 12.0 (a
+# wrapper at /usr/bin/nvcc execing /usr/lib/nvidia-cuda-toolkit/bin/nvcc).
+# pytorch 2.12 wants CUDA >= 12.1 and the 12.0 nvcc + 12.6 headers mix
+# blows up with `__half → unsigned short` conversion errors. Remove it.
+# `nvidia-profiler` and `libthrust-dev` are reverse-deps that depend on
+# the old toolkit; cuda-toolkit-12-6 already supplies nsight + thrust.
+#
+# New: NVIDIA's apt repo. Adds /usr/local/cuda-12.6/. pytorch.py picks it
+# up automatically via the CUDA_HOME probe in _build_env().
+###############################################################################
+if UBUNTU_VERSION >= 2404:
+  os.system("sudo apt -y remove nvidia-cuda-toolkit nvidia-profiler libthrust-dev")
+
+  KEYRING_URL = "https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2404/x86_64/cuda-keyring_1.1-1_all.deb"
+  KEYRING_DEB = "/tmp/cuda-keyring_1.1-1_all.deb"
+  os.system("curl -fsSL -o %s %s" % (KEYRING_DEB, KEYRING_URL))
+  os.system("sudo dpkg -i %s" % KEYRING_DEB)
+  os.system("sudo apt update")
+  os.system("sudo apt -y install cuda-toolkit-12-8")

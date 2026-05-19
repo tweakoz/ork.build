@@ -12,12 +12,17 @@ class pydefaults(dep.Provider):
 
   def build(self): ############################################################
     #PYTHON = dep.instance("python")
+    # opencv-python is built from the tweakoz fork (obt-cp314t-no-homebrew)
+    # via the dedicated `opencv_python` dep — see modules/dep/opencv_python.py.
+    # It is NOT installed from PyPI here: the PyPI wheel uses the abi3
+    # limited API (unsupported in Python 3.14 free-threaded) and links
+    # against /opt/homebrew/lib/libavif.dylib, both of which are blockers
+    # for the no-homebrew cp314t target.
     pip.install(["pytest",
                   "numpy","scipy",
                   "numba","pyopencl",
                   "matplotlib",
                   "pyzmq",
-                  "opencv-python"
                   #"ork.build" # okay...
                   ])#,"backports.lzma"])
 

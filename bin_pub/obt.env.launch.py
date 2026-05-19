@@ -125,7 +125,10 @@ elif args["stack"]!=None:
     print("Stacking env<%s>" % deco.val(stage_dir))
     envsetup.log("obt.build eviron initialized OBT_ROOT<%s>"%deco.path(root_dir))
     if args["command"]!=None:
-        obt.command.Command([shell,"--init-file",bashrc,"-c",args["command"]],environment={}).exec()
+        # Propagate the inner command's exit code, otherwise a failed
+        # `--command "..."` silently looks like success.
+        rval = obt.command.Command([shell,"--init-file",bashrc,"-c",args["command"]],environment={}).exec()
+        sys.exit(rval)
     else:
         obt.command.Command([shell,"--init-file",bashrc],environment={}).exec()
     pass

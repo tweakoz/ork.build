@@ -560,21 +560,27 @@ def configFromCommandLine(parser_args=None):
         print(deco.err("NO PKG-CONFIG FOUND, is your base shell setup correctly ?"))      
         assert(False)
 
-  if("PKG_CONFIG_PATH" not in os.environ):
-    orig_pkg_config = findExecutable("pkg-config")
-    if orig_pkg_config==None:
-      print(deco.err("NO PKG-CONFIG FOUND, is your base shell setup correctly ?"))
-      assert(False)
-    pkg_config_result = subprocess.run(["pkg-config", "--variable=pc_path", "pkg-config"], capture_output=True, text=True)
-    pkg_config_paths = []
-    if pkg_config_result.returncode == 0:
-      pkg_config_paths = pkg_config_result.stdout.strip().split(':')
-      #print(pkg_config_paths)
-      os.environ["OBT_ORIGINAL_PKG_CONFIG_PATH"] = ":".join(pkg_config_paths)
-      os.environ["PKG_CONFIG_PATH"] = ":".join(pkg_config_paths)
-      #print(os.environ)
+  # PKG_CONFIG_PATH is intentionally NOT seeded from the system pkg-config's
+  # default pc_path. On macOS, the system pkg-config IS homebrew's
+  # /opt/homebrew/bin/pkg-config, and it reports
+  # /opt/homebrew/{lib,share}/pkgconfig:... as its default search dirs. If
+  # we seeded those into PKG_CONFIG_PATH, every dep's configure/cmake
+  # pkg-config probe would happily auto-discover homebrew packages,
+  # silently shadowing OBT-built ones.
+  #
+  # Instead: preserve whatever the parent shell had in OBT_ORIGINAL_*
+  # (mostly empty in practice) and start PKG_CONFIG_PATH empty. OBT-managed
+  # deps each prepend their own pkgconfig dir via env_init (see
+  # python.py, qt5.py, etc.). The OBT stage paths $OBT_STAGE/lib/pkgconfig
+  # and $OBT_STAGE/lib64/pkgconfig are prepended unconditionally below
+  # (around line 689).
+  if "PKG_CONFIG_PATH" in os.environ:
+    if not env_is_set("OBT_ORIGINAL_PKG_CONFIG_PATH"):
+      os.environ["OBT_ORIGINAL_PKG_CONFIG_PATH"] = os.environ["PKG_CONFIG_PATH"]
   else:
-    do_path("PKG_CONFIG_PATH","OBT_ORIGINAL_PKG_CONFIG_PATH")
+    if not env_is_set("OBT_ORIGINAL_PKG_CONFIG_PATH"):
+      os.environ["OBT_ORIGINAL_PKG_CONFIG_PATH"] = ""
+  os.environ["PKG_CONFIG_PATH"] = ""
 
   ########################
   # stage dir
@@ -731,6 +737,45 @@ def configFromEnvironment():
 # per dep dynamic env init
 ###########################################
 
+###########################################
+# Build-environment sanitizer
+###########################################
+# These vars carry compiler / library / pkgconfig search paths inherited
+# from the user's parent shell. If homebrew is installed, they typically
+# include /opt/homebrew paths — which then leak into every dep's
+# configure / cmake autodetect step, silently shadowing OBT-built
+# headers and libs.
+#
+# We clear them at OBT-host shell entry so dep env_init() functions
+# start from a known-empty state and only add OBT-managed paths.
+#
+# PATH is INTENTIONALLY NOT cleared: OBT's bootstrap python on macOS is
+# /opt/homebrew/bin/python3 (the single allowed homebrew touch — see
+# NOHOMEBREW.md and _envutils.py:62-76). Dropping /opt/homebrew/bin
+# from PATH would break os-python.
+#
+# Originals are preserved in OBT_ORIGINAL_* so a debugger / test driver
+# can restore them if needed.
+###########################################
+
+_SANITIZE_VARS = [
+    "CMAKE_PREFIX_PATH",
+    "PKG_CONFIG_PATH",
+    "CPPFLAGS", "CFLAGS", "CXXFLAGS", "LDFLAGS",
+    "CPATH", "C_INCLUDE_PATH", "CPLUS_INCLUDE_PATH", "OBJC_INCLUDE_PATH",
+    "LIBRARY_PATH",
+    "LD_LIBRARY_PATH", "DYLD_LIBRARY_PATH", "DYLD_FALLBACK_LIBRARY_PATH",
+]
+
+def _sanitize_build_environment():
+  for var in _SANITIZE_VARS:
+    if var in os.environ:
+      orig_key = "OBT_ORIGINAL_" + var
+      if orig_key not in os.environ:
+        os.environ[orig_key] = os.environ[var]
+      del os.environ[var]
+
+
 def initializeDependencyEnvironments(envsetup):
 
   import obt.host
@@ -739,9 +784,15 @@ def initializeDependencyEnvironments(envsetup):
   import obt.subspace
 
   ####################################
-  print(deco.orange("############################################################################################"))    
+  # Clear inherited compiler / pkgconfig / DYLD env vars so dep env_init
+  # functions don't accidentally inherit homebrew paths from the parent
+  # shell. Must run BEFORE any env_init() below.
+  ####################################
+  _sanitize_build_environment()
+  ####################################
+  print(deco.orange("############################################################################################"))
   print(deco.orange("Initializing Dependencies"))
-  print(deco.orange("############################################################################################"))    
+  print(deco.orange("############################################################################################"))
   ####################################
   hostinfo = obt.host.description()
   if hasattr(hostinfo,"env_init"):

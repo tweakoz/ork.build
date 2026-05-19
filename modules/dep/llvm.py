@@ -26,11 +26,16 @@ class _llvm_from_source(dep.StdProvider):
     self._builder = self.createBuilder(
       dep.CMakeBuilder,
       src_dir_override=self.build_src)
+    self.declareDep("zstd")
     self._builder.setCmVars({
         "CMAKE_BUILD_TYPE": "RELEASE",
         "BUILD_SHARED_LIBS": "ON",
         "LLVM_INSTALL_UTILS": "ON",
         "LLVM_ENABLE_DUMP": "ON",
+        # Force-on so cmake fails loudly if the OBT-built zstd is missing
+        # rather than silently falling back to a system path.
+        "LLVM_ENABLE_ZSTD": "FORCE_ON",
+        "zstd_ROOT": str(path.prefix()),
         #"LLVM_ENABLE_PROJECTS": "clang;libcxx;libcxxabi"
     })
     # arm64-apple-darwin24.1.0

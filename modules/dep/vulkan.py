@@ -22,6 +22,14 @@ class _vulkan_from_moltenvk(dep.Provider):
 
   def __init__(self): ############################################
     super().__init__("vulkan")
+    # MoltenVK build invokes the cmake binary (twice) inside
+    # _build_vulkan_loader() to build Vulkan-Headers and Vulkan-Loader.
+    # Without declaring cmake here, the parallel pipeline could schedule
+    # vulkan to start before cmake has been installed to $OBT_STAGE/bin.
+    # (The serial bootstrap path happened to work because MANDATORY_DEPS
+    # processes [cmake, python, pydefaults, vulkan] in order, so cmake
+    # was always done first by accident of iteration.)
+    self.declareDep("cmake")
     self.VERSION = "v1.4.1"
 
     #print(options)
@@ -36,8 +44,14 @@ class _vulkan_from_moltenvk(dep.Provider):
     return "MoltenVK (github-%s)" % self.VERSION
 
   def wipe(self): #############################################################
-    os.system("rm -rf %s"%self.source_root)
-    os.system("rm -rf %s"%self.build_dest)
+    # shutil.rmtree instead of os.system("rm -rf ...") — os.system inherits
+    # the process's fd 1/2 directly, bypassing the per-thread log redirect
+    # set up by obt.pipeline_io, and would leak output through the TUI.
+    import shutil
+    if self.source_root.exists():
+      shutil.rmtree(str(self.source_root), ignore_errors=True)
+    if self.build_dest.exists():
+      shutil.rmtree(str(self.build_dest), ignore_errors=True)
 
   def env_init(self):
     log.marker("registering Vulkan(%s) <MoltenVK> SDK"%self.VERSION)
@@ -47,7 +61,6 @@ class _vulkan_from_moltenvk(dep.Provider):
     # but C++ exes use glfwInitVulkanLoader() with an absolute dlopen of
     # $OBT_STAGE/lib/libvulkan.1.dylib to bypass SIP stripping.
     env.prepend("DYLD_LIBRARY_PATH", path.libs())
-    env.append("DYLD_LIBRARY_PATH", path.macos_brew_lib)  # for validation layers and other deps
 
     env.set("VULKAN_SDK",self.sdk_dir) # for cmake
     env.set("OBT_VULKAN_VERSION","MoltenVK-%s"%(self.VERSION)) # for OBT internal
@@ -64,10 +77,13 @@ class _vulkan_from_moltenvk(dep.Provider):
     import subprocess, shutil
 
     headers_dir = self.source_root/"External"/"Vulkan-Headers"
-    # determine the headers version tag for a matching loader checkout
+    # determine the headers version tag for a matching loader checkout.
+    # stderr=DEVNULL so git's noise can't leak through the TUI; we only
+    # care about the captured stdout tag here.
     tag = subprocess.check_output(
       ["git","describe","--tags"],
-      cwd=str(headers_dir)).decode().strip()
+      cwd=str(headers_dir),
+      stderr=subprocess.DEVNULL).decode().strip()
     log.marker("Building Vulkan-Loader %s to match MoltenVK headers" % tag)
 
     loader_src = path.builds()/"vulkan-loader"
@@ -120,27 +136,67 @@ class _vulkan_from_moltenvk(dep.Provider):
     if not self.source_root.exists():
       git.Clone("https://github.com/KhronosGroup/MoltenVK",self.source_root,self.VERSION)
 
-    os.chdir(self.source_root)
-
-    command.system(["./fetchDependencies --macos"])
-    cmd = ["xcodebuild", "build",
-           "-project", '"MoltenVKPackaging.xcodeproj"',
-           "-scheme", '"MoltenVK Package (macOS only)"',
-           "-configuration", '"Debug"']
-    ok = (0 == command.system(cmd))
+    # No os.chdir(self.source_root) — racy under the parallel pipeline.
+    # Each command.run() below sets working_dir explicitly.
+    ok = (0 == command.run(["./fetchDependencies", "--macos"],
+                            working_dir=self.source_root))
     if ok:
-      cmd = ["cp",self.build_lib_dir/"libMoltenVk.dylib",path.libs()/"libMoltenVk.dylib"]
-      ok = (0 == command.system(cmd))
+      ok = (0 == command.run(["xcodebuild", "build",
+                              "-project", "MoltenVKPackaging.xcodeproj",
+                              "-scheme", "MoltenVK Package (macOS only)",
+                              "-configuration", "Debug"],
+                              working_dir=self.source_root))
+    if ok:
+      ok = (0 == command.run(["cp",
+                              str(self.build_lib_dir/"libMoltenVk.dylib"),
+                              str(path.libs()/"libMoltenVk.dylib")]))
       if ok:
-        cmd = ["cp","-r","Package/Latest/MoltenVK/include/*",path.includes()]
-        ok = (0 == command.system(cmd))
+        # cp -r with a glob needs shell expansion; use a real glob.
+        import glob, shutil as _sh
+        src_dir = self.source_root/"Package"/"Latest"/"MoltenVK"/"include"
+        ok = src_dir.exists()
         if ok:
-          # moltenvlk does not automatically install shaderc
-          cmd = ["brew","install","--overwrite", "shaderc"]
-          ok = (0 == command.system(cmd))
+          for entry in src_dir.iterdir():
+            tgt = path.includes()/entry.name
+            try:
+              if entry.is_dir():
+                _sh.copytree(str(entry), str(tgt), dirs_exist_ok=True)
+              else:
+                _sh.copy2(str(entry), str(tgt))
+            except Exception as e:
+              print("copy %s -> %s failed: %s" % (entry, tgt, e))
+              ok = False
+              break
         if ok:
           ok = self._build_vulkan_loader()
+        if ok:
+          # vk_enum_string_helper.h moved out of Vulkan-Headers into
+          # Vulkan-Utility-Libraries in newer Vulkan SDKs. orkid still
+          # includes it via <vulkan/vk_enum_string_helper.h>. Drop it in.
+          ok = self._install_vk_enum_string_helper()
     return ok
+
+  def _install_vk_enum_string_helper(self):
+    """Fetch vk_enum_string_helper.h and install it to $OBT_STAGE/include/vulkan/.
+
+    The helper file moved out of Vulkan-Headers into Vulkan-Utility-Libraries
+    in newer Vulkan SDKs. We fetch the file at a tag that matches our
+    MoltenVK-bundled Vulkan-Headers version, otherwise the helper references
+    enum symbols that don't exist in our headers."""
+    import subprocess
+    headers_dir = self.source_root/"External"/"Vulkan-Headers"
+    tag = subprocess.check_output(
+      ["git","describe","--tags"],
+      cwd=str(headers_dir),
+      stderr=subprocess.DEVNULL).decode().strip()
+    url = ("https://raw.githubusercontent.com/KhronosGroup/Vulkan-Utility-Libraries/"
+           "%s/include/vulkan/vk_enum_string_helper.h" % tag)
+    dst_dir = path.includes()/"vulkan"
+    pathtools.ensureDirectoryExists(dst_dir)
+    dst = dst_dir/"vk_enum_string_helper.h"
+    log.marker("fetching vk_enum_string_helper.h @ %s" % tag)
+    rc = command.run(["curl","-fsSL","-o",str(dst),url])
+    return rc == 0
 
 ###############################################################################
 
@@ -223,11 +279,14 @@ class _vulkan_from_lunarg(dep.Provider):
       return False
 
     self.source_root.mkdir(parents=True,exist_ok=True)
-    os.chdir(self.source_root)
-    ok = (command.system(["rm","-rf",self.VERSION])==0)
-    if not ok:
-      return False
-    ok = (command.system(["tar","xvf",path.downloads()/self.download_name])==0)
+    # No chdir; pass working_dir to each subprocess. command.run instead
+    # of command.system so output goes through the per-thread redirect.
+    import shutil as _sh
+    target = self.source_root/self.VERSION
+    if target.exists():
+      _sh.rmtree(str(target), ignore_errors=True)
+    ok = (command.run(["tar","xvf",path.downloads()/self.download_name],
+                       working_dir=self.source_root)==0)
     if not ok:
       return False
 

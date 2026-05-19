@@ -21,6 +21,11 @@ class tbb(dep.StdProvider):
       "TBB_TEST": "OFF",
       "TBB_STRICT": "OFF",
       "TBB_EXAMPLES": "OFF",
+      # Don't auto-detect a system hwloc (e.g. /opt/homebrew/opt/hwloc).
+      # libtbbbind builds without NUMA-binding support, which is fine on
+      # macOS arm64 / single-socket systems. Re-enable later by adding an
+      # OBT-built hwloc dep and pointing TBB at it.
+      "TBB_DISABLE_HWLOC_AUTOMATIC_SEARCH": "ON",
     }
 
     # On certain Ubuntu versions, use gcc-11

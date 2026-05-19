@@ -21,6 +21,20 @@ _async_threads = {}
 _async_thread_counter = 0
 _async_thread_lock = threading.Lock()
 
+# Thread-local hint set by obt.pipeline_io.redirect_thread_io. When set,
+# Command.exec() will pass this fd as stdout/stderr to subprocess.Popen by
+# default (callers can still override with an explicit stdout/stderr kwarg).
+_thread_log = threading.local()
+
+def _set_thread_log_fd(fd):
+  _thread_log.fd = fd
+
+def _clear_thread_log_fd():
+  _thread_log.fd = None
+
+def _get_thread_log_fd():
+  return getattr(_thread_log, "fd", None)
+
 ###########################################################################
 
 def eval_bash_source_env(sourcefile_path):
@@ -56,12 +70,14 @@ class Command:
 
     ###########################################################################
 
-    def __init__(self, 
-                 command_list, 
+    def __init__(self,
+                 command_list,
                  environment=dict(),
                  do_log=True,
                  working_dir=None,
-                 use_shell=False):
+                 use_shell=False,
+                 stdout=None,
+                 stderr=None):
         #print(command_list)
         assert(type(command_list)==list)
         self.env = dict(os.environ)
@@ -75,37 +91,67 @@ class Command:
         #print(self.command_list)
         self._do_log = do_log
         self._use_shell = use_shell
+        # Optional explicit subprocess.Popen stdout/stderr targets. None
+        # means "inherit, unless a thread-local hint is set by
+        # obt.pipeline_io.redirect_thread_io".
+        self._stdout = stdout
+        self._stderr = stderr
 
     ###########################################################################
 
     def exec(self,use_shell=False):
 
-        cur_dir = obt.path.Path(os.getcwd())
-        
-        if self.working_dir!=None:
-          pathtools.chdir(self.working_dir)
-        else:
-          self.working_dir = cur_dir
+        # Pass working_dir to subprocess.Popen via cwd= rather than
+        # chdir-ing the parent process. os.chdir is process-global and
+        # racy under the parallel build pipeline — concurrent workers
+        # would clobber each other's cwd and cause "make: *** No rule
+        # to make target install" / "Cannot build <X> missing files"
+        # style failures.
+        cwd = str(self.working_dir) if self.working_dir is not None else None
 
         if self._do_log:
           log.output("cmdexec: %s"%deco.bright(self.command_list))
 
-        buildtrace.buildTrace({  
+        buildtrace.buildTrace({
          "op": "command(cmd.exec)",
          "working_dir": self.working_dir,
-         "arglist": self.command_list, 
-         "os_env": dict(self.env), 
+         "arglist": self.command_list,
+         "os_env": dict(self.env),
          "use_shell": use_shell or self._use_shell })
 
-        child_process = subprocess.Popen( self.command_list,
-                                          universal_newlines=True,
-                                          env=self.env,
-                                          shell=use_shell or self._use_shell )
+        stdout = self._stdout
+        stderr = self._stderr
+        stdin  = None
+        in_pipeline = False
+        if stdout is None and stderr is None:
+          tfd = _get_thread_log_fd()
+          if tfd is not None:
+            stdout = tfd
+            stderr = tfd
+            in_pipeline = True
+
+        # When this Command is invoked from a pipeline worker thread (i.e.
+        # stdio has been redirected to a per-dep log fd), give the child
+        # a clean stdio + a fresh session: stdin from /dev/null (so it
+        # can't accidentally block reading from our terminal) and a new
+        # process group (no shared controlling-tty interactions). This
+        # is defensive against subtle cmake/cmsysProcess pipe-leak
+        # patterns we've seen under concurrent parallel-pipeline runs.
+        popen_kwargs = dict(
+            universal_newlines=True,
+            env=self.env,
+            cwd=cwd,
+            shell=use_shell or self._use_shell,
+            stdout=stdout,
+            stderr=stderr,
+        )
+        if in_pipeline:
+          popen_kwargs["stdin"] = subprocess.DEVNULL
+          popen_kwargs["start_new_session"] = True
+
+        child_process = subprocess.Popen( self.command_list, **popen_kwargs )
         child_process.communicate()
         child_process.wait()
-
-        if self.working_dir!=None:
-          pathtools.chdir(cur_dir)
 
         return child_process.returncode
 

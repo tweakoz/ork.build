@@ -70,13 +70,19 @@ class CustomBuilder(BaseBuilder):
     print("ok2build<%d>"%int(ok2build))
     if not ok2build:
       return False
+    # NOTE: removed pathtools.chdir(self._builddir). chdir is process-
+    # global and races under the parallel pipeline. Commands held in the
+    # _cleanbuildcommands / _incrbuildcommands / _installcommands lists
+    # MUST be constructed with working_dir= set (Command.exec passes that
+    # to Popen via cwd=, which IS per-subprocess and safe). cmake.py
+    # already does this. Any caller still relying on the inherited cwd
+    # needs to be updated.
     ###################################
     if incremental:
     ###################################
       print("doing incremental build...")
       print(self._incrbuildcommands)
       pathtools.mkdir(self._builddir,clean=False,parents=True)
-      pathtools.chdir(self._builddir)
       return self._run_commands(self._incrbuildcommands)
     ###################################
     else: # clean build
@@ -84,10 +90,8 @@ class CustomBuilder(BaseBuilder):
       print("doing clean build...")
       print(self._cleanbuildcommands)
       pathtools.mkdir(self._builddir,clean=False,parents=True)
-      pathtools.chdir(self._builddir)
       return self._run_commands(self._cleanbuildcommands)
   ###########################################
   def install(self,blddir):
-    pathtools.chdir(self._builddir)
     return self._run_commands(self._installcommands)
   ###########################################

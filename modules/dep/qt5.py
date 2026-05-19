@@ -6,7 +6,7 @@
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
 
-import os, tarfile
+import os, shutil, tarfile
 from obt import dep, host, path, git, make, pathtools, env, command
 from obt.deco import Deco
 from obt.wget import wget
@@ -64,8 +64,10 @@ class _qt5_from_source(dep.Provider):
                                            self.source_base)
   ########
   def wipe(self):
-    os.system("rm -rf %s"%self.source_root)
-    os.system("rm -rf %s"%self.build_dest)
+    if self.source_root.exists():
+      shutil.rmtree(str(self.source_root), ignore_errors=True)
+    if self.build_dest.exists():
+      shutil.rmtree(str(self.build_dest), ignore_errors=True)
   ########
   def build(self): ############################################################
     if dep.require(["assimp"])==None:
@@ -80,10 +82,9 @@ class _qt5_from_source(dep.Provider):
     # prep for build
     #########################################
     if self.should_incremental_build:
-        os.chdir(self.build_dest)
+        pass  # no chdir; commands below pass working_dir explicitly
     else:
         pathtools.mkdir(self.build_dest,clean=True)
-        os.chdir(self.build_dest)
 
         options =  ["-prefix", path.qt5dir()]
         options += ["-release"]
@@ -108,18 +109,22 @@ class _qt5_from_source(dep.Provider):
         #options += ["-pkg-config"]
         #options += ["-proprietary-codecs"]
 
-        b = cmd(["sh", self.source_root/"configure"]+options)
+        b = cmd(["sh", self.source_root/"configure"]+options,
+                working_dir=self.build_dest)
         self.OK = (b.exec()==0)
     #########################################
     # build
     #########################################
     if self.OK:
-      self.OK = (make.exec(parallelism=self.default_parallelism)==0)
+      self.OK = (make.exec(parallelism=self.default_parallelism,
+                           working_dir=self.build_dest)==0)
     if self.OK:
-      self.OK = (make.exec(parallelism=self.default_parallelism)==0)
+      self.OK = (make.exec(parallelism=self.default_parallelism,
+                           working_dir=self.build_dest)==0)
     # uhhuh - https://bugreports.qt.io/browse/QTBUG-60496
     if self.OK:
-      self.OK = (0==make.exec(target="install", parallelism=0.0))
+      self.OK = (0==make.exec(target="install", parallelism=0.0,
+                              working_dir=self.build_dest))
     return self.OK
 
 ###############################################################################

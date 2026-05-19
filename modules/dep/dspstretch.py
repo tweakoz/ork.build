@@ -35,9 +35,9 @@ class dspstretch(dep.StdProvider):
   @property
   def _fetcher(self):
     return dep.GithubFetcher(name=dspstretch.name,
-                             repospec="Signalsmith-Audio/signalsmith-stretch",
+                             repospec="tweakoz/signalsmith-stretch",
                              revision=dspstretch.VERSION,
-                             recursive=True)
+                             recursive=False)
 
   #######################################################################
 

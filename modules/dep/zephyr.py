@@ -8,7 +8,7 @@
 
 VERSION ="litex-vexriscv"
 
-import os, tarfile
+import os, shutil, tarfile
 from obt import dep, host, path, git, cmake, make
 from obt.deco import Deco
 from obt.wget import wget
@@ -42,13 +42,11 @@ class zephyr(dep.Provider):
 
     git.Clone("https://github.com/tweakoz/zephyr",self.source_root,VERSION)
 
-    os.system("rm -rf %s"%self.build_dest)
+    if self.build_dest.exists():
+      shutil.rmtree(str(self.build_dest), ignore_errors=True)
     os.mkdir(self.build_dest)
-    os.chdir(self.build_dest)
-
-    #cmake_ctx = cmake.context("..")
-    #cmake_ctx.exec()
-    #return (make.exec("install")==0)
+    # No chdir — build is currently a no-op, but if cmake/make are
+    # re-enabled they should use working_dir=self.build_dest.
 
     return True
 

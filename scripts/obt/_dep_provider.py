@@ -19,7 +19,13 @@ from enum import Enum
 
 deco = Deco()
 
-root_dep_list = ["root", "python", "pydefaults"]
+# Deps in this list do NOT auto-declare "root" as a prereq. Originally a
+# cycle-break for the python/pydefaults/openssl/xz bootstrap chain (per
+# NOHOMEBREW.md). cmake is added because it's a self-contained bootstrap
+# (system C++ compiler, --system-zlib, no openssl) that needs nothing
+# from the rest of the bootstrap chain — letting it run in parallel with
+# python saves ~3 min on a clean staging.
+root_dep_list = ["root", "python", "pydefaults", "openssl", "xz", "cmake"]
 
 class ProviderScope(Enum):
   CONTAINER = 1 # dependency is scoped to the container
@@ -50,6 +56,12 @@ class Provider(object):
       self._topoindex = -1
       self._debug = False
       self._must_build_in_tree = False
+      # Per-dep escape hatches for the parallel pipeline scheduler.
+      # When True, the scheduler drains the corresponding pool and runs this
+      # dep alone in that stage. The other stage's pool is unaffected.
+      # Default False; deps with known concurrency hazards opt in.
+      self.serial_fetch = False
+      self.serial_build = False
       if name not in root_dep_list:
         self.declareDep("root")
       #############################
@@ -310,6 +322,19 @@ class Provider(object):
       return True
 
     #############################
+    # Default fetch/build split for non-StdProvider subclasses (e.g.
+    # HomebrewProvider). These don't have a separable fetch stage, so
+    # fetch_only is a no-op and build_and_install delegates to provide().
+    # StdProvider overrides both with real implementations.
+    #############################
+    def fetch_only(self):
+      return True
+
+    #############################
+    def build_and_install(self):
+      return self.provide()
+
+    #############################
 
     def _std_cmake_build(self,srcdir,blddir,cmakeEnv=_std_cmake_vars,parallelism=1.0):
       ok2build = True
@@ -439,66 +464,61 @@ class StdProvider(Provider):
     def install(self):
       return self._builder.install(self.build_dest)
     #########################################
-    def provide(self):
+    def fetch_only(self):
+      """Fetch source for this dep. Does NOT build or install.
+      Returns True if source is ready (already cached or freshly fetched),
+      False on terminal fetch failure. Safe to call from the parallel
+      pipeline's fetch pool."""
       import obt.path
       if obt.path.has_deployment_marker:
         return True
-      with buildtrace.NestedBuildTrace({ "op": "StdProvider.provide(%s)"%self._name }) as nested:
-       OK = self.manifest.exists()
-       #print("self.should_wipe<%d>"%self.should_wipe)
-       #print("self.should_build<%d>"%self.should_build)
-       self.postinit()
-
-       #########################################
-       # WIPE
-       #########################################
-
-       if self.should_wipe:
-         self.wipe()
-
-       #########################################
-       # FETCH
-       #########################################
-
-       src_present = self.areRequiredSourceFilesPresent()
-      
-       if not src_present:
-         fetch_ok = self._fetch()
-         if False==fetch_ok:
+      with buildtrace.NestedBuildTrace({ "op": "StdProvider.fetch_only(%s)"%self._name }) as nested:
+        self.postinit()
+        if self.should_wipe:
+          self.wipe()
+        if self.areRequiredSourceFilesPresent():
+          return True
+        fetch_ok = self._fetch()
+        if not fetch_ok:
           print(deco.err("Fetch <%s> failed!"%self._name))
-          OK = False
           return False
+        return True
+    #########################################
+    def build_and_install(self):
+      """Build, post-build, install, post-install, and write manifest.
+      Assumes source has already been fetched (call fetch_only() first or
+      let provide() chain them). Returns True on success.
 
-       #########################################
-       # BUILD
-       #########################################
-
-       if self.should_build:
-        OK = self.build()
-
-        if OK:
-          OK = self.onPostBuild()
-
-          #########################################
-          # INSTALL
-          #########################################
-
+      Honors the manifest short-circuit: if the manifest exists and
+      should_build is False, returns True without doing work."""
+      import obt.path
+      if obt.path.has_deployment_marker:
+        return True
+      with buildtrace.NestedBuildTrace({ "op": "StdProvider.build_and_install(%s)"%self._name }) as nested:
+        OK = self.manifest.exists()
+        if self.should_build:
+          OK = self.build()
           if OK:
-            OK = self.install()
+            OK = self.onPostBuild()
             if OK:
-              OK = self.onPostInstall()
+              OK = self.install()
+              if OK:
+                OK = self.onPostInstall()
+              else:
+                print(deco.err("Install <%s> failed!"%self._name))
             else:
-              print(deco.err("Install <%s> failed!"%self._name))
-          else:
-            return False
-
-       #########################################
-       # MANIFEST
-       #########################################
-
-       if OK:
-        self.manifest.touch()
-            
-       return OK
+              return False
+        if OK:
+          self.manifest.touch()
+        return OK
+    #########################################
+    def provide(self):
+      """Back-compat: fetch + build + install in one call. The serial
+      `obt.dep.build.py` path uses this. The parallel pipeline calls
+      fetch_only() and build_and_install() separately so the two stages
+      can overlap across deps."""
+      if not self.fetch_only():
+        return False
+      return self.build_and_install()
     #########################################
 

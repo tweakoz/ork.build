@@ -13,6 +13,7 @@ from pathlib import PosixPath
 from obt.wget import wget
 from obt.deco import Deco
 from obt.command import run
+from obt.retry import retry_until_rc_zero
 
 deco = Deco()
 
@@ -22,16 +23,10 @@ deco = Deco()
 ###############################################################################
 
 def checkout_update(dest_path,rev,origin="origin"):
-    cwd = os.getcwd()
-    OK = False
-    try:
-      os.chdir(dest_path)
-      retc = run(["git","checkout",rev],do_log=True)
-      retc = run(["git","pull",origin, rev],do_log=True)
-      OK = (0 == retc)
-    finally:
-      os.chdir(cwd)
-    return OK
+    # working_dir threaded through; no os.chdir (process-global, racy).
+    retc = run(["git","checkout",rev], working_dir=dest_path, do_log=True)
+    retc = run(["git","pull",origin, rev], working_dir=dest_path, do_log=True)
+    return (0 == retc)
 
 ###############################################################################
 
@@ -53,26 +48,23 @@ def Clone(url,
   ##############################################################################
 
   def _checkoutrevandupdate():
-    nonlocal cwd
     nonlocal retc
     nonlocal rev
     nonlocal dest_path
     nonlocal recursive
     OK = (0 == retc)
-    #print("OK1<%s> retc<%s>"%(OK,retc))
-    try:
-      os.chdir(dest_path)
-      if OK:
-        retc = run(["git","checkout",rev],do_log=True)
+    # working_dir threaded through; no os.chdir. The previous version did
+    # `os.chdir(dest_path)` then `run([...])` which depended on the parent
+    # process's cwd staying put — racy under the parallel pipeline. The
+    # symptom was `git submodule update` failing with "not a git repository"
+    # because another worker had chdir'd elsewhere between our two commands.
+    if OK:
+      retc = run(["git","checkout",rev], working_dir=dest_path, do_log=True)
+      OK = (0 == retc)
+      if OK and recursive:
+        retc = run(["git","submodule","update","--init","--recursive"],
+                   working_dir=dest_path, do_log=True)
         OK = (0 == retc)
-        #print("OK2<%d>"%OK)
-        if OK:
-          if recursive:
-            retc = run(["git","submodule","update","--init","--recursive"],do_log=True)
-            OK = (0 == retc)
-            #print("OK3<%d>"%OK)
-    finally:
-      os.chdir(cwd)
     return OK
 
   ##############################################################################
@@ -80,12 +72,19 @@ def Clone(url,
   ##############################################################################
 
     print("Cloning1 (recursive) URL<%s> to dest<%s>"%(deco.path(url),deco.path(dest_path)))
-    retc = run(["git",
-                "clone",
-                "-n",
-                str(url),
-                str(dest_path),
-                "--recursive"])
+    def _cleanup_dest():
+      if dest_path.exists():
+        shutil.rmtree(str(dest_path))
+    retc = retry_until_rc_zero(
+        lambda: run(["git",
+                     "clone",
+                     "-n",
+                     str(url),
+                     str(dest_path),
+                     "--recursive"]),
+        label="git clone --recursive %s" % url,
+        cleanup=_cleanup_dest,
+    )
 
     return _checkoutrevandupdate()
 
@@ -97,22 +96,37 @@ def Clone(url,
     print(destpar)
     if False==cache_dest.exists():
       print("Mirroring URL<%s> to dest<%s>"%(deco.path(url),deco.path(cache_dest)))
-      retc = run(["git",
-                  "clone",
-                  str(url),
-                  str(cache_dest),
-                  "--mirror"])
+      def _cleanup_cache_dest():
+        if cache_dest.exists():
+          shutil.rmtree(str(cache_dest))
+      retc = retry_until_rc_zero(
+          lambda: run(["git",
+                       "clone",
+                       str(url),
+                       str(cache_dest),
+                       "--mirror"]),
+          label="git mirror %s" % url,
+          cleanup=_cleanup_cache_dest,
+      )
     print("Cloning2 (from gitcache<%s>) to dest<%s> retc<%s>"%(deco.path(cache_dest),deco.path(dest),retc))
     if dest_path.exists():
       shutil.rmtree(str(dest_path))
     if 0 == retc:
-      retc = run(["git",
-                  "clone",
-                  "--reference",
-                  str(cache_dest),
-                  str(url),
-                  str(dest_path)])
-      return _checkoutrevandupdate()
+      def _cleanup_dest_ref():
+        if dest_path.exists():
+          shutil.rmtree(str(dest_path))
+      retc = retry_until_rc_zero(
+          lambda: run(["git",
+                       "clone",
+                       "--reference",
+                       str(cache_dest),
+                       str(url),
+                       str(dest_path)]),
+          label="git clone --reference %s" % url,
+          cleanup=_cleanup_dest_ref,
+      )
+      if 0 == retc:
+        return _checkoutrevandupdate()
 
   ##############################################################################
   else:
@@ -121,40 +135,50 @@ def Clone(url,
     print("Cloning3 URL<%s> to dest<%s>"%(deco.path(url),deco.path(dest_path)))
     print("shallow<%d>"%shallow)
     if shallow:
-      # shallow clone of speciific rev
+      # shallow clone of specific rev. working_dir on each Command — no chdir.
       if dest_path.exists():
         shutil.rmtree(str(dest_path))
-      run(["mkdir","-p",dest_path])
-      curdir = os.getcwd()
-      os.chdir(dest_path)
+      dest_path.mkdir(parents=True, exist_ok=True)
       ####################
-      retc = run(["git","init"],do_log=True)
+      retc = run(["git","init"], working_dir=dest_path, do_log=True)
       ####################
       if retc==0:
-        retc = run(["git","remote","add","origin",url],do_log=True)
+        retc = run(["git","remote","add","origin",url],
+                   working_dir=dest_path, do_log=True)
       ####################
       if retc==0:
-        retc = run(["git","fetch","--depth","1","origin",rev],do_log=True)
+        retc = retry_until_rc_zero(
+            lambda: run(["git","fetch","--depth","1","origin",rev],
+                        working_dir=dest_path, do_log=True),
+            label="git fetch --depth 1 %s" % rev,
+        )
       ####################
       if retc==0:
-        retc = run(["git","checkout","FETCH_HEAD"],do_log=True)
+        retc = run(["git","checkout","FETCH_HEAD"],
+                   working_dir=dest_path, do_log=True)
       ####################
       if retc==0:
         munged_branch_name = rev
         if munged_branch_name.find("obt-")==-1:
            munged_branch_name = "obt-%s"%rev
-        retc = run(["git","checkout","-b",munged_branch_name],do_log=True)
-      ####################
-      if retc==0:
-        os.chdir(curdir)
+        retc = run(["git","checkout","-b",munged_branch_name],
+                   working_dir=dest_path, do_log=True)
       ####################
       if retc==0 and recursive:
-         retc = run(["git","submodule","update","--init","--recursive"],do_log=True)
+         retc = run(["git","submodule","update","--init","--recursive"],
+                    working_dir=dest_path, do_log=True)
       ####################
       print(retc)
       return (0 == retc)
     else:
-        retc = run(["git","clone",url,dest_path],do_log=True)
+        def _cleanup_dest_plain():
+          if dest_path.exists():
+            shutil.rmtree(str(dest_path))
+        retc = retry_until_rc_zero(
+            lambda: run(["git","clone",url,dest_path],do_log=True),
+            label="git clone %s" % url,
+            cleanup=_cleanup_dest_plain,
+        )
         if 0 == retc:
           return _checkoutrevandupdate()
 
@@ -182,7 +206,6 @@ def get_latest_commit(repo_path):
 #####################################################################################
 
 def fetch_tarball_from_github(repospec=None,revision=None,md5val=None,destdir=None):
-  curdir = os.getcwd()
   ghbase = URL("https://github.com")
   url = ghbase/repospec/"tarball"/revision
   print("URL: %s"%url)
@@ -196,8 +219,7 @@ def fetch_tarball_from_github(repospec=None,revision=None,md5val=None,destdir=No
   print("destdir fetched_path: %s"%fetched_path)
   if destdir.exists():
     shutil.rmtree(str(destdir))
-  run(["mkdir","-p",destdir])
-  os.chdir(destdir)
-  retc = run(["tar","xvf",fetched_path,"--strip-components","1"])
-  os.chdir(curdir)
-  return retc
+  destdir.mkdir(parents=True, exist_ok=True)
+  # working_dir on tar — no chdir.
+  return run(["tar","xvf",fetched_path,"--strip-components","1"],
+             working_dir=destdir)

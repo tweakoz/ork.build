@@ -24,7 +24,7 @@ class nlohmannjson(dep.StdProvider):
     return dep.GithubFetcher(name=nlohmannjson.NAME,
                              repospec="tweakoz/json",
                              revision=nlohmannjson.VERSION,
-                             recursive=True)
+                             recursive=False)
   ########################################################################
   def areRequiredSourceFilesPresent(self):
     return (self.source_root/"CMakeLists.txt").exists()

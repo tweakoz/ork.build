@@ -29,7 +29,7 @@ class nanobind(dep.StdProvider):
   def _fetcher(self):
     return dep.GithubFetcher(name=nanobind.name,
                              repospec="wjakob/nanobind",
-                             revision="v2.2.0",
+                             revision="v2.12.0",   # Python 3.14 support
                              recursive=True)
   def areRequiredSourceFilesPresent(self):
     return (self.source_root/"CMakeLists.txt").exists()

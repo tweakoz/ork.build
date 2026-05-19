@@ -64,14 +64,13 @@ class lua(dep.Provider):
   def build(self): ############################################################
 
     self.download_and_extract()
-    os.chdir(str(self.source_root))
-
+    # No chdir — pass working_dir to Command.
     cmd = ["make","-j",host.NumCores]
 
     if obt.host.IsOsx:
         cmd += ["MACOSX_DEPLOYMENT_TARGET=10.14"]
 
-    self.ok = (0 == Command(cmd).exec())
+    self.ok = (0 == Command(cmd, working_dir=self.source_root).exec())
 
     return self.install()
 

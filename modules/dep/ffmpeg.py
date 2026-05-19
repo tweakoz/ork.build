@@ -13,7 +13,6 @@ class ffmpeg(dep.StdProvider):
   name = "ffmpeg"
   def __init__(self):
     super().__init__(ffmpeg.name)
-    #self._deps = ["pkgconfig"]
     src_root = self.source_root
     #################################################
     tgt_desc = self._target
@@ -25,14 +24,20 @@ class ffmpeg(dep.StdProvider):
       self._builder.setOption("--disable-vaapi")
       self._builder.setEnvVar("LDFLAGS", '-Wl,-ld_classic')
       self._builder.setOption("--enable-videotoolbox")
+      # On macOS we don't need X11 video input. videotoolbox is the
+      # native capture/render path. Disabling these stops ffmpeg's
+      # configure from auto-detecting /opt/homebrew/opt/{libx11,libxcb}
+      # which would otherwise leak into libav* dylibs.
+      self._builder.setOption("--disable-xlib")
+      self._builder.setOption("--disable-libxcb")
+      self._builder.setOption("--disable-libxcb-shm")
+      self._builder.setOption("--disable-libxcb-xfixes")
+      self._builder.setOption("--disable-libxcb-shape")
     elif host.IsLinux and host.IsX86_64:
       self._builder.setOption("--enable-nvenc")
       self._builder.setOption("--enable-nonfree")
     if tgt_desc.identifier == "x86_64-macos":
       self._builder.setOption("--disable-x86asm")
-
-    #################################################
-    self.declareDep("pkgconfig")
   ########################################################################
   @property
   def github_repo(self):

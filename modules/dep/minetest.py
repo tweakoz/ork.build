@@ -48,27 +48,26 @@ class minetest(dep.Provider):
 
 
     source_dir = self.build_dest/("minetest-%s"%VERSION)
-    os.chdir(str(source_dir/"games"))
-    git.Clone("https://github.com/minetest/minetest_game","minetest_game")
+    games_dir = source_dir/"games"
+    mods_dir = games_dir/"minetest_game"/"mods"
 
-    os.chdir(str(source_dir/"games"/"minetest_game"/"mods"))
+    # Absolute dest paths for git.Clone — no chdir.
+    git.Clone("https://github.com/minetest/minetest_game", games_dir/"minetest_game")
 
-    # install mods
+    git.Clone("https://github.com/sofar/luscious", mods_dir/"luscious")
+    git.Clone("https://notabug.org/TenPlus1/mobs_redo", mods_dir/"mobs_redo")
+    git.Clone("https://notabug.org/TenPlus1/mobs_animal", mods_dir/"mobs_animal")
+    git.Clone("https://notabug.org/TenPlus1/mobs_monster", mods_dir/"mobs_monster")
+    git.Clone("https://notabug.org/TenPlus1/mobs_npc", mods_dir/"mobs_npc")
+    git.Clone("https://notabug.org/TenPlus1/mobs_horse", mods_dir/"mobs_horse")
+    git.Clone("https://github.com/blert2112/mobs_sky.git", mods_dir/"mobs_sky")
+    git.Clone("https://github.com/FreeLikeGNU/goblins", mods_dir/"goblins")
+    git.Clone("https://github.com/maikerumine/mobs_mc", mods_dir/"mobs_mc")
 
-    git.Clone("https://github.com/sofar/luscious","luscious")
-    git.Clone("https://notabug.org/TenPlus1/mobs_redo","mobs_redo")
-    git.Clone("https://notabug.org/TenPlus1/mobs_animal","mobs_animal")
-    git.Clone("https://notabug.org/TenPlus1/mobs_monster","mobs_monster")
-    git.Clone("https://notabug.org/TenPlus1/mobs_npc","mobs_npc")
-    git.Clone("https://notabug.org/TenPlus1/mobs_horse","mobs_horse")
-    git.Clone("https://github.com/blert2112/mobs_sky.git","mobs_sky")
-    git.Clone("https://github.com/FreeLikeGNU/goblins","goblins")
-    git.Clone("https://github.com/maikerumine/mobs_mc","mobs_mc")
-
-    git.Clone("https://github.com/tweakoz/minetest_tozcmd","tozcmd")
+    git.Clone("https://github.com/tweakoz/minetest_tozcmd", mods_dir/"tozcmd")
 
     for item in "technic mesecons pipeworks moreores digtron lightning".split():
-      git.Clone("https://github.com/minetest-mods/%s"%item,item)
+      git.Clone("https://github.com/minetest-mods/%s"%item, mods_dir/item)
 
   def build(self): ############################################################
 
@@ -80,10 +79,10 @@ class minetest(dep.Provider):
     build_temp = source_dir/".build"
     print(build_temp)
     if build_temp.exists():
-      Command(["rm","-rf",build_temp]).exec()
+      import shutil
+      shutil.rmtree(str(build_temp), ignore_errors=True)
 
     build_temp.mkdir(parents=True,exist_ok=True)
-    os.chdir(str(build_temp))
     cmakeEnv = {
     }
     if host.IsOsx:
@@ -92,8 +91,10 @@ class minetest(dep.Provider):
       cmakeEnv["GETTEXT_INCLUDE_DIR"]="/usr/local/opt/gettext/include"
       cmakeEnv["GETTEXT_LIBRARY"]="/usr/local/opt/gettext/lib"
 
-    cmake.context(root=source_dir,env=cmakeEnv).exec()
-    return 0==Command(["make","-j",host.NumCores,"install"]).exec()
+    cmake.context(sourcedir=source_dir, builddir=build_temp,
+                  working_dir=build_temp, env=cmakeEnv).exec()
+    return 0==Command(["make","-j",host.NumCores,"install"],
+                      working_dir=build_temp).exec()
 
   def provide(self): ##########################################################
     return super()._old_provide()

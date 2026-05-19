@@ -29,19 +29,22 @@ def downloadAndExtract(urls,
     print("extracting<%s> to build_dest<%s>"%(deco.path(arcpath),deco.path(build_dest)))
     print(archive_type)
     build_dest.mkdir()
+    # NEVER os.chdir() here — process-global, races under the parallel
+    # fetch pool. One worker's chdir into build_dest "leaks" into another
+    # worker's tar/unzip, which then extracts into the wrong dep's tree
+    # (seen in the wild: xz tarball extracted into $OBT_STAGE/builds/zstd/).
+    # Pass working_dir= to Command instead — that's per-subprocess via cwd=.
     if( archive_type=="zip" ):
-        os.chdir(str(build_dest))
-        Command(["unzip"]+arc_options+[arcpath]).exec()
+        Command(["unzip"]+arc_options+[arcpath], working_dir=build_dest).exec()
     elif archive_type=="tgz":
-        os.chdir(str(build_dest))
-        Command(["tar","xvf",arcpath]).exec()
+        Command(["tar","xvf",arcpath], working_dir=build_dest).exec()
     elif archive_type=="none":
-        os.chdir(str(build_dest))
         run(["cp",arcpath,build_dest/outname],do_log=True)
         pass
     else:
         print(arcpath)
-        #assert(tarfile.is_tarfile(str(arcpath)))
+        # tarfile.extractall takes an explicit path= — already safe under
+        # parallel workers (no chdir involved). Left as-is.
         tf = tarfile.open(str(arcpath),mode='r:%s'%archive_type)
         tf.extractall(path=str(build_dest))
 

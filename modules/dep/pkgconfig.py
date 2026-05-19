@@ -33,10 +33,10 @@ class _pkgconfig_from_source(dep.StdProvider):
 
     if host.IsLinux and host.IsX86_64:
       f2r = path.stage()/"bin"/"x86_64-unknown-linux-gnu-pkg-config"
-      os.system( "rm -f %s" % f2r)
+      f2r.unlink(missing_ok=True)
     elif host.IsLinux and host.IsAARCH64:
       f2r = path.stage()/"bin"/"x86_64-unknown-linux-gnu-pkg-config"
-      os.system( "rm -f %s" % f2r)
+      f2r.unlink(missing_ok=True)
 
     pathtools.ensureDirectoryExists(path.pkgconfigdir())
 

@@ -50,14 +50,16 @@ class postgresql(dep.Provider):
 
 
   def build(self): ############################################################
+    import shutil
     self.download_and_extract()
     source_dir = self.build_dest/("postgresql-%s"%VERSION)
     build_temp = source_dir/".build"
     print(build_temp)
     if build_temp.exists():
-      Command(["rm","-rf",build_temp]).exec()
+      shutil.rmtree(str(build_temp), ignore_errors=True)
 
     build_temp.mkdir(parents=True,exist_ok=True)
-    os.chdir(str(build_temp))
-    Command(["../configure","--prefix",path.prefix()]).exec()
-    return 0==Command(["make","-j",host.NumCores,"install"]).exec()
+    Command([str(source_dir/"configure"),"--prefix",path.prefix()],
+            working_dir=build_temp).exec()
+    return 0==Command(["make","-j",host.NumCores,"install"],
+                      working_dir=build_temp).exec()

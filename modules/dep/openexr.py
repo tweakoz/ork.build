@@ -15,11 +15,20 @@ class openexr(dep.StdProvider):
   def __init__(self):
     super().__init__(openexr.name)
     self.declareDep("cmake")
+    self.declareDep("imath")
+    self.declareDep("libdeflate")
     #self.declareDep("fltk")
     self._builder = self.createBuilder(dep.CMakeBuilder)
     self._builder.setCmVar("OPENEXR_VIEWERS_ENABLE","OFF")
     self._builder.setCmVar("CMAKE_MODULE_PATH",self.source_root)
     self._builder.setCmVar("PYILMBASE_ENABLE","OFF")
+    # Force find_package to use the OBT-built imath / libdeflate, not
+    # /opt/homebrew/opt/{imath,libdeflate}. Without these hints,
+    # find_package finds the brew copies first on macOS.
+    self._builder.setCmVar("Imath_ROOT",      str(path.prefix()))
+    self._builder.setCmVar("Imath_DIR",       str(path.libs()/"cmake"/"Imath"))
+    self._builder.setCmVar("libdeflate_ROOT", str(path.prefix()))
+    self._builder.setCmVar("libdeflate_DIR",  str(path.libs()/"cmake"/"libdeflate"))
     #self._builder.requires(["fltk"])
     
   ########################################################################

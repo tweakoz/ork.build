@@ -52,14 +52,14 @@ class wt4(dep.Provider):
 
     #psql = dep.require("postgresql").instance
 
+    import shutil
     source_dir = self.build_dest/("wt-%s"%VERSION)
     build_temp = source_dir/".build"
     print(build_temp)
     if build_temp.exists():
-      Command(["rm","-rf",build_temp]).exec()
+      shutil.rmtree(str(build_temp), ignore_errors=True)
 
     build_temp.mkdir(parents=True,exist_ok=True)
-    os.chdir(str(build_temp))
     cmakeEnv = {
       "BOOST_ALL_DYN_LINK": None,
       "WT_BOOST_DISCOVERY": 1,
@@ -76,8 +76,10 @@ class wt4(dep.Provider):
       cmakeEnv["CMAKE_MACOSX_RPATH"]=1
       cmakeEnv["CMAKE_INSTALL_RPATH"]=path.prefix()/"lib"
 
-    cmake.context(root=source_dir,env=cmakeEnv).exec()
-    return 0==Command(["make","-j",host.NumCores,"install"]).exec()
+    cmake.context(sourcedir=source_dir, builddir=build_temp,
+                  working_dir=build_temp, env=cmakeEnv).exec()
+    return 0==Command(["make","-j",host.NumCores,"install"],
+                      working_dir=build_temp).exec()
 
   def provide(self): ##########################################################
     return super()._old_provide()

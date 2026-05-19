@@ -19,7 +19,7 @@ class bullet(dep.StdProvider):
   ########################################################################
   @property
   def github_repo(self):
-    return "bulletphysics/bullet3"
+    return "tweakoz/bullet3"
   ########################################################################
   @property
   def revision(self):

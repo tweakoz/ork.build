@@ -32,9 +32,9 @@ class cppzmq(dep.StdProvider):
   @property
   def _fetcher(self):
     return dep.GithubFetcher(name=cppzmq.name,
-                             repospec="zeromq/cppzmq",
+                             repospec="tweakoz/cppzmq",
                              revision=VERSION,
-                             recursive=True)
+                             recursive=False)
   ########################################################################
   def areRequiredSourceFilesPresent(self):
     return (self.source_root/"CMakeLists.txt").exists()

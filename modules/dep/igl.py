@@ -27,7 +27,16 @@ class igl(dep.StdProvider):
                    glfw_path)
     self._builder = self.createBuilder(dep.CMakeBuilder)
     self._builder.requires(["eigen","tbb"])
-    self._builder.setCmVar("LIBIGL_WITH_CGAL","TRUE")
+    # Disable igl_copyleft::cgal. Its cmake/recipes/external/cgal.cmake
+    # pulls in cmake/recipes/external/boost.cmake which does
+    # `FetchContent_Declare(Boost URL https://archives.boost.io/...)` and
+    # ignores -DBOOST_ROOT — a ~140 MB redundant download every igl
+    # rebuild plus a second boost build inside igl's tree.
+    #
+    # NOTE: in this libigl fork the correct flag is LIBIGL_COPYLEFT_CGAL
+    # (libigl 3.x naming). The old LIBIGL_WITH_CGAL flag is from libigl
+    # 2.x and is silently ignored by this CMakeLists.
+    self._builder.setCmVar("LIBIGL_COPYLEFT_CGAL","OFF")
     self._builder.setCmVar("LIBIGL_USE_STATIC_LIBRARY","OFF")
 
     boost_cmake = BOOST.cmake_additional_flags()

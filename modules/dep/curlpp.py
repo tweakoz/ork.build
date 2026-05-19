@@ -14,17 +14,8 @@ class curlpp(dep.StdProvider):
   name = "curlpp"
   def __init__(self):
     super().__init__(curlpp.name)
-    #self._deps = ["pkgconfig"]
     src_root = self.source_root
-    #################################################
     self._builder = self.createBuilder(dep.CMakeBuilder)
-    #if host.IsOsx:
-    #  import obt.macos_homebrew
-    #  sslroot = obt.macos_homebrew.prefix_for_package("openssl")
-    #  print(sslroot)
-    #  self._builder.setCmVar("OPENSSL_ROOT_DIR",sslroot)
-    #################################################
-    self.declareDep("pkgconfig")
     self.declareDep("cmake")
     self.declareDep("libcurl")
   ########################################################################

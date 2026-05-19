@@ -64,8 +64,9 @@ class lexertl14(dep.StdProvider):
       with open(lrtl_output, "w") as f:
           f.write(self._conanfile)  
       #
+      # _working_dir on the builder is what the conan builder uses for its
+      # commands; no os.chdir needed (and not safe under the parallel pipeline).
       self._builder._working_dir = lexertl14_dir
-      os.chdir(str(lexertl14_dir))
       #conan export . lexertl14/tweakoz-obt@user/channel
       the_environ = os.environ.copy()
       the_environ.update(conan.environment())

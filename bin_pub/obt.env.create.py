@@ -32,6 +32,18 @@ parser.add_argument('--obttrace',action="store_true",help='enable OBT buildtrace
 
 parser.add_argument('--wipe', action="store_true", help='wipe old staging folder' )
 parser.add_argument('--sshkey',metavar="sshkey",help='ssh key to use with OBT/GIT')
+parser.add_argument('--pipeline', action="store_true",
+    help='build mandatory deps via obt.dep.pipeline.py (concurrent fetch+build) '
+         'instead of the serial loop. Lets xz/openssl/cmake/vulkan/etc. run '
+         'in parallel where the DAG allows.')
+parser.add_argument('--prefetch', default=None, metavar="DEPS",
+    help='comma-separated dep names whose source should be fetched (but not '
+         'built) in parallel with the bootstrap. Overrides the built-in '
+         'default list (llvm, boost, ffmpeg, openexr, assimp, bullet, openblas).')
+parser.add_argument('--no-prefetch', action="store_true",
+    help='disable source prefetching entirely. By default, --pipeline fetches '
+         'a baked-in list of heavyweight deps (llvm, boost, ffmpeg, openexr, '
+         'assimp, bullet, openblas) concurrently with the bootstrap.')
 
 args = vars(parser.parse_args())
 
@@ -90,7 +102,49 @@ os.system("ls %s" % os.environ["OBT_MODULES_PATH"])
 
 MANDATORY_DEPS = ["cmake","python","pydefaults","vulkan"]
 
-import obt.dep
-for item in MANDATORY_DEPS:
-  dep = obt.dep.instance(item)
-  dep.provide()
+# Deps whose source is worth pre-fetching during the bootstrap. Large
+# tarballs / slow upstreams / git-clones-with-submodules — anything that
+# benefits from overlapping with the CPU-bound bootstrap builds. Excludes
+# vulkan (already in MANDATORY_DEPS). Order roughly biggest-first so the
+# slowest fetches launch earliest in the fetch pool.
+PREFETCH_DEFAULTS = [
+    "llvm", "sox", "libpng", "jpegturbo", "boost", "ffmpeg",
+    "openvdb", "oiio", "openexr", "assimp", "bullet", "openblas",
+    "glfw", "luajit", "zstd", "libsodium", "lz4", 
+    "libpng", "libwebp", "glm", "dsp", "dspstretch",
+    "pytorch", "torchvision", "torchaudio"
+]
+
+if args.get("pipeline"):
+  # Run all mandatory deps as a single Chain through the parallel scheduler.
+  # The DAG (root → pydefaults → python → xz/openssl, plus cmake/vulkan
+  # independent) gives us xz+openssl parallel, then python, then pydefaults,
+  # then cmake+vulkan parallel.
+  import subprocess
+  pipeline_script = Path(sys.prefix) / "obt" / "bin_priv" / "obt.dep.pipeline.py"
+  if not pipeline_script.exists():
+    print("ERROR: pipeline script not found at %s" % pipeline_script)
+    sys.exit(2)
+
+  # Resolve prefetch list:
+  #   --no-prefetch     → no prefetch at all
+  #   --prefetch <list> → explicit list (overrides defaults)
+  #   neither           → PREFETCH_DEFAULTS (the default)
+  if args.get("no_prefetch"):
+    prefetch_arg = None
+  elif args.get("prefetch"):
+    prefetch_arg = args.get("prefetch")
+  else:
+    prefetch_arg = ",".join(PREFETCH_DEFAULTS)
+
+  cmd = [sys.executable, str(pipeline_script)] + MANDATORY_DEPS
+  if prefetch_arg:
+    cmd += ["--prefetch", prefetch_arg]
+
+  rc = subprocess.run(cmd, env=os.environ).returncode
+  sys.exit(0 if rc == 0 else rc)
+else:
+  import obt.dep
+  for item in MANDATORY_DEPS:
+    dep = obt.dep.instance(item)
+    dep.provide()

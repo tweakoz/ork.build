@@ -88,7 +88,7 @@ $(UTILS):: libgif.a libutil.a
 
 $(LIBGIFSO): $(OBJECTS) $(HEADERS)
 ifeq ($(UNAME), Darwin)
-	$(CC) $(CFLAGS) -dynamiclib -current_version $(LIBVER) $(OBJECTS) -o $(LIBGIFSO)
+	$(CC) $(CFLAGS) -dynamiclib -current_version $(LIBVER) -install_name @rpath/$(LIBGIFSOMAJOR) $(OBJECTS) -o $(LIBGIFSO)
 else
 	$(CC) $(CFLAGS) -shared $(LDFLAGS) -Wl,-soname -Wl,$(LIBGIFSOMAJOR) -o $(LIBGIFSO) $(OBJECTS)
 endif
@@ -98,7 +98,7 @@ libgif.a: $(OBJECTS) $(HEADERS)
 
 $(LIBUTILSO): $(UOBJECTS) $(UHEADERS)
 ifeq ($(UNAME), Darwin)
-	$(CC) $(CFLAGS) -dynamiclib -current_version $(LIBVER) $(OBJECTS) -o $(LIBUTILSO)
+	$(CC) $(CFLAGS) -dynamiclib -current_version $(LIBVER) -install_name @rpath/$(LIBUTILSOMAJOR) $(OBJECTS) -o $(LIBUTILSO)
 else
 	$(CC) $(CFLAGS) -shared $(LDFLAGS) -Wl,-soname -Wl,$(LIBUTILMAJOR) -o $(LIBUTILSO) $(UOBJECTS)
 endif

@@ -53,7 +53,9 @@ class boost(dep.Provider):
   ########
 
   def wipe(self):
-    os.system("rm -rf %s"%self.source_root)
+    import shutil
+    if self.source_root.exists():
+      shutil.rmtree(str(self.source_root), ignore_errors=True)
 
   ########
 
@@ -74,7 +76,8 @@ class boost(dep.Provider):
     prefix = path.prefix()
     toolset = "darwin" if self._target.os=="macos" else "gcc"
 
-    os.chdir(str(self.build_dest/self.fbase))
+    # working_dir passed explicitly to each Command below — no chdir.
+    boost_src = self.build_dest/self.fbase
 
     #########################################
     # for MacM1 (ARM)
@@ -114,7 +117,7 @@ class boost(dep.Provider):
 
     #########################################
 
-    a = Command(cmdlist).exec()
+    a = Command(cmdlist, working_dir=boost_src).exec()
 
     OK = (a==0)
     assert(OK)
@@ -147,7 +150,7 @@ class boost(dep.Provider):
                  "toolset=%s" % toolset,
                  "link=shared",
                  "runtime-link=shared",
-                 "headers"]).exec()
+                 "headers"], working_dir=boost_src).exec()
 
     OK = (b==0)
     assert(OK)
@@ -173,7 +176,7 @@ class boost(dep.Provider):
                  'linkflags=%s' % " ".join(linkflags),
                  "link=shared",
                  "runtime-link=shared",
-                 "install"]).exec()
+                 "install"], working_dir=boost_src).exec()
 
     OK = (c==0)
     assert(OK)

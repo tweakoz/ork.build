@@ -37,12 +37,17 @@ class ConanBuilder(BaseBuilder):
       self._envvars[k] = othdict[k]
   ###########################################
   def build(self,srcdir,blddir,wrkdir,incremental=False):
-    os.chdir(str(self._working_dir))
-    retval = command.run(self._cmdlist, #
-                         environment=self._environment,do_log=True )
+    # working_dir threaded through command.run instead of os.chdir
+    # (os.chdir is process-global; would race under parallel pipeline).
+    retval = command.run(self._cmdlist,
+                         environment=self._environment,
+                         working_dir=self._working_dir,
+                         do_log=True)
     if retval==0:
-      retval = command.run(self._cmdlist2, #
-                           environment=self._environment,do_log=True )
+      retval = command.run(self._cmdlist2,
+                           environment=self._environment,
+                           working_dir=self._working_dir,
+                           do_log=True)
     return retval==0
   ###########################################
   def install(self,blddir):

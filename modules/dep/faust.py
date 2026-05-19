@@ -6,7 +6,7 @@
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
 
-import os, tarfile
+import os, shutil, tarfile
 from obt import dep, host, path, pathtools, git, cmake, make, command
 from obt.deco import Deco
 from obt.wget import wget
@@ -34,22 +34,23 @@ class faust(dep.Provider):
   def build(self): #############################################################
 
     OK = False
-    if self.should_force_build:
-        os.system("rm -rf %s"%self.source_root)
+    if self.should_force_build and self.source_root.exists():
+        shutil.rmtree(str(self.source_root), ignore_errors=True)
 
     git.Clone("https://github.com/grame-cncm/faust",
               self.source_root,
               VERSION,
               recursive=True)
 
-    pathtools.chdir(self.source_root)
-
     makeenv = {
         "PREFIX": path.stage()
     }
 
-    if command.Command(['make',"-e"],environment=makeenv).exec()==0:
-        if command.Command(['make',"-e","install"],environment=makeenv).exec()==0:
+    # working_dir explicit; no chdir.
+    if command.Command(['make',"-e"], environment=makeenv,
+                       working_dir=self.source_root).exec()==0:
+        if command.Command(['make',"-e","install"], environment=makeenv,
+                           working_dir=self.source_root).exec()==0:
           OK = True
           self.manifest.touch()
 

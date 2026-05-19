@@ -8,7 +8,7 @@
 
 VERSION ="1.7"
 
-import os, tarfile
+import os, shutil, tarfile
 from obt import dep, host, path, git, cmake, make
 from obt.deco import Deco
 from obt.wget import wget
@@ -36,16 +36,17 @@ class astcencoder(dep.Provider):
 
     dep.require("openexr")
 
-    os.system("rm -rf %s"%self.source_root)
+    if self.source_root.exists():
+      shutil.rmtree(str(self.source_root), ignore_errors=True)
     git.Clone("https://github.com/ARM-software/astc-encoder",self.source_root,VERSION)
-    os.chdir(self.build_dest)
-    cmd = Command(["make","-j",host.NumCores])
+    cmd = Command(["make","-j",host.NumCores], working_dir=self.build_dest)
     err = cmd.exec()
     if err == 0:
-      cmd = Command(["ls","-l"])
+      cmd = Command(["ls","-l"], working_dir=self.build_dest)
       err = cmd.exec()
       if err == 0:
-        cmd = Command(["cp","astcenc",path.prefix()/"bin"])
+        cmd = Command(["cp","astcenc",path.prefix()/"bin"],
+                      working_dir=self.build_dest)
         err = cmd.exec()
         self.manifest.touch()
     return (err==0)

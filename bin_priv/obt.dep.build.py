@@ -13,6 +13,8 @@ parser.add_argument('--serial', action="store_true", help='serial build' )
 parser.add_argument('--usegitclone', action="store_true", help='do not use github wget, use github clone for fetching' )
 parser.add_argument('--verbose', action="store_true", help='verbose build' )
 parser.add_argument('--debug', action="store_true", help='debug build' )
+parser.add_argument('--fetch-only', dest='fetch_only', action="store_true",
+    help='fetch source for this dep and all transitive prereqs; do not build')
 
 _args = vars(parser.parse_args())
 
@@ -40,14 +42,19 @@ if os.environ["OBT_SUBSPACE"]!="host":
 chain = dep.Chain(depname)
 
 #print(chain)
+fetch_only_mode = _args["fetch_only"]
 for item in reversed(chain._list):
   name = deco.key("%s"%(item._name))
-  should = item.supports_host and item.should_build
-  #print("dep<%s> ShouldBuild<%s>"%(name,deco.val("%s"%should)))
   ret = True
-  if should:
-    ret = item.provide()
-  
+  if fetch_only_mode:
+    if item.supports_host:
+      ret = item.fetch_only()
+  else:
+    should = item.supports_host and item.should_build
+    #print("dep<%s> ShouldBuild<%s>"%(name,deco.val("%s"%should)))
+    if should:
+      ret = item.provide()
+
   if not ret:
   	print(deco.red("Dependency Failed! : %s ret<%s>"%(name,ret)))
   	sys.exit(-1)

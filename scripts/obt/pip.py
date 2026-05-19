@@ -1,7 +1,14 @@
-import os, shutil
+import os, shutil, threading
 import obt.deco
 from obt import path, dep
 from obt.command import Command
+from obt.retry import retry_until_rc_zero
+
+# pip is not safe to invoke concurrently — `pip install` writes to
+# site-packages without any cross-process locking, so two concurrent installs
+# can corrupt the python environment. This module-level lock serializes all
+# pip operations within a single process (the parallel pipeline scheduler).
+_pip_lock = threading.Lock()
 
 def _clean_build_dir(name_or_list):
   """Remove build/ directory for local path installs to avoid stale artifacts."""
@@ -23,15 +30,18 @@ def _command(name_or_list,cmd):
   if cmd == "install":
     _clean_build_dir(name_or_list)
 
-  rval = 0
-  if(isinstance(name_or_list,str)):
-    r = Command(cmd_prefix+[name_or_list]).exec()
-    rval = r
-  elif (isinstance(name_or_list,list)):
-    r = Command(cmd_prefix+name_or_list).exec()
-    rval = r
+  if isinstance(name_or_list, str):
+    argv = cmd_prefix + [name_or_list]
+    label_target = name_or_list
+  else:
+    argv = cmd_prefix + name_or_list
+    label_target = ",".join(name_or_list)
 
-  return rval
+  with _pip_lock:
+    return retry_until_rc_zero(
+        lambda: Command(argv).exec(),
+        label="pip %s %s" % (cmd, label_target),
+    )
 
 def install(name_or_list):
   return _command(name_or_list,"install")

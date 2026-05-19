@@ -10,13 +10,16 @@ from obt.command import Command
 import obt.host
 from obt import obt_math
 
-def exec(target=None,parallelism=1.0):
+def exec(target=None,parallelism=1.0,working_dir=None):
   """
   Execute make with target and specific parallelism.
-   Assumes Makefile present in current directory.
   Keyword Arguments:
-  target - makefile target (eg all, default, install, etc..)
+  target      - makefile target (eg all, default, install, etc..)
   parallelism - numjobs normalized to numcores/2 (0.0: numjobs=1, 1.0: numjobs=numcores/2)
+  working_dir - directory containing the Makefile. If None, runs in the
+                parent process's cwd — UNSAFE under the parallel pipeline
+                because concurrent workers race on cwd. Callers in the
+                pipeline MUST pass an explicit working_dir.
   """
   cmd = ["make"]
   print("make with parallel<%g>"%parallelism)
@@ -27,4 +30,4 @@ def exec(target=None,parallelism=1.0):
     cmd += ["-j",numcores]
   if target!=None:
     cmd += [target]
-  return Command(cmd).exec()
+  return Command(cmd,working_dir=working_dir).exec()

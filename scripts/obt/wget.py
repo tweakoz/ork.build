@@ -10,6 +10,7 @@ from pathlib import Path
 import hashlib
 import obt.path
 from obt.command import Command
+from obt.retry import retry_until_rc_zero
 
 ###############################################################################
 
@@ -45,11 +46,14 @@ def wget(urls=[],
   if False==hash_ok:
     dl_succeeded = False
     for url in urls:
-      res = Command(["wget",
-                     "-O",
-                     output_path,
-                     #"--show-progress",
-                     url]).exec()
+      res = retry_until_rc_zero(
+          lambda u=url: Command(["wget",
+                                 "-O",
+                                 output_path,
+                                 #"--show-progress",
+                                 u]).exec(),
+          label="wget %s" % url,
+      )
 
       if res==0:
         dl_succeeded = True 

@@ -26,9 +26,11 @@ class simavr(dep.Provider):
   def provide(self): ##########################################################
 
     git.Clone("https://github.com/tweakoz/simavr",self.source_root,"master")
-    os.chdir(self.source_root)
+    # INSTALL_PREFIX consumed by simavr's Makefile via env. Per-Command env
+    # would be cleaner, but make.exec doesn't take an env kwarg today and
+    # this is a low-priority dep; leave the env.set as-is.
     os.environ["INSTALL_PREFIX"] = str(path.prefix())
-    OK = make.exec("install")
+    OK = make.exec("install", working_dir=self.source_root)
     if OK:
       self.manifest.touch()
     return OK

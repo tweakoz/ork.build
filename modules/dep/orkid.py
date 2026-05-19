@@ -126,6 +126,19 @@ class orkid(dep.StdProvider):
     deplist += ["pydefaults"]
     deplist += ["python"]
     deplist += ["pybind11"]
+    # Prereqs of torchvision / torchaudio. Listed here so the parallel
+    # scheduler dispatches them concurrently with pytorch's long compile
+    # (~50 min). Pytorch itself does not use any of these; by listing
+    # them up-front we ensure torchvision/torchaudio can launch the
+    # instant pytorch finishes, instead of waiting on a late-discovered
+    # ffmpeg / sox / jpegturbo / libpng build.
+    deplist += ["ffmpeg"]      # torchvision + torchaudio
+    deplist += ["sox"]         # torchaudio
+    deplist += ["jpegturbo"]   # torchvision
+    deplist += ["libpng"]      # torchvision
+    deplist += ["pytorch"]
+    deplist += ["torchvision"]
+    deplist += ["torchaudio"]
     deplist += ["openexr"]
     deplist += ["oiio"]
     deplist += ["assimp"]
@@ -153,13 +166,19 @@ class orkid(dep.StdProvider):
     #deplist += ["libsurvive"]
     deplist += ["openvdb"]    
     deplist += ["vulkan"]
-    deplist += ["pytorch"]
     #deplist += ["notcurses"]
     deplist += ["lz4"]
     deplist += ["curlpp"]
     deplist += ["libarchive"]
     deplist += ["rnnoise"]
     deplist += ["lunasvg"]
+    # Replacements for what ork.core/ork.lev2 used to pull from /opt/homebrew:
+    deplist += ["libsodium"]   # ork.core
+    deplist += ["xxhash"]      # ork.core
+    deplist += ["gmp"]         # ork.lev2
+    deplist += ["mpfr"]        # ork.lev2 (also depends on gmp)
+    deplist += ["libsndfile"]  # ork.lev2 (sndfile)
+    deplist += ["shaderc"]     # ork.lev2 (shaderc_shared)
     if host.IsLinux:
       deplist += ["rtmidi"]
       #deplist += ["pipewire"]
@@ -167,8 +186,6 @@ class orkid(dep.StdProvider):
         deplist += ["openvr"]
         deplist += ["ispctexc"]
         #deplist += ["nvtt"]
-      elif host.IsAARCH64:
-        deplist += ["shaderc"] # shaderc provided by vulkan on intel...
     elif host.IsDarwin:
       pass
 

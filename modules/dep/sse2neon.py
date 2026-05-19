@@ -26,7 +26,7 @@ class sse2neon(dep.StdProvider):
     return dep.GithubFetcher(name=sse2neon.name,
                              repospec="tweakoz/sse2neon",
                              revision="master",
-                             recursive=True)
+                             recursive=False)
   ########################################################################
   def areRequiredSourceFilesPresent(self):
     return (self.source_root/"Makefile").exists()
