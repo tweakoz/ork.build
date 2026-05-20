@@ -19,7 +19,6 @@ class libpqpp(dep.StdProvider):
     #################################################
     self._builder = self.createBuilder(dep.CMakeBuilder)
     #################################################
-    self.declareDep("pkgconfig")
     self.declareDep("cmake")
     self.declareDep("postgresql")
 

@@ -38,6 +38,9 @@ class openvdb(dep.StdProvider):
       "CMAKE_PREFIX_PATH": str(path.prefix()),
       "CMAKE_IGNORE_PATH": "/opt/homebrew;/opt/homebrew/lib;/opt/homebrew/include",
     }
+    # mold linker — Linux-only, no-op on macOS. After the _cmakeenv
+    # reassignment above so the -fuse-ld=mold flags survive.
+    self._builder.useMold()
 
   def onPostInstall(self):
     dep_python = dep.instance("python")

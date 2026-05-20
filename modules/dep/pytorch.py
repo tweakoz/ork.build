@@ -186,6 +186,20 @@ def _build_env():
       env["CC"]          = "/usr/bin/gcc-12"
       env["CXX"]         = "/usr/bin/g++-12"
       env["CUDAHOSTCXX"] = "/usr/bin/g++-12"
+    # mold linker — pytorch's build has a long serial link tail
+    # (libtorch_cpu / libtorch_cuda / libtorch_python and downstream
+    # exes); mold cuts that sharply.
+    #
+    # Must use the LDFLAGS env var, NOT CMAKE_*_LINKER_FLAGS:
+    # CMAKE_{EXE,SHARED,MODULE}_LINKER_FLAGS are standard cmake variables
+    # that project() defines (empty) at CMakeLists.txt:28. pytorch's
+    # cmake/EnvVarForwarding.cmake runs later (line 39) and only forwards
+    # env vars `if(NOT DEFINED ...)` — so it SKIPS the already-defined
+    # linker-flags vars and our value is lost. cmake instead natively
+    # seeds all three linker-flags vars from $ENV{LDFLAGS} during
+    # project(), before EnvVarForwarding — so LDFLAGS reaches the link
+    # steps. (Linux only — this is the else branch.)
+    env["LDFLAGS"] = "-fuse-ld=mold"
 
   # Point pybind11_DIR at OBT's pybind11 v3.0.4 cmake config so
   # find_package(pybind11) under USE_SYSTEM_PYBIND11 finds ours, not
@@ -246,6 +260,10 @@ class _pytorch_from_source(dep.StdProvider):
   def __init__(self):
     super().__init__(NAME,NAME)
     self.VERSION = VER
+    # Long-pole build (~50 min, large serial sections). Front-load it:
+    # the pipeline scheduler dispatches highest build_priority first, so
+    # pytorch grabs a build slot the instant its prereqs finish.
+    self.build_priority = 100
     # WgetFetcher extracts the tarball into path.builds()/NAME/. The
     # archive's top-level dir is BASENAME ("pytorch-v2.12.0/"), so the
     # actual source root is one level deeper than the default.

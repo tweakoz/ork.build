@@ -54,6 +54,7 @@ class oiio(dep.StdProvider):
     CMAKE_VARS.update(BOOST.cmake_additional_flags())
 
     self._builder.setCmVars(CMAKE_VARS)
+    self._builder.useMold()  # mold linker — Linux-only, no-op on macOS
   ########################################################################
   @property
   def _fetcher(self):

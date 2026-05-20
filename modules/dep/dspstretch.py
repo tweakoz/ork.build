@@ -15,19 +15,16 @@ class dspstretch(dep.StdProvider):
     self._builder._cleanOnClean = False
 
     def before_build():
-      print("before_build")
       pathtools.ensureDirectoryExists(self.dest_header_path)
       items = pathtools.patglob(self.source_root, "*.h")
       copy_commands = []
       for item in items:
-        print(item)
         cmd = command.Command([
           "cp",str(item), str(self.dest_header_path)+"/"
           ])
         copy_commands.append(cmd)
       self._builder._cleanbuildcommands = copy_commands
       self._builder._incrbuildcommands = copy_commands
-      print("copy_commands: %s" % copy_commands)
     
     self._builder._invokeBeforeBuild = before_build
 
@@ -43,7 +40,6 @@ class dspstretch(dep.StdProvider):
   #######################################################################
 
   def areRequiredSourceFilesPresent(self):
-    print(self.source_root)
     return (self.source_root/"README.md").exists()
 
   def areRequiredBinaryFilesPresent(self):

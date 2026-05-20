@@ -15,6 +15,11 @@ class root(dep.Provider): # dummy dep for including pydefaults for everyone
     name = "root"
     super().__init__(name)
     self.declareDep("pydefaults")
+    # NOTE: root does NOT declare pybind11. Doing so made pybind11 a
+    # universal prereq of everything-via-root, which serialized
+    # independent deps (e.g. vulkan) behind pybind11's build. Deps that
+    # genuinely use pybind11 declare it themselves; env-create builds it
+    # via MANDATORY_DEPS.
   ########################################################################
   def build(self):
     return True

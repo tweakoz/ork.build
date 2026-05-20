@@ -57,13 +57,34 @@ class _pkgconfig_from_source(dep.StdProvider):
   def areRequiredBinaryFilesPresent(self):
     return (path.bin()/"pkg-config").exists()
 ###############################################################################
-class _pkgconfig_from_homebrew(dep.HomebrewProvider):
+# macOS: pkgconfig is being severed from the macOS build. Its only macOS
+# provider used to be a HomebrewProvider (`brew install pkg-config`) — a
+# homebrew touch we're eliminating. On macOS, cmake's find_package config
+# files + system frameworks cover what pkg-config did; the rare autotools
+# dep that genuinely needs it sets PKG_CONFIG=/usr/bin/true (see sox.py).
+#
+# This guard provider asserts if any dep still pulls pkgconfig into a
+# macOS build — a deliberate tripwire while we remove the last
+# declareDep("pkgconfig") / requires(["pkgconfig"]) call sites.
+###############################################################################
+class _pkgconfig_macos_forbidden(dep.Provider):
   def __init__(self):
-    super().__init__(NAME,NAME)
-    self.VERSION = "homebrew"
+    super().__init__(NAME)
+    self.VERSION = "macos-forbidden"
+  def build(self):
+    assert False, (
+      "pkgconfig must not be used on macOS — a dependency still declares "
+      "it as a prereq. Find the offending declareDep('pkgconfig') / "
+      "requires(['pkgconfig']) and remove it. cmake find_package config "
+      "files cover macOS; autotools deps that truly need pkg-config set "
+      "PKG_CONFIG=/usr/bin/true (see sox.py). See pkgconfig.py.")
+  def areRequiredSourceFilesPresent(self):
+    return True
+  def areRequiredBinaryFilesPresent(self):
+    return True
 ###############################################################################
 class pkgconfig(dep.switch(linux=_pkgconfig_from_source, \
-                           macos=_pkgconfig_from_homebrew)):
+                           macos=_pkgconfig_macos_forbidden)):
   def __init__(self):
     super().__init__()
   def env_init(self):

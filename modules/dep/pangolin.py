@@ -17,7 +17,6 @@ class pangolin(dep.StdProvider):
     #self._deps = ["pkgconfig"]
     src_root = self.source_root
     #################################################
-    self.declareDep("pkgconfig")
     self.declareDep("cmake")
     self.declareDep("libcurl")
     self.declareDep("pybind11")

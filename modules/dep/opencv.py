@@ -21,7 +21,7 @@ class opencv(dep.StdProvider):
   name = "opencv"
   def __init__(self): ############################################
     super().__init__(opencv.name)
-    self.declareDeps(["pkgconfig","pybind11","opencv_contrib"])
+    self.declareDeps(["pybind11","opencv_contrib"])
     self.EXR = self.declareDep("openexr")
     # dep.instance() is a passive lookup (returns None if python isn't
     # available); dep.require() would actively .provide() it — which is

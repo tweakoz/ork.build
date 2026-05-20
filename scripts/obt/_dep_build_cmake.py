@@ -81,6 +81,24 @@ class CMakeBuilder(BaseBuilder):
     for k in othdict:
       self._cmakeenv[k] = othdict[k]
   ###########################################
+  def useMold(self):
+    """Route this dep's link steps through the mold linker (Linux only).
+
+    mold sharply cuts the link phase of large C++ projects. Per-dep opt-in:
+    a dep calls this in __init__ after createBuilder(). No-op on non-Linux —
+    mold is ELF-only and macOS's linker is already fast. Requires the host
+    `mold` package (see obt.ix.installdeps.ubuntu_x86_64.py). Appends to any
+    linker flags the dep already set rather than clobbering them."""
+    if not obt.host.IsLinux:
+      return self
+    flag = "-fuse-ld=mold"
+    for k in ("CMAKE_EXE_LINKER_FLAGS",
+              "CMAKE_SHARED_LINKER_FLAGS",
+              "CMAKE_MODULE_LINKER_FLAGS"):
+      existing = self._cmakeenv.get(k, "")
+      self._cmakeenv[k] = (existing + " " + flag).strip()
+    return self
+  ###########################################
   @property 
   def cmakeEnvAsString(self):
     return " ".join(self.cmakeEnvAsStringList)

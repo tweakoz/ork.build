@@ -19,7 +19,6 @@ class csvparser(dep.StdProvider):
     self._builder = dep.BinInstaller(csvparser.name)
     self._builder.install_item(self.source_root/"csv.h",path.includes()/"csv.h")
     #################################################
-    self.declareDep("pkgconfig")
     self.declareDep("cmake")
 
   ########################################################################

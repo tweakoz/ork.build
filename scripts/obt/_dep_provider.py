@@ -25,7 +25,19 @@ deco = Deco()
 # (system C++ compiler, --system-zlib, no openssl) that needs nothing
 # from the rest of the bootstrap chain — letting it run in parallel with
 # python saves ~3 min on a clean staging.
-root_dep_list = ["root", "python", "pydefaults", "openssl", "xz", "cmake"]
+# moltenvk is added for the same reason: its build is xcodebuild +
+# ./fetchDependencies + system git/curl/wget — it needs nothing from the
+# python bootstrap. Without this it would auto-declare root (→ pydefaults
+# → python) and serialize behind the whole bootstrap; with it, MoltenVK's
+# long xcodebuild overlaps cmake + python.
+# pybind11 is here so it builds immediately after python+cmake — in
+# parallel with the rest of the bootstrap — instead of waiting on
+# pydefaults via the implicit root edge. It's a frequent prereq (pytorch,
+# opencv, pangolin, ...) carrying build_priority=100, so clearing it early
+# unblocks the long-pole chain. pybind11 still explicitly declares its
+# real prereqs (python, cmake). NOTE: `root` does NOT declare pybind11 —
+# that was tried and reverted (it serialized vulkan etc behind pybind11).
+root_dep_list = ["root", "python", "pydefaults", "openssl", "xz", "cmake", "moltenvk", "pybind11"]
 
 class ProviderScope(Enum):
   CONTAINER = 1 # dependency is scoped to the container
@@ -62,6 +74,13 @@ class Provider(object):
       # Default False; deps with known concurrency hazards opt in.
       self.serial_fetch = False
       self.serial_build = False
+      # Build-dispatch priority for the parallel pipeline. When more deps
+      # are eligible than there are free build slots, the scheduler
+      # dispatches highest build_priority first (ties broken by topo
+      # order). Use it to front-load long-pole deps (e.g. pytorch) so a
+      # slow serial build starts in the first wave instead of queueing.
+      # Default 0; higher = sooner.
+      self.build_priority = 0
       if name not in root_dep_list:
         self.declareDep("root")
       #############################

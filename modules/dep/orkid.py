@@ -126,17 +126,22 @@ class orkid(dep.StdProvider):
     deplist += ["pydefaults"]
     deplist += ["python"]
     deplist += ["pybind11"]
-    # Prereqs of torchvision / torchaudio. Listed here so the parallel
-    # scheduler dispatches them concurrently with pytorch's long compile
-    # (~50 min). Pytorch itself does not use any of these; by listing
-    # them up-front we ensure torchvision/torchaudio can launch the
-    # instant pytorch finishes, instead of waiting on a late-discovered
-    # ffmpeg / sox / jpegturbo / libpng build.
+    # pytorch is the build's long pole (~50 min, large serial sections).
+    # List it FIRST after its prereqs (cmake/python/pybind11) so it has
+    # the lowest topo-discovery index among the post-bootstrap deps — the
+    # parallel scheduler dispatches in discovery order, so this guarantees
+    # pytorch grabs a build slot in the very first dispatch wave instead
+    # of queueing behind ~20 other newly-eligible deps.
+    deplist += ["pytorch"]
+    # torchvision / torchaudio prereqs — listed right after pytorch so
+    # they land in the same first dispatch wave (build_jobs slots) and
+    # compile concurrently with pytorch's long build. pytorch itself uses
+    # none of them; having them ready means torchvision/torchaudio launch
+    # the instant pytorch finishes.
     deplist += ["ffmpeg"]      # torchvision + torchaudio
     deplist += ["sox"]         # torchaudio
     deplist += ["jpegturbo"]   # torchvision
     deplist += ["libpng"]      # torchvision
-    deplist += ["pytorch"]
     deplist += ["torchvision"]
     deplist += ["torchaudio"]
     deplist += ["openexr"]

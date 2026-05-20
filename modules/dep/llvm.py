@@ -43,6 +43,10 @@ class _llvm_from_source(dep.StdProvider):
       self._builder.setCmVar("LLVM_TARGETS_TO_BUILD","AArch64")
     else:
       self._builder.setCmVar("LLVM_TARGETS_TO_BUILD","X86")
+    # mold linker — biggest single win in the dep set; LLVM's final link
+    # of libLLVM/libclang + tools is one of the slowest link phases.
+    # Linux-only; no-op on macOS.
+    self._builder.useMold()
 
   ########################################################################
   @property

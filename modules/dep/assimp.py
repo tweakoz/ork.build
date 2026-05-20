@@ -28,6 +28,7 @@ class assimp(dep.StdProvider):
       if use_gcc_11:
         self._builder.setCmVar("CMAKE_CXX_COMPILER","g++-11")
         self._builder.setCmVar("CMAKE_CMAKE_C_COMPILER","gcc-11")
+    self._builder.useMold()  # mold linker — Linux-only, no-op on macOS
   ########################################################################
   @property
   def _fetcher(self):

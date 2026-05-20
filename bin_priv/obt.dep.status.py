@@ -27,6 +27,41 @@ deco = Deco()
 
 chain = dep.Chain(depname)
 
+###############################################################################
+# Priority-aware topological build order (deps-first / leaves-first).
+#
+# Kahn's algorithm: repeatedly emit a node whose prereqs are all already
+# emitted; among the currently-ready frontier, emit highest build_priority
+# first (ties broken by topo index). This mirrors how the parallel
+# pipeline scheduler dispatches — so the listing reflects the order deps
+# would actually build. It is an approximation: the live scheduler's order
+# also shifts with build-slot contention and fetch timing, which a static
+# listing can't model.
+###############################################################################
+def _build_order(chain):
+  providers = list(chain._list)
+  by_name   = chain._dict
+  indeg     = {}
+  dependents = {}
+  for p in providers:
+    prereqs = [d._name for d in p._required_deps.values()
+               if d is not None and d._name in by_name]
+    indeg[p._name] = len(prereqs)
+    for pre in prereqs:
+      dependents.setdefault(pre, []).append(p._name)
+  ready = [p for p in providers if indeg[p._name] == 0]
+  order = []
+  while ready:
+    # highest build_priority first; stable tie-break on topo index
+    ready.sort(key=lambda p: (-getattr(p, "build_priority", 0), p._topoindex))
+    p = ready.pop(0)
+    order.append(p)
+    for dn in dependents.get(p._name, []):
+      indeg[dn] -= 1
+      if indeg[dn] == 0:
+        ready.append(by_name[dn])
+  return order
+
 def genline(dep,scope,sup,man,spres,bpres,srcr):
   line = "%-40s" % dep
   line += "%24s" % scope
@@ -41,7 +76,7 @@ def separator():
   print(deco.inf("#########################################################################################################################################"))
 
 separator()
-print(genline(deco.white("Dependency(RevTopoOrder)"),
+print(genline(deco.white("Dependency(BuildOrder)"),
             deco.val("Scope"),
 	          deco.val("Supported"),
 	          deco.val("Manifest"),
@@ -50,7 +85,7 @@ print(genline(deco.white("Dependency(RevTopoOrder)"),
 	          deco.path("SourceRoot")))
 separator()
 index = 0
-for item in chain._list:
+for item in _build_order(chain):
   should = item.should_build
   colorize_name = deco.red if should else deco.white
   name = colorize_name("%d. %s"%(index,item._name))

@@ -369,7 +369,11 @@ def _dispatch_loop(deps, fetch_pool, build_pool,
       if not fetch_only:
         build_avail = max(0, build_jobs - n_building)
         if build_avail > 0:
-          for p in deps:
+          # Dispatch highest build_priority first. sorted() is stable, so
+          # deps of equal priority keep their topo (deps-first) order —
+          # i.e. priority only reorders within an otherwise-tied frontier.
+          build_order = sorted(deps, key=lambda d: -d.build_priority)
+          for p in build_order:
             if len(to_build) >= build_avail:
               break
             if _state.get(p._name) != State.SOURCE_READY:

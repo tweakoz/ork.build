@@ -9,7 +9,7 @@
 LINUX_MD5 = "e054826ba9906af783c5109b5b618ec3"
 
 import os, tarfile, glob
-from obt import dep, host, path, cmake, git, make, command, wget, env, log, pathtools
+from obt import dep, host, path, cmake, make, command, wget, env, log, pathtools
 from obt.deco import Deco
 from obt.wget import wget
 from obt.command import Command
@@ -17,41 +17,39 @@ from obt.command import Command
 deco = Deco()
 
 ###############################################################################
+# macOS: Vulkan-Loader build, MoltenVK-backed.
+#
+# The MoltenVK build proper (./fetchDependencies + xcodebuild, the long pole)
+# lives in the separate `moltenvk` dep — split out so it can schedule in
+# parallel with cmake + python. This dep declares `moltenvk` AND `cmake`, so
+# it runs only after both finish; the work here is just the (short) cmake
+# build of the Khronos Vulkan-Loader against MoltenVK's bundled headers.
+###############################################################################
 
 class _vulkan_from_moltenvk(dep.Provider):
 
   def __init__(self): ############################################
     super().__init__("vulkan")
-    # MoltenVK build invokes the cmake binary (twice) inside
-    # _build_vulkan_loader() to build Vulkan-Headers and Vulkan-Loader.
-    # Without declaring cmake here, the parallel pipeline could schedule
-    # vulkan to start before cmake has been installed to $OBT_STAGE/bin.
-    # (The serial bootstrap path happened to work because MANDATORY_DEPS
-    # processes [cmake, python, pydefaults, vulkan] in order, so cmake
-    # was always done first by accident of iteration.)
-    self.declareDep("cmake")
+    self.declareDep("moltenvk")  # produces libMoltenVk.dylib + External/Vulkan-Headers
+    self.declareDep("cmake")     # _build_vulkan_loader() shells out to cmake
     self.VERSION = "v1.4.1"
-
-    #print(options)
-    self.source_root = path.builds()/"moltenvk"
-    self.build_dest = path.builds()/"moltenvk"/".build"
-    #self._archlist = ["x86_64"]
     self._oslist = ["Darwin"]
-    self.sdk_dir = self.source_root/"Package"/"Latest"/"MoltenVK"
+    # The moltenvk dep's source tree — we read its bundled
+    # External/Vulkan-Headers (populated by moltenvk's fetchDependencies).
+    self.moltenvk_root = path.builds()/"moltenvk"
+    self.sdk_dir       = self.moltenvk_root/"Package"/"Latest"/"MoltenVK"
     self.build_lib_dir = self.sdk_dir/"dylib"/"macOS"
-  def __str__(self): ##########################################################
+    # This dep's own build tree — the Vulkan-Loader checkout.
+    self.source_root = path.builds()/"vulkan-loader"
+    self.build_dest  = self.source_root/"build"
 
-    return "MoltenVK (github-%s)" % self.VERSION
+  def __str__(self): ##########################################################
+    return "Vulkan-Loader (MoltenVK-backed, %s)" % self.VERSION
 
   def wipe(self): #############################################################
-    # shutil.rmtree instead of os.system("rm -rf ...") — os.system inherits
-    # the process's fd 1/2 directly, bypassing the per-thread log redirect
-    # set up by obt.pipeline_io, and would leak output through the TUI.
     import shutil
     if self.source_root.exists():
       shutil.rmtree(str(self.source_root), ignore_errors=True)
-    if self.build_dest.exists():
-      shutil.rmtree(str(self.build_dest), ignore_errors=True)
 
   def env_init(self):
     log.marker("registering Vulkan(%s) <MoltenVK> SDK"%self.VERSION)
@@ -70,13 +68,13 @@ class _vulkan_from_moltenvk(dep.Provider):
   def _build_vulkan_loader(self):
     """Build the Khronos Vulkan-Loader from source.
 
-    Uses the Vulkan-Headers already fetched by MoltenVK (in External/)
+    Uses the Vulkan-Headers fetched by the `moltenvk` dep (in its External/)
     to build libvulkan.1.dylib — the Vulkan loader that discovers MoltenVK
     via the ICD mechanism. This eliminates the homebrew vulkan-loader dependency.
     """
     import subprocess, shutil
 
-    headers_dir = self.source_root/"External"/"Vulkan-Headers"
+    headers_dir = self.moltenvk_root/"External"/"Vulkan-Headers"
     # determine the headers version tag for a matching loader checkout.
     # stderr=DEVNULL so git's noise can't leak through the TUI; we only
     # care about the captured stdout tag here.
@@ -86,7 +84,7 @@ class _vulkan_from_moltenvk(dep.Provider):
       stderr=subprocess.DEVNULL).decode().strip()
     log.marker("Building Vulkan-Loader %s to match MoltenVK headers" % tag)
 
-    loader_src = path.builds()/"vulkan-loader"
+    loader_src = self.source_root
     loader_build = loader_src/"build"
     # GithubFetcher in tarball mode (recursive=False + default shallow=True)
     # re-extracts from the md5-cached tarball on every call, so the prior
@@ -95,41 +93,55 @@ class _vulkan_from_moltenvk(dep.Provider):
     #
     # `tag` is computed from `git describe` on MoltenVK's bundled
     # Vulkan-Headers — deterministic given the pinned MoltenVK VERSION, so
-    # the tarball md5 is stable and pinnable. md5val below is a HARVEST
-    # placeholder: the first run fails at wget with "desired<0> actual<...>";
-    # copy that actual hash in here to enable caching + validation.
-    dep.GithubFetcher(name="vulkan-loader",
-                      repospec="tweakoz/Vulkan-Loader",
-                      revision=tag,
-                      md5val="0",  # HARVEST: run once, read printed hash, pin here
-                      recursive=False).fetch(loader_src)
+    # the tarball md5 below is stable. If MoltenVK's VERSION is bumped the
+    # headers (hence tag, hence md5) change — recompute then.
+    if not dep.GithubFetcher(name="vulkan-loader",
+                             repospec="tweakoz/Vulkan-Loader",
+                             revision=tag,
+                             md5val="072e8811164e59be46ce5db2b88489f3", # v1.4.334
+                             recursive=False).fetch(loader_src):
+      print(deco.err("Vulkan-Loader fetch failed (tag %s)" % tag))
+      return False
 
     # cmake-install Vulkan-Headers so find_package(VulkanHeaders) works
     headers_build = headers_dir/".build"
     headers_build.mkdir(parents=True, exist_ok=True)
     headers_install = headers_dir/".install"
-    command.run([
+    if command.run([
       "cmake", str(headers_dir),
       "-DCMAKE_INSTALL_PREFIX=%s" % headers_install,
-    ], working_dir=str(headers_build))
-    command.run(["make","install"], working_dir=str(headers_build))
+    ], working_dir=str(headers_build)) != 0:
+      print(deco.err("Vulkan-Headers cmake configure failed"))
+      return False
+    if command.run(["make","install"], working_dir=str(headers_build)) != 0:
+      print(deco.err("Vulkan-Headers make install failed"))
+      return False
 
     loader_build.mkdir(parents=True, exist_ok=True)
 
-    command.run([
+    if command.run([
       "cmake", str(loader_src),
       "-DCMAKE_BUILD_TYPE=Release",
       "-DCMAKE_PREFIX_PATH=%s" % headers_install,
       "-DCMAKE_INSTALL_PREFIX=%s" % path.stage(),
       "-DBUILD_TESTS=OFF",
-    ], working_dir=str(loader_build))
+    ], working_dir=str(loader_build)) != 0:
+      print(deco.err("Vulkan-Loader cmake configure failed"))
+      return False
 
-    command.run([
+    if command.run([
       "make", "-j%d" % os.cpu_count(),
-    ], working_dir=str(loader_build))
+    ], working_dir=str(loader_build)) != 0:
+      print(deco.err("Vulkan-Loader make failed"))
+      return False
 
     # install libvulkan.1.dylib + symlinks into staging lib
-    for f in sorted(loader_build.glob("loader/libvulkan*")):
+    loader_libs = sorted(loader_build.glob("loader/libvulkan*"))
+    if not loader_libs:
+      print(deco.err("Vulkan-Loader build produced no libvulkan* in %s/loader"
+                     % loader_build))
+      return False
+    for f in loader_libs:
       dst = path.libs()/f.name
       if f.is_symlink():
         link_target = os.readlink(str(f))
@@ -141,57 +153,14 @@ class _vulkan_from_moltenvk(dep.Provider):
     return True
 
   def build(self): ##########################################################
-
-    #glfw = dep.require("glfw")
-
-    if not self.source_root.exists():
-      # GithubFetcher tarball mode — md5-cached + validated. The guard
-      # stays because the followup ./fetchDependencies + xcodebuild are
-      # expensive; we only refetch when source_root is absent.
-      dep.GithubFetcher(name="moltenvk",
-                        repospec="tweakoz/MoltenVK",
-                        revision=self.VERSION,
-                        md5val="ba3285b89dfb4a633185f29e4d4cd30e", # v1.4.1
-                        recursive=False).fetch(self.source_root)
-
-    # No os.chdir(self.source_root) — racy under the parallel pipeline.
-    # Each command.run() below sets working_dir explicitly.
-    ok = (0 == command.run(["./fetchDependencies", "--macos"],
-                            working_dir=self.source_root))
+    # moltenvk dep has already produced libMoltenVk.dylib + the
+    # External/Vulkan-Headers tree; we just build the loader against it.
+    ok = self._build_vulkan_loader()
     if ok:
-      ok = (0 == command.run(["xcodebuild", "build",
-                              "-project", "MoltenVKPackaging.xcodeproj",
-                              "-scheme", "MoltenVK Package (macOS only)",
-                              "-configuration", "Debug"],
-                              working_dir=self.source_root))
-    if ok:
-      ok = (0 == command.run(["cp",
-                              str(self.build_lib_dir/"libMoltenVk.dylib"),
-                              str(path.libs()/"libMoltenVk.dylib")]))
-      if ok:
-        # cp -r with a glob needs shell expansion; use a real glob.
-        import glob, shutil as _sh
-        src_dir = self.source_root/"Package"/"Latest"/"MoltenVK"/"include"
-        ok = src_dir.exists()
-        if ok:
-          for entry in src_dir.iterdir():
-            tgt = path.includes()/entry.name
-            try:
-              if entry.is_dir():
-                _sh.copytree(str(entry), str(tgt), dirs_exist_ok=True)
-              else:
-                _sh.copy2(str(entry), str(tgt))
-            except Exception as e:
-              print("copy %s -> %s failed: %s" % (entry, tgt, e))
-              ok = False
-              break
-        if ok:
-          ok = self._build_vulkan_loader()
-        if ok:
-          # vk_enum_string_helper.h moved out of Vulkan-Headers into
-          # Vulkan-Utility-Libraries in newer Vulkan SDKs. orkid still
-          # includes it via <vulkan/vk_enum_string_helper.h>. Drop it in.
-          ok = self._install_vk_enum_string_helper()
+      # vk_enum_string_helper.h moved out of Vulkan-Headers into
+      # Vulkan-Utility-Libraries in newer Vulkan SDKs. orkid still
+      # includes it via <vulkan/vk_enum_string_helper.h>. Drop it in.
+      ok = self._install_vk_enum_string_helper()
     return ok
 
   def _install_vk_enum_string_helper(self):
@@ -202,7 +171,7 @@ class _vulkan_from_moltenvk(dep.Provider):
     MoltenVK-bundled Vulkan-Headers version, otherwise the helper references
     enum symbols that don't exist in our headers."""
     import subprocess
-    headers_dir = self.source_root/"External"/"Vulkan-Headers"
+    headers_dir = self.moltenvk_root/"External"/"Vulkan-Headers"
     tag = subprocess.check_output(
       ["git","describe","--tags"],
       cwd=str(headers_dir),
@@ -247,8 +216,8 @@ class _vulkan_from_lunarg(dep.Provider):
       nam = "vulkansdk-linux-i386-%s.tar.xz"%self.VERSION
     elif host.IsAARCH64:
       nam = "vulkansdk-linux-aarch64-%s.tar.xz"%self.VERSION
-    return nam 
-  
+    return nam
+
   @property
   def download_URL(self):
     return "https://sdk.lunarg.com/sdk/download/%s/linux/%s"%(self.VERSION,self.download_name)

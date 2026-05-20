@@ -66,7 +66,26 @@ if obt_config.stage_dir.exists() and args["wipe"]==False:
   print("Not going to wipe your staging folder<%s> unless you ask... use --wipe"%obt_config.stage_dir)
   sys.exit(0)
 if args["wipe"] and obt_config.stage_dir.exists():
-  os.system( "rm -rf %s"%obt_config.stage_dir)
+  import time
+  _sd = str(obt_config.stage_dir)
+  for _attempt in range(5):
+    os.system("rm -rf %s" % _sd)
+    if not obt_config.stage_dir.exists():
+      break
+    # macOS/APFS: `rm -rf` on a huge tree (e.g. boost's thousands of
+    # headers) intermittently fails mid-recursion with "Directory not
+    # empty" — rmdir races its own just-issued unlinks. A retry clears
+    # the remainder. (Same race that bit moltenvk/External and the
+    # obt.test.nohomebrew.py safe_wipe.)
+    print("staging wipe incomplete (attempt %d/5) — retrying..." % (_attempt+1))
+    time.sleep(1)
+  if obt_config.stage_dir.exists():
+    print("ERROR: could not fully wipe %s after 5 attempts.\n"
+          "       A process is likely holding files open inside it — "
+          "check for stale cmake/build processes:\n"
+          "         ps -ef | grep %s | grep -v grep"
+          % (_sd, _sd))
+    sys.exit(1)
 
 ###########################################
 
@@ -100,7 +119,7 @@ print(os.environ)
 print(os.environ["OBT_MODULES_PATH"])
 os.system("ls %s" % os.environ["OBT_MODULES_PATH"])
 
-MANDATORY_DEPS = ["cmake","python","pydefaults","vulkan"]
+MANDATORY_DEPS = ["cmake","python","pydefaults","pybind11","vulkan"]
 
 # Deps whose source is worth pre-fetching during the bootstrap. Large
 # tarballs / slow upstreams / git-clones-with-submodules — anything that

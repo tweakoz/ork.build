@@ -14,6 +14,11 @@ class pybind11(dep.StdProvider):
   name = "pybind11"
   def __init__(self):
     super().__init__(pybind11.name)
+    # High build_priority: pytorch (also priority 100) needs pybind11 done
+    # before it can start, so pybind11 must clear the build queue ASAP —
+    # front-load it alongside pytorch so the long-pole chain isn't gated
+    # behind unrelated leaf deps.
+    self.build_priority = 100
     self.declareDep("python")
     self.declareDep("cmake")
     PYTHON = dep.instance("python")

@@ -18,6 +18,9 @@ class openvr(dep.StdProvider):
     self._builder._cmakeenv = {
       "BUILD_SHARED_LIBS": "ON"
     }
+    # mold linker — Linux-only opt-in (no-op elsewhere). Called AFTER the
+    # _cmakeenv reassignment above so the -fuse-ld=mold flags survive.
+    self._builder.useMold()
 
   ########################################################################
   @property
@@ -25,6 +28,7 @@ class openvr(dep.StdProvider):
     return dep.GithubFetcher(name=openvr.name,
                              repospec="ValveSoftware/openvr",
                              revision="v1.11.11",
+                             md5val="344c31fa7c7787826b95e97e4d55405e",
                              recursive=False)
   ########################################################################
 

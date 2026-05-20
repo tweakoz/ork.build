@@ -15,7 +15,6 @@ class ocio(dep.StdProvider):
   def __init__(self): ############################################
     super().__init__(ocio.name)
     self.declareDep("cmake")
-    self.declareDep("pkgconfig")
     self.declareDep("oiio")
     self._builder = self.createBuilder(dep.CMakeBuilder)
     self._builder.setCmVars({
