@@ -35,6 +35,7 @@ class pybind11(dep.StdProvider):
     return dep.GithubFetcher(name=pybind11.name,
                              repospec="pybind/pybind11",
                              revision="v3.0.4",   # Python 3.14 + subinterpreter support
+                             md5val="73481f296ee0cbe1b84797a40ee6a93d",
                              recursive=False)
   def areRequiredSourceFilesPresent(self):
     return (self.source_root/"CMakeLists.txt").exists()

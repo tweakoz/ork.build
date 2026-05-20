@@ -38,6 +38,7 @@ class openexr(dep.StdProvider):
                              repospec="tweakoz/openexr",
                              #revision="v2.5.8",
                              revision="obt-v3.2.1",
+                             md5val="af9619821aee2044191b17ebb2e1273e",
                              recursive=False)
 
   ########################################################################

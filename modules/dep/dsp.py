@@ -39,6 +39,7 @@ class dsp(dep.StdProvider):
     return dep.GithubFetcher(name=dsp.name,
                              repospec="Signalsmith-Audio/dsp",
                              revision=dsp.VERSION,
+                             md5val="8fe8b31922758fc7a3bd536848225600", # v1.5.0
                              recursive=False)
 
   #######################################################################

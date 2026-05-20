@@ -54,6 +54,11 @@ class luajit(dep.StdProvider):
     return dep.GithubFetcher(name=luajit.name,
                              repospec="LuaJIT/LuaJIT",
                              revision=VERSION,
+                             # WARNING: VERSION is "v2.1" — LuaJIT's rolling
+                             # dev branch, not a release tag. This md5 will
+                             # break on the next upstream commit. Recompute,
+                             # or better: pin VERSION to a specific SHA.
+                             md5val="8876b8cd0804f48ec2fa5f8d21f92f9c",
                              recursive=False,
                              patchdict=patch_dict)
 

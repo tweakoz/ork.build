@@ -87,6 +87,7 @@ class cmake(dep.StdProvider):
                                  # close out the parallel-build pipe-
                                  # leak hang seen on jpegturbo.
                                  revision="v3.31.12",
+                                 md5val="8968437294e7cb7dafca802a80cb9da6",
                                  recursive=False)
 
     def areRequiredSourceFilesPresent(self):

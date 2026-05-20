@@ -60,6 +60,7 @@ class oiio(dep.StdProvider):
     return dep.GithubFetcher(name=oiio.name,
                              repospec="OpenImageIO/oiio",
                              revision="v2.5.17.0",
+                             md5val="fcd2a100d13bc23fff3bc41126d70b41",
                              recursive=False)
 
   #######################################################################

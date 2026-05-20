@@ -35,6 +35,7 @@ class openblas(dep.StdProvider):
     return dep.GithubFetcher(name=openblas.NAME,
                              repospec="xianyi/OpenBLAS",
                              revision=openblas.VERSION,
+                             md5val="4e30022e79990d5a6fa008e099a3ec56", # v0.3.23
                              recursive=False)
   ########################################################################
   def areRequiredSourceFilesPresent(self):

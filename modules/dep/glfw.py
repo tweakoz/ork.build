@@ -58,6 +58,7 @@ class glfw(dep.StdProvider):
     return dep.GithubFetcher(name=glfw.name,
                              repospec="glfw/glfw",
                              revision="3.4",
+                             md5val="2dc4635f6dcd48f8e399a74e87ef4e52",
                              recursive=False)
 
   ########################################################################

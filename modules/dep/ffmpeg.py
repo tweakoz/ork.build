@@ -52,6 +52,7 @@ class ffmpeg(dep.StdProvider):
     return dep.GithubFetcher(name=ffmpeg.name,
                              repospec=self.github_repo,
                              revision=self.revision,
+                             md5val="6aeda1ecb4a33c18e98ba722168be88b", # n6.1.1
                              recursive=False)
   ########################################################################
   def areRequiredSourceFilesPresent(self):

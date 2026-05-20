@@ -27,6 +27,7 @@ class glm(dep.StdProvider):
     return dep.GithubFetcher(name=glm.name,
                              repospec="tweakoz/glm",
                              revision="toz-oct16",
+                             md5val="96445e30b5d764a0d211021e8deeb551",
                              recursive=False)
 
   #######################################################################

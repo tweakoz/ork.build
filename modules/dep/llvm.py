@@ -47,9 +47,15 @@ class _llvm_from_source(dep.StdProvider):
   ########################################################################
   @property
   def _fetcher(self):
+    # md5val enables wget's download cache for the github tarball — without
+    # it wget re-downloads the ~166 MB llvm tarball on every provision.
+    # NOTE: the md5 pins tarball *content*. If toz-apr20 is a branch and
+    # gets new commits, this hash must be recomputed or the fetch will
+    # hard-fail (wget returns None on md5 mismatch, not just a cache miss).
     fetcher = dep.GithubFetcher(name=_llvm_from_source.name,
                                 repospec="tweakoz/llvm-project",
                                 revision="toz-apr20",
+                                md5val="d79a5a4d0e84b24dd58e663a62900483",
                                 recursive=False)
     return fetcher
   ########################################################################

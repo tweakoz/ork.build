@@ -34,6 +34,7 @@ class assimp(dep.StdProvider):
     return dep.GithubFetcher(name=assimp.name,
                              repospec="tweakoz/assimp",
                              revision=assimp.VERSION,
+                             md5val="e1bd34a3aab758ae897858b25554f225", # obt-v5.2.5
                              recursive=False)
 
   #######################################################################

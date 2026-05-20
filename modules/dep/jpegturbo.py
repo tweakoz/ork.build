@@ -19,6 +19,7 @@ class jpegturbo(dep.StdProvider):
     return dep.GithubFetcher(name=jpegturbo.name,
                              repospec="libjpeg-turbo/libjpeg-turbo",
                              revision="2.1.2",
+                             md5val="35c38fe6796a2e88e9c2e65e778bf461",
                              recursive=False)
 
   ########################################################################

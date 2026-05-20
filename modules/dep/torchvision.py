@@ -87,6 +87,7 @@ class torchvision(dep.StdProvider):
       name=NAME,
       repospec=GIT_SPEC,
       revision=GIT_REV,
+      md5val="e45298889651b43c4ee0af1d7f2a5734",
       recursive=False,
     )
   ########################################################################

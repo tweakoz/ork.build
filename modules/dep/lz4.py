@@ -51,6 +51,7 @@ class lz4(dep.StdProvider):
     return dep.GithubFetcher(name=lz4.name,
                              repospec="lz4/lz4",
                              revision=VERSION,
+                             md5val="828d4914ca1ce5ce59a52d684ca88e44", # v1.10.0
                              recursive=False)
 
   ########

@@ -57,8 +57,8 @@ class sox(dep.StdProvider):
     return dep.GithubFetcher(name=sox.name,
                              repospec="tweakoz/libsox",
                              revision="toz-2026-may18", # sox-14.4.2 + LP64 seek-typedef fixes
-                             recursive=False,
-                             shallow=False)
+                             md5val="c4cd8d31b58051abceda724e33179185",
+                             recursive=False)
   ########################################################################
   def areRequiredSourceFilesPresent(self):
     return (self.source_root/"configure.ac").exists()

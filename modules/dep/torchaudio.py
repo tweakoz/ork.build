@@ -93,6 +93,7 @@ class torchaudio(dep.StdProvider):
       name=NAME,
       repospec=GIT_SPEC,
       revision=GIT_REV,
+      md5val="c036e27f61347b69bbb6c76d00897716",
       recursive=False,
     )
   ########################################################################

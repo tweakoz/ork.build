@@ -88,10 +88,21 @@ class _vulkan_from_moltenvk(dep.Provider):
 
     loader_src = path.builds()/"vulkan-loader"
     loader_build = loader_src/"build"
-    if not loader_src.exists():
-      git.Clone("https://github.com/KhronosGroup/Vulkan-Loader", loader_src, tag)
-    else:
-      command.run(["git","checkout",tag], working_dir=str(loader_src))
+    # GithubFetcher in tarball mode (recursive=False + default shallow=True)
+    # re-extracts from the md5-cached tarball on every call, so the prior
+    # "git checkout tag" else-branch is no longer needed — fetch() always
+    # gives a clean tree at the requested revision.
+    #
+    # `tag` is computed from `git describe` on MoltenVK's bundled
+    # Vulkan-Headers — deterministic given the pinned MoltenVK VERSION, so
+    # the tarball md5 is stable and pinnable. md5val below is a HARVEST
+    # placeholder: the first run fails at wget with "desired<0> actual<...>";
+    # copy that actual hash in here to enable caching + validation.
+    dep.GithubFetcher(name="vulkan-loader",
+                      repospec="tweakoz/Vulkan-Loader",
+                      revision=tag,
+                      md5val="0",  # HARVEST: run once, read printed hash, pin here
+                      recursive=False).fetch(loader_src)
 
     # cmake-install Vulkan-Headers so find_package(VulkanHeaders) works
     headers_build = headers_dir/".build"
@@ -134,7 +145,14 @@ class _vulkan_from_moltenvk(dep.Provider):
     #glfw = dep.require("glfw")
 
     if not self.source_root.exists():
-      git.Clone("https://github.com/KhronosGroup/MoltenVK",self.source_root,self.VERSION)
+      # GithubFetcher tarball mode — md5-cached + validated. The guard
+      # stays because the followup ./fetchDependencies + xcodebuild are
+      # expensive; we only refetch when source_root is absent.
+      dep.GithubFetcher(name="moltenvk",
+                        repospec="tweakoz/MoltenVK",
+                        revision=self.VERSION,
+                        md5val="ba3285b89dfb4a633185f29e4d4cd30e", # v1.4.1
+                        recursive=False).fetch(self.source_root)
 
     # No os.chdir(self.source_root) — racy under the parallel pipeline.
     # Each command.run() below sets working_dir explicitly.
@@ -189,7 +207,7 @@ class _vulkan_from_moltenvk(dep.Provider):
       ["git","describe","--tags"],
       cwd=str(headers_dir),
       stderr=subprocess.DEVNULL).decode().strip()
-    url = ("https://raw.githubusercontent.com/KhronosGroup/Vulkan-Utility-Libraries/"
+    url = ("https://raw.githubusercontent.com/tweakoz/Vulkan-Utility-Libraries/"
            "%s/include/vulkan/vk_enum_string_helper.h" % tag)
     dst_dir = path.includes()/"vulkan"
     pathtools.ensureDirectoryExists(dst_dir)

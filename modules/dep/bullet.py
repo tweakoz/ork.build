@@ -30,6 +30,7 @@ class bullet(dep.StdProvider):
     return dep.GithubFetcher(name=bullet.name,
                              repospec=self.github_repo,
                              revision=self.revision,
+                             md5val="1d0d801ee94eea9edfd2635829459116", # 3.25
                              recursive=False)
 
   ########################################################################

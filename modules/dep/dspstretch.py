@@ -37,6 +37,7 @@ class dspstretch(dep.StdProvider):
     return dep.GithubFetcher(name=dspstretch.name,
                              repospec="tweakoz/signalsmith-stretch",
                              revision=dspstretch.VERSION,
+                             md5val="7a9221f72d2d2fc45c26e6bdafeaafeb", # c315378
                              recursive=False)
 
   #######################################################################
