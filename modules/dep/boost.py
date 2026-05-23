@@ -6,7 +6,7 @@
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
 
-VERSION = ["1","81","0"]
+VERSION = ["1","82","0"]
 HASH = "ffac94fbdd92d6bc70a897052022eeba"
 
 import os,tarfile

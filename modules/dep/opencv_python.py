@@ -57,6 +57,15 @@ class opencv_python(dep.StdProvider):
     wheels_dir = path.builds()/NAME/"wheels"
     pathtools.mkdir(wheels_dir, clean=True, parents=True)
 
+    # scikit-build leaves _skbuild/ in the source tree. Its CMakeCache.txt
+    # hardcodes the numpy include path from the pip build env used that run.
+    # pip build envs are ephemeral (random names), so on a later rebuild that
+    # cached path is dead -> 'numpy/ndarrayobject.h not found'. Wipe it so
+    # cmake reconfigures against the current build env.
+    skbuild_dir = self.source_root/"_skbuild"
+    if skbuild_dir.exists():
+      Command(["/bin/rm", "-rf", str(skbuild_dir)]).exec()
+
     rc = Command([str(py), "-m", "pip", "wheel", "--no-deps",
                   "-w", str(wheels_dir), "."],
                  working_dir=self.source_root).exec()
@@ -69,6 +78,13 @@ class opencv_python(dep.StdProvider):
       print("opencv_python: no wheel produced in %s" % wheels_dir)
       return False
     wheel = wheels[0]
+    # Remove any pre-existing cv2/ before installing — e.g. one left by an
+    # older opencv.py build that compiled the bindings. That cv2 had no pip
+    # metadata, so pip's --force-reinstall cannot uninstall it and its
+    # orphan files would shadow the freshly-installed wheel.
+    stale_cv2 = PYTHON.site_packages_dir/"cv2"
+    if stale_cv2.exists():
+      Command(["/bin/rm", "-rf", str(stale_cv2)]).exec()
     rc = Command([str(py), "-m", "pip", "install",
                   "--force-reinstall", "--no-deps", wheel]).exec()
     if rc != 0:

@@ -29,5 +29,5 @@ class libsurvive(dep.StdProvider):
   def areRequiredSourceFilesPresent(self):
     return (self.source_root/"CMakeLists.txt").exists()
   def areRequiredBinaryFilesPresent(self):
-    return (path.include()/"nlohmann"/"json.hpp").exists()
+    return (path.includes()/"nlohmann"/"json.hpp").exists()
 

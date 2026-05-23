@@ -134,7 +134,7 @@ class _qt5_from_homebrew(dep.HomebrewProvider):
     super().__init__("qt5","qt5")
     self.fullver = "5.15.13_1"
   def install_dir(self):
-    return path.Path("/opt/homebrew/Cellar/qt\@5/5.15.13_1")
+    return path.Path("/opt/homebrew/Cellar/qt@5/5.15.13_1")
 
 ###############################################################################
 

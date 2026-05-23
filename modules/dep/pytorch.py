@@ -28,83 +28,18 @@ SRC_URL   = "https://github.com/pytorch/pytorch/releases/download/v%s/%s" % (VER
 MD5       = "b372b5d6d201814e7be2071d1d5e8f42"
 
 ###############################################################################
-def _cherrypick_torch_assets():
-  """Copy torch's include + lib assets into orkid-owned, explicitly-named
-  locations under $OBT_STAGE so orkid never references $OBT_PYPKG/torch
-  directly. Two purposes:
-
-  1. The include copy EXCLUDES torch's bundled pybind11/. With
-     USE_SYSTEM_PYBIND11=ON our wheel should not ship one, but the rule
-     stays as belt-and-suspenders so a regression upstream cannot leak a
-     mismatched pybind11 onto orkid's include path.
-  2. The libs are RENAMED to libobt.torch.<component>.{dylib,so} with
-     install-names / sonames + cross-references rewritten via
-     install_name_tool / patchelf, so orkid links to a hermetically-sealed
-     torch instance that cannot collide with the regular torch (still in
-     $OBT_PYPKG/torch/lib) used by torchvision / torchaudio / user scripts.
-  """
-  PYTHON = dep.instance("python")
-  src_torch = PYTHON.site_packages_dir/"torch"
-  src_inc   = src_torch/"include"
-  src_lib   = src_torch/"lib"
-  dst_inc   = path.includes()/"obt.torch"
-  dst_lib   = path.libs()
-
-  log.marker("cherrypicking torch headers (sans pybind11) -> $OBT_STAGE/include/obt.torch")
-  if dst_inc.exists():
-    shutil.rmtree(str(dst_inc))
-  dst_inc.mkdir(parents=True)
-  for entry in sorted(os.listdir(str(src_inc))):
-    if entry == "pybind11":
-      continue
-    s = src_inc/entry
-    d = dst_inc/entry
-    if s.is_dir():
-      shutil.copytree(str(s), str(d), symlinks=False)
-    else:
-      shutil.copy2(str(s), str(d))
-
-  log.marker("cherrypicking torch libs -> $OBT_STAGE/lib (renamed to libobt.torch.*)")
-  shext = "dylib" if host.IsOsx else "so"
-  rename_map = {
-    "libtorch.%s"             % shext: "libobt.torch.%s"             % shext,
-    "libtorch_cpu.%s"         % shext: "libobt.torch.cpu.%s"         % shext,
-    "libtorch_python.%s"      % shext: "libobt.torch.python.%s"      % shext,
-    "libc10.%s"               % shext: "libobt.torch.c10.%s"         % shext,
-    "libshm.%s"               % shext: "libobt.torch.shm.%s"         % shext,
-    "libomp.%s"               % shext: "libobt.torch.omp.%s"         % shext,
-    "libtorch_global_deps.%s" % shext: "libobt.torch.global_deps.%s" % shext,
-  }
-  if not host.IsOsx:
-    rename_map["libtorch_cuda.so"] = "libobt.torch.cuda.so"
-
-  for src_name, dst_name in rename_map.items():
-    src_path = src_lib/src_name
-    if not src_path.exists() or src_path.is_symlink():
-      continue
-    dst_path = dst_lib/dst_name
-    if dst_path.exists() or os.path.islink(str(dst_path)):
-      os.unlink(str(dst_path))
-    shutil.copy2(str(src_path), str(dst_path))
-
-    if host.IsOsx:
-      subprocess.run(["install_name_tool", "-id",
-                      "@rpath/" + dst_name, str(dst_path)],
-                     check=False, capture_output=True)
-      for ref_src, ref_dst in rename_map.items():
-        subprocess.run(["install_name_tool", "-change",
-                        "@rpath/" + ref_src, "@rpath/" + ref_dst, str(dst_path)],
-                       check=False, capture_output=True)
-      subprocess.run(["codesign", "--force", "--sign", "-", str(dst_path)],
-                     check=False, capture_output=True)
-    else:
-      subprocess.run(["patchelf", "--set-soname", dst_name, str(dst_path)],
-                     check=False, capture_output=True)
-      for ref_src, ref_dst in rename_map.items():
-        subprocess.run(["patchelf", "--replace-needed", ref_src, ref_dst, str(dst_path)],
-                       check=False, capture_output=True)
-  return True
-
+# NOTE: the former `_cherrypick_torch_assets()` — which copied torch's
+# headers to $OBT_STAGE/include/obt.torch and copied+RENAMED the dylibs to
+# libobt.torch.* — has been removed. The rename created a SECOND libtorch
+# instance: a process that both `import torch` (loads torch/lib/libtorch_*)
+# and uses orkid's C++ torch integration (linked libobt.torch.*) ended up
+# with two copies of libtorch's global c10 type registry → custom-class
+# lookups (e.g. ConvPackedParamsBase) failed with "could not be converted
+# to any of the known types". The rename's original justification — torch
+# bundling a conflicting pybind11 — is moot: pytorch 2.12 builds with
+# USE_SYSTEM_PYBIND11=ON against OBT's pybind11 v3.0.4. orkid now links the
+# real libtorch_* at $OBT_PYPKG/torch/lib (see orkid.cmake ork_torch_opts),
+# so there is exactly one libtorch per process.
 ###############################################################################
 def _build_env():
   """Env vars consumed by pytorch's setup.py / cmake. Caller merges with
@@ -275,15 +210,14 @@ class _pytorch_from_source(dep.StdProvider):
       return
     self._builder = self.createBuilder(dep.CustomBuilder)
     # bdist_wheel produces dist/torch-*.whl in the source tree; pip
-    # install --no-deps writes it into site-packages, then
-    # _cherrypick_torch_assets() promotes the renamed dylibs + headers
-    # to $OBT_STAGE for orkid to link against.
+    # install --no-deps writes it into $OBT_PYPKG/torch/. orkid links the
+    # real libtorch_* there directly (orkid.cmake ork_torch_opts) — no
+    # cherrypick/rename step (see the NOTE above _build_env).
     self._builder._cleanbuildcommands += [ _wipe_pytorch_build_dir,
                                            _build_pytorch_wheel ]
     self._builder._incrbuildcommands  += [ _build_pytorch_wheel ]
     self._builder._installcommands    += [
       _pip_install_torch_wheel,
-      _cherrypick_torch_assets,
     ]
   ########################################################################
   @property
@@ -302,8 +236,10 @@ class _pytorch_from_source(dep.StdProvider):
   ########################################################################
   def areRequiredBinaryFilesPresent(self):
     PYTHON = dep.instance("python")
-    return (PYTHON.site_packages_dir/"torch"/"__init__.py").exists() \
-       and (path.libs()/("libobt.torch.cpu.%s" % ("dylib" if host.IsOsx else "so"))).exists()
+    torch_dir = PYTHON.site_packages_dir/"torch"
+    shext = "dylib" if host.IsOsx else "so"
+    return (torch_dir/"__init__.py").exists() \
+       and (torch_dir/"lib"/("libtorch_cpu.%s" % shext)).exists()
 
 ###############################################################################
 class pytorch(dep.switch(linux=_pytorch_from_source,

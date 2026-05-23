@@ -23,22 +23,17 @@ class opencv(dep.StdProvider):
     super().__init__(opencv.name)
     self.declareDeps(["pybind11","opencv_contrib"])
     self.EXR = self.declareDep("openexr")
-    # dep.instance() is a passive lookup (returns None if python isn't
-    # available); dep.require() would actively .provide() it — which is
-    # fatal here because __init__ is called during dep enumeration
-    # (DepNode.FindWithMethod), triggering a full python+openssl+xz
-    # build chain BEFORE obt.env.create.py reaches its --pipeline branch.
-    self.python_dep = self.declareDep("python")
-
-    if self.python_dep == None:
-      return None
-
+    # opencv.py builds the OpenCV C++ SDK only — headers + dylibs into
+    # $OBT_STAGE, consumed by orkid/impcore native code. The python cv2
+    # module is NOT built here; it is provided by the separate
+    # `opencv_python` dep (the tweakoz/opencv-python fork, pip-installed so
+    # it carries proper dist metadata). A C++-only build needs no python.
     self._builder = self.createBuilder(dep.CMakeBuilder)
 
     cmakeEnv = {
       "CMAKE_BUILD_TYPE": "RELEASE",
       "INSTALL_C_EXAMPLES": "ON",
-      "INSTALL_PYTHON_EXAMPLES": "ON",
+      "INSTALL_PYTHON_EXAMPLES": "OFF",
       "ENABLE_PRECOMPILED_HEADERS": "OFF",
       "WITH_TBB": "OFF",
       "WITH_GDAL": "OFF",
@@ -53,17 +48,10 @@ class opencv(dep.StdProvider):
       "OPENCV_EXTRA_MODULES_PATH": "../../opencv_contrib/modules",
       "WITH_OPENEXR": "OFF",
       "BUILD_opencv_gapi":"OFF", # fails to build on ub22-aarch64
-      "BUILD_opencv_python2":"OFF", # fails to build on ub22-aarch64
+      # python cv2 is built by the `opencv_python` dep, not here.
+      "BUILD_opencv_python2":"OFF",
+      "BUILD_opencv_python3":"OFF",
       "BUILD_EXAMPLES": "OFF",
-      "PYTHON3_NUMPY_INCLUDE_DIRS": self.python_dep.numpy_include_dir,
-      #"OPENEXR_ROOT": path.stage(),
-      # todo get internal python3 working
-      # todo get internal openexr working
-      "PYTHON_DEFAULT_EXECUTABLE": self.python_dep.executable,
-      "PYTHON3_EXECUTABLE": self.python_dep.executable,
-      "PYTHON3_LIBRARY": self.python_dep.library_file,
-      "PYTHON3_INCLUDE_PATH": self.python_dep.include_dir,
-      "PYTHON3_PACKAGES_PATH": self.python_dep.site_packages_dir,
     }
     if host.IsLinux:
       cmakeEnv["WITH_V4L"]="ON"
