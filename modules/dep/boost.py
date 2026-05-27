@@ -7,7 +7,7 @@
 ###############################################################################
 
 VERSION = ["1","82","0"]
-HASH = "ffac94fbdd92d6bc70a897052022eeba"
+HASH = "844c8e4c727571e37556ed7b64e7ac8f"
 
 import os,tarfile
 from obt import path,host,dep, gen_pkgconfig, patch

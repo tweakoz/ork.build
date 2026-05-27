@@ -49,6 +49,8 @@ class openvdb(dep.StdProvider):
     pyext_dst_path = dep_python.pylib_dir/"site-packages"
     vcode = dep_python.version_major
     vcode = vcode.replace(".","")
+    if dep_python.FREE_THREADED:
+      vcode += "t"
     platform = "darwin" if host.IsDarwin else "x86_64-linux-gnu"
     print(vcode)
     if host.IsDarwin:
@@ -81,8 +83,8 @@ class openvdb(dep.StdProvider):
   def _fetcher(self):
     fetcher = dep.GithubFetcher(name=openvdb.name,
                                 repospec="tweakoz/openvdb",
-                                revision="toz-2024-v12-obt",
-                                md5val="994b38745e88d080b8dbafcb3c729046",
+                                revision="toz-2026-may23",
+                                md5val="cebee1c80014c3fdc7d386e2d1fb1b46",
                                 recursive=False)
     return fetcher
   ########################################################################

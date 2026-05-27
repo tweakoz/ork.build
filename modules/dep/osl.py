@@ -16,15 +16,17 @@ class osl(dep.StdProvider):
     self.declareDep("cmake")
     self.createBuilder(dep.CMakeBuilder)
     self._builder._cmakeenv = {
-      "CMAKE_CXX_STANDARD": "17"
+      "CMAKE_CXX_STANDARD": "17",
+      "LLVM_DIRECTORY": str(path.stage()),
+      "LLVM_BC_GENERATOR": "/usr/bin/clang++",
     }
 
   ########################################################################
   @property
   def _fetcher(self):
     return dep.GithubFetcher(name=osl.name,
-                             repospec="AcademySoftwareFoundation/OpenShadingLanguage",
-                             revision="v1.11.16.0",
+                             repospec="tweakoz/osl",
+                             revision="v1.15.4.0",
                              recursive=False)
 
   ########################################################################

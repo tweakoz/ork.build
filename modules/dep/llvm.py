@@ -29,7 +29,14 @@ class _llvm_from_source(dep.StdProvider):
     self.declareDep("zstd")
     self._builder.setCmVars({
         "CMAKE_BUILD_TYPE": "RELEASE",
-        "BUILD_SHARED_LIBS": "ON",
+        # Aggregate libLLVM.dylib so downstream consumers (e.g. OpenVDB AX)
+        # link a single library instead of an exact per-component list that
+        # drifts between LLVM versions. LLVM forbids combining BUILD_SHARED_LIBS
+        # with LLVM_LINK_LLVM_DYLIB, so per-component libs stay static and roll
+        # up into the single aggregate dylib.
+        "BUILD_SHARED_LIBS": "OFF",
+        "LLVM_BUILD_LLVM_DYLIB": "ON",
+        "LLVM_LINK_LLVM_DYLIB": "ON",
         "LLVM_INSTALL_UTILS": "ON",
         "LLVM_ENABLE_DUMP": "ON",
         # Force-on so cmake fails loudly if the OBT-built zstd is missing
@@ -58,8 +65,8 @@ class _llvm_from_source(dep.StdProvider):
     # hard-fail (wget returns None on md5 mismatch, not just a cache miss).
     fetcher = dep.GithubFetcher(name=_llvm_from_source.name,
                                 repospec="tweakoz/llvm-project",
-                                revision="toz-apr20",
-                                md5val="d79a5a4d0e84b24dd58e663a62900483",
+                                revision="toz-2026-may23",
+                                md5val="3863ed18b96116b4611276211d6712a1",
                                 recursive=False)
     return fetcher
   ########################################################################

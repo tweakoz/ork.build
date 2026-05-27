@@ -9,7 +9,7 @@ from obt import dep, command, pathtools, path, host, osrelease
 ###############################################################################
 class assimp(dep.StdProvider):
   name = "assimp"
-  VERSION ="obt-v5.2.5"
+  VERSION ="obt-6.0.5"
   def __init__(self):
     super().__init__(assimp.name)
     self.declareDep("cmake")    
@@ -35,7 +35,7 @@ class assimp(dep.StdProvider):
     return dep.GithubFetcher(name=assimp.name,
                              repospec="tweakoz/assimp",
                              revision=assimp.VERSION,
-                             md5val="e1bd34a3aab758ae897858b25554f225", # obt-v5.2.5
+                             md5val=None, # obt-6.0.5 — md5 TBD; set after tag is published
                              recursive=False)
 
   #######################################################################
