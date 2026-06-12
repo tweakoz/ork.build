@@ -132,7 +132,7 @@ class orkid(dep.StdProvider):
     # parallel scheduler dispatches in discovery order, so this guarantees
     # pytorch grabs a build slot in the very first dispatch wave instead
     # of queueing behind ~20 other newly-eligible deps.
-    deplist += ["pytorch"]
+    #deplist += ["pytorch"]
     # torchvision / torchaudio prereqs — listed right after pytorch so
     # they land in the same first dispatch wave (build_jobs slots) and
     # compile concurrently with pytorch's long build. pytorch itself uses

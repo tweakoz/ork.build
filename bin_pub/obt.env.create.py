@@ -130,8 +130,7 @@ PREFETCH_DEFAULTS = [
     "llvm", "sox", "libpng", "jpegturbo", "boost", "ffmpeg",
     "openvdb", "oiio", "openexr", "assimp", "bullet", "openblas",
     "glfw", "luajit", "zstd", "libsodium", "lz4", 
-    "libpng", "libwebp", "glm", "dsp", "dspstretch",
-    "pytorch", "torchvision", "torchaudio"
+    "libpng", "libwebp", "glm", "dsp", "dspstretch"
 ]
 
 if args.get("pipeline"):
