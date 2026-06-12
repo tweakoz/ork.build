@@ -142,8 +142,6 @@ class orkid(dep.StdProvider):
     deplist += ["sox"]         # torchaudio
     deplist += ["jpegturbo"]   # torchvision
     deplist += ["libpng"]      # torchvision
-    deplist += ["torchvision"]
-    deplist += ["torchaudio"]
     deplist += ["openexr"]
     deplist += ["oiio"]
     deplist += ["assimp"]
