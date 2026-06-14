@@ -207,6 +207,7 @@ class EnvSetup:
 
     BASHRC += "obt.goto.scripts() { cd ${OBT_SCRIPTS_DIR}; };" 
     BASHRC += "obt.goto.venv() { cd ${VIRTUAL_ENV}; };" 
+    BASHRC += "obt.goto.global() { mkdir -p ${HOME}/.obt-global; cd ${HOME}/.obt-global; };"
 
     for k in dirs:
         v = dirs[k]
