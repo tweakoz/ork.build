@@ -162,7 +162,7 @@ class qt5(BASE):
   def env_init(self):
     env.set("QTDIR",self.basedir)
     if self.basedir.exists():
-      log.marker("registering QT5(%s) SDK"%self.fullver)
+      log.sdk_announce("registering QT5(%s) SDK"%self.fullver)
       env.prepend("PATH",self.basedir/"bin")
       env.prepend("LD_LIBRARY_PATH",self.basedir/"lib")
       #env.append("PKG_CONFIG_PATH",self.basedir/"lib"/"pkgconfig")

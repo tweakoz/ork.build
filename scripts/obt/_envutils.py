@@ -41,7 +41,7 @@ class EnvSetup:
 
   ###########################################
   def log(self,x):
-    if not self._config.quiet:
+    if (not self._config.quiet) and ("OBT_NONDEV" not in os.environ):   # quiet non-dev ork.shell
        print(x)
   ###########################################
   def lazyMakeDirs(self):
@@ -137,10 +137,18 @@ class EnvSetup:
     if override_sysprompt!=None:
       SYSPROM = override_sysprompt
 
-    PROMPT = bdeco.promptL('%s[ %s %s-${OBT_SUBSPACE_PROMPT} ]'%(SYSPROM,stackindic,self._config.project_name))
-    PROMPT += bdeco.promptC("\\w")
-    PROMPT += bdeco.promptR("[$(parse_git_branch) ]")
-    PROMPT += bdeco.bright("> ")
+    # OBT_NONDEV (orkid non-dev ork.shell): git-free minimal prompt
+    #   ICON[ORK<version>] <pwd> >  — no subspace/stack, no $(parse_git_branch).
+    if "OBT_NONDEV" in os.environ:
+      _orkver = os.environ.get("ORKID_VERSION","")
+      PROMPT = bdeco.promptL('%s[ORK%s]'%(SYSPROM,_orkver))
+      PROMPT += bdeco.promptC("\\w")
+      PROMPT += bdeco.bright("> ")
+    else:
+      PROMPT = bdeco.promptL('%s[ %s %s-${OBT_SUBSPACE_PROMPT} ]'%(SYSPROM,stackindic,self._config.project_name))
+      PROMPT += bdeco.promptC("\\w")
+      PROMPT += bdeco.promptR("[$(parse_git_branch) ]")
+      PROMPT += bdeco.bright("> ")
 
     validate_prompt(PROMPT)
 
@@ -158,9 +166,11 @@ class EnvSetup:
 
     ################################################
 
-    BASHRC += 'parse_git_branch() { git branch 2> /dev/null | grep "*" | sed -e "s/*//";};\n'
-
-    BASHRC += 'export -f parse_git_branch\n'
+    # Non-dev mode has no $(parse_git_branch) in PS1; don't define it
+    # (avoids shelling out to git on every prompt render).
+    if "OBT_NONDEV" not in os.environ:
+      BASHRC += 'parse_git_branch() { git branch 2> /dev/null | grep "*" | sed -e "s/*//";};\n'
+      BASHRC += 'export -f parse_git_branch\n'
 
     BASHRC += "\nexport PS1='%s';\n" % PROMPT
     BASHRC += "alias ls='ls -G';\n"

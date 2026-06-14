@@ -97,6 +97,9 @@ def center_text(text, width):
     """Center text within given width"""
     return text.center(width)
 
+if "OBT_NONDEV" in os.environ:    # non-dev ork.shell: skip git-repo listing
+    sys.exit(0)
+
 # Print header if there are git projects
 if project_list and any(obt.path.Path(item).exists() for item in project_list):
     print( "######################################################")

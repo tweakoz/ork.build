@@ -14,6 +14,7 @@ from functools import lru_cache
 Path = pathlib.Path
 
 from obt.deco import Deco 
+import obt.log
 
 deco = Deco()
 
@@ -154,13 +155,9 @@ def importProject(item):
     spec = importlib.util.spec_from_file_location("autoexec", str(autoexec))
     init_env = importlib.util.module_from_spec(spec) 
     spec.loader.exec_module(init_env)
-    print(deco.orange("############################################################################################"))    
-    print(deco.orange("Initializing Project: %s"%project_name))
-    print(deco.orange("############################################################################################"))    
+    obt.log.banner("Initializing Project: %s"%project_name)
     init_env.setup()
-    print(deco.orange("############################################################################################"))    
-    print(deco.orange("Initialized Project: %s"%project_name))
-    print(deco.orange("############################################################################################"))    
+    obt.log.banner("Initialized Project: %s"%project_name)
     if "extend_bashrc" in dir(init_env):
       BASHEXT = init_env.extend_bashrc()
       _config.addBashRcLines(BASHEXT)
@@ -600,7 +597,8 @@ def configFromCommandLine(parser_args=None):
 
   if IS_ARG_SET("project"):
     project_dirs = parser_args["project"]
-    print(project_dirs)
+    if "OBT_NONDEV" not in os.environ:
+      print(project_dirs)
     _config._project_dirs = _genpaths(":".join(project_dirs))
     os.environ["OBT_PROJECT_DIRS"] = ":".join(project_dirs)
 
@@ -649,9 +647,6 @@ def configFromCommandLine(parser_args=None):
   import obt.subspace
 
   ########################
-  print(deco.orange("############################################################################################"))    
-  print(deco.orange("Initializing OBT Base"))
-  print(deco.orange("############################################################################################"))    
   ########################
 
   obt.env.append("OBT_DEP_PATH",_config.modules_path[0]/"dep")
@@ -698,9 +693,6 @@ def configFromCommandLine(parser_args=None):
     #print(os.environ)
     ########################
 
-    print(deco.orange("############################################################################################"))    
-    print(deco.orange("Initialized OBT Base"))
-    print(deco.orange("############################################################################################"))    
 
     for item in _config._project_dirs:
       if item!=_config.root_dir:
@@ -790,33 +782,48 @@ def initializeDependencyEnvironments(envsetup):
   ####################################
   _sanitize_build_environment()
   ####################################
-  print(deco.orange("############################################################################################"))
-  print(deco.orange("Initializing Dependencies"))
-  print(deco.orange("############################################################################################"))
+  obt.log.banner("Initializing Dependencies")
   ####################################
   hostinfo = obt.host.description()
   if hasattr(hostinfo,"env_init"):
     hostinfo.env_init()
   ####################################
+  # OBT_MINIMAL_SDKS (set by orkid's non-dev ork.shell): when present, only the
+  # listed sdks run env_init; empty string => skip all. Unset => full scan (dev).
+  _minimal_sdks = os.environ.get("OBT_MINIMAL_SDKS")
+  _sdk_allow = None if _minimal_sdks is None else set(s for s in _minimal_sdks.split(":") if s)
   sdkitems = obt.sdk.enumerate()
   for sdk_module_key in sdkitems.keys():
+    if _sdk_allow is not None and sdk_module_key not in _sdk_allow:
+      continue
     sdk_module_item = sdkitems[sdk_module_key]
     sdk_module = sdk_module_item._module
     sdkinfo = sdk_module.sdkinfo()
     if hasattr(sdkinfo,"env_init"):
       sdkinfo.env_init()
   ####################################
-  depitems = obt.dep.DepNode.FindWithMethod("env_init")
-  for depitemk in depitems:
-    depitem = depitems[depitemk]
-    if depitem.supports_host:
-      depitem.env_init()
+  # OBT_MINIMAL_DEPS (set by orkid's non-dev ork.shell): when present, only the
+  # listed deps are imported + env_init'd via DepNode.FIND (skips importing all
+  # ~185 dep modules). Unset => full FindWithMethod scan (dev behavior).
+  _minimal_deps = os.environ.get("OBT_MINIMAL_DEPS")
+  if _minimal_deps is not None:
+    for _depname in [d for d in _minimal_deps.split(":") if d]:
+      _node = obt.dep.DepNode.FIND(_depname)   # FIND already filters supports_host
+      if _node is None:
+        continue
+      _inst = _node.instance
+      if hasattr(_inst,"env_init"):
+        _inst.env_init()
+  else:
+    depitems = obt.dep.DepNode.FindWithMethod("env_init")
+    for depitemk in depitems:
+      depitem = depitems[depitemk]
+      if depitem.supports_host:
+        depitem.env_init()
   ####################################
   subspaceitems = obt.subspace.findWithMethod("env_init")
   for subitemk in subspaceitems:
     subitem = subspaceitems[subitemk]
     subitem._module.env_init(envsetup)
   ####################################
-  print(deco.orange("############################################################################################"))    
-  print(deco.orange("Initialized Dependencies"))
-  print(deco.orange("############################################################################################"))    
+  obt.log.banner("Initialized Dependencies")

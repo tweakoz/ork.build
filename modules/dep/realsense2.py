@@ -89,7 +89,7 @@ class realsense2(BASE):
     return "realsense2"
   ########
   def env_init(self):
-    log.marker("registering realsense2(%s) SDK"%self.fullver)
+    log.sdk_announce("registering realsense2(%s) SDK"%self.fullver)
     #if host.IsOsx:
     #  qtdir = Path("/")/"usr"/"local"/"opt"/"qt5"
     #else:

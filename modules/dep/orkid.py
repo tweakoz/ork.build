@@ -212,7 +212,7 @@ class orkid(dep.StdProvider):
   ########
 
   def env_init(self):
-    log.marker("registering Orkid(%s) SDK @ %s"%(self.revision,self.orkid_src_dir))
+    log.sdk_announce("registering Orkid(%s) SDK @ %s"%(self.revision,self.orkid_src_dir))
     env.set("ORKID_WORKSPACE_DIR",self.orkid_src_dir)
     env.set("ORKID_LEV2_EXAMPLES_DIR",self.orkid_src_dir/"ork.lev2"/"examples")
     env.append("PATH",self.orkid_src_dir/"obt.project"/"bin")

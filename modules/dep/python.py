@@ -62,7 +62,7 @@ class python_from_source(dep.Provider):
   ########
 
   def env_init(self):
-    log.marker("registering Python(%s) SDK"%VERSION)
+    log.sdk_announce("registering Python(%s) SDK"%VERSION)
     env.set("OBT_PYTHON_SUBSPACE_BUILD_DIR",path.builds())
     env.set("OBT_PYLIB",self.library_dir)
     env.set("OBT_PYPKG",self.site_packages_dir)

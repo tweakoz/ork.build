@@ -37,7 +37,7 @@ class tbb(dep.StdProvider):
         self._builder._cmakeenv["CMAKE_C_COMPILER"] = "gcc-11"
 
   def env_init(self):
-    log.marker("registering TBB(%s) SDK" % VERSION)
+    log.sdk_announce("registering TBB(%s) SDK" % VERSION)
 
   ########################################################################
   @property

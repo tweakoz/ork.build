@@ -27,7 +27,7 @@ class vivado(dep.Provider):
 
   def env_init(self):
     if self.vivbase.exists():
-      log.marker("registering vivado(%s) SDK"%VERSION)
+      log.sdk_announce("registering vivado(%s) SDK"%VERSION)
       env.append("PATH",self.vivbase/"bin")
 
   ########

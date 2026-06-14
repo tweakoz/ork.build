@@ -45,7 +45,7 @@ class _ispc_from_homebrew(dep.HomebrewProvider):
   def env_init(self):
     binary = self.brew_prefix()/"bin"/"ispc"
     version = ""
-    log.marker("registering ispc SDK (%s)"%version)
+    log.sdk_announce("registering ispc SDK (%s)"%version)
     env.set("ISPC",binary)
 
 ###############################################################################
@@ -76,7 +76,7 @@ class _ispc_from_wget(dep.StdProvider):
 
   ########################################################################
   def env_init(self):
-    log.marker("registering ispc(%s) SDK"%self._version)
+    log.sdk_announce("registering ispc(%s) SDK"%self._version)
     env.set("ISPC",path.stage()/"bin"/"ispc")
 
   def install(self):

@@ -74,7 +74,7 @@ class ue5(dep.StdProvider):
   def env_init(self):
     bins = path.builds()/"unreal"/"Engine"/"Binaries"/"Linux"
     if bins.exists():
-      log.marker("registering Unreal SDK")
+      log.sdk_announce("registering Unreal SDK")
       env.append("PATH",bins)
 
   def areRequiredSourceFilesPresent(self):

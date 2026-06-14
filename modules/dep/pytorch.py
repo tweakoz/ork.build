@@ -247,4 +247,4 @@ class pytorch(dep.switch(linux=_pytorch_from_source,
   def __init__(self):
     super().__init__()
   def env_init(self):
-    log.marker("registering pytorch SDK(%s)"%self.VERSION)
+    log.sdk_announce("registering pytorch SDK(%s)"%self.VERSION)

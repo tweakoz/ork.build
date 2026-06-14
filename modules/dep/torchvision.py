@@ -99,4 +99,4 @@ class torchvision(dep.StdProvider):
     return (PYTHON.site_packages_dir/"torchvision"/"__init__.py").exists()
   ########################################################################
   def env_init(self):
-    log.marker("registering torchvision SDK(%s)"%self.VERSION)
+    log.sdk_announce("registering torchvision SDK(%s)"%self.VERSION)

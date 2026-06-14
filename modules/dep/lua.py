@@ -37,7 +37,7 @@ class lua(dep.Provider):
   ########
 
   def env_init(self):
-    log.marker("registering Lua SDK")
+    log.sdk_announce("registering Lua SDK")
 
   ########
 

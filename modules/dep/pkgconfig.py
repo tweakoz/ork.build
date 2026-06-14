@@ -88,4 +88,4 @@ class pkgconfig(dep.switch(linux=_pkgconfig_from_source, \
   def __init__(self):
     super().__init__()
   def env_init(self):
-    log.marker("registering pkgconfig SDK(%s)"%self.VERSION)
+    log.sdk_announce("registering pkgconfig SDK(%s)"%self.VERSION)

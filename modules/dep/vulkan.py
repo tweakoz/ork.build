@@ -52,7 +52,7 @@ class _vulkan_from_moltenvk(dep.Provider):
       shutil.rmtree(str(self.source_root), ignore_errors=True)
 
   def env_init(self):
-    log.marker("registering Vulkan(%s) <MoltenVK> SDK"%self.VERSION)
+    log.sdk_announce("registering Vulkan(%s) <MoltenVK> SDK"%self.VERSION)
     env.prepend("LD_LIBRARY_PATH",self.sdk_dir/"dylib")
 
     # DYLD_LIBRARY_PATH is still useful for ork.python-wrapped processes,
@@ -234,7 +234,7 @@ class _vulkan_from_lunarg(dep.Provider):
 
   def env_init(self):
     if self.sdk_dir.exists():
-      log.marker("registering Vulkan(%s) SDK"%self.VERSION)
+      log.sdk_announce("registering Vulkan(%s) SDK"%self.VERSION)
       env.prepend("LD_LIBRARY_PATH",self.sdk_dir/"lib")
       env.append("PATH",self.sdk_dir/"bin")
       env.set("VULKAN_SDK",self.sdk_dir) # for cmake
@@ -306,7 +306,7 @@ class _vulkan_from_system(dep.StdProvider):
   def __str__(self):
     return "vulkan"
   def env_init(self):
-    log.marker("registering Vulkan(%s) SDK"%self.fullver)
+    log.sdk_announce("registering Vulkan(%s) SDK"%self.fullver)
     env.set("VULKAN_VER",self.fullver)
   def install_dir(self):
     return path.Path("/usr")

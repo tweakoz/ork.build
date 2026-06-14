@@ -44,4 +44,4 @@ class embree(dep.switch(linux=_embree_from_source, \
     if host.IsX86_64:
       self.requires(["ispc"])
   def env_init(self):
-    log.marker("registering embree SDK(%s)"%self.VERSION)
+    log.sdk_announce("registering embree SDK(%s)"%self.VERSION)

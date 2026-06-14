@@ -128,7 +128,7 @@ class qt5forpython(dep.StdProvider):
   ##############################################################################
   def env_init(self): ###########################################
     if self.pyside_dir.exists():
-      log.marker("registering qt5forpython SDK")
+      log.sdk_announce("registering qt5forpython SDK")
       env.append("LD_LIBRARY_PATH",self.pyside_dir)
       env.append("LD_LIBRARY_PATH",self.library_path)
   ##############################################################################

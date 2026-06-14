@@ -23,6 +23,6 @@ class houdini(dep.Provider):
 
   def env_init(self):
     if self.hfs_path.exists():
-      log.marker("registering Houdini SDK @ %s" % self.hfs_path)
+      log.sdk_announce("registering Houdini SDK @ %s" % self.hfs_path)
       env.set("HFS",self.hfs_path)
       env.append("PATH",self.hfs_path/"bin")

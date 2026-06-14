@@ -147,7 +147,7 @@ class litex(dep.Provider):
     LITEX_ROOT = self.build_dest
     if not LITEX_ROOT.exists():
       return
-    log.marker("registering LITEX(%s) SDK" % VERSION)
+    log.sdk_announce("registering LITEX(%s) SDK" % VERSION)
     LITEX_BOARDS = LITEX_ROOT/"litex-boards"/"litex_boards"
     env.set("LITEX_ROOT", LITEX_ROOT)
     env.set("LITEX_BOARDS", LITEX_BOARDS)

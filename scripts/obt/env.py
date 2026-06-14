@@ -17,7 +17,8 @@ deco = obt.deco.Deco()
 
 def set(key,val):
 
-  log.output(deco.orange("set")+" var<" + deco.key(str(key))+"> to <" + deco.path(val) + ">")
+  if "OBT_NONDEV" not in os.environ:   # quiet per-var logging in non-dev ork.shell
+    log.output(deco.orange("set")+" var<" + deco.key(str(key))+"> to <" + deco.path(val) + ">")
   os.environ[str(key)] = str(val)
 
 ###########################################
@@ -34,9 +35,10 @@ def prepend(key,val,dedupe=True):
     prev = os.environ[key]
     newv = str(val) + ":" + prev
     os.environ[str(key)] = newv
-    log_str = deco.magenta("prepend")+" var<" + deco.key(key) 
-    log_str += "> -> <" + deco.val(str(val)) + ":" + deco.path(prev) + ">"
-    log.output(log_str)
+    if "OBT_NONDEV" not in os.environ:
+      log_str = deco.magenta("prepend")+" var<" + deco.key(key)
+      log_str += "> -> <" + deco.val(str(val)) + ":" + deco.path(prev) + ">"
+      log.output(log_str)
 
 ###########################################
 
@@ -63,9 +65,10 @@ def append(key,val,dedupe=True):
     os.environ[str(key)] = newv
     #print("prev<%s:%d:%s>"%(CHK,len(prev),prev))
     #print(os.environ)
-    log_str = deco.cyan("append")+" var<" + deco.key(key) 
-    log_str += "> -> <" + deco.path(prev) + ":" + deco.val(str(val)) + ">"
-    log.output(log_str)
+    if "OBT_NONDEV" not in os.environ:
+      log_str = deco.cyan("append")+" var<" + deco.key(key)
+      log_str += "> -> <" + deco.path(prev) + ":" + deco.val(str(val)) + ">"
+      log.output(log_str)
 
 ###########################################
 

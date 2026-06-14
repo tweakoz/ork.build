@@ -105,4 +105,4 @@ class torchaudio(dep.StdProvider):
     return (PYTHON.site_packages_dir/"torchaudio"/"__init__.py").exists()
   ########################################################################
   def env_init(self):
-    log.marker("registering torchaudio SDK(%s)"%self.VERSION)
+    log.sdk_announce("registering torchaudio SDK(%s)"%self.VERSION)

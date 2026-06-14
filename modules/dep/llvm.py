@@ -98,4 +98,4 @@ class llvm(BASE):
   def __init__(self):
     super().__init__("llvm")
   def env_init(self):
-    log.marker("registering LLVM SDK")
+    log.sdk_announce("registering LLVM SDK")

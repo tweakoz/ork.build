@@ -132,7 +132,7 @@ class tflite(dep.StdProvider):
     return (path.libs()/"libtflitemcDynamics.so").exists()
 
 
-"""
+r"""
 export TF_NCCL_VERSION=1.3
 
 export PYTHONPATH=${TF_ROOT}/lib

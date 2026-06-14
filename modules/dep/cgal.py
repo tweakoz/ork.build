@@ -29,5 +29,5 @@ class cgal(dep.switch(linux=_cgal_from_source,macos=_cgal_from_homebrew)):
   def __init__(self):
     super().__init__()
   def env_init(self):
-    log.marker("registering cgal SDK")
+    log.sdk_announce("registering cgal SDK")
 ###############################################################################
