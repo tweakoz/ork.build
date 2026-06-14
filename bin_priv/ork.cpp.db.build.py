@@ -183,7 +183,8 @@ def build_database(db_path, source_paths, verbose=False, show_progress=True, inc
     if verbose:
         total_raw = sum(item['raw_size'] for item in results['success'])
         total_trimmed = sum(item['trimmed_size'] for item in results['success'])
-        print(f"{deco.green(f'Ingested {len(results["success"])} files in {ingestion_time:.1f}s')}")
+        n_ok = len(results["success"])
+        print(f"{deco.green(f'Ingested {n_ok} files in {ingestion_time:.1f}s')}")
         print(f"  Raw size: {total_raw/(1024*1024):.1f} MB")
         print(f"  Trimmed size: {total_trimmed/(1024*1024):.1f} MB")
         print(f"  Reduction: {(1 - total_trimmed/total_raw)*100:.1f}%")
