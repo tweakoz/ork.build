@@ -157,7 +157,8 @@ class CppCommandBase:
         
         if verbose:
             stats = db.get_statistics()
-            print(f"{self.deco.green(f'Built temporary database with {stats.get("total_entities", 0)} entities')}")
+            _n_ent = stats.get("total_entities", 0)
+            print(f"{self.deco.green(f'Built temporary database with {_n_ent} entities')}")
         
         self.db_path = self.temp_db
         return db

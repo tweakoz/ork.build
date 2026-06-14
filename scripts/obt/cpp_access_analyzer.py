@@ -83,7 +83,8 @@ class CppAccessAnalyzer:
         """Recursively analyze AST nodes"""
         
         if self.debug and node.type in ['function_definition', 'call_expression', 'field_expression']:
-            print(f"DEBUG: Found {node.type} at line {source[:node.start_byte].count(b'\\n') + 1}")
+            _line_no = source[:node.start_byte].count(b'\\n') + 1
+            print(f"DEBUG: Found {node.type} at line {_line_no}")
         
         # Track namespace context
         if node.type == 'namespace_definition':
@@ -169,7 +170,8 @@ class CppAccessAnalyzer:
     
     def _analyze_function_definition(self, node: Node, source: bytes):
         """Analyze a function definition and its body"""
-        print(f"ENTERING FUNCTION at line {source[:node.start_byte].count(b'\n') + 1}")
+        _ln = source[:node.start_byte].count(b'\n') + 1
+        print(f"ENTERING FUNCTION at line {_ln}")
         
         # Extract function name for context
         function_name = None

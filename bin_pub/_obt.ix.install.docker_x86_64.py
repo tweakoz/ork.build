@@ -58,7 +58,7 @@ command.run(["sudo","loginctl","enable-linger",USERNAME],do_log=True)
 
 VERSION="v0.17.1"
 HOMEDIR = path.Path(os.environ["HOME"])
-PLUGDIR = HOMEDIR}/".docker"/"cli-plugins"
+PLUGDIR = HOMEDIR/".docker"/"cli-plugins"
 pathtools.mkdir(f"{PLUGDIR}",parents=True)
 wget.wget(urls=["https://github.com/docker/buildx/releases/download/$VERSION/buildx-$VERSION.linux-amd64"],
           output_name = f"{PLUGDIR}/docker-buildx",

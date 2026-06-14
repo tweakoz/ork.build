@@ -27,7 +27,7 @@ LOGTEXT = LOGTEXTPATH.read_text()
 #########################################
 # redact paths
 #########################################
-searchstr = str(BASEDIR).replace("/","\/")
+searchstr = str(BASEDIR).replace("/","\\/")
 replacestr = "[JOBDIR]"
 result = str(LOGTEXT).replace(searchstr,replacestr)
 #########################################
