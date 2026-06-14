@@ -553,8 +553,10 @@ def configFromCommandLine(parser_args=None):
       orig_pkg_config = findExecutable("pkg-config")
       if orig_pkg_config!=None:
         os.environ["OBT_ORIGINAL_PKG_CONFIG"] = str(orig_pkg_config)
+      elif sys.platform == "darwin":
+        pass  # macOS: pkg-config is optional (no homebrew dependency); leave unset
       else:
-        print(deco.err("NO PKG-CONFIG FOUND, is your base shell setup correctly ?"))      
+        print(deco.err("NO PKG-CONFIG FOUND, is your base shell setup correctly ?"))
         assert(False)
 
   # PKG_CONFIG_PATH is intentionally NOT seeded from the system pkg-config's
