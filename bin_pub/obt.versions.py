@@ -41,7 +41,13 @@ print_env_var(f'sys.base_prefix', sys.base_prefix)
 
 print( "######################################################")
 
-a = importlib.metadata.distribution("ork.build").metadata
+try:
+    # normalized dist name: Python 3.9's importlib.metadata does NOT normalize
+    # the '.' in "ork.build" to the installed "ork_build" dist-info (3.10+ does).
+    a = importlib.metadata.distribution("ork-build").metadata
+except importlib.metadata.PackageNotFoundError:
+    from email.message import Message
+    a = Message()   # in-tree / not pip-installed: empty metadata (a["X"] -> None)
 
 print_item( "obt-pymodule-path",obt.path.obt_module_path() )
 print_item( "obt-data-base",obt.path.obt_data_base() )
