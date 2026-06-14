@@ -3,7 +3,7 @@ from setuptools.command.install import install
 import os
 import stat
 
-version = "0.0.303dev18"
+version = "0.0.303"
 
 # Read the long description from the README file
 with open("README.md", "r", encoding="utf-8") as fh:
@@ -54,7 +54,7 @@ setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
-    python_requires='>=3.10',
+    python_requires='>=3.9',
     install_requires=[
         'yarl',
         'toposort',
