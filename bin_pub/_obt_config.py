@@ -745,8 +745,8 @@ def configFromEnvironment():
 #
 # PATH is INTENTIONALLY NOT cleared: OBT's bootstrap python on macOS is
 # /opt/homebrew/bin/python3 (the single allowed homebrew touch — see
-# NOHOMEBREW.md and _envutils.py:62-76). Dropping /opt/homebrew/bin
-# from PATH would break os-python.
+# NOHOMEBREW.md). Dropping /opt/homebrew/bin from PATH would break the
+# bootstrap python OBT seeds its venv from.
 #
 # Originals are preserved in OBT_ORIGINAL_* so a debugger / test driver
 # can restore them if needed.

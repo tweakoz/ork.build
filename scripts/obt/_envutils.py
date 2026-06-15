@@ -59,21 +59,9 @@ class EnvSetup:
     obt.path.gitcache().mkdir(parents=True,exist_ok=True)
     obt.path.apps().mkdir(parents=True,exist_ok=True)
     obt.path.buildlogs().mkdir(parents=True,exist_ok=True)
-    # Symlink <prefix>/bin/os-python → the OBT bootstrap python (the host
-    # python used to seed the OBT venv). On macOS that's brew's
-    # /opt/homebrew/bin/python3 (the single allowed homebrew touch — see
-    # NOHOMEBREW.md). On Linux the system /usr/bin/python3.
-    # `ork.python` is the OBT-built python under $OBT_STAGE/pyvenv/bin/;
-    # `os-python` is intentionally distinct from that.
-    # Idempotent — uses `ln -sf` and checks the right destination filename.
-    if not obt.path.has_deployment_marker:
-      os_python_link = obt.path.prefix()/"bin/os-python"
-      if not os_python_link.exists() and not os_python_link.is_symlink():
-        if obt.host.IsOsx:
-          target = "/opt/homebrew/bin/python3"
-        else:
-          target = "/usr/bin/python3"
-        os.system("ln -sf %s %s" % (target, str(os_python_link)))
+    # (os-python symlink retired: its only consumer — ork.blender.asset.assistant.py —
+    #  was removed, and as a host-absolute symlink (/opt/homebrew/bin/python3) it did
+    #  not relocate; deployed bundles never regenerated it. Use `ork.python` instead.)
 
   ###########################################
   def genLaunchScript(self,out_path=None,subspace=None):
