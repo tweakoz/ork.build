@@ -121,7 +121,7 @@ class StackBasedAccessAnalyzer:
         
         # Initialize parser
         self.parser = Parser()
-        self.parser.set_language(Language(ts_cpp.language(), "cpp"))
+        self.parser.language = Language(ts_cpp.language())
         
     def analyze_file(self, file_path: Path, trimmed_source: str, 
                      line_mapping: Dict[int, int]) -> List[Access]:

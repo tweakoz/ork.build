@@ -26,7 +26,7 @@ class RecursiveDescentCppParser:
     def __init__(self, verbose: bool = False, db_path: Optional[str] = None):
         self.verbose = verbose
         self.parser = Parser()
-        self.parser.set_language(Language(ts_cpp.language()))
+        self.parser.language = Language(ts_cpp.language())
         self.current_namespace = []
         self.current_file = None
         # Initialize type registry for unified type system

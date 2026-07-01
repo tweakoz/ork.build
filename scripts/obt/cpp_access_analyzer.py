@@ -40,7 +40,7 @@ class CppAccessAnalyzer:
         self.verbose = verbose
         self.debug = debug
         self.parser = Parser()
-        self.parser.set_language(Language(ts_cpp.language(), "cpp"))
+        self.parser.language = Language(ts_cpp.language())
         
         # Access tracking state
         self.accesses = []

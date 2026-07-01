@@ -426,7 +426,7 @@ Examples:
     if entity_id is None:
         print(f"{deco.red(f'Entity not found: {args.entity}')}")
         print("\nTry searching for it first:")
-        print(f"  ork.cpp.search.py {member_or_func}")
+        print(f"  ork.cpp.db.search.py {member_or_func}")
         sys.exit(1)
     
     if class_name and member_or_func and member_id is None:
