@@ -16,7 +16,7 @@ import obt.path
 import obt.deco
 from obt.cpp_database_v2 import CppDatabaseV2
 from obt.cpp_entities_v2 import EntityType, MemberType, AccessLevel
-from obt.cpp_display_v2 import CppEntityDisplayV2
+from obt.cpp_display_v2 import CppEntityDisplayV2, porcelain_entities
 from obt.cpp_search_v2 import search_database, format_json_results
 from obt.cpp_argparse_v2 import create_search_parser
 from obt.deco import Deco
@@ -36,7 +36,9 @@ def add_obt_specific_args(parser):
     # Database info
     parser.add_argument('--stats', action='store_true',
                        help='Show database statistics instead of searching')
-    
+    parser.add_argument('--porcelain', action='store_true',
+                       help='Terse machine output: kind<TAB>qualified_name<TAB>file:line (no color/headers)')
+
     return parser
 
 def main():
@@ -64,6 +66,14 @@ def main():
     # Show stats if requested
     if args.stats:
         stats = db.get_statistics()
+        if args.porcelain:
+            print(f"db\t{db_path}")
+            for key in ('total_entities', 'entities_class', 'entities_struct',
+                        'entities_function', 'entities_enum', 'entities_typedef',
+                        'template_entities', 'total_locations', 'total_members',
+                        'total_files'):
+                print(f"{key}\t{stats.get(key, 0)}")
+            sys.exit(0)
         print(f"{deco.green(f'=== Database Statistics for {args.project} ===')}")
         print(f"Database: {db_path}")
         print(f"\n{deco.cyan('Entity counts:')}")
@@ -97,10 +107,19 @@ def main():
         results = search_database(db, args)
         
         if not results:
-            print(f"{deco.yellow('No results found')}")
+            if not args.porcelain:
+                print(f"{deco.yellow('No results found')}")
             sys.exit(0)
         
-        if args.json:
+        if args.porcelain:
+            if results and isinstance(results[0], dict):
+                for file_info in results:
+                    # relative_path may be present-but-None -> fall through to file_path
+                    print(file_info.get('relative_path') or file_info.get('file_path', ''))
+                print(f"# total: {len(results)}")
+            else:
+                print(porcelain_entities(results))
+        elif args.json:
             # JSON output for tool integration
             json_results = format_json_results(results)
             print(json.dumps(json_results, indent=2))

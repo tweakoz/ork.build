@@ -16,7 +16,7 @@ import obt.path
 import obt.deco
 from obt.cpp_database_v2 import CppDatabaseV2
 from obt.cpp_entities_v2 import EntityType, MemberType, AccessLevel
-from obt.cpp_display_v2 import CppEntityDisplayV2
+from obt.cpp_display_v2 import CppEntityDisplayV2, porcelain_entities
 from obt.cpp_search_v2 import search_database, format_json_results
 from obt.cpp_argparse_v2 import create_search_parser
 
@@ -170,7 +170,9 @@ def add_ork_specific_args(parser):
     # Database selection (optional with default)
     parser.add_argument('--project', '-p', default='orkid',
                        help='Project database to search (default: orkid)')
-    
+    parser.add_argument('--porcelain', action='store_true',
+                       help='Terse machine output: kind<TAB>qualified_name<TAB>file:line (no color/headers)')
+
     return parser
 
 def main():
@@ -198,7 +200,10 @@ def main():
     # Namespace search: bespoke distinct-namespace query (namespaces are a column, not typed entity rows)
     if args.types and 'namespace' in args.types.lower():
         results = search_namespaces(db, args.pattern, args.limit)
-        if args.json:
+        if args.porcelain:
+            if results:  # empty porcelain result stays 0 bytes
+                print(porcelain_entities(results))
+        elif args.json:
             print(json.dumps(format_namespace_json(results), indent=2))
         elif not results:
             print(f"{deco.yellow('No matching namespaces found')}")
@@ -231,18 +236,27 @@ def main():
         results = search_database(db, args)
         
         if not results:
-            print(f"{deco.yellow('No results found')}")
+            if not args.porcelain:
+                print(f"{deco.yellow('No results found')}")
             sys.exit(0)
         
         # Check if we're in files mode (results are dicts not Entity objects)
         if results and isinstance(results[0], dict):
             # File listing mode
-            print(f"Found {len(results)} files:")
-            print("=" * 80)
-            for file_info in results:
-                size_kb = file_info['file_size'] / 1024 if file_info.get('file_size') else 0
-                relative_path = file_info.get('relative_path', file_info['file_path'])
-                print(f"{relative_path:<60} {size_kb:>8.1f} KB")
+            if args.porcelain:
+                for file_info in results:
+                    # relative_path may be present-but-None -> fall through to file_path
+                    print(file_info.get('relative_path') or file_info.get('file_path', ''))
+                print(f"# total: {len(results)}")
+            else:
+                print(f"Found {len(results)} files:")
+                print("=" * 80)
+                for file_info in results:
+                    size_kb = file_info['file_size'] / 1024 if file_info.get('file_size') else 0
+                    relative_path = file_info.get('relative_path', file_info['file_path'])
+                    print(f"{relative_path:<60} {size_kb:>8.1f} KB")
+        elif args.porcelain:
+            print(porcelain_entities(results))
         elif args.json:
             # JSON output for tool integration
             json_results = format_json_results(results)

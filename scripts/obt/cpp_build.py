@@ -11,6 +11,7 @@
 # parallel parse -> optional parallel access tracking.
 ################################################################################
 
+import sys
 import time
 import json
 from pathlib import Path
@@ -157,9 +158,19 @@ def analyze_single_file_worker(args):
 
 
 def build_database(db_path, source_paths, verbose=False, show_progress=True, incremental=False,
-                  defines=None, defines_preset=None, include_paths=None, track_accesses=False):
-    """Build the C++ entity database using two-phase approach: ingestion then parsing"""
-    
+                  defines=None, defines_preset=None, include_paths=None, track_accesses=False,
+                  porcelain=False):
+    """Build the C++ entity database using two-phase approach: ingestion then parsing
+
+    porcelain=True emits ONLY a terse TAB-separated key<TAB>value summary on stdout
+    (db/files/parse_errors/entities/accesses/time) — no colors, no progress."""
+
+    # Progress is interactive-only: \r-progress lines are spam when stdout is piped
+    # to a file, and porcelain mode must stay machine-clean.
+    show_progress = show_progress and not porcelain and sys.stdout.isatty()
+    if porcelain:
+        verbose = False
+
     # Delete and recreate database unless incremental
     if not incremental:
         if db_path.exists():
@@ -196,7 +207,8 @@ def build_database(db_path, source_paths, verbose=False, show_progress=True, inc
     )
     
     # Ingest files in parallel
-    results = ingestor.ingest_files_parallel(files, max_workers=host.NumCores)
+    results = ingestor.ingest_files_parallel(files, max_workers=host.NumCores,
+                                             show_progress=show_progress)
     
     ingestion_time = time.time() - ingestion_start
     
@@ -392,20 +404,29 @@ def build_database(db_path, source_paths, verbose=False, show_progress=True, inc
     
     # Report summary
     total_time = time.time() - ingestion_start
-    
-    print(f"\n{deco.green('=== Build Complete ===')}")
-    print(f"Total time: {total_time:.1f}s")
-    print(f"  Ingestion: {ingestion_time:.1f}s ({ingestion_time/total_time*100:.0f}%)")
-    print(f"  DB storage: {db_store_time:.1f}s ({db_store_time/total_time*100:.0f}%)")
-    print(f"  Parsing: {parse_time:.1f}s ({parse_time/total_time*100:.0f}%)")
-    if track_accesses:
-        print(f"  Access tracking: {access_time:.1f}s ({access_time/total_time*100:.0f}%)")
-    print(f"Files processed: {parsed_count}/{total_files}")
-    if error_count > 0:
-        print(f"Files with errors: {error_count}")
-    print(f"Entities found: {entity_count}")
-    if track_accesses:
-        print(f"Accesses tracked: {access_count}")
-    print(f"Database: {db_path}")
-    
+
+    if porcelain:
+        print(f"db\t{db_path}")
+        print(f"files\t{parsed_count}/{total_files}")
+        print(f"parse_errors\t{error_count}")
+        print(f"entities\t{entity_count}")
+        if track_accesses:
+            print(f"accesses\t{access_count}")
+        print(f"time\t{total_time:.1f}")
+    else:
+        print(f"\n{deco.green('=== Build Complete ===')}")
+        print(f"Total time: {total_time:.1f}s")
+        print(f"  Ingestion: {ingestion_time:.1f}s ({ingestion_time/total_time*100:.0f}%)")
+        print(f"  DB storage: {db_store_time:.1f}s ({db_store_time/total_time*100:.0f}%)")
+        print(f"  Parsing: {parse_time:.1f}s ({parse_time/total_time*100:.0f}%)")
+        if track_accesses:
+            print(f"  Access tracking: {access_time:.1f}s ({access_time/total_time*100:.0f}%)")
+        print(f"Files processed: {parsed_count}/{total_files}")
+        if error_count > 0:
+            print(f"Files with errors: {error_count}")
+        print(f"Entities found: {entity_count}")
+        if track_accesses:
+            print(f"Accesses tracked: {access_count}")
+        print(f"Database: {db_path}")
+
     return parsed_count, entity_count

@@ -33,6 +33,8 @@ def main():
                         help='Verbose output')
     parser.add_argument('--no-progress', action='store_true',
                         help='Disable progress indicator')
+    parser.add_argument('--porcelain', action='store_true',
+                        help='Terse machine output: key<TAB>value summary only (no color/progress)')
     parser.add_argument('--incremental', '-i', action='store_true',
                         help='Incremental update - keep existing data')
     parser.add_argument('--stats-only', action='store_true',
@@ -50,7 +52,8 @@ def main():
     args = parser.parse_args()
 
     db_path = obt.path.stage() / f"cpp_db_v2_{args.project}.db"
-    print(f"Database file: {db_path}")
+    if not args.porcelain:
+        print(f"Database file: {db_path}")
 
     # If stats only, show stats and exit
     if args.stats_only:
@@ -61,6 +64,15 @@ def main():
 
         db = CppDatabaseV2(db_path)
         stats = db.get_statistics()
+
+        if args.porcelain:
+            print(f"db\t{db_path}")
+            for key in ('total_entities', 'entities_class', 'entities_struct',
+                        'entities_function', 'entities_enum', 'entities_typedef',
+                        'template_entities', 'total_locations', 'total_members',
+                        'total_files'):
+                print(f"{key}\t{stats.get(key, 0)}")
+            sys.exit(0)
 
         print(f"{deco.green('=== Database Statistics ===')}")
         print(f"Database: {db_path}")
@@ -130,6 +142,7 @@ def main():
         defines_preset=args.defines_preset,
         include_paths=include_paths,
         track_accesses=not args.no_track_accesses,
+        porcelain=args.porcelain,
     )
 
 

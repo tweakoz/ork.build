@@ -762,20 +762,23 @@ class CppDatabaseV2:
         entity.is_using_alias = bool(row['is_using_alias'])
         
         # Load locations
+        file_line_maps = {}  # file_path -> {trimmed_line: original_line}; reused to remap member lines
         for loc_row in conn.execute(
-            """SELECT el.*, sf.line_mapping 
+            """SELECT el.*, sf.line_mapping
                FROM entity_locations el
                JOIN source_files sf ON el.file_path = sf.file_path
-               WHERE el.entity_id = ? 
+               WHERE el.entity_id = ?
                ORDER BY el.location_type DESC, el.line_number""",
             (row['id'],)
         ):
             # Remap line number using line_mapping
+            mapping = json.loads(loc_row['line_mapping']) if loc_row['line_mapping'] else None
+            if mapping is not None:
+                file_line_maps[loc_row['file_path']] = mapping
             display_line = loc_row['line_number']
-            if loc_row['line_mapping']:
-                mapping = json.loads(loc_row['line_mapping'])
+            if mapping is not None:
                 display_line = mapping.get(str(loc_row['line_number']), loc_row['line_number'])
-            
+
             location = Location(
                 file_path=loc_row['file_path'],
                 line_number=display_line,  # Use remapped line
@@ -785,14 +788,21 @@ class CppDatabaseV2:
                 context=loc_row['context']
             )
             entity.locations.append(location)
-        
+
+        # Member decl lines are stored as TRIMMED-source lines relative to the entity's
+        # declaring file; remap them to original the same way entity locations are (above).
+        _member_map = file_line_maps.get(entity.locations[0].file_path) if entity.locations else None
+
         # Load members
         for mem_row in conn.execute(
-            """SELECT * FROM entity_members 
-               WHERE entity_id = ? 
+            """SELECT * FROM entity_members
+               WHERE entity_id = ?
                ORDER BY access_level, line_number""",
             (row['id'],)
         ):
+            _mem_line = mem_row['line_number']
+            if _member_map is not None and _mem_line is not None:
+                _mem_line = _member_map.get(str(_mem_line), _mem_line)
             member = Member(
                 name=mem_row['name'],
                 member_type=MemberType(mem_row['member_type']),
@@ -807,7 +817,7 @@ class CppDatabaseV2:
                 is_final=bool(mem_row['is_final']),
                 is_deleted=bool(mem_row['is_deleted']),
                 is_default=bool(mem_row['is_default']),
-                line_number=mem_row['line_number'],
+                line_number=_mem_line,
                 signature=mem_row['signature'],
                 value=mem_row['value'],
                 array_dimensions=mem_row['array_dimensions'],
@@ -818,16 +828,20 @@ class CppDatabaseV2:
                 is_constexpr=bool(mem_row['is_constexpr'])
             )
             
-            # Load member implementation locations
+            # Load member implementation locations (also stored as trimmed lines — remap)
             for impl_row in conn.execute(
-                """SELECT * FROM member_implementation_locations 
-                   WHERE member_id = ? 
-                   ORDER BY line_number""",
+                """SELECT mil.*, sf.line_mapping FROM member_implementation_locations mil
+                   LEFT JOIN source_files sf ON mil.file_path = sf.file_path
+                   WHERE mil.member_id = ?
+                   ORDER BY mil.line_number""",
                 (mem_row['id'],)
             ):
+                _impl_line = impl_row['line_number']
+                if impl_row['line_mapping'] and _impl_line is not None:
+                    _impl_line = json.loads(impl_row['line_mapping']).get(str(_impl_line), _impl_line)
                 impl_location = Location(
                     file_path=impl_row['file_path'],
-                    line_number=impl_row['line_number'],
+                    line_number=_impl_line,
                     column_number=impl_row['column_number'],
                     location_type=LocationType(impl_row['location_type']),
                     has_body=bool(impl_row['has_body']),
@@ -1245,7 +1259,38 @@ class CppDatabaseV2:
             """, (entity_id, member_id, access_type, file_id, original_line, trimmed_line,
                   column_number, accessing_function_id, context_snippet, raw_identifier))
     
-    def get_entity_accesses(self, entity_id: Optional[int] = None, 
+    def get_accesses_by_identifier(self, identifier: str,
+                                   access_type: Optional[str] = None) -> List[Dict[str, Any]]:
+        """
+        Get access records by RAW IDENTIFIER (exact token, name-match — NOT type-resolved).
+
+        Most accesses are stored with their source token (`raw_identifier`) but are not
+        resolved to a member_id/entity_id, so get_entity_accesses() misses them. This
+        surfaces every textual use of a name — method call sites, enum-value uses, free
+        functions — classified by access_type, scoped to the indexed modules. It is
+        name-based: it cannot distinguish two different symbols that share a short name,
+        so callers should treat the results as candidates and type-verify when precision
+        matters. Match is on the exact identifier token (not a substring).
+        """
+        with self.connect() as conn:
+            query = """
+                SELECT ea.id, ea.entity_id, ea.member_id, ea.access_type,
+                       ea.original_line as line_number, ea.trimmed_line, ea.column_number,
+                       ea.accessing_function_id, ea.context_snippet, ea.raw_identifier,
+                       sf.file_path, sf.relative_path
+                FROM entity_accesses ea
+                JOIN source_files sf ON ea.file_id = sf.id
+                WHERE ea.raw_identifier = ?
+            """
+            params = [identifier]
+            if access_type is not None:
+                query += " AND ea.access_type = ?"
+                params.append(access_type)
+            query += " ORDER BY sf.file_path, ea.original_line"
+            cursor = conn.execute(query, params)
+            return [dict(row) for row in cursor.fetchall()]
+
+    def get_entity_accesses(self, entity_id: Optional[int] = None,
                            member_id: Optional[int] = None,
                            access_type: Optional[str] = None) -> List[Dict[str, Any]]:
         """

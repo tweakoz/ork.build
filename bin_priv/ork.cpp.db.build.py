@@ -27,8 +27,9 @@ def main():
     )
     
     # Module selection
-    parser.add_argument('-m', '--module', action='append',
-                       help='Specific modules to index (core, lev2, ecs, tool, gfx, etc.)')
+    parser.add_argument('-m', '--module', action='append', nargs='+',
+                       help='Modules to index (core, lev2, ecs, tool, gfx, ...). Accepts '
+                            '`-m core lev2 ecs`, `-m core -m lev2`, or a mix.')
     
     parser.add_argument('--all', action='store_true',
                        help='Index all modules')
@@ -39,7 +40,10 @@ def main():
     
     parser.add_argument('--no-progress', action='store_true',
                        help='Disable progress indicator')
-    
+
+    parser.add_argument('--porcelain', action='store_true',
+                       help='Terse machine output: key<TAB>value summary only (no color/progress)')
+
     parser.add_argument('--incremental', '-i', action='store_true',
                        help='Incremental update - only reparse changed files')
     
@@ -66,18 +70,28 @@ def main():
     # Database is always in stage directory with fixed name
     import obt.path as obt_path
     db_path = obt_path.stage() / "cpp_db_v2_orkid.db"
-    print(f"Database file: {db_path}")
-    
+    if not args.porcelain:
+        print(f"Database file: {db_path}")
+
     # If stats only, show stats and exit
     if args.stats_only:
         if not db_path.exists():
             print(f"{deco.red(f'Database not found: {db_path}')}")
             print("Run without --stats-only to build the database first")
             sys.exit(1)
-        
+
         db = CppDatabaseV2(db_path)
         stats = db.get_statistics()
-        
+
+        if args.porcelain:
+            print(f"db\t{db_path}")
+            for key in ('total_entities', 'entities_class', 'entities_struct',
+                        'entities_function', 'entities_enum', 'entities_typedef',
+                        'template_entities', 'total_locations', 'total_members',
+                        'total_files'):
+                print(f"{key}\t{stats.get(key, 0)}")
+            sys.exit(0)
+
         print(f"{deco.green('=== Orkid Database Statistics ===')}")
         print(f"Database: {db_path}")
         print(f"\n{deco.cyan('Entity counts:')}")
@@ -98,7 +112,8 @@ def main():
     if args.all:
         modules = ork_cppdb.list_available_modules()
     else:
-        modules = args.module
+        # nargs='+' + append -> list-of-lists; flatten to a flat module list
+        modules = [m for group in (args.module or []) for m in group]
     
     source_paths = ork_cppdb.get_orkid_paths(
         modules=modules
@@ -129,7 +144,8 @@ def main():
         defines=args.defines,
         defines_preset=args.defines_preset,
         include_paths=include_paths,
-        track_accesses=not args.no_track_accesses  # Default to True unless disabled
+        track_accesses=not args.no_track_accesses,  # Default to True unless disabled
+        porcelain=args.porcelain
     )
 
 if __name__ == '__main__':

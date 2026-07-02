@@ -45,7 +45,13 @@ class MembersCommand(CppCommandBase):
             action='store_true',
             help='Output in JSON format (optimized for AI readability)'
         )
-        
+
+        parser.add_argument(
+            '--porcelain',
+            action='store_true',
+            help='Terse machine output: access<TAB>kind<TAB>name<TAB>line<TAB>signature (no color/headers)'
+        )
+
         # Filtering options
         parser.add_argument(
             '--access',
@@ -98,31 +104,45 @@ class MembersCommand(CppCommandBase):
         try:
             # Create details display (which shows members)
             details_display = ClassDetailsDisplay(db)
-            
-            if args.json:
-                # Build filters from command line arguments
-                filters = {}
-                
-                if args.access:
-                    filters['access_level'] = args.access
-                
-                if args.type:
-                    filters['member_type'] = args.type
-                
-                if args.static:
-                    filters['is_static'] = True
-                
-                if args.virtual:
-                    filters['is_virtual'] = True
-                
-                if args.const:
-                    filters['is_const'] = True
-                
-                if args.name_pattern:
-                    filters['name_pattern'] = args.name_pattern
-                
-                # Output JSON
-                json_output = details_display.to_json(args.pattern, filters if filters else None)
+
+            # Build filters from command line arguments (shared by --json and --porcelain)
+            filters = {}
+            if args.access:
+                filters['access_level'] = args.access
+            if args.type:
+                filters['member_type'] = args.type
+            if args.static:
+                filters['is_static'] = True
+            if args.virtual:
+                filters['is_virtual'] = True
+            if args.const:
+                filters['is_const'] = True
+            if args.name_pattern:
+                filters['name_pattern'] = args.name_pattern
+            filters = filters if filters else None
+
+            if args.porcelain:
+                # Terse: one line per member, reusing the JSON extraction.
+                # Non-empty output ends with '# total: N' (+ per-access breakdown)
+                # so the consumer quotes counts instead of hand-tallying.
+                import json
+                data = json.loads(details_display.to_json(args.pattern, filters))
+                if 'error' not in data:
+                    total = 0
+                    per_access = {}
+                    for access in ('public', 'protected', 'private'):
+                        for kind, items in (data.get('members', {}).get(access, {}) or {}).items():
+                            for m in items:
+                                sig = m.get('signature') or m.get('type') or ''
+                                print(f"{access}\t{kind}\t{m.get('name', '')}\t{m.get('line', '')}\t{sig}")
+                                total += 1
+                                per_access[access] = per_access.get(access, 0) + 1
+                    if total:
+                        print(f"# total: {total}")
+                        if len(per_access) > 1:
+                            print("# per-access: " + " ".join(f"{k}={n}" for k, n in per_access.items()))
+            elif args.json:
+                json_output = details_display.to_json(args.pattern, filters)
                 print(json_output)
             else:
                 # Display the details/members in colored format
