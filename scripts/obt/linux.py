@@ -123,6 +123,17 @@ def elf_set_rpath(elf_path, rpaths, force_rpath=True):
   """
   assert host.IsLinux
   joined = rpaths if isinstance(rpaths, str) else ":".join(rpaths)
+  # Idempotency guard: skip if the rpath is already exactly what we want. A
+  # repeated patchelf --set-rpath can GROW the file each call and eventually
+  # corrupt it ("data region extends past file end"), which is easy to trigger
+  # when the same physical inode is reached via multiple hardlink names (e.g.
+  # pythonX.Yt hardlinked to pythonX.Y) or across phases.
+  try:
+    if capture([_tool("patchelf"), "--print-rpath", str(elf_path)],
+               do_log=False).strip() == joined:
+      return
+  except Exception:
+    pass
   cmd = [_tool("patchelf")]
   if force_rpath:
     cmd.append("--force-rpath")
@@ -209,6 +220,7 @@ def discover_elf_files(root_dir, skip_dirs=None):
     skip_dirs = set()
   root_dir = path.Path(root_dir)
   result = []
+  seen_inodes = set()   # dedup hardlinks: one physical file -> patch once
   for dirpath, dirnames, filenames in os.walk(str(root_dir), followlinks=False):
     dirnames[:] = [d for d in dirnames if d not in skip_dirs]
     for fname in filenames:
@@ -216,6 +228,14 @@ def discover_elf_files(root_dir, skip_dirs=None):
       if os.path.islink(fpath) or not os.path.isfile(fpath):
         continue
       if _looks_like_elf_name(fname) and is_elf_binary(fpath):
+        try:
+          st = os.stat(fpath)
+          key = (st.st_dev, st.st_ino)
+          if key in seen_inodes:
+            continue           # already returned via another hardlink name
+          seen_inodes.add(key)
+        except OSError:
+          pass
         result.append(path.Path(fpath))
   return result
 
@@ -260,6 +280,45 @@ def is_keep_on_host(soname, keep_extra=(), bundle_anyway=()):
   if base in KEEP_ON_HOST_EXACT or base in set(keep_extra):
     return True
   return any(base.startswith(p) for p in KEEP_ON_HOST_PREFIXES)
+
+def internalize_lib(src_lib, lib_dir):
+  """Copy an external .so into lib_dir as a self-contained, SONAME-linked entry.
+
+  ELF consumers reference a dependency by its SONAME (e.g. `libavcodec.so.60`),
+  which on disk is usually a symlink to the real versioned file
+  (`libavcodec.so.60.31.102`). To keep the bundle self-contained we copy the
+  REAL file and recreate the SONAME (and the ldd-referenced basename) as
+  symlinks pointing at it, so the loader resolves by SONAME within lib/.
+
+  This is the ELF analog of the macOS "copy homebrew dylib into lib/" step
+  (Mach-O needs no symlink because it references by full basename).
+
+  Returns the destination real-file path, or None if the source is missing.
+  """
+  lib_dir = path.Path(lib_dir)
+  lib_dir.mkdir(parents=True, exist_ok=True)
+  real = os.path.realpath(str(src_lib))
+  if not os.path.isfile(real):
+    return None
+  realbase = os.path.basename(real)
+  dest = lib_dir / realbase
+  if not dest.exists():
+    shutil.copy2(real, str(dest))
+  # Recreate the SONAME + the referenced basename as symlinks -> realbase.
+  linknames = set()
+  soname = elf_get_soname(real)
+  if soname:
+    linknames.add(os.path.basename(soname))
+  linknames.add(os.path.basename(str(src_lib)))
+  for ln in linknames:
+    if ln and ln != realbase:
+      lp = lib_dir / ln
+      if not lp.exists():
+        try:
+          os.symlink(realbase, str(lp))
+        except FileExistsError:
+          pass
+  return str(dest)
 
 ###############################################################################
 
@@ -388,20 +447,28 @@ class ElfRelocator:
         self.modified_files.add(binary_str)
 
   def relocate_rpath(self, binary_path):
-    """Replace the object's RPATH with $ORIGIN-relative reaches to lib/
-    (and pyvenv/lib/ for objects living under pyvenv)."""
+    """Add $ORIGIN-relative reaches to lib/ (and pyvenv/lib/ for objects under
+    pyvenv), while PRESERVING any existing $ORIGIN-relative entries.
+
+    Preserving matters for auditwheel/manylinux wheels: their extension modules
+    carry a self-referential rpath like `$ORIGIN/../pkg.libs` that lets them
+    find their bundled sibling libraries. Clobbering it breaks the wheel. We
+    keep every existing $ORIGIN entry and drop only absolute entries (build-host
+    staging paths that leak and won't exist post-move)."""
     binary_str = str(binary_path)
-    rpaths = []
-    rp_to_lib = self.compute_origin_to(binary_path, self.lib_dir)
-    rpaths.append(rp_to_lib)
+    # Keep existing self-relative entries (vendored .libs reaches, etc.);
+    # absolute entries are dropped by simply not carrying them over.
+    rpaths = [rp for rp in elf_enumerate_rpaths(binary_str)
+              if rp.startswith("$ORIGIN")]
+    def _add(rp):
+      if rp not in rpaths:
+        rpaths.append(rp)
+    _add(self.compute_origin_to(binary_path, self.lib_dir))
     pyvenv_lib = self.pyvenv_dir / "lib"
     if pyvenv_lib.exists() and str(self.pyvenv_dir) in binary_str:
-      rp_to_pyvenv = self.compute_origin_to(binary_path, pyvenv_lib)
-      if rp_to_pyvenv not in rpaths:
-        rpaths.append(rp_to_pyvenv)
+      _add(self.compute_origin_to(binary_path, pyvenv_lib))
     # a self-reach ($ORIGIN) is cheap insurance for sibling dylibs in lib/
-    if "$ORIGIN" not in rpaths:
-      rpaths.append("$ORIGIN")
+    _add("$ORIGIN")
     elf_set_rpath(binary_str, rpaths, force_rpath=self.force_rpath)
     self.modified_files.add(binary_str)
 
