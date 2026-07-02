@@ -390,7 +390,14 @@ Examples:
     
     parser.add_argument('--json', action='store_true',
                        help='Output in JSON format (optimized for AI parsing)')
-    
+
+    parser.add_argument('--porcelain', action='store_true',
+                       help='Terse machine output: file:line<TAB>access_type (no color/headers)')
+
+    parser.add_argument('--exact-only', action='store_true',
+                       help='Only member_id/entity_id-resolved references (precise but sparse; '
+                            'default augments with name-matched call sites / enum-value uses)')
+
     parser.add_argument('--project', '-p', default='orkid',
                        help='Project database to search (default: orkid)')
     
@@ -419,23 +426,107 @@ Examples:
     
     # Parse the entity specification
     namespace, class_name, member_or_func = parse_entity_spec(args.entity)
-    
+    # the short identifier token to name-match on (method / enum-value / free-fn / class)
+    name_token = member_or_func or class_name
+
     # Find the entity in the database
     entity_id, member_id = find_entity_id(db, namespace, class_name, member_or_func)
-    
+
+    # Warn (stderr — keeps porcelain stdout clean) on bare TYPE queries: type-usage sites
+    # (params / returns / locals / fields of this type) are NOT recorded as accesses, so
+    # name-match under-reports a type/enum RENAME. Methods / fields / enum-values are fine.
+    if entity_id is not None and member_id is None:
+        with db.connect() as _c:
+            _tr = _c.execute("SELECT entity_type FROM entities WHERE id=?", (entity_id,)).fetchone()
+        if _tr and _tr[0] in ('class', 'struct', 'union', 'enum'):
+            print(f"note: '{name_token}' is a {_tr[0]} — type-usage sites are not indexed; "
+                  f"for a rename, rg-backstop (e.g. rg -w {name_token}).", file=sys.stderr)
+
+    def emit_porcelain_footer(rows, total_found):
+        """'#'-comment summary footer: total / per-type / per-file counts, so the
+        consumer quotes them instead of hand-tallying. Empty result stays 0 bytes."""
+        from pathlib import Path as PathlibPath
+        if not rows:
+            return
+        print(f"# total: {len(rows)}")
+        if len(rows) < total_found:
+            print(f"# limit: showing {len(rows)} of {total_found}")
+        by_type = {}
+        by_file = {}
+        paths_seen = set()
+        for a in rows:
+            by_type[a['access_type']] = by_type.get(a['access_type'], 0) + 1
+            fname = PathlibPath(a['file_path']).name
+            by_file[fname] = by_file.get(fname, 0) + 1
+            paths_seen.add(a['file_path'])
+        if len(by_type) > 1:
+            print("# per-type: " + " ".join(f"{t}={n}" for t, n in
+                                            sorted(by_type.items(), key=lambda kv: (-kv[1], kv[0]))))
+        if len(by_file) > 1:
+            print(f"# files: {len(paths_seen)}")
+            print("# per-file: " + " ".join(f"{f}={n}" for f, n in
+                                            sorted(by_file.items(), key=lambda kv: (-kv[1], kv[0]))))
+
+    def emit_namematch(token):
+        """Name-matched references (complete but not type-verified) in the requested format."""
+        from pathlib import Path as PathlibPath
+        rows = db.get_accesses_by_identifier(token, access_type)
+        total_found = len(rows)
+        if args.limit and args.limit > 0:
+            rows = rows[:args.limit]
+        def _sp(fp):
+            return fp  # absolute path — matches db.search/objects porcelain, click-through
+        if args.porcelain:
+            for a in rows:
+                print(f"{_sp(a['file_path'])}:{a['line_number']}\t{a['access_type']}")
+            emit_porcelain_footer(rows, total_found)
+        elif args.json:
+            refs = [{"access_type": a['access_type'], "file_path": _sp(a['file_path']),
+                     "line_number": a['line_number']} for a in rows]
+            print(json.dumps({"symbol": token, "resolution": "name-match (not type-verified)",
+                              "total": len(refs), "references": refs}, indent=2))
+        else:
+            print(f"\nReferences to {deco.cyan(token)} {deco.yellow('(name-match — not type-verified)')}")
+            print("=" * 80)
+            cur_file = None
+            for a in rows:
+                sp = _sp(a['file_path'])
+                if sp != cur_file:
+                    cur_file = sp
+                    print(f"\n{deco.inf(sp)}")
+                print(f"  {a['access_type']:<8} :{a['line_number']}")
+            print(f"\n{len(rows)} name-matched reference(s). May include same-named symbols on other "
+                  f"types — verify type/context (comments & strings are excluded; exact-token match only).")
+
+    # DEFAULT: complete name-match — surfaces the method call sites + enum-value uses that the
+    # member_id resolver misses (it resolves ~16% of accesses). --exact-only restores the
+    # precise member-resolved view.
+    if not args.exact_only:
+        if not name_token:
+            print(f"{deco.red(f'Could not parse a symbol from: {args.entity}')}")
+            sys.exit(1)
+        emit_namematch(name_token)
+        return
+
+    # --exact-only: precise, member_id/entity_id-resolved references
     if entity_id is None:
         print(f"{deco.red(f'Entity not found: {args.entity}')}")
         print("\nTry searching for it first:")
-        print(f"  ork.cpp.search.py {member_or_func}")
+        print(f"  ork.cpp.db.search.py {member_or_func}")
         sys.exit(1)
-    
+
     if class_name and member_or_func and member_id is None:
         print(f"{deco.red(f'Member not found: {member_or_func} in {namespace}::{class_name}')}")
         print("\nNote: The member might be inherited. Try searching for the base class.")
         sys.exit(1)
-    
-    # Display the references
-    if args.json:
+
+    if args.porcelain:
+        data = json.loads(output_references_json(db, entity_id, member_id, access_type, args.limit))
+        refs = data.get('references', [])
+        for ref in refs:
+            print(f"{ref['file_path']}:{ref['line_number']}\t{ref['access_type']}")
+        emit_porcelain_footer(refs, data.get('summary', {}).get('total_found', len(refs)))
+    elif args.json:
         json_output = output_references_json(db, entity_id, member_id, access_type, args.limit)
         print(json_output)
     else:

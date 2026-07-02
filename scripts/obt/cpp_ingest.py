@@ -128,11 +128,13 @@ class CppIngestor:
         
         return b'\n'.join(result), line_mapping
     
-    def ingest_files_parallel(self, filepaths: List[Path], 
-                            max_workers: Optional[int] = None) -> Dict:
+    def ingest_files_parallel(self, filepaths: List[Path],
+                            max_workers: Optional[int] = None,
+                            show_progress: bool = True) -> Dict:
         """
         Ingest multiple files in parallel
         Returns dict of results
+        show_progress=False keeps stdout free of \\r progress lines (piped/porcelain builds)
         """
         if max_workers is None:
             max_workers = multiprocessing.cpu_count()
@@ -185,15 +187,15 @@ class CppIngestor:
                     })
                 
                 completed += 1
-                if completed % 10 == 0 or completed == total:
+                if show_progress and (completed % 10 == 0 or completed == total):
                     percent = (completed / total) * 100
                     deco = obt.deco.Deco()
                     # Orange for "Ingestion progress", white for percent, yellow for counter
                     progress_text = f"{deco.orange('Ingestion progress:')} {deco.white(f'{percent:.1f}%')} {deco.yellow(f'({completed}/{total})')}"
                     print(f"\r{progress_text}", end='', flush=True)
-                    
+
         # Print newline after completion
-        if completed == total:
+        if show_progress and completed == total:
             print()
             
         results['stats']['time_seconds'] = time.time() - start_time

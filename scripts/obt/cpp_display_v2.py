@@ -12,6 +12,65 @@ from obt.cpp_entities_v2 import Entity, EntityType, MemberType, AccessLevel
 import obt.path
 import json
 
+
+def _porcelain_kind(entity):
+    """Kind label for porcelain output; tolerant of namespace pseudo-entities
+    whose entity_type is a plain string rather than an EntityType enum."""
+    et = entity.entity_type
+    if et == EntityType.FUNCTION:
+        return "method" if getattr(entity, 'is_method', False) else "function"
+    return et.value.lower() if hasattr(et, 'value') else str(et).lower()
+
+
+def porcelain_footer(count, per_file=None, file_count=None):
+    """Comment-line summary footer for porcelain output (lines start with '#',
+    so data-line parsers can skip them). Consumers should QUOTE these counts
+    instead of hand-tallying the list. file_count counts distinct FULL paths
+    (per_file keys are basenames, which can collide). Returns [] for count==0
+    so empty porcelain results stay 0 bytes."""
+    if not count:
+        return []
+    lines = [f"# total: {count}"]
+    if per_file and len(per_file) > 1:
+        lines.append(f"# files: {file_count or len(per_file)}")
+        breakdown = " ".join(f"{name}={n}" for name, n in
+                             sorted(per_file.items(), key=lambda kv: (-kv[1], kv[0])))
+        lines.append(f"# per-file: {breakdown}")
+    return lines
+
+
+def porcelain_entities(entities, root_path=None):
+    """Terse, ANSI-free machine output for agent/tool consumption.
+
+    One line per entity, TAB-separated:  <kind>\\t<qualified_name>\\t<file>:<line>
+    (file:line is '-' when the entity has no location, e.g. namespaces).
+    Non-empty results end with a '# total: N' footer (+ '# per-file: …' when
+    the hits span multiple files) so counts never need hand-tallying.
+    No colors, no headers, no ASCII-art -- stable and cheap to parse."""
+    lines = []
+    per_file = defaultdict(int)
+    paths_seen = set()
+    for e in entities:
+        kind = _porcelain_kind(e)
+        locs = getattr(e, 'locations', None)
+        if locs:
+            loc = locs[0]
+            fp = loc.file_path
+            if root_path:
+                try:
+                    fp = str(Path(fp).relative_to(root_path))
+                except Exception:
+                    pass
+            where = f"{fp}:{loc.line_number}"
+            per_file[Path(fp).name] += 1
+            paths_seen.add(fp)
+        else:
+            where = "-"
+        lines.append(f"{kind}\t{e.canonical_name}\t{where}")
+    lines.extend(porcelain_footer(len(lines), per_file, len(paths_seen)))
+    return "\n".join(lines)
+
+
 class CppEntityDisplayV2:
     """Handles display of C++ entities with formatting and colors"""
     
