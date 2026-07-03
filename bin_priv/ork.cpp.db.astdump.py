@@ -1,4 +1,8 @@
-#!/usr/bin/env python3
+#!/bin/sh
+# Relocatable trampoline: re-exec under THIS venv's interpreter (bin_priv/../../bin/python3).
+# This tool imports tree-sitter, which is only usable in the venv (0.26); under PATH's
+# ork.python 3.14t the native tree_sitter_cpp import SEGFAULTS before argparse even runs.
+"exec" "$(dirname $0)/../../bin/python3" "$0" "$@"
 """
 AST dump tool for C++ database - foundational debugging tool
 Fetches preprocessed source from database and dumps tree-sitter AST
@@ -27,10 +31,10 @@ class ASTDumper:
     def __init__(self, db_path: Path):
         self.db = CppDatabaseV2(db_path)
         
-        # Initialize tree-sitter
-        self.CPP_LANGUAGE = Language(tscpp.language(), "cpp")
+        # Initialize tree-sitter (0.22+ API: 1-arg Language, .language property)
+        self.CPP_LANGUAGE = Language(tscpp.language())
         self.parser = Parser()
-        self.parser.set_language(self.CPP_LANGUAGE)
+        self.parser.language = self.CPP_LANGUAGE
     
     def get_preprocessed_source(self, file_path: str) -> Optional[str]:
         """Get preprocessed source from database"""

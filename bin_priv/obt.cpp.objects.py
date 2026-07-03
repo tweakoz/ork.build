@@ -12,7 +12,7 @@ sys.path.append(str(Path(__file__).parent.parent.parent))
 from obt.cpp_command_base import CppCommandBase
 from obt.cpp_database_v2 import CppDatabaseV2
 from obt.cpp_search_v2 import search_database
-from obt.cpp_display_v2 import CppEntityDisplayV2
+from obt.cpp_display_v2 import CppEntityDisplayV2, porcelain_entities
 from obt.deco import Deco
 
 deco = Deco()
@@ -71,7 +71,13 @@ class ObjectsCommand(CppCommandBase):
             action='store_true',
             help='Output results as JSON'
         )
-        
+
+        parser.add_argument(
+            '--porcelain',
+            action='store_true',
+            help='Terse machine output: kind<TAB>qualified_name<TAB>file:line (no color/headers)'
+        )
+
         return parser
     
     def run(self, args):
@@ -91,11 +97,14 @@ class ObjectsCommand(CppCommandBase):
             results = search_database(db, args)
             
             if not results:
-                print(f"{deco.yellow('No classes or structs found')}")
+                if not args.porcelain:
+                    print(f"{deco.yellow('No classes or structs found')}")
                 sys.exit(0)
             
             # Display results
-            if args.json:
+            if args.porcelain:
+                print(porcelain_entities(results[:args.limit] if args.limit else results))
+            elif args.json:
                 # JSON output
                 import json
                 json_results = []

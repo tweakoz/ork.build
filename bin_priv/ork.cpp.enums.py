@@ -178,7 +178,7 @@ def display_enum_values_columnar(db: CppDatabaseV2, enum_info: Dict[str, Any]):
         print(output)
 
 
-def search_by_hash(db: CppDatabaseV2, hash_value: str, show_json: bool = False):
+def search_by_hash(db: CppDatabaseV2, hash_value: str, show_json: bool = False, porcelain: bool = False):
     """Search for enum values by CRC32 hash"""
     import zlib
     
@@ -227,7 +227,12 @@ def search_by_hash(db: CppDatabaseV2, hash_value: str, show_json: bool = False):
                         'hash_dec': crc_value
                     })
     
-    if show_json:
+    if porcelain:
+        for result in results:
+            print(f"{result['enum']}::{result['value']}\t{result['hash_hex']}\t{result['hash_dec']}")
+        if results:  # footer only on non-empty (empty porcelain stays 0 bytes)
+            print(f"# total: {len(results)}")
+    elif show_json:
         import json
         print(json.dumps({'results': results}, indent=2))
     else:
@@ -243,7 +248,7 @@ def search_by_hash(db: CppDatabaseV2, hash_value: str, show_json: bool = False):
             print(f"{deco.red(f'No CrcEnum values found with hash: {hash_value}')}")
 
 
-def display_enums(db: CppDatabaseV2, pattern: str, show_json: bool = False):
+def display_enums(db: CppDatabaseV2, pattern: str, show_json: bool = False, porcelain: bool = False):
     """Display enums matching pattern"""
     
     # Check if pattern has wildcards
@@ -273,12 +278,41 @@ def display_enums(db: CppDatabaseV2, pattern: str, show_json: bool = False):
             enums = [dict(row) for row in cursor.fetchall()]
     
     if not enums:
-        if show_json:
+        if porcelain:
+            pass  # no output for machine mode
+        elif show_json:
             print(json.dumps({"error": f"No enums matching '{pattern}'"}, indent=2))
         else:
             print(f"{deco.red(f'No enums matching: {pattern}')}")
         return
-    
+
+    if porcelain:
+        # Terse: one line per enum value -> <enum>\t<value_name>\t<value>
+        # Non-empty output ends with '# total: N' (+ '# per-enum: …' when several
+        # enums matched) so the consumer quotes counts instead of hand-tallying.
+        total = 0
+        per_enum = {}
+        for enum_info in enums:
+            with db.connect() as conn:
+                cursor = conn.cursor()
+                cursor.execute("""
+                    SELECT name, value
+                    FROM entity_members
+                    WHERE entity_id = ? AND member_type = 'enum_value'
+                    ORDER BY line_number
+                """, (enum_info['id'],))
+                for val in cursor.fetchall():
+                    v = val['value'] if val['value'] else ''
+                    print(f"{enum_info['canonical_name']}\t{val['name']}\t{v}")
+                    total += 1
+                    per_enum[enum_info['canonical_name']] = per_enum.get(enum_info['canonical_name'], 0) + 1
+        if total:
+            print(f"# total: {total}")
+            if len(per_enum) > 1:
+                print("# per-enum: " + " ".join(f"{k}={n}" for k, n in
+                                                sorted(per_enum.items(), key=lambda kv: (-kv[1], kv[0]))))
+        return
+
     if show_json:
         # JSON output for all matching enums
         result = {"enums": []}
@@ -351,7 +385,13 @@ def main():
         action='store_true',
         help='Output in JSON format'
     )
-    
+
+    parser.add_argument(
+        '--porcelain',
+        action='store_true',
+        help='Terse machine output (no color/headers): enum<TAB>value_name<TAB>value; with --hash: enum::value<TAB>hex<TAB>dec'
+    )
+
     parser.add_argument(
         '--all',
         action='store_true',
@@ -374,7 +414,7 @@ def main():
         
         # Check if searching by hash
         if args.hash:
-            search_by_hash(db, args.hash, args.json)
+            search_by_hash(db, args.hash, args.json, args.porcelain)
         else:
             # Determine pattern for regular enum display
             if args.all:
@@ -386,7 +426,7 @@ def main():
             else:
                 parser.error('Either provide a pattern, use --match, --hash, or use --all')
             
-            display_enums(db, pattern, args.json)
+            display_enums(db, pattern, args.json, args.porcelain)
     except Exception as e:
         print(f"{deco.red(f'Error: {e}')}")
         import traceback
