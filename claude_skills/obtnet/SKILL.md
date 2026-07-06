@@ -23,6 +23,13 @@ accepted anywhere an address is (port defaults to 7461).
 obt.net.py list                                           # fleet + load + clock offsets
 obt.net.py run <node> [--timeout S] [--cwd D] -- CMD...   # short sync command (<~60s)
 obt.net.py submit <node> [--out GLOB] -- CMD...           # long work -> job id
+obt.net.py build <node> [--cwd D]                         # ork.build.py (or -- CMD);
+                                                          #   verdict: errors=N warnings=N
+                                                          #   (error-grep beats lying rc0)
+obt.net.py test <node> -- CMD...                          # verdict: passed=N failed=N
+obt.net.py scene <node> [--out G] [--env K=V] -- CMD...   # OFFSCREEN forced unless
+                                                          #   --windowed (owner consent);
+                                                          #   cook/settle/fps lines surfaced
 obt.net.py wait <node> j-XXXX                             # verdict; auto stderr-tail on fail
 obt.net.py log <node> j-XXXX [--stderr --tail N --grep P] # bounded peek at a LIVE job
 obt.net.py jobs                                           # fleet-wide job table

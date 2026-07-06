@@ -136,11 +136,11 @@ class Client:
 
     # -- async jobs ---------------------------------------------------------
     def job_submit(self, node: str, argv, kind="command", env=None, cwd=None,
-                   timeout_s=3600, inputs=None, output_globs=None):
+                   timeout_s=3600, inputs=None, output_globs=None, **extra):
         return self._request(proto.make_request(
             proto.OP_JOB_SUBMIT, node=node, kind=kind, argv=list(argv),
             env=env or {}, cwd=cwd, timeout_s=timeout_s,
-            inputs=inputs or [], output_globs=output_globs or []))
+            inputs=inputs or [], output_globs=output_globs or [], **extra))
 
     def job_status(self, node: str, job: str):
         return self._request(proto.make_request(proto.OP_JOB_STATUS, node=node, job=job))
@@ -417,6 +417,20 @@ def main(argv=None):
         p.add_argument("--cwd", default=None)
         p.add_argument("--out", action="append", default=[], help="output glob (repeatable)")
         p.add_argument("--env", action="append", default=[], help="KEY=VAL (repeatable)")
+    for verb in ("build", "test", "scene"):        # the O2 kit (submit+wait)
+        p = sub.add_parser(verb)
+        p.add_argument("node")
+        p.add_argument("--timeout", type=float, default=3600)
+        p.add_argument("--cwd", default=None)
+        p.add_argument("--env", action="append", default=[], help="KEY=VAL (repeatable)")
+        p.add_argument("--out", action="append", default=[], help="output glob (repeatable)")
+        p.add_argument("--async", dest="asy", action="store_true",
+                       help="submit only; poll with wait/status")
+        if verb == "scene":
+            p.add_argument("--windowed", action="store_true",
+                           help="allow a visible window on the node (owner consent)")
+            p.add_argument("--markers", default=None,
+                           help="regex for summary marker lines (default cook|settle|fps)")
     p = sub.add_parser("status"); p.add_argument("node"); p.add_argument("job")
     p = sub.add_parser("wait"); p.add_argument("node"); p.add_argument("job")
     p.add_argument("--timeout", type=float, default=3600)
@@ -534,6 +548,55 @@ def main(argv=None):
                      f"job={rep.get('job')}" if ok else f"error={rep.get('error')}",
                      jm, {"job": rep.get("job"), "error": rep.get("error")})
             return 0 if ok else 1
+
+    if args.cmd in ("build", "test", "scene"):
+        kind = {"build": "project.build", "test": "test", "scene": "scene.run"}[args.cmd]
+        argv2 = cmd_argv or (["ork.build.py"] if args.cmd == "build" else None)
+        if not argv2:
+            print(f"no argv given (use: {args.cmd} <node> -- cmd args...)", file=sys.stderr)
+            return 2
+        env = dict(kv.split("=", 1) for kv in args.env)
+        extra = {}
+        if args.cmd == "scene":
+            extra = {"windowed": args.windowed, "markers": args.markers}
+            if args.windowed and not jm:
+                print("[obtnet] WINDOWED run — a window will open on the node",
+                      file=sys.stderr)
+        rep = c.job_submit(args.node, argv2, kind=kind, env=env, cwd=args.cwd,
+                           timeout_s=args.timeout, output_globs=args.out, **extra)
+        if not rep.get("ok"):
+            _verdict(False, args.cmd, args.node, f"error={rep.get('error')}", jm,
+                     {"error": rep.get("error")})
+            return 1
+        job = rep["job"]
+        if args.asy:
+            _verdict(True, args.cmd, args.node, f"job={job} (async)", jm, {"job": job})
+            return 0
+        rep = c.job_wait(args.node, job, timeout_s=args.timeout + 60)
+        s = rep.get("summary") or {}
+        ok = bool(s.get("verdict_ok"))
+        if args.cmd == "scene" and not jm:
+            for ln in s.get("markers", []):
+                print(f"  {ln}", file=sys.stderr)
+        for o in (rep.get("outputs") or []):
+            if not jm:
+                print(f"[output] {o['name']} {o['bytes']}B sha={o['sha256'][:12]}",
+                      file=sys.stderr)
+        if not ok and rep.get("ok") and not jm:
+            if args.cmd == "build":            # bounded: just the error lines
+                el = c.job_log(args.node, job, stream="stdout", tail=15, grep="error")
+                for ln in (el.get("lines") or []):
+                    print(ln, file=sys.stderr)
+            _print_job_fail_tail(c, args.node, job)
+        detail = {"build": lambda: f"errors={s.get('errors','?')} warnings={s.get('warnings','?')}",
+                  "test": lambda: f"passed={s.get('passed','?')} failed={s.get('failed','?')}",
+                  "scene": lambda: f"rc={rep.get('rc')} markers={len(s.get('markers', []))}",
+                  }[args.cmd]()
+        _verdict(ok, args.cmd, args.node,
+                 f"{detail} {rep.get('dur_s', 0)}s files={len(rep.get('outputs') or [])} job={job}",
+                 jm, {"job": job, "state": rep.get("state"), "rc": rep.get("rc"),
+                      "summary": s, "outputs": rep.get("outputs")})
+        return 0 if ok else 1
 
     if args.cmd == "status":
         rep = c.job_status(args.node, args.job)

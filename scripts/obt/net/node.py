@@ -48,6 +48,7 @@ class Job:
         self.rc = None
         self.detail = ""                     # failure detail / timeout note
         self.outputs = []                    # [{name, bytes, sha256}]
+        self.summary = {}                    # kind-computed server-side verdict
         self.workdir = None                  # Path, set at start
         self.popen = None
         self.cancel_requested = False
@@ -64,6 +65,8 @@ class Job:
         if self.started_at:
             end = self.ended_at or proto.now()
             d["dur_s"] = round(end - self.started_at, 2)
+        if self.summary:
+            d["summary"] = self.summary
         if self.workdir:  # live log sizes — the frugal "how much output so far"
             for stream in ("stdout", "stderr"):
                 p = Path(self.workdir) / f"{stream}.log"
@@ -116,7 +119,15 @@ class Node:
         self.job_q = queue.Queue()
         self.n_workers = max(1, workers)
         self.event_q = queue.Queue()
-        self.kinds = {"command": self._kind_command}   # O2 registers more
+        # JobKinds: 'command' = raw argv; the O2 kit kinds wrap it with
+        # SERVER-SIDE verdict summaries (the LLM-frugality law: verification
+        # computed where the logs live, shipped as a few ints).
+        self.kinds = {
+            "command": self._kind_command,
+            "project.build": self._kind_project_build,
+            "test": self._kind_test,
+            "scene.run": self._kind_scene_run,
+        }
 
     # -- controller client side (heartbeat thread owns these one-shot sockets) ----
     def _ctl_request(self, payload: bytes, timeout_ms=5000):
@@ -408,6 +419,71 @@ class Node:
             job.ended_at = proto.now()
         self._write_status(job)
 
+    def _job_log_text(self, job, max_bytes=2 << 20):
+        """Bounded combined log text for server-side verdict parsing."""
+        text = ""
+        for stream in ("stdout", "stderr"):
+            p = Path(job.workdir) / f"{stream}.log" if job.workdir else None
+            if p and p.exists():
+                size = p.stat().st_size
+                with open(p, "rb") as f:
+                    f.seek(max(0, size - max_bytes))
+                    text += f.read().decode(errors="replace") + "\n"
+        return text
+
+    def _kind_project_build(self, job):
+        """Build with the verdict computed HERE from the logs — independent of
+        rc, because build wrappers have been caught exiting 0 on failed makes.
+        ok iff rc==0 AND zero error lines."""
+        import re
+        if not job.spec.get("argv"):
+            job.spec["argv"] = ["ork.build.py"]
+        self._kind_command(job)
+        out = self._job_log_text(job)
+        errors = len(re.findall(r"(?:^|[\s/])error:", out)) \
+            + len(re.findall(r"undefined reference|Undefined symbols|"
+                             r"ld returned \d+ exit status|fatal error", out))
+        warnings = len(re.findall(r"(?:^|[\s/])warning:", out))
+        job.summary = {"errors": errors, "warnings": warnings,
+                       "verdict_ok": job.state == proto.JOB_DONE
+                       and job.rc == 0 and errors == 0}
+        self._write_status(job)
+
+    def _kind_test(self, job):
+        """Run tests; parse pass/fail counts server-side (pytest wording, with
+        a bare PASS/FAIL fallback). ok iff rc==0 and failed==0."""
+        import re
+        self._kind_command(job)
+        out = self._job_log_text(job)
+        passed = sum(int(m) for m in re.findall(r"(\d+) passed", out))
+        failed = sum(int(m) for m in re.findall(r"(\d+) (?:failed|error(?:s)?)\b", out))
+        if passed == 0 and failed == 0:      # non-pytest runners
+            passed = len(re.findall(r"\bPASS(?:ED)?\b", out))
+            failed = len(re.findall(r"\bFAIL(?:ED)?\b", out))
+        job.summary = {"passed": passed, "failed": failed,
+                       "verdict_ok": job.state == proto.JOB_DONE
+                       and job.rc == 0 and failed == 0}
+        self._write_status(job)
+
+    def _kind_scene_run(self, job):
+        """Run a scene/player command. SELF-DEFENDING consent rail: offscreen
+        unless the spec explicitly says windowed (a node must never pop a
+        window on someone's desk uninvited). Marker lines (cook/settle/fps by
+        default) are extracted server-side into the summary."""
+        import re
+        argv = [str(a) for a in job.spec["argv"]]
+        if not job.spec.get("windowed") and "--offscreen" not in argv:
+            argv.append("--offscreen")
+        job.spec["argv"] = argv
+        self._kind_command(job)
+        pat = job.spec.get("markers") or r"cook|settle|fps|frame_rate"
+        rx = re.compile(pat, re.IGNORECASE)
+        lines = [ln.strip()[:200] for ln in self._job_log_text(job).splitlines()
+                 if rx.search(ln)]
+        job.summary = {"markers": lines[-10:], "windowed": bool(job.spec.get("windowed")),
+                       "verdict_ok": job.state == proto.JOB_DONE and job.rc == 0}
+        self._write_status(job)
+
     def _write_status(self, job):
         import json as _json
         if job.workdir:
@@ -446,7 +522,8 @@ class Node:
             return proto.make_reply_err(proto.ERR_UNKNOWN_KIND, kind=kind,
                                         known=sorted(self.kinds))
         spec = {k: msg.get(k) for k in
-                ("kind", "argv", "env", "cwd", "timeout_s", "inputs", "output_globs")}
+                ("kind", "argv", "env", "cwd", "timeout_s", "inputs",
+                 "output_globs", "windowed", "markers")}
         spec["kind"] = kind
         if not spec.get("argv"):
             return proto.make_reply_err(proto.ERR_EXEC_FAILED, detail="empty argv")
