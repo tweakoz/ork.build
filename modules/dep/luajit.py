@@ -7,6 +7,13 @@
 ###############################################################################
 
 VERSION = "v2.1"
+# LuaJIT's v2.1 is a ROLLING branch (upstream tags no releases anymore), so the
+# github tarball md5 breaks on every upstream push. Pin an exact commit: the
+# tarball for a SHA is immutable, so the md5 is stable forever. To bump: pick a
+# new SHA from https://github.com/LuaJIT/LuaJIT/commits/v2.1, then
+#   curl -sL https://github.com/LuaJIT/LuaJIT/tarball/<sha> | md5sum
+PINNED_REV = "a2bde60819d83e6f75130ac2c93ee4b3c7615800"   # 2026-06-29
+PINNED_MD5 = "ce49f4c7c30eb16d0b0d1ee70f8bc15b"
 
 import os, tarfile
 from yarl import URL
@@ -53,12 +60,8 @@ class luajit(dep.StdProvider):
     patch_dict = { self.source_root/"Makefile": makefile_items }
     return dep.GithubFetcher(name=luajit.name,
                              repospec="LuaJIT/LuaJIT",
-                             revision=VERSION,
-                             # WARNING: VERSION is "v2.1" — LuaJIT's rolling
-                             # dev branch, not a release tag. This md5 will
-                             # break on the next upstream commit. Recompute,
-                             # or better: pin VERSION to a specific SHA.
-                             md5val="8876b8cd0804f48ec2fa5f8d21f92f9c",
+                             revision=PINNED_REV,
+                             md5val=PINNED_MD5,
                              recursive=False,
                              patchdict=patch_dict)
 

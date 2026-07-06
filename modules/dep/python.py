@@ -303,10 +303,25 @@ class python_from_source(dep.Provider):
   ########################################################################
 
   def deployment_fixup(self, deploy_root):
-    """Fix pyvenv python binary's hardcoded libpython reference to @rpath."""
+    """Fix the pyvenv python binary so it resolves libpython from the relocated
+    tree (macOS: rewrite the load command to @rpath + codesign; Linux: ensure an
+    $ORIGIN rpath reaching pyvenv/lib and lib/)."""
     import subprocess, glob
+    from obt import host
     for pybin in glob.glob(f"{deploy_root}/pyvenv/bin/python3.[0-9]*"):
       if os.path.islink(pybin) or pybin.endswith("-config"):
+        continue
+      if host.IsLinux:
+        # ELF: NEEDED already references libpython by bare SONAME; Phase-2
+        # relocation set an $ORIGIN rpath, but re-assert both reaches here
+        # (belt-and-suspenders, without clobbering existing $ORIGIN entries).
+        from obt import linux as elf
+        rpaths = [rp for rp in elf.elf_enumerate_rpaths(pybin)
+                  if rp.startswith("$ORIGIN")]
+        for w in ("$ORIGIN/../lib", "$ORIGIN/../../lib"):
+          if w not in rpaths:
+            rpaths.append(w)
+        elf.elf_set_rpath(pybin, rpaths, force_rpath=True)
         continue
       otool = subprocess.run(["otool", "-L", pybin], capture_output=True, text=True).stdout
       for line in otool.splitlines()[1:]:

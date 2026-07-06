@@ -46,19 +46,28 @@ class EnvSetup:
   ###########################################
   def lazyMakeDirs(self):
     self.log(deco.bright("Making required directories"))
-    (obt.path.prefix()/"lib").mkdir(parents=True,exist_ok=True)
-    (obt.path.prefix()/"bin").mkdir(parents=True,exist_ok=True)
-    (obt.path.prefix()/"include").mkdir(parents=True,exist_ok=True)
-    (obt.path.prefix()/"sdks").mkdir(parents=True,exist_ok=True)
-    (obt.path.prefix()/"tempdir").mkdir(parents=True,exist_ok=True)
-    (obt.path.subspace_root()).mkdir(parents=True,exist_ok=True)
-    (obt.path.quarantine()).mkdir(parents=True,exist_ok=True)
-    obt.path.downloads().mkdir(parents=True,exist_ok=True)
-    obt.path.builds().mkdir(parents=True,exist_ok=True)
-    obt.path.manifests().mkdir(parents=True,exist_ok=True)
-    obt.path.gitcache().mkdir(parents=True,exist_ok=True)
-    obt.path.apps().mkdir(parents=True,exist_ok=True)
-    obt.path.buildlogs().mkdir(parents=True,exist_ok=True)
+    def _mk(p):
+      # Tolerate a read-only deployed stage (e.g. a Flatpak /app): these are
+      # build-time dirs. At runtime they either already exist (lib/bin) or are
+      # not needed; anything that genuinely needs to be written at runtime is
+      # redirected to a writable location (e.g. $HOME/.obt-global).
+      try:
+        p.mkdir(parents=True,exist_ok=True)
+      except OSError:
+        pass
+    _mk(obt.path.prefix()/"lib")
+    _mk(obt.path.prefix()/"bin")
+    _mk(obt.path.prefix()/"include")
+    _mk(obt.path.prefix()/"sdks")
+    _mk(obt.path.prefix()/"tempdir")
+    _mk(obt.path.subspace_root())
+    _mk(obt.path.quarantine())
+    _mk(obt.path.downloads())
+    _mk(obt.path.builds())
+    _mk(obt.path.manifests())
+    _mk(obt.path.gitcache())
+    _mk(obt.path.apps())
+    _mk(obt.path.buildlogs())
     # (os-python symlink retired: its only consumer — ork.blender.asset.assistant.py —
     #  was removed, and as a host-absolute symlink (/opt/homebrew/bin/python3) it did
     #  not relocate; deployed bundles never regenerated it. Use `ork.python` instead.)
