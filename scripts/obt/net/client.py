@@ -25,12 +25,70 @@ from obt.net import proto
 from obt.net.upload_cache import sha256_hex
 
 
+CONFIG_PATH = Path.home() / ".obt-global" / "obtnet.json"
+
+
+def resolve_controller(explicit=None):
+    """Resolution order: --controller > OBTNET_CONTROLLER > ~/.obt-global/
+    obtnet.json > localhost. Returns (addr, source)."""
+    if explicit:
+        return proto.normalize_controller_addr(explicit), "arg"
+    env = os.environ.get("OBTNET_CONTROLLER")
+    if env:
+        return proto.normalize_controller_addr(env), "env"
+    try:
+        addr = json.loads(CONFIG_PATH.read_text())["controller"]
+        return proto.normalize_controller_addr(addr), str(CONFIG_PATH)
+    except Exception:
+        pass
+    return f"tcp://127.0.0.1:{proto.CONTROLLER_PORT}", "default"
+
+
 class Client:
     def __init__(self, controller_addr: str = None):
-        self.controller_addr = proto.normalize_controller_addr(
-            controller_addr or os.environ.get(
-                "OBTNET_CONTROLLER", f"tcp://127.0.0.1:{proto.CONTROLLER_PORT}"))
+        self.controller_addr, _ = resolve_controller(controller_addr)
         self.ctx = zmq.Context.instance()
+
+    # -- capability-query routing ------------------------------------------
+    def resolve_node(self, spec: str) -> str:
+        """Literal node name, or a '@' selector routed by capability:
+          @any            any live node
+          @linux / @mac   by OS
+          @gpu            has a GPU
+          @key=val        capability substring match (@gpu=5090, @arch=x86_64)
+          @<word>         substring across name/hostname/os/arch/gpu (@5090)
+        Terms compose with commas (@linux,gpu). Ties break to the least busy
+        node (fewest active jobs, then load)."""
+        if not spec.startswith("@"):
+            return spec
+        nodes = self.list_nodes().get("nodes", [])
+        live = [n for n in nodes if n.get("last_ping_age_s", 1e9) < 5.0]
+
+        def matches(n, term):
+            caps = n.get("capabilities", {})
+            if term in ("", "any"):
+                return True
+            if term == "linux":
+                return caps.get("os") == "Linux"
+            if term in ("mac", "darwin"):
+                return caps.get("os") == "Darwin"
+            if term == "gpu":
+                return bool(caps.get("gpu"))
+            if "=" in term:
+                k, v = term.split("=", 1)
+                return v.lower() in str(caps.get(k, "")).lower()
+            hay = " ".join(str(x) for x in
+                           [n.get("name")] + [caps.get(k) for k in
+                            ("hostname", "os", "arch", "gpu")] if x)
+            return term.lower() in hay.lower()
+
+        terms = spec[1:].split(",")
+        picked = [n for n in live if all(matches(n, t) for t in terms)]
+        if not picked:
+            raise KeyError(f"no live node matches {spec!r} "
+                           f"(live: {sorted(n['name'] for n in live)})")
+        picked.sort(key=lambda n: (n.get("n_jobs", 0), n.get("load", 0.0)))
+        return picked[0]["name"]
 
     def _request_to(self, addr, payload: bytes, timeout_ms=10000):
         s = self.ctx.socket(zmq.REQ)
@@ -362,7 +420,8 @@ def main(argv=None):
     p = sub.add_parser("status"); p.add_argument("node"); p.add_argument("job")
     p = sub.add_parser("wait"); p.add_argument("node"); p.add_argument("job")
     p.add_argument("--timeout", type=float, default=3600)
-    p = sub.add_parser("jobs"); p.add_argument("node")
+    p = sub.add_parser("jobs")
+    p.add_argument("node", nargs="?", default=None, help="omit for fleet-wide view")
     p.add_argument("--limit", type=int, default=20)
     p = sub.add_parser("cancel"); p.add_argument("node"); p.add_argument("job")
     p = sub.add_parser("log"); p.add_argument("node"); p.add_argument("job")
@@ -375,6 +434,8 @@ def main(argv=None):
     p = sub.add_parser("watch")
     p.add_argument("--node", default=None)
     p.add_argument("--grep", default=None)
+    p = sub.add_parser("config", help="show or set the default controller address")
+    p.add_argument("addr", nargs="?", default=None)
     p = sub.add_parser("diff", help="symmetric tree diff: local vs node dir")
     p.add_argument("node")
     p.add_argument("local_dir")
@@ -395,6 +456,31 @@ def main(argv=None):
 
     c = Client(args.controller)
     jm = args.json
+
+    if args.cmd == "config":
+        if args.addr:
+            CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
+            addr = proto.normalize_controller_addr(args.addr)
+            CONFIG_PATH.write_text(json.dumps({"controller": addr}, indent=1))
+            _verdict(True, "config", addr, f"written {CONFIG_PATH}", jm,
+                     {"controller": addr, "path": str(CONFIG_PATH)})
+        else:
+            addr, src = resolve_controller(args.controller)
+            if jm:
+                print(json.dumps({"controller": addr, "source": src}))
+            else:
+                print(f"controller: {addr}   (from {src})")
+        return 0
+
+    # '@' capability selectors route to a concrete node (least-busy match)
+    if getattr(args, "node", None) and args.node.startswith("@"):
+        try:
+            resolved = c.resolve_node(args.node)
+        except (KeyError, RuntimeError) as e:
+            _verdict(False, args.cmd, args.node, f"error={e}", jm, {"error": str(e)})
+            return 1
+        print(f"[obtnet] {args.node} -> {resolved}", file=sys.stderr)
+        args.node = resolved
 
     if args.cmd == "list":
         rep = c.list_nodes()
@@ -483,17 +569,25 @@ def main(argv=None):
         return 0 if ok else 1
 
     if args.cmd == "jobs":
-        rep = c.job_list(args.node, limit=args.limit)
-        if not rep.get("ok"):
-            _verdict(False, "jobs", args.node, f"error={rep.get('error')}", jm)
-            return 1
+        targets = [args.node] if args.node else \
+            [n["name"] for n in c.list_nodes().get("nodes", [])
+             if n.get("last_ping_age_s", 1e9) < 5.0]
+        all_jobs, failed = [], []
+        for t in targets:
+            rep = c.job_list(t, limit=args.limit)
+            if rep.get("ok"):
+                all_jobs += [{**j, "node": t} for j in rep.get("jobs", [])]
+            else:
+                failed.append(t)
         if jm:
-            print(json.dumps(rep.get("jobs", []))); return 0
-        for j in rep.get("jobs", []):
-            print(f"{j['job']} {j['state']:9s} rc={str(j.get('rc')):5s} "
+            print(json.dumps(all_jobs)); return 0
+        for j in sorted(all_jobs, key=lambda j: j["queued_at"]):
+            print(f"{j['node']:10s} {j['job']} {j['state']:9s} rc={str(j.get('rc')):5s} "
                   f"{j.get('dur_s', 0) or 0:8.1f}s {j['argv_head']}")
-        _verdict(True, "jobs", args.node, f"n={len(rep.get('jobs', []))}", jm)
-        return 0
+        scope = args.node or f"fleet({len(targets)})"
+        _verdict(not failed, "jobs", scope,
+                 f"n={len(all_jobs)}" + (f" unreachable={failed}" if failed else ""), jm)
+        return 0 if not failed else 1
 
     if args.cmd == "cancel":
         rep = c.job_cancel(args.node, args.job)
