@@ -37,6 +37,9 @@ obt.net.py cancel <node> j-XXXX                           # SIGTERM the job's pg
 obt.net.py fetch <node> <sha256> <dest>                   # artifact by sha (from verdicts)
 obt.net.py sync <node> <local_dir> <remote_dir>           # make remote == local (git-free)
 obt.net.py sync <node> L R --pull                         # make local == remote
+obt.net.py gitsync <node> <local_repo> <remote_repo>      # align git base (branch+HEAD)
+                                                          #   via bundle, NO push; --tree
+                                                          #   chains the uncommitted delta
 obt.net.py diff <node> <local_dir> <remote_dir>           # +/-/M/L classified; rc0=equal
 obt.net.py watch [--node N] [--grep P]                    # live fleet event tail (ctrl-c)
 ```
@@ -45,6 +48,9 @@ work directly: `obt.net.py run @linux,gpu -- ork.cpp.db.search.py MySymbol --por
 
 ## Rules
 - Long or unbounded work: ALWAYS `submit` (never `run`) and give an honest `--timeout`.
+- BEFORE modifying/building a node's checkout: `gitsync` it (aligned bases = diffs/patches
+  line up; it fails loudly on divergence or tracked dirt), then `--tree`/`sync` for the
+  uncommitted delta. Never assume the node is current.
 - `sync` dry-runs first when the target matters: `--dry` (counts only); `--delete` is opt-in.
   Verdict `tree=MATCH` is cryptographic proof both sides are equal — nothing else to check.
 - Kill only YOUR jobs, by job id. Check `jobs` before heavy work on a busy node.

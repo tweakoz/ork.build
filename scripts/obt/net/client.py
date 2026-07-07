@@ -340,6 +340,79 @@ class Client:
                 "remote_files": len(remote), "equal": not entries,
                 "local_tree": tree_sync.tree_hash(local), "remote_tree": rep["tree"]}
 
+    # -- gitsync (base-commit alignment; bundles because we never push) ----------
+    def _local_git(self, repo, *args):
+        import subprocess
+        r = subprocess.run(["git", "-C", str(repo)] + list(args),
+                           capture_output=True, text=True)
+        return r.returncode, r.stdout.strip()
+
+    def _remote_git(self, node, repo, *args):
+        rep = self.run(node, ["git", "-C", str(repo)] + list(args), timeout_s=30)
+        return (rep.get("rc", 1) if rep.get("ok") else 1), (rep.get("stdout") or "").strip()
+
+    def gitsync(self, node, local_repo, remote_repo, dry=False):
+        """Make the node repo's git state (branch + HEAD) equal the controller
+        repo's, WITHOUT push: thin git bundle -> content-addressed blob ->
+        node fetches from the bundle file and checkouts the same branch@sha.
+        Preconditions (fail loudly): local HEAD known; remote has no
+        tracked-file dirt; remote HEAD is an ancestor of local HEAD (true
+        divergence is a human decision, not a sync)."""
+        import subprocess, tempfile
+        rc, l_head = self._local_git(local_repo, "rev-parse", "HEAD")
+        if rc:
+            raise RuntimeError(f"{local_repo} is not a git repo")
+        _, l_branch = self._local_git(local_repo, "rev-parse", "--abbrev-ref", "HEAD")
+        rc, r_head = self._remote_git(node, remote_repo, "rev-parse", "HEAD")
+        if rc:
+            raise RuntimeError(f"remote {remote_repo} on {node}: not a git repo (or git failed)")
+        _, r_branch = self._remote_git(node, remote_repo, "rev-parse", "--abbrev-ref", "HEAD")
+        _, r_stat = self._remote_git(node, remote_repo, "status", "--porcelain")
+        r_dirty = [ln for ln in r_stat.splitlines() if ln and not ln.startswith("??")]
+        state = {"local": f"{l_branch}@{l_head[:12]}", "remote": f"{r_branch}@{r_head[:12]}",
+                 "remote_dirty": len(r_dirty)}
+        if r_head == l_head:
+            return {**state, "action": "already-aligned", "ok": True}
+        if r_dirty:
+            raise RuntimeError(
+                f"remote repo has tracked-file changes ({len(r_dirty)}: "
+                f"{', '.join(d.split()[-1] for d in r_dirty[:3])}...) — clean it first; "
+                f"gitsync refuses to clobber")
+        rc, _ = self._local_git(local_repo, "merge-base", "--is-ancestor", r_head, l_head)
+        if rc:
+            raise RuntimeError(
+                f"DIVERGED: remote {r_head[:12]} is not an ancestor of local {l_head[:12]} "
+                f"— resolve by hand (gitsync only fast-forwards)")
+        n_commits = self._local_git(local_repo, "rev-list", "--count",
+                                    f"{r_head}..{l_head}")[1]
+        if dry:
+            return {**state, "action": f"would-fast-forward {n_commits} commits", "ok": True}
+        with tempfile.TemporaryDirectory() as td:
+            bpath = Path(td) / "gitsync.bundle"
+            r = subprocess.run(["git", "-C", str(local_repo), "bundle", "create",
+                                str(bpath), f"{r_head}..HEAD"],
+                               capture_output=True, text=True)
+            if r.returncode:
+                raise RuntimeError(f"bundle create failed: {r.stderr.strip()[:200]}")
+            data = bpath.read_bytes()
+            sha = sha256_hex(data)
+            addr = self._fetch_addr(node)
+            self._blob_put(addr, data, sha, tag="gitsync.bundle")
+        # the bundle materializes into the job workdir; fetch + checkout there
+        script = (f"git -C {remote_repo} fetch \"$PWD/gitsync.bundle\" && "
+                  f"git -C {remote_repo} checkout -q -B {l_branch} {l_head}")
+        rep = self.run(node, ["sh", "-c", script], timeout_s=120,
+                       inputs=[{"sha256": sha, "as": "gitsync.bundle"}])
+        if not rep.get("ok") or rep.get("rc") != 0:
+            raise RuntimeError(f"remote fetch/checkout failed: "
+                               f"{(rep.get('stderr') or rep.get('error') or '')[-300:]}")
+        rc2, r_head2 = self._remote_git(node, remote_repo, "rev-parse", "HEAD")
+        if r_head2 != l_head:
+            raise RuntimeError(f"post-sync mismatch: remote at {r_head2[:12]}")
+        return {**state, "action": f"fast-forwarded {n_commits} commits",
+                "remote_now": f"{l_branch}@{l_head[:12]}",
+                "bundle_bytes": len(data), "ok": True}
+
     # -- watch ------------------------------------------------------------------
     def watch(self, node_filter=None, grep=None, out=sys.stdout):
         """Subscribe to the controller's aggregated event stream; print lines
@@ -450,6 +523,17 @@ def main(argv=None):
     p.add_argument("--grep", default=None)
     p = sub.add_parser("config", help="show or set the default controller address")
     p.add_argument("addr", nargs="?", default=None)
+    p = sub.add_parser("gitsync",
+                       help="align node repo's git base (branch+HEAD) to the controller's "
+                            "via bundle (no push); then diffs/patches line up")
+    p.add_argument("node")
+    p.add_argument("local_repo")
+    p.add_argument("remote_repo")
+    p.add_argument("--dry", action="store_true")
+    p.add_argument("--tree", action="store_true",
+                   help="follow with a content sync (carries the uncommitted delta)")
+    p.add_argument("--exclude", action="append", default=[],
+                   help="extra excludes for --tree")
     p = sub.add_parser("diff", help="symmetric tree diff: local vs node dir")
     p.add_argument("node")
     p.add_argument("local_dir")
@@ -721,6 +805,26 @@ def main(argv=None):
                  f"tree={'MATCH ' + r['tree'][:12] if match else 'MISMATCH!'}",
                  jm, r if jm else None)
         return 0 if match else 1
+
+    if args.cmd == "gitsync":
+        try:
+            r = c.gitsync(args.node, args.local_repo, args.remote_repo, dry=args.dry)
+        except (RuntimeError, KeyError) as e:
+            _verdict(False, "gitsync", args.node, f"error={e}", jm, {"error": str(e)})
+            return 1
+        _verdict(True, "gitsync", args.node,
+                 f"{r['action']} local={r['local']} remote={r['remote']}"
+                 + (f" bundle={r['bundle_bytes']}B" if "bundle_bytes" in r else ""),
+                 jm, r if jm else None)
+        if args.tree and not args.dry:
+            rs = c.sync(args.node, args.local_repo, args.remote_repo,
+                        excludes=args.exclude)
+            match = rs["tree"] == rs["want_tree"]
+            _verdict(match, "gitsync+tree", args.node,
+                     f"files={rs['files']} del={rs['deleted']} "
+                     f"tree={'MATCH' if match else 'MISMATCH!'}", jm, rs if jm else None)
+            return 0 if match else 1
+        return 0
 
     if args.cmd == "diff":
         try:
