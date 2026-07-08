@@ -275,12 +275,47 @@ class Client:
             raise RuntimeError("fetch sha mismatch")
         return bytes(buf)
 
+    def _pushlog_path(self, node, remote_dir):
+        key = sha256_hex(f"{node}|{remote_dir}".encode())[:16]
+        return Path.home() / ".obtnet" / "pushlog" / f"{key}.json"
+
+    def _remote_tracked_dirt(self, node, remote_dir):
+        """relpaths (to remote_dir) of tracked-modified files, or None if the
+        destination is not inside a git work tree."""
+        rc, out = self._remote_git(node, remote_dir, "rev-parse", "--show-prefix")
+        if rc:
+            return None
+        prefix = out.strip()
+        _, stat = self._remote_git(node, remote_dir, "status", "--porcelain", "--", ".")
+        dirty = []
+        for ln in stat.splitlines():
+            ln = ln.rstrip()
+            if not ln or ln.lstrip().startswith("??"):
+                continue
+            # robust to the transport's strip() eating the first line's leading
+            # status space: take everything after the 2-char status field,
+            # wherever it starts. Renames: keep the NEW name.
+            p = ln[2:].lstrip() if len(ln) > 2 and ln[1] in " MADRCU" else ln.split(None, 1)[-1]
+            p = p.strip().strip('"')
+            if " -> " in p:
+                p = p.split(" -> ", 1)[1]
+            if prefix and p.startswith(prefix):
+                p = p[len(prefix):]
+            dirty.append(p)
+        return dirty
+
     def sync(self, node, local_dir, remote_dir, pull=False, delete=False,
-             excludes=None, dry=False, progress=None):
+             excludes=None, dry=False, progress=None, force=False):
         """Make the destination tree equal the source tree (push: local->node,
         pull: node->local). Only changed blobs travel (content-addressed,
         dedup'd, sha-verified); returns a result dict whose 'tree' hashes
-        match on both sides when the sync is faithful."""
+        match on both sides when the sync is faithful.
+
+        DIRT GUARD (push only): refuses to clobber NODE-SIDE edits — a
+        to-be-overwritten/deleted file that is tracked-dirty at the
+        destination AND does not match what our own last push left there
+        (the pushlog) is somebody else's work; --force overrides. Pull has
+        no guard (the controller clobbering its own tree is deliberate)."""
         from obt.net import tree_sync
         addr = self._fetch_addr(node)
         local = tree_sync.build_manifest(local_dir, excludes)
@@ -298,6 +333,24 @@ class Client:
         expected = {r: e for r, e in dst.items()
                     if r not in src and r not in set(to_delete)}
         expected.update(src)
+        pushlog = {}
+        plpath = self._pushlog_path(node, remote_dir)
+        try:
+            pushlog = json.loads(plpath.read_text())
+        except Exception:
+            pass
+        if not pull and not dry and not force and (to_send or to_delete):
+            dirty = self._remote_tracked_dirt(node, remote_dir)
+            if dirty:
+                touched = set(to_send) | set(to_delete)
+                at_risk = sorted(
+                    r for r in (touched & set(dirty))
+                    if dst.get(r, {}).get("sha256") != pushlog.get(r))
+                if at_risk:
+                    raise RuntimeError(
+                        f"DIRT GUARD: {len(at_risk)} node-side edited file(s) would be "
+                        f"clobbered: {at_risk[:5]}{'...' if len(at_risk) > 5 else ''} "
+                        f"— pull/merge them first, or --force to overwrite")
         send_bytes = sum(src[r]["size"] for r in to_send)
         changed = sorted(to_send + to_link)
         result = {"files": len(to_send), "links": len(to_link),
@@ -343,6 +396,12 @@ class Client:
                 raise RuntimeError(f"tree_apply failed: {rep.get('error')} {rep}")
             result.update(files=rep["files"], links=rep["links"],
                           deleted=rep["deleted"], tree=rep["tree"])
+            for r in to_send:                      # remember what WE left there
+                pushlog[r] = src[r]["sha256"]
+            for r in to_delete:
+                pushlog.pop(r, None)
+            plpath.parent.mkdir(parents=True, exist_ok=True)
+            plpath.write_text(json.dumps(pushlog))
         return result
 
     def diff(self, node, local_dir, remote_dir, excludes=None):
@@ -568,6 +627,8 @@ def main(argv=None):
     p.add_argument("remote_dir")
     p.add_argument("--pull", action="store_true", help="node -> local (default: push)")
     p.add_argument("--delete", action="store_true", help="remove dest-only files")
+    p.add_argument("--force", action="store_true",
+                   help="override the dirt guard (clobber node-side edits)")
     p.add_argument("--dry", action="store_true", help="report the diff, change nothing")
     p.add_argument("--exclude", action="append", default=[], help="extra exclude pattern")
     p.add_argument("-v", action="store_true", help="list changed paths (first 50)")
@@ -620,7 +681,8 @@ def main(argv=None):
                     _verdict(True, "gitsync", n, r["action"], jm, r if jm else None)
                 else:
                     r = c.sync(n, args.local_dir, args.remote_dir, pull=args.pull,
-                               delete=args.delete, excludes=args.exclude, dry=args.dry)
+                               delete=args.delete, excludes=args.exclude, dry=args.dry,
+                               force=args.force)
                     ok = args.dry or r["tree"] == r["want_tree"]
                     _verdict(ok, "sync", n,
                              f"files={r.get('files')} tree="
@@ -879,7 +941,7 @@ def main(argv=None):
         try:
             r = c.sync(args.node, args.local_dir, args.remote_dir,
                        pull=args.pull, delete=args.delete,
-                       excludes=args.exclude, dry=args.dry)
+                       excludes=args.exclude, dry=args.dry, force=args.force)
         except (RuntimeError, KeyError) as e:
             _verdict(False, "sync", args.node, f"error={e}", jm, {"error": str(e)})
             return 1
