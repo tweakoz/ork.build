@@ -447,17 +447,48 @@ class Client:
         if rc:
             raise RuntimeError(f"remote {remote_repo} on {node}: not a git repo (or git failed)")
         _, r_branch = self._remote_git(node, remote_repo, "rev-parse", "--abbrev-ref", "HEAD")
-        _, r_stat = self._remote_git(node, remote_repo, "status", "--porcelain")
-        r_dirty = [ln for ln in r_stat.splitlines() if ln and not ln.startswith("??")]
+        r_dirty = self._remote_tracked_dirt(node, remote_repo) or []
         state = {"local": f"{l_branch}@{l_head[:12]}", "remote": f"{r_branch}@{r_head[:12]}",
                  "remote_dirty": len(r_dirty)}
         if r_head == l_head:
             return {**state, "action": "already-aligned", "ok": True}
+        own_wip = []
         if r_dirty:
-            raise RuntimeError(
-                f"remote repo has tracked-file changes ({len(r_dirty)}: "
-                f"{', '.join(d.split()[-1] for d in r_dirty[:3])}...) — clean it first; "
-                f"gitsync refuses to clobber")
+            # exempt OUR OWN pushed WIP (pushlog + remote content-hash proof);
+            # anything else is somebody's work — refuse.
+            pushlog = {}
+            try:
+                pushlog = json.loads(self._pushlog_path(node, remote_repo).read_text())
+            except Exception:
+                pass
+            # ownership proof, either way: remote content matches what our last
+            # push recorded (pushlog) OR matches our CURRENT local content (what
+            # we'd push anyway — also heals pushlogs older than the file).
+            from obt.net.tree_sync import _sha256_file
+            local_sha = {}
+            for f in r_dirty:
+                lp = Path(local_repo) / f
+                if lp.is_file():
+                    local_sha[f] = _sha256_file(lp)
+            hashes = {}
+            rep = self.run(node, ["python3", "-c",
+                "import hashlib,sys\n"
+                "for f in sys.argv[1:]:\n"
+                "  print(hashlib.sha256(open(f,'rb').read()).hexdigest(), f)",
+                *r_dirty], cwd=remote_repo, timeout_s=60)
+            for ln in (rep.get("stdout") or "").splitlines():
+                parts = ln.split(None, 1)
+                if len(parts) == 2:
+                    hashes[parts[1]] = parts[0]
+            own_wip = [f for f in r_dirty
+                       if hashes.get(f) and
+                       (hashes[f] == pushlog.get(f) or hashes[f] == local_sha.get(f))]
+            foreign = sorted(set(r_dirty) - set(own_wip))
+            if foreign:
+                raise RuntimeError(
+                    f"remote repo has FOREIGN tracked-file changes ({len(foreign)}: "
+                    f"{', '.join(foreign[:3])}...) — pull/merge them first; "
+                    f"gitsync refuses to clobber")
         rc, _ = self._local_git(local_repo, "merge-base", "--is-ancestor", r_head, l_head)
         if rc:
             raise RuntimeError(
@@ -479,8 +510,9 @@ class Client:
             addr = self._fetch_addr(node)
             self._blob_put(addr, data, sha, tag="gitsync.bundle")
         # the bundle materializes into the job workdir; fetch + checkout there
+        co_flags = "-q -f" if own_wip else "-q"
         script = (f"git -C {remote_repo} fetch \"$PWD/gitsync.bundle\" && "
-                  f"git -C {remote_repo} checkout -q -B {l_branch} {l_head}")
+                  f"git -C {remote_repo} checkout {co_flags} -B {l_branch} {l_head}")
         rep = self.run(node, ["sh", "-c", script], timeout_s=120,
                        inputs=[{"sha256": sha, "as": "gitsync.bundle"}])
         if not rep.get("ok") or rep.get("rc") != 0:
@@ -489,9 +521,13 @@ class Client:
         rc2, r_head2 = self._remote_git(node, remote_repo, "rev-parse", "HEAD")
         if r_head2 != l_head:
             raise RuntimeError(f"post-sync mismatch: remote at {r_head2[:12]}")
-        return {**state, "action": f"fast-forwarded {n_commits} commits",
-                "remote_now": f"{l_branch}@{l_head[:12]}",
-                "bundle_bytes": len(data), "ok": True}
+        out = {**state, "action": f"fast-forwarded {n_commits} commits",
+               "remote_now": f"{l_branch}@{l_head[:12]}",
+               "bundle_bytes": len(data), "ok": True}
+        if own_wip:
+            out["discarded_own_wip"] = own_wip
+            out["action"] += f" (discarded {len(own_wip)} own-WIP file(s) — re-sync to restore)"
+        return out
 
     # -- watch ------------------------------------------------------------------
     def watch(self, node_filter=None, grep=None, out=sys.stdout):
