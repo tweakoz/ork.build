@@ -17,6 +17,9 @@ accepted anywhere an address is (port defaults to 7461).
 `@` selector, routed to the least-busy live match:
 `@any` · `@linux` / `@mac` · `@gpu` · `@gpu=5090` (capability substring) · `@5090`
 (substring across name/os/arch/gpu) · comma-composed: `@linux,gpu`.
+FAN-OUT on run/build/test/scene/sync/gitsync: `@each` (every live node), `@each:linux`
+(every match), or `a,b` lists — execution verbs submit to ALL then wait (simultaneous
+cross-machine builds/tests), working-copy verbs loop; per-node verdicts + a fleet summary.
 
 ## One happy path per task
 ```bash

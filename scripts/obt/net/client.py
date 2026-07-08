@@ -61,34 +61,55 @@ class Client:
         node (fewest active jobs, then load)."""
         if not spec.startswith("@"):
             return spec
-        nodes = self.list_nodes().get("nodes", [])
-        live = [n for n in nodes if n.get("last_ping_age_s", 1e9) < 5.0]
-
-        def matches(n, term):
-            caps = n.get("capabilities", {})
-            if term in ("", "any"):
-                return True
-            if term == "linux":
-                return caps.get("os") == "Linux"
-            if term in ("mac", "darwin"):
-                return caps.get("os") == "Darwin"
-            if term == "gpu":
-                return bool(caps.get("gpu"))
-            if "=" in term:
-                k, v = term.split("=", 1)
-                return v.lower() in str(caps.get(k, "")).lower()
-            hay = " ".join(str(x) for x in
-                           [n.get("name")] + [caps.get(k) for k in
-                            ("hostname", "os", "arch", "gpu")] if x)
-            return term.lower() in hay.lower()
-
+        live = self._live_nodes()
         terms = spec[1:].split(",")
-        picked = [n for n in live if all(matches(n, t) for t in terms)]
+        picked = [n for n in live if all(self._node_matches(n, t) for t in terms)]
         if not picked:
             raise KeyError(f"no live node matches {spec!r} "
                            f"(live: {sorted(n['name'] for n in live)})")
         picked.sort(key=lambda n: (n.get("n_jobs", 0), n.get("load", 0.0)))
         return picked[0]["name"]
+
+    def _live_nodes(self):
+        return [n for n in self.list_nodes().get("nodes", [])
+                if n.get("last_ping_age_s", 1e9) < 5.0]
+
+    @staticmethod
+    def _node_matches(n, term):
+        caps = n.get("capabilities", {})
+        if term in ("", "any"):
+            return True
+        if term == "linux":
+            return caps.get("os") == "Linux"
+        if term in ("mac", "darwin"):
+            return caps.get("os") == "Darwin"
+        if term == "gpu":
+            return bool(caps.get("gpu"))
+        if "=" in term:
+            k, v = term.split("=", 1)
+            return v.lower() in str(caps.get(k, "")).lower()
+        hay = " ".join(str(x) for x in
+                       [n.get("name")] + [caps.get(k) for k in
+                        ("hostname", "os", "arch", "gpu")] if x)
+        return term.lower() in hay.lower()
+
+    def resolve_nodes(self, spec: str):
+        """FAN-OUT resolution: 'a,b,c' = literal list; '@each' = every live
+        node; '@each:linux' / '@each:gpu=3090' = every live match. Anything
+        else = ONE node via resolve_node. Ordered, deduped."""
+        if spec.startswith("@each"):
+            live = self._live_nodes()
+            terms = spec.split(":", 1)[1].split(",") if ":" in spec else []
+            return sorted(n["name"] for n in live
+                          if all(self._node_matches(n, t) for t in terms))
+        if "," in spec:
+            out = []
+            for s in spec.split(","):
+                r = self.resolve_node(s.strip())
+                if r not in out:
+                    out.append(r)
+            return out
+        return [self.resolve_node(spec)]
 
     def _request_to(self, addr, payload: bytes, timeout_ms=10000):
         s = self.ctx.socket(zmq.REQ)
@@ -570,15 +591,92 @@ def main(argv=None):
                 print(f"controller: {addr}   (from {src})")
         return 0
 
-    # '@' capability selectors route to a concrete node (least-busy match)
-    if getattr(args, "node", None) and args.node.startswith("@"):
+    # '@' selectors route to a node; comma-lists and '@each[:terms]' FAN OUT
+    # across nodes (working-copy verbs loop; execution verbs submit-all then
+    # wait-all = simultaneous cross-machine runs).
+    FAN_VERBS = ("run", "build", "test", "scene", "sync", "gitsync")
+    fan_targets = None
+    if getattr(args, "node", None) and (args.node.startswith("@") or "," in args.node):
         try:
-            resolved = c.resolve_node(args.node)
+            targets = c.resolve_nodes(args.node) if args.cmd in FAN_VERBS \
+                else [c.resolve_node(args.node)]
         except (KeyError, RuntimeError) as e:
             _verdict(False, args.cmd, args.node, f"error={e}", jm, {"error": str(e)})
             return 1
-        print(f"[obtnet] {args.node} -> {resolved}", file=sys.stderr)
-        args.node = resolved
+        if len(targets) == 1:
+            if targets[0] != args.node:
+                print(f"[obtnet] {args.node} -> {targets[0]}", file=sys.stderr)
+            args.node = targets[0]
+        else:
+            print(f"[obtnet] {args.node} -> {','.join(targets)}", file=sys.stderr)
+            fan_targets = targets
+
+    if fan_targets and args.cmd in ("sync", "gitsync"):
+        fails = []
+        for n in fan_targets:
+            try:
+                if args.cmd == "gitsync":
+                    r = c.gitsync(n, args.local_repo, args.remote_repo, dry=args.dry)
+                    _verdict(True, "gitsync", n, r["action"], jm, r if jm else None)
+                else:
+                    r = c.sync(n, args.local_dir, args.remote_dir, pull=args.pull,
+                               delete=args.delete, excludes=args.exclude, dry=args.dry)
+                    ok = args.dry or r["tree"] == r["want_tree"]
+                    _verdict(ok, "sync", n,
+                             f"files={r.get('files')} tree="
+                             + ("DRY" if args.dry else
+                                ("MATCH" if ok else "MISMATCH!")), jm, r if jm else None)
+                    if not ok:
+                        fails.append(n)
+            except (RuntimeError, KeyError) as e:
+                _verdict(False, args.cmd, n, f"error={e}", jm, {"error": str(e)})
+                fails.append(n)
+        _verdict(not fails, args.cmd, f"fleet({len(fan_targets)})",
+                 f"ok={len(fan_targets)-len(fails)}/{len(fan_targets)}"
+                 + (f" failed={fails}" if fails else ""), jm)
+        return 0 if not fails else 1
+
+    if fan_targets and args.cmd in ("run", "build", "test", "scene"):
+        kind = {"run": "command", "build": "project.build",
+                "test": "test", "scene": "scene.run"}[args.cmd]
+        argv2 = cmd_argv or (["ork.build.py"] if args.cmd == "build" else None)
+        if not argv2:
+            print(f"no argv given (use: {args.cmd} <nodes> -- cmd...)", file=sys.stderr)
+            return 2
+        env = dict(kv.split("=", 1) for kv in getattr(args, "env", []) or [])
+        extra = {}
+        if args.cmd == "scene":
+            extra = {"windowed": args.windowed, "markers": args.markers}
+        timeout = getattr(args, "timeout", 600)
+        jobs = {}
+        for n in fan_targets:                      # submit ALL first = simultaneous
+            rep = c.job_submit(n, argv2, kind=kind, env=env,
+                               cwd=getattr(args, "cwd", None), timeout_s=timeout,
+                               output_globs=getattr(args, "out", []) or [], **extra)
+            if rep.get("ok"):
+                jobs[n] = rep["job"]
+            else:
+                _verdict(False, args.cmd, n, f"submit error={rep.get('error')}", jm)
+        fails = [n for n in fan_targets if n not in jobs]
+        for n, job in jobs.items():                # then wait each (they overlap)
+            rep = c.job_wait(n, job, timeout_s=timeout + 60)
+            s = rep.get("summary") or {}
+            ok = bool(s.get("verdict_ok")) if s else                 (rep.get("state") == proto.JOB_DONE and rep.get("rc") == 0)
+            detail = (f"errors={s.get('errors')} warnings={s.get('warnings')}"
+                      if args.cmd == "build" else
+                      f"passed={s.get('passed')} failed={s.get('failed')}"
+                      if args.cmd == "test" else f"rc={rep.get('rc')}")
+            _verdict(ok, args.cmd, n, f"{detail} {rep.get('dur_s', 0)}s job={job}", jm,
+                     {"node": n, "job": job, "summary": s} if jm else None)
+            if args.cmd == "run" and not jm:       # fleet-run: show a bounded tail
+                for ln in (c.job_log(n, job, tail=5).get("lines") or []):
+                    print(f"  {n}: {ln}")
+            if not ok:
+                fails.append(n)
+        _verdict(not fails, args.cmd, f"fleet({len(fan_targets)})",
+                 f"ok={len(fan_targets)-len(fails)}/{len(fan_targets)}"
+                 + (f" failed={sorted(fails)}" if fails else ""), jm)
+        return 0 if not fails else 1
 
     if args.cmd == "list":
         rep = c.list_nodes()
