@@ -76,13 +76,22 @@ initializeDependencyEnvironments(envsetup)
 if args["stagedir"]!=None:
 ###########################################
     envsetup.lazyMakeDirs()
-    envsetup.genBashRc(obt_config,stage_dir/".bashrc")
+    # The stage may be read-only (deployed bundle, e.g. a Flatpak /app). Write
+    # the generated bashrc to a writable location in that case and launch the
+    # shell against it.
+    import pathlib as _pl
+    if os.access(str(stage_dir), os.W_OK):
+        bashrc = stage_dir/".bashrc"
+    else:
+        _rcdir = _pl.Path(os.environ.get("XDG_RUNTIME_DIR") or os.path.expanduser("~/.obt-global"))
+        _rcdir.mkdir(parents=True, exist_ok=True)
+        bashrc = _rcdir/"obt-deploy.bashrc"
+    envsetup.genBashRc(obt_config,bashrc)
     stage_dir_sh = stage_dir/"obt-launch-env"
     envsetup.log(stage_dir_sh)
     assert(stage_dir_sh.exists())
     #############
     shell = "bash"
-    bashrc = stage_dir/".bashrc"
     #############
     if args["subspace"]!=None:
         if args["chdir"]!=None:

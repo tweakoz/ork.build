@@ -97,7 +97,7 @@ deplist += ["vulkan-tools","vulkan-validationlayers"]
 deplist += ["libffmpeg-nvenc-dev"]
 deplist += ["libshaderc-dev"]
 deplist += ["libinput-dev"]
-
+deplist += ["mold"]
 
 merged = " ".join(deplist)
 os.system("sudo apt -y install %s" % merged)

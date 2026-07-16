@@ -24,7 +24,7 @@ class opencv(dep.StdProvider):
     self.declareDeps(["pybind11","opencv_contrib"])
     self.EXR = self.declareDep("openexr")
     # opencv.py builds the OpenCV C++ SDK only — headers + dylibs into
-    # $OBT_STAGE, consumed by orkid/impcore native code. The python cv2
+    # $OBT_STAGE, consumed by dependent native code. The python cv2
     # module is NOT built here; it is provided by the separate
     # `opencv_python` dep (the tweakoz/opencv-python fork, pip-installed so
     # it carries proper dist metadata). A C++-only build needs no python.

@@ -248,12 +248,17 @@ class Provider(object):
 
     @property
     def should_build(self):
+      # should_wipe implies rebuild: callers (obt.dep.build.py, the pipeline)
+      # gate provide() on should_build, so a wipe that doesn't set it is a
+      # silent no-op that exits 0 — a lying success.
+      needs = (not self.manifest.exists()) or self.should_force_build \
+              or self.should_incremental_build or self.should_wipe
       if subspace.targeting_host():
-        return (not self.manifest.exists()) or self.should_force_build or self.should_incremental_build
+        return needs
       else:
         if self._allow_build_in_subspaces:
           if self._subspace_vif==2:
-            return (not self.manifest.exists()) or self.should_force_build or self.should_incremental_build
+            return needs
         return False
       
     #############################

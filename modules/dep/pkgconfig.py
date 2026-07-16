@@ -31,12 +31,14 @@ class _pkgconfig_from_source(dep.StdProvider):
     self._builder._cleanbuildcommands = [autogen,mkdir,configure]
     self.VERSION = VER
 
-    if host.IsLinux and host.IsX86_64:
+    if host.IsLinux:
       f2r = path.stage()/"bin"/"x86_64-unknown-linux-gnu-pkg-config"
-      f2r.unlink(missing_ok=True)
-    elif host.IsLinux and host.IsAARCH64:
-      f2r = path.stage()/"bin"/"x86_64-unknown-linux-gnu-pkg-config"
-      f2r.unlink(missing_ok=True)
+      try:
+        f2r.unlink(missing_ok=True)
+      except OSError:
+        # Read-only deployed stage (e.g. a Flatpak /app): this INIT-scope
+        # cleanup is a build-time concern; nothing to remove at runtime.
+        pass
 
     pathtools.ensureDirectoryExists(path.pkgconfigdir())
 
