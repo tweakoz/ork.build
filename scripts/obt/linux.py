@@ -278,6 +278,15 @@ KEEP_ON_HOST_PREFIXES = (
   "libasound", "libpulse", "libpipewire", "libjack",
   "libdbus-", "libsystemd", "libudev",
   "libnvidia-", "libcuda",   # proprietary NVIDIA userspace — never bundle
+  # glib family: MODULE-LOADING desktop plumbing. A bundled (older) libgio
+  # scans the HOST's gio module dir and rejects modules built against newer
+  # glib (undefined symbol: g_variant_builder_init_static on 26.04), and a
+  # bundled gdk_pixbuf can't use host loader caches — while host GTK (file
+  # dialogs) mixes into the same process. Anything GTK-adjacent must ride the
+  # host stack. Validated on a fresh 26.04/Wayland/AMD box: quarantining the bundled
+  # copies -> consumers resolve host glib, warnings gone, renders fine.
+  "libglib-", "libgio-", "libgobject-", "libgmodule-", "libgthread-",
+  "libgdk_pixbuf",
 )
 
 def is_keep_on_host(soname, keep_extra=(), bundle_anyway=()):
