@@ -250,6 +250,16 @@ class EnvSetup:
       BASHRC += completions_line
 
     ################################################
+    # user-global env hook — sourced LAST so per-user/per-machine settings
+    # (e.g. ORKID_DRM_MODE, XR_RUNTIME_JSON, VK_DRIVER_FILES) override
+    # bundle/launcher defaults in EVERY obt shell (dev, pip ork.shell, dmg).
+    # Tested at SHELL time ([ -f ]), not generation time, so the file can
+    # appear/disappear without regenerating the rc.
+    ################################################
+
+    BASHRC += '[ -f "$HOME/.obt-global/env.common.sh" ] && source "$HOME/.obt-global/env.common.sh"\n'
+
+    ################################################
 
     if out_path!=None:
       f = open(str(out_path), 'w')

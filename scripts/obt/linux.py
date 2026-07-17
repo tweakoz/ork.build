@@ -207,6 +207,8 @@ def _looks_like_elf_name(fname):
     return True
   if ext == '':                        # bare executable
     return True
+  if ext == '.exe':                    # orkid tool convention (ork.ecs.player.exe)
+    return True
   if ext and ext[1:].isdigit():        # versioned .so.1 / .so.1.2.3
     return True
   return False
@@ -227,7 +229,12 @@ def discover_elf_files(root_dir, skip_dirs=None):
       fpath = os.path.join(dirpath, fname)
       if os.path.islink(fpath) or not os.path.isfile(fpath):
         continue
-      if _looks_like_elf_name(fname) and is_elf_binary(fpath):
+      # The name test is only a cheap pre-filter; +x files are candidates too —
+      # dotted tool names (ork.eda.vcdviewer) defeat splitext, and missing one
+      # here means it is NEVER relocated or verified (the .exe player shipped
+      # with an absolute build-host RUNPATH because of exactly that).
+      if ((_looks_like_elf_name(fname) or os.access(fpath, os.X_OK))
+          and is_elf_binary(fpath)):
         try:
           st = os.stat(fpath)
           key = (st.st_dev, st.st_ino)
