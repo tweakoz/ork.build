@@ -41,16 +41,22 @@ class sox(dep.StdProvider):
                 "--without-twolame",
                 "--without-wavpack"]:
       self._builder.setOption(opt)
-    if host.IsDarwin:
-      # autoconf 2.70+ + clang on apple silicon: tells configure to stop
-      # treating implicit function decls as errors (sox 14.4.2 has stale
-      # C declarations that newer clang rejects under -Werror).
-      self._builder.setEnvVar("CFLAGS","-Wno-error=implicit-function-declaration")
-      # sox's configure REQUIRES pkg-config even when every optional codec
-      # is --without-*. Since we've disabled all codecs that would need
-      # pkg-config detection, point at /usr/bin/true so the configure
-      # probe succeeds and emits empty CFLAGS/LIBS for every PKG_CHECK_*.
-      self._builder.setEnvVar("PKG_CONFIG","/usr/bin/true")
+    # sox 14.4.2 has stale pre-C23 C declarations that both apple-silicon
+    # clang and gcc-15 (default -std=gnu23) reject as hard errors. Downgrade
+    # the C23 default-error promotions back to warnings so it compiles on
+    # both toolchains.
+    self._builder.setEnvVar(
+      "CFLAGS",
+      "-Wno-error=implicit-function-declaration -Wno-error=int-conversion "
+      "-Wno-error=incompatible-pointer-types -Wno-error=implicit-int")
+    # sox's configure REQUIRES pkg-config even when every optional codec is
+    # --without-*. OBT points PKG_CONFIG at $stage/bin/pkg-config, which is
+    # only built when a dep declares pkgconfig — sox does not, so on Linux
+    # that path is absent and configure aborts ("pkg-config not found").
+    # Since all codecs are disabled, point at /usr/bin/true so every
+    # PKG_CHECK_* probe succeeds with empty CFLAGS/LIBS (matches the macOS
+    # design where pkgconfig is severed entirely; see pkgconfig.py).
+    self._builder.setEnvVar("PKG_CONFIG","/usr/bin/true")
   ########################################################################
   @property
   def _fetcher(self):

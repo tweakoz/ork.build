@@ -78,4 +78,7 @@ class oiio(dep.StdProvider):
     return (self.source_root/"CMakeLists.txt").exists()
   #######################################################################
   def areRequiredBinaryFilesPresent(self):
-    return (path.libs()/"libIlmImf.so").exists()
+    # oiio produces libOpenImageIO; libIlmImf was the OpenEXR-2.x image lib
+    # (renamed to libOpenEXR in 3.x) and was never an oiio product. Probe
+    # the actual primary lib with the host's shared-lib extension.
+    return (path.libs()/("libOpenImageIO.%s" % self.shlib_extension)).exists()

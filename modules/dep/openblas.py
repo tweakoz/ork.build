@@ -19,7 +19,21 @@ class openblas(dep.StdProvider):
         "BUILD_EXAMPLES": "ON"
     })
     if host.IsX86_64:
-      self._builder.setCmVar("TARGET", "HASWELL") # todo try newer cpu targets
+      # Pin an AVX2 (HASWELL) baseline UNCONDITIONALLY on all x86_64 — never
+      # autodetect the host core and never DYNAMIC_ARCH. Staged OpenBLAS
+      # artifacts get consumed across the whole fleet, so a conservative,
+      # portable target that runs everywhere beats per-box tuning (a
+      # Zen5/Strix-Halo-tuned build would fault on older fleet members).
+      self._builder.setCmVar("TARGET", "HASWELL")
+    if host.IsLinux:
+      # OpenBLAS-0.3.23's LAPACK glue (lapack/getrs/getrs_parallel.c) passes
+      # a mismatched pointer to gemm_thread_n. gcc-14+ promotes
+      # -Wincompatible-pointer-types (and -Wimplicit-function-declaration,
+      # C23 default) to hard errors, breaking the build on gcc-15. Downgrade
+      # those two classes back to warnings; the code is functionally correct.
+      self._builder.setCmVar(
+        "CMAKE_C_FLAGS",
+        "-Wno-error=incompatible-pointer-types -Wno-error=implicit-function-declaration")
     if host.IsOsx:
      def postInstall():
        from obt import macos

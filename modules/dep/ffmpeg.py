@@ -20,6 +20,20 @@ class ffmpeg(dep.StdProvider):
     self._builder.setOption("--disable-vdpau")
     self._builder.setOption("--disable-static")
     self._builder.setOption("--enable-shared")
+    if host.IsLinux:
+      # ffmpeg-n6.1.1's Vulkan AV1 decoder (libavcodec/vulkan_av1.c) targets
+      # the pre-standardization MESA vendor types (VkVideoDecodeAV1ProfileInfoMESA,
+      # StdVideoAV1MESATile*). Current Vulkan headers ship only the ratified
+      # KHR AV1 decode types, so configure auto-enables Vulkan and the build
+      # then fails to compile that file. orkid does not use ffmpeg's Vulkan
+      # hwaccel, so disable it outright.
+      self._builder.setOption("--disable-vulkan")
+      # n6.1.1's doc/t2h.pm HTML converter calls Texinfo::Convert::HTML->gdt,
+      # a method dropped in the Texinfo perl shipped on newer distros
+      # (Ubuntu 26.04), so `make install` fails building the HTML manuals
+      # after the libraries are already built. orkid consumes only the
+      # libav* shared libs — skip doc generation entirely.
+      self._builder.setOption("--disable-doc")
     if host.IsDarwin:
       self._builder.setOption("--disable-vaapi")
       self._builder.setEnvVar("LDFLAGS", '-Wl,-ld_classic')
@@ -59,4 +73,7 @@ class ffmpeg(dep.StdProvider):
     return (self.source_root/"configure").exists()
 
   def areRequiredBinaryFilesPresent(self):
-    return (path.libs()/"libffmpeg.so").exists()
+    # ffmpeg produces the split libav* / libsw* shared libs, never a
+    # combined "libffmpeg.so" (which existed on no platform). Probe the
+    # primary codec lib with the host's shared-lib extension.
+    return (path.libs()/("libavcodec.%s" % self.shlib_extension)).exists()

@@ -50,6 +50,13 @@ class _llvm_from_source(dep.StdProvider):
       self._builder.setCmVar("LLVM_TARGETS_TO_BUILD","AArch64")
     else:
       self._builder.setCmVar("LLVM_TARGETS_TO_BUILD","X86")
+    # LLVM-18's ADT/SmallVector.h uses uint32_t/uint64_t but only includes
+    # <cstddef>. gcc-15 no longer transitively pulls <cstdint> through the
+    # libstdc++ headers, so the TableGen host tools fail to compile
+    # ("'uint64_t' was not declared in this scope"). Force-include cstdint
+    # for every C++ TU — version-agnostic and a no-op where already present.
+    if host.IsLinux:
+      self._builder.setCmVar("CMAKE_CXX_FLAGS","-include cstdint")
     # mold linker — biggest single win in the dep set; LLVM's final link
     # of libLLVM/libclang + tools is one of the slowest link phases.
     # Linux-only; no-op on macOS.
