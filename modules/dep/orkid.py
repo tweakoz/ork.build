@@ -169,6 +169,9 @@ class orkid(dep.StdProvider):
     #deplist += ["libsurvive"]
     deplist += ["openvdb"]    
     deplist += ["vulkan"]
+    deplist += ["openxr"]  # ork.lev2 CMake requires openxr_loader unconditionally (X-ladder);
+                           # pre-2026-07 nodes were provisioned manually - declare it so fresh
+                           # nodes (h9ixub26 was the discovery) build without hand-holding.
     #deplist += ["notcurses"]
     deplist += ["lz4"]
     deplist += ["curlpp"]
