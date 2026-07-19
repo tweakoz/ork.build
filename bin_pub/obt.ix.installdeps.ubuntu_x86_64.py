@@ -16,7 +16,9 @@ elif UBUNTU_VERSION <= 2004:
 else:
   deplist += ["clang-12"]
 
-deplist += ["libboost-dev","gcc-9","g++-9","gcc-10","g++-10","clang","clang-format"]
+deplist += ["libboost-dev","clang","clang-format"]
+if UBUNTU_VERSION < 2604:  # dropped from the 26.04 archive (clang-17/g++-11/12 cover it)
+  deplist += ["gcc-9","g++-9","gcc-10","g++-10"]
 deplist += ["g++-12","gfortran"] # https://askubuntu.com/questions/1441844/todays-ubuntu-22-04-updates-seem-to-break-clang-compiler
 deplist += ["libboost-filesystem-dev","libboost-system-dev","libboost-thread-dev"]
 deplist += ["libboost-program-options-dev","libftdi-dev", "libfmt-dev"]
@@ -81,7 +83,9 @@ deplist += ["libmad0-dev","libsdl2-dev","libassimp-dev"]
 deplist += ["device-tree-compiler"]
 deplist += ["imagemagick","curl","tk-dev"]
 deplist += ["libgeos-dev","libpng-dev","libspatialindex-dev"]
-deplist += ["qt5-style-plugins","qt5ct","python3-gdal","python3-pyqt5","python3-pyqt5.qtopengl"]
+deplist += ["qt5ct","python3-gdal","python3-pyqt5","python3-pyqt5.qtopengl"]
+if UBUNTU_VERSION < 2604:
+  deplist += ["qt5-style-plugins"]  # dropped from the 26.04 archive
 deplist += ["python3-simplejson","python3-tk"]
 
 deplist += ["libdrm-dev","libaudiofile-dev","libsndfile1-dev"]
@@ -92,7 +96,9 @@ deplist += ["libsbc-dev","libsdl2-dev","libudev-dev","libva-dev","libv4l-dev","l
 deplist += ["pkg-config","python3-docutils","systemd","mesa-utils","xvfb"]
 deplist += ["meson","ninja-build","libserialport-dev", "libxxhash-dev"]
 deplist += ["libpipewire-0.3-dev", "pipewire", "gstreamer1.0-libav"]
-deplist += ["astap","libnotcurses++-dev","libsodium-dev","libtar-dev"]
+deplist += ["astap","libnotcurses++-dev","libsodium-dev"]
+if UBUNTU_VERSION < 2604:
+  deplist += ["libtar-dev"]  # dropped from the 26.04 archive; vendor if a dep ever needs it
 deplist += ["vulkan-tools","vulkan-validationlayers"]
 deplist += ["libffmpeg-nvenc-dev"]
 deplist += ["libshaderc-dev"]
@@ -102,7 +108,9 @@ deplist += ["mold"]
 merged = " ".join(deplist)
 os.system("sudo apt -y install %s" % merged)
 
-os.system("pip3 install os_release")
+# PEP-668 (externally-managed system python, 23.04+): plain pip3 refuses; fall back.
+if os.system("pip3 install os_release") != 0:
+  os.system("pip3 install --break-system-packages os_release")
 
 ###############################################################################
 # CUDA toolkit
@@ -117,12 +125,22 @@ os.system("pip3 install os_release")
 # New: NVIDIA's apt repo. Adds /usr/local/cuda-12.6/. pytorch.py picks it
 # up automatically via the CUDA_HOME probe in _build_env().
 ###############################################################################
-if UBUNTU_VERSION >= 2404:
+# CUDA only makes sense on NVIDIA hardware (h9ixub26, an AMD box, taught us this) -
+# and only where NVIDIA actually publishes a repo for this ubuntu release.
+def _has_nvidia_gpu():
+  return os.system("lspci 2>/dev/null | grep -qi 'nvidia'") == 0
+
+if UBUNTU_VERSION >= 2404 and _has_nvidia_gpu():
   os.system("sudo apt -y remove nvidia-cuda-toolkit nvidia-profiler libthrust-dev")
 
-  KEYRING_URL = "https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2404/x86_64/cuda-keyring_1.1-1_all.deb"
+  # per-release repo path; if NVIDIA has not published this release's repo yet the
+  # keyring download fails LOUDLY below (curl -f) rather than half-configuring apt.
+  _CUDA_DISTRO = "ubuntu%d" % ((UBUNTU_VERSION // 100) * 100 + (UBUNTU_VERSION % 100))
+  KEYRING_URL = "https://developer.download.nvidia.com/compute/cuda/repos/%s/x86_64/cuda-keyring_1.1-1_all.deb" % _CUDA_DISTRO
   KEYRING_DEB = "/tmp/cuda-keyring_1.1-1_all.deb"
   os.system("curl -fsSL -o %s %s" % (KEYRING_DEB, KEYRING_URL))
   os.system("sudo dpkg -i %s" % KEYRING_DEB)
   os.system("sudo apt update")
   os.system("sudo apt -y install cuda-toolkit-12-8")
+elif UBUNTU_VERSION >= 2404:
+  print("[installdeps] no NVIDIA GPU detected - skipping the CUDA toolkit section")
