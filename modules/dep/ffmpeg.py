@@ -20,14 +20,17 @@ class ffmpeg(dep.StdProvider):
     self._builder.setOption("--disable-vdpau")
     self._builder.setOption("--disable-static")
     self._builder.setOption("--enable-shared")
+    # ffmpeg-n6.1.1's Vulkan AV1 decoder (libavcodec/vulkan_av1.c) targets
+    # the pre-standardization MESA vendor types (VkVideoDecodeAV1ProfileInfoMESA,
+    # StdVideoAV1MESATile*). Current Vulkan headers ship only the ratified
+    # KHR AV1 decode types, so configure auto-enables Vulkan whenever the
+    # staging include prefix exposes vulkan/vulkan.h — Linux Vulkan SDK OR
+    # macOS MoltenVK (the second-staging bringup hit this on mac 2026-07-24,
+    # where MoltenVK landed on the prefix before ffmpeg built) — and the build
+    # then fails to compile that file. orkid does not use ffmpeg's Vulkan
+    # hwaccel on any platform, so disable it on every host.
+    self._builder.setOption("--disable-vulkan")
     if host.IsLinux:
-      # ffmpeg-n6.1.1's Vulkan AV1 decoder (libavcodec/vulkan_av1.c) targets
-      # the pre-standardization MESA vendor types (VkVideoDecodeAV1ProfileInfoMESA,
-      # StdVideoAV1MESATile*). Current Vulkan headers ship only the ratified
-      # KHR AV1 decode types, so configure auto-enables Vulkan and the build
-      # then fails to compile that file. orkid does not use ffmpeg's Vulkan
-      # hwaccel, so disable it outright.
-      self._builder.setOption("--disable-vulkan")
       # n6.1.1's doc/t2h.pm HTML converter calls Texinfo::Convert::HTML->gdt,
       # a method dropped in the Texinfo perl shipped on newer distros
       # (Ubuntu 26.04), so `make install` fails building the HTML manuals
