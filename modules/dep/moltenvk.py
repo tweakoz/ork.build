@@ -17,12 +17,36 @@
 #
 # The cmake-dependent Vulkan-Loader build lives in vulkan.py, which declares
 # both `moltenvk` and `cmake`.
+#
+# PIN: MoltenVK PR #2777 ("taskless Vulkan mesh shader support"), fork
+# dttdrv/MoltenVK branch macgaming/mesh-shader, pinned by full sha because the
+# branch head moves. No released MoltenVK (through 1.4.2) implements
+# VK_EXT_mesh_shader; orkid's vulkan backend requires it for its mesh pass.
+# The PR exposes the extension taskless (meshShader=true, taskShader=false).
+#
+# The PR also pins SPIRV-Cross to af71ba0bbfcc (a commit that exists only in
+# unmerged SPIRV-Cross PR #2650). That resolves without help from us: the PR's
+# fetchDependencies fetches the exact revision (`git fetch origin <sha>`)
+# instead of `git fetch --all`, which cannot see an unmerged PR commit.
+#
+# FOLLOWUP: graft PR #2777 onto the tweakoz/MoltenVK fork and repin here, so
+# the dep tracks a repo we control (this direct-fork pin is the interim step).
+#
+# NOTE: bumping this pin moves MoltenVK's bundled External/Vulkan-Headers,
+# which vulkan.py `git describe`s to pick its Vulkan-Loader tag + md5 — see
+# the fetch there before/after any change to VERSION.
+#
+# WIPE REQUIRED on repin: build() only fetches when source_root is absent, so
+# a VERSION change alone leaves the old tree in place. --wipe alone is a no-op
+# once the dep is provisioned (should_build short-circuits on the existing
+# $OBT_STAGE/manifests/moltenvk), so both flags are needed —
+#   obt.dep.build.py moltenvk --wipe --force
 ###############################################################################
 
 from obt import dep, path, command, log
 
-VERSION      = "v1.4.1"
-MOLTENVK_MD5 = "ba3285b89dfb4a633185f29e4d4cd30e"  # tweakoz/MoltenVK v1.4.1 tarball
+VERSION      = "4fc3f6c1f97c7579aa6bbffa791b7a9b35b7fcd4"
+MOLTENVK_MD5 = "25b669f2e04301c17254ae4dd23fdd60"  # dttdrv/MoltenVK @ 4fc3f6c tarball
 
 ###############################################################################
 
@@ -56,7 +80,7 @@ class moltenvk(dep.Provider):
       # stays because the followup ./fetchDependencies + xcodebuild are
       # expensive; we only refetch when source_root is absent.
       dep.GithubFetcher(name="moltenvk",
-                        repospec="tweakoz/MoltenVK",
+                        repospec="dttdrv/MoltenVK",
                         revision=self.VERSION,
                         md5val=MOLTENVK_MD5,
                         recursive=False).fetch(self.source_root)

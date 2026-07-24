@@ -95,6 +95,13 @@ class _vulkan_from_moltenvk(dep.Provider):
     # Vulkan-Headers — deterministic given the pinned MoltenVK VERSION, so
     # the tarball md5 below is stable. If MoltenVK's VERSION is bumped the
     # headers (hence tag, hence md5) change — recompute then.
+    #
+    # Known mapping: MoltenVK v1.4.1 bundles Vulkan-Headers 6aefb8eb =
+    # tag v1.4.334 (the md5 below). The mesh-shader pin (PR #2777) bundles
+    # e3b1eec0 = tag v1.4.357, which the tweakoz forks do not carry yet
+    # (they stop at v1.4.352) — mirror v1.4.357 to tweakoz/Vulkan-Loader and
+    # tweakoz/Vulkan-Utility-Libraries, then recompute this md5, before
+    # building this dep against that MoltenVK.
     if not dep.GithubFetcher(name="vulkan-loader",
                              repospec="tweakoz/Vulkan-Loader",
                              revision=tag,
