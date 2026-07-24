@@ -41,11 +41,17 @@ class python_from_source(dep.Provider):
     #self.declareDep("pkgconfig")
     ##########################################
     # On macOS, openssl + xz are sourced from OBT-built deps instead of
-    # /opt/homebrew. The Linux path uses --with-openssl=/usr (system openssl)
-    # and the system liblzma, so no declaration needed there.
+    # /opt/homebrew. On Linux, xz still comes from the system liblzma, but
+    # openssl must be the OBT-staged build too: linking _hashlib/_ssl
+    # against system OpenSSL (soname libcrypto.so.3, no RPATH) collides at
+    # runtime with the staged libcrypto.so.3 pulled in by the engine chain
+    # (orkengine._core -> libork_core -> staged libcurl -> staged libssl) —
+    # whichever loads first wins the soname, and system 3.0.13 doesn't
+    # satisfy libssl's OPENSSL_3.3.0+ verdefs.
     ##########################################
-    if host.IsOsx:
+    if host.IsOsx or host.IsLinux:
       self.openssl = self.declareDep("openssl")
+    if host.IsOsx:
       self.xz      = self.declareDep("xz")
     ##########################################
     #print(options)
@@ -269,7 +275,12 @@ class python_from_source(dep.Provider):
 
     else:
        options += ["--with-system-ffi"]
-       options += ["--with-openssl=/usr"]
+       # OBT-staged openssl (not system /usr) — see the soname-collision
+       # note in __init__ above. --with-openssl-rpath bakes an RPATH into
+       # _hashlib/_ssl so the extension resolves the staged libcrypto even
+       # when something else resident-loads a different libcrypto.so.3 first.
+       options += ["--with-openssl=%s" % self.openssl.root]
+       options += ["--with-openssl-rpath=%s" % self.openssl.lib_dir]
        options += ["--enable-shared"]
 
     Command(["../configure"]+options, working_dir=build_temp).exec()
