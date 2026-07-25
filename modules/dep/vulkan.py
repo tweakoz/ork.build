@@ -97,15 +97,22 @@ class _vulkan_from_moltenvk(dep.Provider):
     # headers (hence tag, hence md5) change — recompute then.
     #
     # Known mapping: MoltenVK v1.4.1 bundles Vulkan-Headers 6aefb8eb =
-    # tag v1.4.334 (the md5 below). The mesh-shader pin (PR #2777) bundles
-    # e3b1eec0 = tag v1.4.357, which the tweakoz forks do not carry yet
-    # (they stop at v1.4.352) — mirror v1.4.357 to tweakoz/Vulkan-Loader and
-    # tweakoz/Vulkan-Utility-Libraries, then recompute this md5, before
-    # building this dep against that MoltenVK.
+    # tag v1.4.334. The mesh-shader pin (PR #2777) bundles e3b1eec0 =
+    # tag v1.4.357. The tweakoz forks only carry tags up to v1.4.352, so
+    # for 357 we fetch the loader from UPSTREAM KhronosGroup/Vulkan-Loader
+    # (public, read-only) — no github push / fork mirror required.
+    # The md5 below is of the exact tarball the fetcher downloads,
+    #   https://github.com/KhronosGroup/Vulkan-Loader/tarball/v1.4.357
+    # (top-dir prefix KhronosGroup-Vulkan-Loader-5f157b6; github tarball
+    # bytes differ per owner, so this md5 is owner-specific and matches the
+    # KhronosGroup URL, NOT the tweakoz one). If MoltenVK's VERSION is
+    # bumped the headers (hence tag, hence md5) change — recompute against
+    # the new tag's KhronosGroup tarball then. Fork re-pin (mirror 357 to
+    # tweakoz + recompute md5) optional later.
     if not dep.GithubFetcher(name="vulkan-loader",
-                             repospec="tweakoz/Vulkan-Loader",
+                             repospec="KhronosGroup/Vulkan-Loader",
                              revision=tag,
-                             md5val="072e8811164e59be46ce5db2b88489f3", # v1.4.334
+                             md5val="1ec906d3acb1d349f3e4864878e4c082", # v1.4.357 (KhronosGroup upstream tarball)
                              recursive=False).fetch(loader_src):
       print(deco.err("Vulkan-Loader fetch failed (tag %s)" % tag))
       return False
@@ -183,7 +190,11 @@ class _vulkan_from_moltenvk(dep.Provider):
       ["git","describe","--tags"],
       cwd=str(headers_dir),
       stderr=subprocess.DEVNULL).decode().strip()
-    url = ("https://raw.githubusercontent.com/tweakoz/Vulkan-Utility-Libraries/"
+    # Upstream KhronosGroup (public, read-only) — the tweakoz fork's tags
+    # stop at v1.4.352, so 357's helper is fetched from upstream. This is a
+    # raw single-file curl (no md5, no tarball), so switching the owner is
+    # sufficient; no github push required.
+    url = ("https://raw.githubusercontent.com/KhronosGroup/Vulkan-Utility-Libraries/"
            "%s/include/vulkan/vk_enum_string_helper.h" % tag)
     dst_dir = path.includes()/"vulkan"
     pathtools.ensureDirectoryExists(dst_dir)
