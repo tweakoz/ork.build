@@ -449,8 +449,15 @@ def phase2_execute(deps, fetch_jobs, build_jobs, fetch_only=False):
     ok_states = {State.SOURCE_READY, State.DONE}
     return all(_state.get(p._name) in ok_states
                for p in deps if p.supports_host)
-  return all(_state.get(p._name) == State.DONE
-             for p in deps if p.supports_host)
+  # Per-dep completion: fetch-only deps (from --prefetch / _fetch_only_set)
+  # legitimately complete at SOURCE_READY (they never build), but may also be
+  # DONE if already provisioned or also reachable from a build target;
+  # everything else must reach DONE.
+  def _dep_complete(name):
+    if name in _fetch_only_set:
+      return _state.get(name) in (State.SOURCE_READY, State.DONE)
+    return _state.get(name) == State.DONE
+  return all(_dep_complete(p._name) for p in deps if p.supports_host)
 
 
 ###############################################################################
