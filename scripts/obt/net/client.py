@@ -216,6 +216,13 @@ class Client:
     def fetch(self, node: str, sha: str, dest):
         """download_artifacts: chunked pull DIRECT from the node's fetch socket,
         sha-verified, atomic publish at dest. Returns bytes fetched."""
+        sha = (sha or "").strip().lower()
+        if len(sha) != 64 or any(c not in "0123456789abcdef" for c in sha):
+            raise RuntimeError(
+                f"fetch needs a full 64-hex sha256, got {len(sha)} chars ({sha!r}); "
+                "prefixes are not resolvable at the fetch socket. The verdict/[output] "
+                "line prints only a 12-char preview — get the full sha from "
+                "`obt.net.py --json status/wait <node> <job>`.")
         rec = self.node_record(node)
         addr = rec["fetch_addr"]
         dest = Path(dest)

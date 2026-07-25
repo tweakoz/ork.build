@@ -246,9 +246,15 @@ class Node:
             self.fetch.send(reply)
 
     def _h_fetch_chunk(self, msg):
-        if not self.uploads.has(msg["sha256"]):
-            return proto.make_reply_err(proto.ERR_UNKNOWN_SHA, sha256=msg["sha256"])
-        p = self.uploads.path_for(msg["sha256"])
+        sha = str(msg.get("sha256", "")).strip().lower()
+        if len(sha) != 64 or any(c not in "0123456789abcdef" for c in sha):
+            # malformed/short sha (e.g. a truncated preview or prefix) — report
+            # cleanly instead of letting path_for's ValueError surface as exec_failed
+            return proto.make_reply_err(proto.ERR_UNKNOWN_SHA, sha256=sha,
+                                        detail="sha256 must be 64 hex chars")
+        if not self.uploads.has(sha):
+            return proto.make_reply_err(proto.ERR_UNKNOWN_SHA, sha256=sha)
+        p = self.uploads.path_for(sha)
         total = p.stat().st_size
         off = int(msg.get("offset", 0))
         n = min(int(msg.get("size", proto.FETCH_CHUNK_BYTES)), proto.FETCH_CHUNK_BYTES)
@@ -615,12 +621,14 @@ class Node:
         for pat in (msg.get("output_globs") or []):
             for f in _glob.glob(str(Path(cwd) / pat)):
                 data = Path(f).read_bytes()
+                # always cache -> the reported sha is fetchable (parity with
+                # _kind_command); small outputs ALSO ride inline for the fast path
+                sha = self.uploads.put(data, tag=os.path.relpath(f, cwd))
                 entry = {"name": os.path.relpath(f, cwd), "bytes": len(data),
-                         "sha256": sha256_hex(data)}
+                         "sha256": sha}
                 if len(data) <= proto.MAX_INLINE_OUTPUT:
                     entry["bytes_b64"] = base64.b64encode(data).decode()
-                else:  # cache it — retrievable via the fetch socket
-                    self.uploads.put(data, tag=entry["name"])
+                else:
                     entry["cached"] = True
                 outputs.append(entry)
         self._emit("run", f"run done rc={r.returncode} {time.time()-t_start:.1f}s "
