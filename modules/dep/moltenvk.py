@@ -18,9 +18,12 @@
 # The cmake-dependent Vulkan-Loader build lives in vulkan.py, which declares
 # both `moltenvk` and `cmake`.
 #
-# PIN: MoltenVK PR #2777 ("taskless Vulkan mesh shader support"), fork
-# dttdrv/MoltenVK branch macgaming/mesh-shader, pinned by full sha because the
-# branch head moves. No released MoltenVK (through 1.4.2) implements
+# PIN: MoltenVK PR #2777 ("taskless Vulkan mesh shader support"), commit
+# 4fc3f6c1 (authored on dttdrv/MoltenVK branch macgaming/mesh-shader), fetched
+# from the tweakoz/MoltenVK fork where tag v1.4.2-taskless-mesh-pr2777 anchors
+# that exact sha — the PR branch head moves and an untagged sha on someone
+# else's fork is GC-eligible; the tag on our own fork is the permanence
+# guarantee. No released MoltenVK (through 1.4.2) implements
 # VK_EXT_mesh_shader; orkid's vulkan backend requires it for its mesh pass.
 # The PR exposes the extension taskless (meshShader=true, taskShader=false).
 #
@@ -29,8 +32,8 @@
 # fetchDependencies fetches the exact revision (`git fetch origin <sha>`)
 # instead of `git fetch --all`, which cannot see an unmerged PR commit.
 #
-# FOLLOWUP: graft PR #2777 onto the tweakoz/MoltenVK fork and repin here, so
-# the dep tracks a repo we control (this direct-fork pin is the interim step).
+# FOLLOWUP: when PR #2777 merges upstream, repin to the upstream release tag
+# and retire the fork pin.
 #
 # NOTE: bumping this pin moves MoltenVK's bundled External/Vulkan-Headers,
 # which vulkan.py `git describe`s to pick its Vulkan-Loader tag + md5 — see
@@ -46,7 +49,7 @@
 from obt import dep, path, command, log
 
 VERSION      = "4fc3f6c1f97c7579aa6bbffa791b7a9b35b7fcd4"
-MOLTENVK_MD5 = "25b669f2e04301c17254ae4dd23fdd60"  # dttdrv/MoltenVK @ 4fc3f6c tarball
+MOLTENVK_MD5 = "b27e7a2837fc6aa2046ccb6eefc56a9f"  # tweakoz/MoltenVK @ 4fc3f6c tarball
 
 ###############################################################################
 
@@ -80,7 +83,7 @@ class moltenvk(dep.Provider):
       # stays because the followup ./fetchDependencies + xcodebuild are
       # expensive; we only refetch when source_root is absent.
       dep.GithubFetcher(name="moltenvk",
-                        repospec="dttdrv/MoltenVK",
+                        repospec="tweakoz/MoltenVK",
                         revision=self.VERSION,
                         md5val=MOLTENVK_MD5,
                         recursive=False).fetch(self.source_root)
