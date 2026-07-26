@@ -39,13 +39,23 @@
 # which vulkan.py `git describe`s to pick its Vulkan-Loader tag + md5 — see
 # the fetch there before/after any change to VERSION.
 #
-# WIPE REQUIRED on repin: build() only fetches when source_root is absent, so
-# a VERSION change alone leaves the old tree in place. --wipe alone is a no-op
-# once the dep is provisioned (should_build short-circuits on the existing
-# $OBT_STAGE/manifests/moltenvk), so both flags are needed —
+# WIPE REQUIRED on repin OR config change: build() only fetches when
+# source_root is absent, so a VERSION change alone leaves the old tree in
+# place. --wipe alone is a no-op once the dep is provisioned (should_build
+# short-circuits on the existing $OBT_STAGE/manifests/moltenvk), so both
+# flags are needed —
 #   obt.dep.build.py moltenvk --wipe --force
+#
+# BUILD CONFIG: OBT_MOLTENVK_CONFIG selects the xcodebuild -configuration.
+# Default is Release (owner decision 2026-07-25 — the Debug default's
+# validation overhead tainted every mac graphics perf number). Set to Debug
+# only when debugging MoltenVK itself. A config switch reuses the same
+# fetched source tree but produces a different xcodebuild product, so the
+# same --wipe --force is required to force a rebuild — the Package/Latest
+# symlink follows the built config.
 ###############################################################################
 
+import os
 from obt import dep, path, command, log
 
 VERSION      = "4fc3f6c1f97c7579aa6bbffa791b7a9b35b7fcd4"
@@ -78,6 +88,14 @@ class moltenvk(dep.Provider):
       shutil.rmtree(str(self.build_dest), ignore_errors=True)
 
   def build(self): ############################################################
+    # Build configuration: Release (default) or Debug. OBT_MOLTENVK_CONFIG=
+    # Debug is the opt-out for debugging MoltenVK itself.
+    config = os.environ.get("OBT_MOLTENVK_CONFIG", "Release")
+    if config not in ("Debug", "Release"):
+      log.marker("MoltenVK: OBT_MOLTENVK_CONFIG=%r invalid (must be Debug or Release)" % config)
+      return False
+    log.marker("MoltenVK build configuration: %s  (OBT_MOLTENVK_CONFIG, default Release)" % config)
+
     if not self.source_root.exists():
       # GithubFetcher tarball mode — md5-cached + validated. The guard
       # stays because the followup ./fetchDependencies + xcodebuild are
@@ -96,7 +114,7 @@ class moltenvk(dep.Provider):
       ok = (0 == command.run(["xcodebuild", "build",
                               "-project", "MoltenVKPackaging.xcodeproj",
                               "-scheme", "MoltenVK Package (macOS only)",
-                              "-configuration", "Debug"],
+                              "-configuration", config],
                               working_dir=self.source_root))
     if ok:
       ok = (0 == command.run(["cp",
