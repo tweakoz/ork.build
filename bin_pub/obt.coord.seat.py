@@ -304,7 +304,7 @@ def cmd_taskset(args):
         _verdict(False, "taskset", f"unknown subcommand {args.tscmd!r}")
         return 2
     dest = Path(args.path).expanduser()
-    for d in (dest, dest / "epics", dest / "tasks", dest / "decisions", dest / "issues", dest / "deviations", dest / "completed"):
+    for d in (dest, dest / "epics", dest / "tasks", dest / "decisions", dest / "issues", dest / "deviations", dest / "completed", dest / "notes"):
         d.mkdir(parents=True, exist_ok=True)
     title = dest.name or "taskset"
     created = time.strftime("%Y-%m-%d", time.gmtime())
@@ -314,7 +314,8 @@ def cmd_taskset(args):
     _write_if_missing(dest / "tasks" / "_template.md", TASK_TMPL)
     _write_if_missing(dest / "BOARD.md", BOARD_TMPL)
     _write_if_missing(dest / "AWAITING_OWNER.md", AWAITING_TMPL)
-    _write_if_missing(dest / "decisions" / ".gitkeep", "")
+    for _d in ("decisions","completed","notes","epics","tasks","issues","deviations"):
+        _write_if_missing(dest / _d / ".gitkeep", "")
     _verdict(True, "taskset", f"new {dest}")
     return 0
 
