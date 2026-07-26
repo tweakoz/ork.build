@@ -109,7 +109,9 @@ def cmd_init(args):
     cfg = _load_config()
     cfg["coordid"] = seat                       # merge — preserves other keys
     if role == "sub" and args.master:
-        cfg["controller"] = _normalize_addr(args.master)
+        cfg["master"] = _normalize_addr(args.master)  # NEVER cfg["controller"]: the
+        # client default must stay the seat's OWN controller (localhost); the
+        # master address lives only in the node launch line and this doc key
     _save_config(cfg)
 
     if role == "master":
