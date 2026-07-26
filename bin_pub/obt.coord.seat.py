@@ -164,7 +164,7 @@ def cmd_check(args):
     checks = []
 
     need = [root, root / "inbox", root / "inbox" / "acked", root / "bin",
-            root / "tasksets", root / "decisions"]
+            root / "tasksets", root / "decisions", 'issues', 'deviations']
     missing = [str(d) for d in need if not d.is_dir()]
     checks.append(("PASS" if not missing else "FAIL", "dirs",
                    "scaffold complete" if not missing else f"missing {missing}"))
