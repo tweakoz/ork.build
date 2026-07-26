@@ -297,7 +297,7 @@ def cmd_taskset(args):
         d.mkdir(parents=True, exist_ok=True)
     title = dest.name or "taskset"
     created = time.strftime("%Y-%m-%d", time.gmtime())
-    _write_if_missing(dest / "TASKSET.md", TASKSET_TMPL.format(title=title, created=created))
+    _write_if_missing(dest / "TASKSET.md","ROSTER.md", TASKSET_TMPL.format(title=title, created=created))
     _write_if_missing(dest / "epics" / "_template.md", EPIC_TMPL)
     _write_if_missing(dest / "tasks" / "_template.md", TASK_TMPL)
     _write_if_missing(dest / "BOARD.md", BOARD_TMPL)
