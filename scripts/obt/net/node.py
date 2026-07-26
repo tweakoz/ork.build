@@ -90,11 +90,29 @@ def default_node_name():
     return n
 
 
+# Restricted-mode allowlists: a coordinator-seat node (--restrict msg,sync)
+# refuses arbitrary run/submit/build/test/scene work, permitting ONLY the
+# command HEADS below (matched server-side against argv[0]'s basename). The
+# file verbs (fetch/tree_manifest/tree_apply/blob_put) ride the separate FETCH
+# socket and move only content — never arbitrary exec — so they stay available
+# in every restricted set by construction. Enforcement lives HERE (server side),
+# never on the client.
+RESTRICT_ALLOWED_HEADS = {
+    "msg":  {"obt.net.msg.deposit.py"},   # the message-deposit tool shape only
+    "sync": {"git"},                       # git status/bundle for sync + gitsync
+}
+
+
 class Node:
     def __init__(self, controller_addr: str, name: str = None, root: Path = None,
-                 workers: int = 2):
+                 workers: int = 2, restrict=None):
         self.controller_addr = proto.normalize_controller_addr(controller_addr)
         self.name = name or default_node_name()
+        # restrict: set of enabled capability tokens (empty = unrestricted)
+        self.restrict = set(t.strip() for t in (restrict or []) if t.strip())
+        self.allowed_heads = set()
+        for tok in self.restrict:
+            self.allowed_heads |= RESTRICT_ALLOWED_HEADS.get(tok, set())
         self.uuid = proto.new_uuid64()
         self.root = Path(root or (Path.home() / ".obtnet" / self.name))
         self.uploads = UploadCache(self.root / "upload_cache")
@@ -502,10 +520,33 @@ class Node:
         except (ProcessLookupError, PermissionError):
             pass
 
+    # -- restricted-mode gate (server-side allowlist) -----------------------
+    def _restrict_check(self, argv, kind="command"):
+        """Return None if allowed, or a loud verdict-style error reply if the
+        node is in restricted mode and this command shape is not permitted.
+        Restricted seats (coordinator nodes) run ONLY message-deposit + file
+        verbs — never build/test/scene/arbitrary run."""
+        if not self.restrict:
+            return None
+        head = os.path.basename(str(argv[0])) if argv else ""
+        allowed = kind == "command" and head in self.allowed_heads
+        if allowed:
+            return None
+        what = f"kind={kind}" if kind != "command" else f"'{head}'"
+        detail = (f"restricted node {self.name} refuses {what} "
+                  f"(restrict={','.join(sorted(self.restrict))}; "
+                  f"allowed heads: {','.join(sorted(self.allowed_heads)) or '(none)'})")
+        self._emit("restricted", f"REFUSED {what} — {detail}")
+        return proto.make_reply_err("restricted", detail=detail, node=self.name,
+                                    head=head, kind=kind,
+                                    restrict=sorted(self.restrict),
+                                    allowed=sorted(self.allowed_heads))
+
     # -- control handlers ---------------------------------------------------
     def _h_node_info(self, msg):
         return proto.make_reply_ok(name=self.name, uuid=self.uuid,
                                    capabilities=proto.probe_capabilities(),
+                                   restrict=sorted(self.restrict),
                                    jobs=self._jobs_snapshot()[-8:])
 
     def _h_upload_query(self, msg):
@@ -533,6 +574,9 @@ class Node:
         spec["kind"] = kind
         if not spec.get("argv"):
             return proto.make_reply_err(proto.ERR_EXEC_FAILED, detail="empty argv")
+        refusal = self._restrict_check(spec["argv"], kind=kind)
+        if refusal is not None:
+            return refusal
         job = Job(spec)
         with self.jobs_lock:
             self.jobs[job.id] = job
@@ -599,6 +643,9 @@ class Node:
         """v0 SYNC path, kept for short commands (the controller relays it off
         its main loop now, so this no longer stalls anyone's heartbeat)."""
         argv = msg["argv"]
+        refusal = self._restrict_check(argv, kind="command")
+        if refusal is not None:
+            return refusal
         t_start = time.time()
         self._emit("run", f"run -> {' '.join(str(a) for a in argv)[:70]}")
         timeout_s = float(msg.get("timeout_s", 300))
@@ -661,9 +708,12 @@ class Node:
             proto.OP_JOB_CANCEL: self._h_job_cancel,
             proto.OP_JOB_LOG: self._h_job_log,
         }
+        restrict_note = (f" restrict={','.join(sorted(self.restrict))} "
+                         f"allowed={','.join(sorted(self.allowed_heads)) or '(none)'}"
+                         if self.restrict else "")
         print(f"[obtnet.node:{self.name}] control tcp://*:{self.control_port} "
               f"pub tcp://*:{self.pub_port} fetch tcp://*:{self.fetch_port} "
-              f"workers={self.n_workers} root={self.root}", flush=True)
+              f"workers={self.n_workers} root={self.root}{restrict_note}", flush=True)
         poller = zmq.Poller()
         poller.register(self.control, zmq.POLLIN)
         while not self._stop.is_set():
@@ -690,8 +740,14 @@ def main(argv=None):
     ap.add_argument("--name", default=None)
     ap.add_argument("--root", default=None)
     ap.add_argument("--workers", type=int, default=2)
+    ap.add_argument("--restrict", default=os.environ.get("OBT_NET_RESTRICT", ""),
+                    help="comma list of allowed capability tokens (e.g. msg,sync). "
+                         "Restricted nodes refuse arbitrary run/build/test/scene; "
+                         "coordinator-seat launch: --restrict msg,sync")
     args = ap.parse_args(argv)
-    node = Node(args.controller, name=args.name, root=args.root, workers=args.workers)
+    restrict = [t for t in (args.restrict or "").replace(",", " ").split() if t]
+    node = Node(args.controller, name=args.name, root=args.root,
+                workers=args.workers, restrict=restrict)
     signal.signal(signal.SIGTERM, lambda *a: node.stop())
     try:
         node.run()

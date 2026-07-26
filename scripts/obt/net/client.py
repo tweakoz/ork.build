@@ -15,6 +15,8 @@ Every verb ends with ONE greppable verdict line (LLM token frugality law);
 import base64
 import json
 import os
+import socket
+import subprocess
 import sys
 import time
 from pathlib import Path
@@ -26,6 +28,28 @@ from obt.net.upload_cache import sha256_hex
 
 
 CONFIG_PATH = Path.home() / ".obt-global" / "obtnet.json"
+COORD_ROOT = Path.home() / "coordination"
+# well-known, venv-independent location of the deposit tool on ssh recipients
+# (deployed there so a bare `ssh host python3 <path>` needs only system python3)
+SSH_DEPOSIT_PATH = "$HOME/coordination/bin/obt.net.msg.deposit.py"
+
+
+def _load_global_config():
+    try:
+        return json.loads(CONFIG_PATH.read_text())
+    except Exception:
+        return {}
+
+
+def _coordid():
+    """Sender identity: explicit `coordid` in obtnet.json, else short hostname."""
+    return _load_global_config().get("coordid") or socket.gethostname().split(".")[0]
+
+
+def _sshhosts():
+    """Map of ssh-target-name -> ssh destination (host alias) for msg/push/pull."""
+    hosts = _load_global_config().get("sshhosts") or {}
+    return {k: (v or k) for k, v in hosts.items()}
 
 
 def resolve_controller(explicit=None):
@@ -594,6 +618,164 @@ def _print_job_fail_tail(c, node, job, n=30):
             break
 
 
+# ---------------------------------------------------------------------------
+# coordinator messaging (pilot): msg send/list/ack, push/pull, @coords fan-out
+# ---------------------------------------------------------------------------
+
+def _utc_ts():
+    return time.strftime("%Y%m%dT%H%M%SZ", time.gmtime())
+
+
+def _parse_deposit_stdout(text):
+    """The deposit tool prints one JSON result line; pull it out of stdout."""
+    for line in reversed((text or "").strip().splitlines()):
+        line = line.strip()
+        if line.startswith("{"):
+            try:
+                d = json.loads(line)
+            except ValueError:
+                continue
+            if d.get("ok"):
+                return d
+            raise RuntimeError(f"deposit error: {d.get('error')}")
+    raise RuntimeError(f"deposit produced no result line: {text[:300]!r}")
+
+
+def _resolve_target(c, target):
+    """Route a msg/push/pull target: a LIVE node name -> ('node', name);
+    else an sshhosts entry -> ('ssh', dest); else a loud error listing both."""
+    live = sorted(n["name"] for n in c._live_nodes())
+    if target in live:
+        return ("node", target)
+    hosts = _sshhosts()
+    if target in hosts:
+        return ("ssh", hosts[target])
+    raise RuntimeError(
+        f"unknown target {target!r}; known live nodes={live}, "
+        f"sshhosts={sorted(hosts)} (use @coords to broadcast)")
+
+
+def _coord_targets(c):
+    """@coords fan-out set: every LIVE node named coord-* PLUS every sshhosts
+    entry (ordered, deduped)."""
+    out = []
+    for n in sorted(n["name"] for n in c._live_nodes()):
+        if n.startswith("coord-") and n not in out:
+            out.append(n)
+    for h in sorted(_sshhosts()):
+        if h not in out:
+            out.append(h)
+    return out
+
+
+def _msg_send_node(c, node, sender, subject, ts, payload_b64):
+    """Deposit via the node's own run machinery: argv is exec'd DIRECTLY on the
+    node (no shell), so subject/base64 payload carry safely as argv elements.
+    On a restricted seat this passes because the deposit head is allow-listed."""
+    argv = ["obt.net.msg.deposit.py", "--from", sender, "--subject", subject,
+            "--ts", ts, "--payload-b64", payload_b64]
+    rep = c.run(node, argv, timeout_s=30)
+    if not rep.get("ok"):
+        raise RuntimeError(f"node run failed: {rep.get('error')}")
+    if rep.get("rc") != 0:
+        raise RuntimeError(f"deposit rc={rep.get('rc')} stderr={rep.get('stderr','')[:200]}")
+    return _parse_deposit_stdout(rep.get("stdout", ""))
+
+
+def _msg_send_ssh(dest, sender, subject, ts, payload_b64):
+    """Deposit over bare ssh: the entire message rides a JSON blob on STDIN
+    (zero shell interpolation of subject/payload); the remote shell only ever
+    sees the fixed `python3 <path> --stdin-json` words. Runs the same tool via
+    system python3 — no obt venv needed on the recipient."""
+    blob = json.dumps({"from": sender, "subject": subject, "ts": ts,
+                       "payload_b64": payload_b64}).encode("utf-8")
+    argv = ["ssh", "-o", "BatchMode=yes", dest,
+            "python3", SSH_DEPOSIT_PATH, "--stdin-json"]
+    r = subprocess.run(argv, input=blob, capture_output=True, timeout=45)
+    if r.returncode != 0:
+        raise RuntimeError(f"ssh deposit rc={r.returncode}: "
+                           f"{r.stderr.decode(errors='replace')[:300]}")
+    return _parse_deposit_stdout(r.stdout.decode(errors="replace"))
+
+
+def _do_msg_send(c, target, sender, subject, ts, payload_b64):
+    """Route one message; returns (via, deposit_result_dict)."""
+    kind, dest = _resolve_target(c, target)
+    if kind == "node":
+        return "node", _msg_send_node(c, target, sender, subject, ts, payload_b64)
+    return "ssh", _msg_send_ssh(dest, sender, subject, ts, payload_b64)
+
+
+def _read_frontmatter(path):
+    """Parse the from/subject/ts frontmatter of an inbox .md; best-effort."""
+    fm = {}
+    try:
+        with open(path, encoding="utf-8", errors="replace") as f:
+            first = f.readline()
+            if first.strip() != "---":
+                return fm
+            for line in f:
+                if line.strip() == "---":
+                    break
+                if ":" in line:
+                    k, v = line.split(":", 1)
+                    fm[k.strip()] = v.strip()
+    except OSError:
+        pass
+    return fm
+
+
+def _inbox_messages():
+    """Local unacked inbox messages, newest first: list of (ts, from, subject, path)."""
+    inbox = COORD_ROOT / "inbox"
+    rows = []
+    if inbox.is_dir():
+        for p in inbox.glob("*.md"):
+            fm = _read_frontmatter(p)
+            rows.append((fm.get("ts", p.name[:16]), fm.get("from", "?"),
+                         fm.get("subject", ""), str(p)))
+    rows.sort(key=lambda r: r[0], reverse=True)
+    return rows
+
+
+def _push_pull(c, target, local, remote, pull):
+    """File transfer routed like msg: node channel for a live node (content-
+    addressed sync/fetch), scp for an ssh host. Returns the via token."""
+    kind, dest = _resolve_target(c, target)
+    if kind == "ssh":
+        if pull:
+            argv = ["scp", "-q", "-o", "BatchMode=yes", f"{dest}:{remote}", local]
+        else:
+            argv = ["scp", "-q", "-o", "BatchMode=yes", local, f"{dest}:{remote}"]
+        r = subprocess.run(argv, capture_output=True, timeout=300)
+        if r.returncode != 0:
+            raise RuntimeError(f"scp rc={r.returncode}: "
+                               f"{r.stderr.decode(errors='replace')[:300]}")
+        return "scp"
+    # node channel
+    if pull:                      # hash the remote file, fetch its blob by sha
+        rem_dir = os.path.dirname(remote) or "."
+        rep = c._fetch_req(c._fetch_addr(target), proto.make_request(
+            proto.OP_TREE_MANIFEST, root=rem_dir, excludes=[]))
+        if not rep.get("ok"):
+            raise RuntimeError(f"remote manifest failed: {rep.get('error')}")
+        entry = (rep.get("manifest") or {}).get(os.path.basename(remote))
+        if not entry or entry.get("t") != "f":
+            raise RuntimeError(f"remote file not found: {remote}")
+        c.fetch(target, entry["sha256"], local)
+        return "node"
+    else:                         # stage the single file, content-sync it over
+        import tempfile
+        import shutil
+        tmp = Path(tempfile.mkdtemp(prefix="obtnet_push_"))
+        try:
+            (tmp / os.path.basename(remote)).write_bytes(Path(local).read_bytes())
+            c.sync(target, str(tmp), os.path.dirname(remote) or ".")
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+        return "node"
+
+
 def main(argv=None):
     import argparse
     raw = list(sys.argv[1:] if argv is None else argv)
@@ -675,6 +857,25 @@ def main(argv=None):
     p.add_argument("--dry", action="store_true", help="report the diff, change nothing")
     p.add_argument("--exclude", action="append", default=[], help="extra exclude pattern")
     p.add_argument("-v", action="store_true", help="list changed paths (first 50)")
+    # -- coordinator messaging pilot ---------------------------------------
+    pmsg = sub.add_parser("msg", help="coordinator messaging (send/list/ack)")
+    msub = pmsg.add_subparsers(dest="msgcmd", required=True)
+    ps = msub.add_parser("send", help="deposit a message to a node or ssh host "
+                                       "(or @coords to broadcast)")
+    ps.add_argument("target")
+    ps.add_argument("--subject", required=True)
+    g = ps.add_mutually_exclusive_group(required=True)
+    g.add_argument("--body", help="inline message body text")
+    g.add_argument("--body-file", help="read message body from a file ('-' = stdin)")
+    pls = msub.add_parser("list", help="list this box's local inbox, newest first")
+    pls.add_argument("--inbox", action="store_true",
+                     help="(default view; reserved for future scopes)")
+    pak = msub.add_parser("ack", help="move an inbox message to inbox/acked/")
+    pak.add_argument("ref", help="message file path, or a ts / filename fragment")
+    ppush = sub.add_parser("push", help="send a file to a node/ssh host (routed like msg)")
+    ppush.add_argument("target"); ppush.add_argument("local"); ppush.add_argument("remote")
+    ppull = sub.add_parser("pull", help="fetch a file from a node/ssh host (routed like msg)")
+    ppull.add_argument("target"); ppull.add_argument("remote"); ppull.add_argument("local")
     args = ap.parse_args(raw)
 
     c = Client(args.controller)
@@ -693,6 +894,96 @@ def main(argv=None):
                 print(json.dumps({"controller": addr, "source": src}))
             else:
                 print(f"controller: {addr}   (from {src})")
+        return 0
+
+    if args.cmd == "msg":
+        if args.msgcmd == "send":
+            sender = _coordid()
+            ts = _utc_ts()
+            if args.body_file:
+                data = (sys.stdin.buffer.read() if args.body_file == "-"
+                        else Path(args.body_file).read_bytes())
+            else:
+                data = (args.body or "").encode("utf-8")
+            payload_b64 = base64.b64encode(data).decode()
+            if args.target == "@coords":
+                targets = _coord_targets(c)
+                if not targets:
+                    _verdict(False, "msg", "@coords",
+                             "no coord-* nodes or sshhosts to broadcast to", jm)
+                    return 1
+                fails = []
+                for t in targets:
+                    try:
+                        via, res = _do_msg_send(c, t, sender, args.subject, ts, payload_b64)
+                        _verdict(True, "msg", t,
+                                 f"subject<{args.subject}> via<{via}>", jm,
+                                 {"target": t, "via": via, "path": res.get("path")})
+                    except Exception as e:
+                        _verdict(False, "msg", t, f"error={e}", jm, {"error": str(e)})
+                        fails.append(t)
+                _verdict(not fails, "msg", f"@coords({len(targets)})",
+                         f"ok={len(targets)-len(fails)}/{len(targets)}"
+                         + (f" failed={fails}" if fails else ""), jm)
+                return 0 if not fails else 1
+            try:
+                via, res = _do_msg_send(c, args.target, sender, args.subject, ts,
+                                        payload_b64)
+            except Exception as e:
+                _verdict(False, "msg", args.target, f"error={e}", jm, {"error": str(e)})
+                return 1
+            _verdict(True, "msg", args.target,
+                     f"subject<{args.subject}> via<{via}>", jm,
+                     {"target": args.target, "via": via, "path": res.get("path"),
+                      "ts": ts, "from": sender})
+            return 0
+
+        if args.msgcmd == "list":
+            rows = _inbox_messages()
+            if jm:
+                print(json.dumps([{"ts": r[0], "from": r[1], "subject": r[2],
+                                   "path": r[3]} for r in rows]))
+            else:
+                for ts_, frm, subj, pth in rows:
+                    print(f"{ts_}  {frm:16s}  {subj[:50]:50s}  {pth}")
+            _verdict(True, "msg", "inbox", f"n={len(rows)}", jm)
+            return 0
+
+        if args.msgcmd == "ack":
+            inbox = COORD_ROOT / "inbox"
+            acked = inbox / "acked"
+            cand = Path(args.ref)
+            if not cand.is_file():
+                matches = [p for p in inbox.glob("*.md")
+                           if args.ref in p.name]
+                if len(matches) == 0:
+                    _verdict(False, "msg", "ack", f"no inbox message matches {args.ref!r}",
+                             jm)
+                    return 1
+                if len(matches) > 1:
+                    _verdict(False, "msg", "ack",
+                             f"ambiguous ref {args.ref!r} matches {len(matches)}: "
+                             f"{sorted(p.name for p in matches)}", jm)
+                    return 1
+                cand = matches[0]
+            acked.mkdir(parents=True, exist_ok=True)
+            target_path = acked / cand.name
+            os.replace(str(cand), str(target_path))
+            _verdict(True, "msg", "ack", f"{cand.name} -> inbox/acked/", jm,
+                     {"acked": str(target_path)})
+            return 0
+
+    if args.cmd in ("push", "pull"):
+        try:
+            via = _push_pull(c, args.target, args.local, args.remote,
+                             pull=(args.cmd == "pull"))
+        except Exception as e:
+            _verdict(False, args.cmd, args.target, f"error={e}", jm, {"error": str(e)})
+            return 1
+        _verdict(True, args.cmd, args.target,
+                 f"{args.local} {'<-' if args.cmd == 'pull' else '->'} {args.remote} "
+                 f"via<{via}>", jm,
+                 {"local": args.local, "remote": args.remote, "via": via})
         return 0
 
     # '@' selectors route to a node; comma-lists and '@each[:terms]' FAN OUT
@@ -811,8 +1102,10 @@ def main(argv=None):
                         timeout_s=args.timeout, output_globs=args.out)
             dt = time.time() - t0
             if not rep.get("ok"):
-                _verdict(False, "run", args.node, f"error={rep.get('error')} {dt:.1f}s",
-                         jm, {"error": rep.get("error")})
+                det = rep.get("detail")
+                _verdict(False, "run", args.node,
+                         f"error={rep.get('error')}{': ' + det if det else ''} {dt:.1f}s",
+                         jm, {"error": rep.get("error"), "detail": det})
                 return 1
             if not jm:
                 sys.stdout.write(rep["stdout"])
@@ -831,9 +1124,11 @@ def main(argv=None):
             rep = c.job_submit(args.node, cmd_argv, env=env, cwd=args.cwd,
                                timeout_s=args.timeout, output_globs=args.out)
             ok = bool(rep.get("ok"))
+            det = rep.get("detail")
             _verdict(ok, "submit", args.node,
-                     f"job={rep.get('job')}" if ok else f"error={rep.get('error')}",
-                     jm, {"job": rep.get("job"), "error": rep.get("error")})
+                     f"job={rep.get('job')}" if ok else
+                     f"error={rep.get('error')}{': ' + det if det else ''}",
+                     jm, {"job": rep.get("job"), "error": rep.get("error"), "detail": det})
             return 0 if ok else 1
 
     if args.cmd in ("build", "test", "scene"):
@@ -852,8 +1147,10 @@ def main(argv=None):
         rep = c.job_submit(args.node, argv2, kind=kind, env=env, cwd=args.cwd,
                            timeout_s=args.timeout, output_globs=args.out, **extra)
         if not rep.get("ok"):
-            _verdict(False, args.cmd, args.node, f"error={rep.get('error')}", jm,
-                     {"error": rep.get("error")})
+            det = rep.get("detail")
+            _verdict(False, args.cmd, args.node,
+                     f"error={rep.get('error')}{': ' + det if det else ''}", jm,
+                     {"error": rep.get("error"), "detail": det})
             return 1
         job = rep["job"]
         if args.asy:
