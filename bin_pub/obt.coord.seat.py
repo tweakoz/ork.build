@@ -92,7 +92,8 @@ def cmd_init(args):
     seat, role = args.seat, args.role
     root = _coord_root()
     for d in (root / "inbox" / "acked", root / "bin",
-              root / "tasksets", root / "decisions"):
+              root / "tasksets", root / "decisions",
+          root / "issues", root / "deviations"):
         d.mkdir(parents=True, exist_ok=True)
 
     dst = root / "bin" / DEPOSIT_TOOL
@@ -164,7 +165,7 @@ def cmd_check(args):
     checks = []
 
     need = [root, root / "inbox", root / "inbox" / "acked", root / "bin",
-            root / "tasksets", root / "decisions", 'issues', 'deviations']
+        root / "tasksets", root / "decisions", root / "issues", root / "deviations"]
     missing = [str(d) for d in need if not d.is_dir()]
     checks.append(("PASS" if not missing else "FAIL", "dirs",
                    "scaffold complete" if not missing else f"missing {missing}"))
@@ -238,6 +239,14 @@ seats:   []
      flips are the workflow; commit whenever. -->
 """
 
+ROSTER_TMPL = """# ROSTER — seat / controller / net assignments (HUMAN-EDITED)
+## localhost — MASTER (single-seat default; edit as the fleet grows)
+- controller: tcp://localhost:7461
+- nodes: localhost
+- hardware anchor: localhost
+- owns epics: ALL
+"""
+
 EPIC_TMPL = """\
 ---
 id: <epic-slug>
@@ -293,11 +302,12 @@ def cmd_taskset(args):
         _verdict(False, "taskset", f"unknown subcommand {args.tscmd!r}")
         return 2
     dest = Path(args.path).expanduser()
-    for d in (dest, dest / "epics", dest / "tasks", dest / "decisions"):
+    for d in (dest, dest / "epics", dest / "tasks", dest / "decisions", dest / "issues", dest / "deviations"):
         d.mkdir(parents=True, exist_ok=True)
     title = dest.name or "taskset"
     created = time.strftime("%Y-%m-%d", time.gmtime())
-    _write_if_missing(dest / "TASKSET.md","ROSTER.md", TASKSET_TMPL.format(title=title, created=created))
+    _write_if_missing(dest / "TASKSET.md", TASKSET_TMPL.format(title=title, created=created))
+    _write_if_missing(dest / "ROSTER.md", ROSTER_TMPL)
     _write_if_missing(dest / "epics" / "_template.md", EPIC_TMPL)
     _write_if_missing(dest / "tasks" / "_template.md", TASK_TMPL)
     _write_if_missing(dest / "BOARD.md", BOARD_TMPL)
