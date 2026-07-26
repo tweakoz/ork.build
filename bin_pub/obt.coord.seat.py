@@ -304,7 +304,7 @@ def cmd_taskset(args):
         _verdict(False, "taskset", f"unknown subcommand {args.tscmd!r}")
         return 2
     dest = Path(args.path).expanduser()
-    for d in (dest, dest / "epics", dest / "tasks", dest / "decisions", dest / "issues", dest / "deviations"):
+    for d in (dest, dest / "epics", dest / "tasks", dest / "decisions", dest / "issues", dest / "deviations", dest / "completed"):
         d.mkdir(parents=True, exist_ok=True)
     title = dest.name or "taskset"
     created = time.strftime("%Y-%m-%d", time.gmtime())
