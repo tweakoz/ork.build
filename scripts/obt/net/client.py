@@ -458,9 +458,38 @@ class Client:
                            capture_output=True, text=True)
         return r.returncode, r.stdout.strip()
 
+    @staticmethod
+    def _check_remote_path(repo, node):
+        """Remote argv is exec'd WITHOUT a shell (that is what lets a restricted
+        seat allowlist the 'git' head), so '~' never expands — git would receive
+        the literal string and report 'not a git repo'. Fail with the real
+        reason instead of that lie. (The file verbs expanduser server-side, so
+        this only binds the git legs.)"""
+        s = str(repo)
+        if s.startswith("~"):
+            raise RuntimeError(
+                f"remote path {s!r} on {node} starts with '~': remote commands run "
+                f"without a shell, so '~' is not expanded — pass the absolute path")
+
     def _remote_git(self, node, repo, *args):
-        rep = self.run(node, ["git", "-C", str(repo)] + list(args), timeout_s=30)
+        """One DIRECT `git ...` argv on the node — never shell-wrapped, so a
+        restricted seat node (allowed heads: git) accepts it."""
+        self._check_remote_path(repo, node)
+        rep = self.run(node, ["git", "-C", str(repo)] + [str(a) for a in args],
+                       timeout_s=30)
         return (rep.get("rc", 1) if rep.get("ok") else 1), (rep.get("stdout") or "").strip()
+
+    def _remote_git_step(self, node, repo, *args, timeout_s=120):
+        """_remote_git for steps whose FAILURE TEXT matters: returns the full
+        reply (stderr included) and raises loudly when the node refuses to run
+        it at all (e.g. a restricted head)."""
+        self._check_remote_path(repo, node)
+        rep = self.run(node, ["git", "-C", str(repo)] + [str(a) for a in args],
+                       timeout_s=timeout_s)
+        if not rep.get("ok"):
+            det = rep.get("detail") or rep.get("error")
+            raise RuntimeError(f"remote `git {args[0]}` on {node} did not run: {det}")
+        return rep
 
     def gitsync(self, node, local_repo, remote_repo, dry=False):
         """Make the node repo's git state (branch + HEAD) equal the controller
@@ -507,6 +536,15 @@ class Client:
                 "for f in sys.argv[1:]:\n"
                 "  print(hashlib.sha256(open(f,'rb').read()).hexdigest(), f)",
                 *r_dirty], cwd=remote_repo, timeout_s=60)
+            if not rep.get("ok") and rep.get("error") == "restricted":
+                # a restricted seat allowlists 'git' only, so the ownership
+                # proof cannot be computed — say THAT, instead of reporting
+                # every dirty file as somebody else's work.
+                raise RuntimeError(
+                    f"{remote_repo} on {node} has {len(r_dirty)} tracked-dirty file(s) "
+                    f"({', '.join(r_dirty[:3])}...) and {node} is a RESTRICTED node, so "
+                    f"the own-WIP ownership proof (a content hash) cannot run there — "
+                    f"clean that tree by hand, or gitsync via an unrestricted node")
             for ln in (rep.get("stdout") or "").splitlines():
                 parts = ln.split(None, 1)
                 if len(parts) == 2:
@@ -529,6 +567,22 @@ class Client:
                                     f"{r_head}..{l_head}")[1]
         if dry:
             return {**state, "action": f"would-fast-forward {n_commits} commits", "ok": True}
+        # The remote leg is composed of DIRECT `git ...` argv steps — never a
+        # shell compound. argv[0] is what a restricted seat node allowlists
+        # ('git' for the sync token), and `sh -c "git ... && git ..."` presents
+        # argv[0]='sh', which such a node correctly refuses. The bundle
+        # therefore cannot ride as a run-input either (it materializes into a
+        # server-chosen temp workdir whose path only a shell's $PWD could name):
+        # it is STAGED at a client-known absolute path via the FETCH socket,
+        # whose file verbs move content without exec and stay available under
+        # every restrict set. Staging lives inside the remote .git dir — same
+        # filesystem, and invisible to `git status`, so it can never look like
+        # working-tree dirt.
+        rc, r_gitdir = self._remote_git(node, remote_repo, "rev-parse",
+                                        "--absolute-git-dir")
+        if rc or not r_gitdir:
+            raise RuntimeError(f"cannot resolve the git dir of {remote_repo} on {node}")
+        stage_dir = f"{r_gitdir}/obtnet-gitsync"
         with tempfile.TemporaryDirectory() as td:
             bpath = Path(td) / "gitsync.bundle"
             r = subprocess.run(["git", "-C", str(local_repo), "bundle", "create",
@@ -537,18 +591,27 @@ class Client:
             if r.returncode:
                 raise RuntimeError(f"bundle create failed: {r.stderr.strip()[:200]}")
             data = bpath.read_bytes()
-            sha = sha256_hex(data)
-            addr = self._fetch_addr(node)
-            self._blob_put(addr, data, sha, tag="gitsync.bundle")
-        # the bundle materializes into the job workdir; fetch + checkout there
-        co_flags = "-q -f" if own_wip else "-q"
-        script = (f"git -C {remote_repo} fetch \"$PWD/gitsync.bundle\" && "
-                  f"git -C {remote_repo} checkout {co_flags} -B {l_branch} {l_head}")
-        rep = self.run(node, ["sh", "-c", script], timeout_s=120,
-                       inputs=[{"sha256": sha, "as": "gitsync.bundle"}])
-        if not rep.get("ok") or rep.get("rc") != 0:
-            raise RuntimeError(f"remote fetch/checkout failed: "
-                               f"{(rep.get('stderr') or rep.get('error') or '')[-300:]}")
+            rs = self.sync(node, td, stage_dir, force=True)   # file verbs only
+            if rs["tree"] != rs["want_tree"]:
+                raise RuntimeError(f"bundle staging to {stage_dir} did not verify")
+        remote_bundle = f"{stage_dir}/gitsync.bundle"
+        try:
+            rep = self._remote_git_step(node, remote_repo, "fetch", remote_bundle)
+            if rep.get("rc") != 0:
+                raise RuntimeError(f"remote git fetch of the bundle failed: "
+                                   f"{(rep.get('stderr') or '')[-300:]}")
+            co = ["checkout", "-q"] + (["-f"] if own_wip else []) + \
+                 ["-B", l_branch, l_head]
+            rep = self._remote_git_step(node, remote_repo, *co)
+            if rep.get("rc") != 0:
+                raise RuntimeError(f"remote git checkout failed: "
+                                   f"{(rep.get('stderr') or '')[-300:]}")
+        finally:                      # drop the staged bundle (file verb, no exec)
+            with tempfile.TemporaryDirectory() as empty:
+                try:
+                    self.sync(node, empty, stage_dir, delete=True, force=True)
+                except (RuntimeError, KeyError, zmq.ZMQError):
+                    pass              # a leftover bundle is litter, not a failure
         rc2, r_head2 = self._remote_git(node, remote_repo, "rev-parse", "HEAD")
         if r_head2 != l_head:
             raise RuntimeError(f"post-sync mismatch: remote at {r_head2[:12]}")
