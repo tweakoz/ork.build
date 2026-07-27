@@ -43,6 +43,9 @@ obt.net.py sync <node> L R --pull                         # make local == remote
 obt.net.py gitsync <node> <local_repo> <remote_repo>      # align git base (branch+HEAD)
                                                           #   via bundle, NO push; --tree
                                                           #   chains the uncommitted delta
+                                                          #   LFS objects the node lacks
+                                                          #   ride along (--no-lfs off,
+                                                          #   --lfs-max-mb caps a seed)
 obt.net.py diff <node> <local_dir> <remote_dir>           # +/-/M/L classified; rc0=equal
 obt.net.py watch [--node N] [--grep P]                    # live fleet event tail (ctrl-c)
 ```

@@ -25,6 +25,17 @@ environment produces confusing distant failures — `ModuleNotFoundError: obt`, 
 `$OBT_STAGE` — instead of a loud local one. Temp/extra nodes go through
 `obt.env.launch.py --stagedir <stage> --command obt.net.node.py` too.
 
+## Coordinator nodes are a different class
+
+`coord-<seat>` nodes (launched with `--restrict msg,sync`) are NOT workers: they are a
+sub seat's communication endpoint on the MASTER's controller — msg/push/pull/sync only,
+work verbs refused. Ownership differs accordingly: the seat's COORDINATOR starts and
+restarts its own coord node (bus plumbing, like its controller), while WORKER nodes are
+owner-started at a watched console. The launch law above still applies, as does the
+restart-after-upgrade rule below. Full doctrine: the orkid repo's
+`.claude/skills/coordinator/COORDINATION_OPS.md` ("Two node classes" + "Division of
+control").
+
 ## What the controller may do to this machine
 
 - **Jobs run in your env**: `run`/`submit`/`build`/`test`/`scene` execute with this node's
@@ -62,4 +73,5 @@ environment produces confusing distant failures — `ModuleNotFoundError: obt`, 
 | controller `list` doesn't show this node | controller addr wrong (`--controller`, `OBTNET_CONTROLLER`, `~/.obt-global/obtnet.json`) or network |
 | node console says "controller forgot us; re-registering" | controller restarted — harmless, self-heals |
 | gitsync refuses: DIVERGED | this checkout has local commits — resolve with git, don't fight the tool |
+| gitsync FAILs naming LFS pointers/smudge | the asset objects are not in this node's `.git/lfs/objects` and no server has them (lane commits are never pushed) — the controller stages them; do NOT `git lfs pull` |
 | build fails `CMake Error: source ... does not match` | a lane repointed the staging build dir — remove `CMakeCache.txt` + `CMakeFiles` under `<stage>/builds/<proj>/.build` |

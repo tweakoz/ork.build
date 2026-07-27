@@ -491,18 +491,279 @@ class Client:
             raise RuntimeError(f"remote `git {args[0]}` on {node} did not run: {det}")
         return rep
 
-    def gitsync(self, node, local_repo, remote_repo, dry=False):
+    # -- gitsync: LFS objects (a bundle carries POINTERS, never the content) --
+    #
+    # A git bundle transports commits/trees/blobs — and an LFS-tracked file's
+    # blob IS the ~130-byte pointer. So a node that lacks the real object dies
+    # in the smudge filter at checkout ("external filter 'git-lfs
+    # filter-process' failed"), and `git lfs pull` cannot save it: lane commits
+    # are never pushed, so no LFS server has the object either. The controller
+    # is the only holder, hence: stage the missing objects over the same file
+    # verbs the bundle rides, BEFORE the checkout.
+    SMUDGE_MARKERS = ("smudge filter", "external filter", "filter-process",
+                      "Error downloading object", "should have been pointers",
+                      "Smudge error")
+
+    @classmethod
+    def _smudge_failure(cls, text):
+        """The smudge-failure lines in a git leg's stderr, or "" — the check
+        that does NOT trust rc (a node with filter.lfs.required=false, or
+        lfs.skipdownloaderrors, fails the smudge and still exits 0, leaving
+        POINTER TEXT where an asset belongs)."""
+        hits = [ln.strip() for ln in (text or "").splitlines()
+                if any(m in ln for m in cls.SMUDGE_MARKERS)]
+        return "\n".join(hits[:6])
+
+    @staticmethod
+    def _lfs_store_relpath(oid):
+        """LFS store layout — content-addressed, which is what makes a plain
+        dir-sync of the missing objects safe (never a delete: every node's
+        store is its own superset)."""
+        return f"{oid[:2]}/{oid[2:4]}/{oid}"
+
+    @staticmethod
+    def _parse_lfs_ls_files(text):
+        """`git lfs ls-files --long <ref>` -> [(oid, marker, path)].
+        Line: '<64-hex oid> <*|-> <path>' (paths may contain spaces).
+        The marker reports WORKING-TREE materialization ('*' real content on
+        disk, '-' pointer or absent) — NOT object-store presence; store
+        presence is answered by the file-verb manifest instead."""
+        out = []
+        for ln in (text or "").splitlines():
+            parts = ln.split(" ", 2)
+            if len(parts) != 3:
+                continue
+            oid, mark, path = parts[0].strip().lower(), parts[1], parts[2].strip()
+            if len(oid) != 64 or any(c not in "0123456789abcdef" for c in oid):
+                continue
+            out.append((oid, mark, path))
+        return out
+
+    @staticmethod
+    def _chunks(seq, n):
+        seq = list(seq)
+        for i in range(0, len(seq), n):
+            yield seq[i:i + n]
+
+    def _git_common_dir(self, node, repo):
+        """Absolute .git dir that HOLDS THE LFS STORE. A linked worktree keeps
+        its lfs objects in the COMMON dir, so --absolute-git-dir would name the
+        wrong store; node=None asks the local repo."""
+        args = ("rev-parse", "--path-format=absolute", "--git-common-dir")
+        rc, out = (self._local_git(repo, *args) if node is None
+                   else self._remote_git(node, repo, *args))
+        if rc == 0 and out.strip().startswith("/"):
+            return out.strip()
+        args = ("rev-parse", "--absolute-git-dir")
+        rc, out = (self._local_git(repo, *args) if node is None
+                   else self._remote_git(node, repo, *args))
+        return out.strip() if rc == 0 else None
+
+    def _lfs_ls_files(self, node, repo, ref):
+        """LFS files of ref's tree: [(oid, marker, path)], or None when git-lfs
+        is not available there (no git-lfs = no smudge = nothing to repair).
+        Empty list = the repo simply has no LFS. node=None asks the local
+        repo."""
+        args = ("lfs", "ls-files", "--long", ref)
+        if node is None:
+            rc, out = self._local_git(repo, *args)
+        else:
+            rep = self.run(node, ["git", "-C", str(repo)] + [str(a) for a in args],
+                           timeout_s=180)
+            if not rep.get("ok"):
+                return None
+            rc, out = rep.get("rc", 1), (rep.get("stdout") or "")
+        if rc:
+            return None
+        return self._parse_lfs_ls_files(out)
+
+    def _lfs_stage_missing(self, node, local_repo, remote_repo, r_gitdir,
+                           l_head, max_bytes):
+        """Give the node every LFS object the TARGET tree needs and its store
+        lacks. Enumeration is local (`git lfs ls-files` on the target commit —
+        one cheap command, and the controller is the only holder anyway);
+        presence is the node's store manifest over the fetch socket, where the
+        file NAME is the sha256 of the content, so 'present and intact' is one
+        comparison. Only the missing objects travel, and nothing is ever
+        deleted. Returns a dict folded into the gitsync result."""
+        needed = self._lfs_ls_files(None, local_repo, l_head)
+        if needed is None:
+            return {"lfs": "skipped (no git-lfs on the controller)"}
+        if not needed:
+            # repo has no LFS at this commit — clean no-op (and lfs_needed=0
+            # tells the caller the pointer scan has nothing to look for)
+            return {"lfs_objects": 0, "lfs_needed": 0}
+        l_common = self._git_common_dir(None, local_repo)
+        r_common = self._git_common_dir(node, remote_repo) or r_gitdir
+        if not l_common:
+            return {"lfs": "skipped (local git dir unresolved)"}
+        l_store = Path(l_common) / "lfs" / "objects"
+        r_store = f"{r_common}/lfs/objects"
+        addr = self._fetch_addr(node)
+        rep = self._fetch_req(addr, proto.make_request(
+            proto.OP_TREE_MANIFEST, root=r_store, excludes=[]),
+            timeout_ms=600000)                 # cold store hash can be minutes
+        if not rep.get("ok"):
+            raise RuntimeError(f"cannot read the LFS store of {remote_repo} on "
+                               f"{node} ({r_store}): {rep.get('error')}")
+        present = {rel: e.get("sha256") for rel, e in (rep["manifest"] or {}).items()}
+        want, seen = [], set()
+        for oid, _mark, _path in needed:
+            if oid in seen:
+                continue
+            seen.add(oid)
+            rel = self._lfs_store_relpath(oid)
+            if present.get(rel) != oid:        # absent, or corrupt in-place
+                want.append(oid)
+        if not want:
+            return {"lfs_objects": 0, "lfs_needed": len(seen)}
+        have, absent = [], []
+        for oid in want:
+            (have if (l_store / self._lfs_store_relpath(oid)).is_file()
+             else absent).append(oid)
+        if not have:
+            return {"lfs_objects": 0, "lfs_needed": len(seen),
+                    "lfs_absent_locally": absent[:10]}
+        nbytes = sum((l_store / self._lfs_store_relpath(o)).stat().st_size
+                     for o in have)
+        if nbytes > max_bytes:
+            raise RuntimeError(
+                f"{node} lacks {len(have)} LFS object(s) totalling "
+                f"{nbytes/1e6:.0f}MB — that is a store SEED, not a sync delta "
+                f"(limit {max_bytes/1e6:.0f}MB). Raise it with --lfs-max-mb, or "
+                f"seed the store once with: obt.net.py sync {node} "
+                f"{l_store} {r_store}")
+        import tempfile
+        with tempfile.TemporaryDirectory() as td:
+            for oid in have:
+                rel = self._lfs_store_relpath(oid)
+                dst = Path(td) / rel
+                dst.parent.mkdir(parents=True, exist_ok=True)
+                try:
+                    os.link(l_store / rel, dst)      # no copy when same fs
+                except OSError:
+                    import shutil
+                    shutil.copyfile(l_store / rel, dst)
+            rs = self.sync(node, td, r_store, force=True)   # never --delete
+        if rs["tree"] != rs["want_tree"]:
+            raise RuntimeError(f"LFS object staging to {r_store} did not verify")
+        out = {"lfs_objects": len(have), "lfs_bytes": nbytes,
+               "lfs_needed": len(seen)}
+        if absent:
+            out["lfs_absent_locally"] = absent[:10]
+        return out
+
+    # -- gitsync: debris from an ABORTED checkout ----------------------------
+    #
+    # A checkout that dies in the smudge filter has already created some of the
+    # new-in-target files. They survive as untracked collisions ("would be
+    # overwritten by checkout") that block every retry. They are OUR litter,
+    # not human work — provable: the content is exactly what the target tree
+    # holds for that path (real content, or the LFS pointer for it).
+    @staticmethod
+    def _literal(paths):
+        """Pathspec magic: a path is a PATH here, never a glob (assets are full
+        of '[' and '#'), and -z output keeps git from quoting non-ASCII names."""
+        return [f":(literal){p}" for p in paths]
+
+    def _remote_untracked(self, node, repo, paths):
+        """Which of `paths` exist as untracked files on the node (git-only, so
+        a restricted seat can answer)."""
+        found = []
+        for chunk in self._chunks(paths, 400):
+            rep = self._remote_git_step(node, repo, "ls-files", "--others",
+                                        "--exclude-standard", "-z", "--",
+                                        *self._literal(chunk), timeout_s=120)
+            if rep.get("rc") != 0:
+                raise RuntimeError(
+                    f"remote `git ls-files` on {node} failed: "
+                    f"{(rep.get('stderr') or '')[-200:]}")
+            found += [p for p in (rep.get("stdout") or "").split("\0") if p]
+        return found
+
+    def _remote_blob_ids(self, node, repo, paths, no_filters):
+        """{path: blob id} for files ON THE NODE, via `git hash-object` — the
+        restricted-seat-safe content proof (argv[0] is git, no exec token
+        needed). With filters an LFS-materialized file hashes to its POINTER
+        blob (what a commit would hold); --no-filters hashes the literal bytes
+        (what a pointer file already is). Failure -> {} (proof unavailable =
+        not proven ours)."""
+        out = {}
+        flags = ["--no-filters"] if no_filters else []
+        for chunk in self._chunks(paths, 200):
+            try:
+                rep = self._remote_git_step(node, repo, "hash-object", *flags,
+                                            "--", *chunk, timeout_s=180)
+            except RuntimeError:
+                return {}
+            if rep.get("rc") != 0:             # partial output misaligns: drop
+                return {}
+            ids = [ln.strip() for ln in (rep.get("stdout") or "").splitlines()
+                   if ln.strip()]
+            if len(ids) != len(chunk):
+                return {}
+            out.update(dict(zip(chunk, ids)))
+        return out
+
+    def _local_tree_blobs(self, repo, ref, paths):
+        """{path: blob id} in the LOCAL target tree, for the given paths."""
+        out = {}
+        for chunk in self._chunks(paths, 400):
+            rc, txt = self._local_git(repo, "ls-tree", "-r", "-z", ref, "--",
+                                      *self._literal(chunk))
+            if rc:
+                continue
+            for rec in txt.split("\0"):
+                if "\t" not in rec:
+                    continue
+                meta, path = rec.split("\t", 1)
+                bits = meta.split()
+                if len(bits) >= 3 and bits[1] == "blob":
+                    out[path] = bits[2]
+        return out
+
+    def _classify_debris(self, node, local_repo, remote_repo, l_head, paths):
+        """(ours, foreign) for colliding untracked paths: OURS = the node's
+        file content is exactly the target tree's blob for that path, so only
+        our own aborted checkout could have written it. Anything else is
+        somebody's work and keeps the loud refusal."""
+        want = self._local_tree_blobs(local_repo, l_head, paths)
+        filtered = self._remote_blob_ids(node, remote_repo, paths, no_filters=False)
+        raw = self._remote_blob_ids(node, remote_repo, paths, no_filters=True)
+        ours, foreign = [], []
+        for p in paths:
+            w = want.get(p)
+            (ours if w and (filtered.get(p) == w or raw.get(p) == w)
+             else foreign).append(p)
+        return ours, foreign
+
+    def gitsync(self, node, local_repo, remote_repo, dry=False, lfs=True,
+                lfs_max_bytes=1 << 30):
         """Make the node repo's git state (branch + HEAD) equal the controller
         repo's, WITHOUT push: thin git bundle -> content-addressed blob ->
         node fetches from the bundle file and checkouts the same branch@sha.
-        Preconditions (fail loudly): local HEAD known; remote has no
-        tracked-file dirt; remote HEAD is an ancestor of local HEAD (true
-        divergence is a human decision, not a sync)."""
+        LFS objects the target tree needs and the node lacks are staged into
+        its store first (a bundle carries pointers only), and the checkout is
+        verified by rc AND by a pointer scan (a failed smudge can exit 0).
+        Preconditions (fail loudly): local HEAD known and ON A BRANCH; remote
+        has no tracked-file dirt; remote HEAD is an ancestor of local HEAD
+        (true divergence is a human decision, not a sync)."""
         import subprocess, tempfile
         rc, l_head = self._local_git(local_repo, "rev-parse", "HEAD")
         if rc:
             raise RuntimeError(f"{local_repo} is not a git repo")
         _, l_branch = self._local_git(local_repo, "rev-parse", "--abbrev-ref", "HEAD")
+        if l_branch == "HEAD" or not l_branch:
+            # detached: the remote leg would compose `checkout -B HEAD <sha>`
+            # and die on git's own "'HEAD' is not a valid branch name", which
+            # names neither the cause nor the cure. Say both, before anything
+            # touches the node. (Lane worktrees are often detached.)
+            raise RuntimeError(
+                f"local HEAD is DETACHED at {l_head[:12]} in {local_repo} — gitsync "
+                f"aligns a BRANCH (it checks the node out to branch@sha), so there is "
+                f"no name to give the node: check a branch out here first "
+                f"(git -C {local_repo} switch -c <branch>), or gitsync from a branch "
+                f"checkout of the same commit")
         rc, r_head = self._remote_git(node, remote_repo, "rev-parse", "HEAD")
         if rc:
             raise RuntimeError(f"remote {remote_repo} on {node}: not a git repo (or git failed)")
@@ -511,7 +772,21 @@ class Client:
         state = {"local": f"{l_branch}@{l_head[:12]}", "remote": f"{r_branch}@{r_head[:12]}",
                  "remote_dirty": len(r_dirty)}
         if r_head == l_head:
-            return {**state, "action": "already-aligned", "ok": True}
+            out = {**state, "action": "already-aligned", "ok": True}
+            if lfs:
+                # a checkout that lied (rc=0 over a failed smudge) leaves the
+                # ref AT THE TARGET with stub/pointer assets, and every retry
+                # would short-circuit right here calling it aligned — so say
+                # what the tree actually holds.
+                listing = self._lfs_ls_files(node, remote_repo, l_head)
+                stubs = sorted(p for _oid, mark, p in (listing or []) if mark != "*")
+                if stubs:
+                    out["lfs_pointers"] = stubs[:10]
+                    out["action"] += (
+                        f" — WARNING {len(stubs)} LFS file(s) on {node} are NOT real "
+                        f"content ({', '.join(stubs[:3])}...): the sha matches but "
+                        f"those assets are pointers/absent")
+            return out
         own_wip = []
         if r_dirty:
             # exempt OUR OWN pushed WIP (pushlog + remote content-hash proof);
@@ -595,29 +870,94 @@ class Client:
             if rs["tree"] != rs["want_tree"]:
                 raise RuntimeError(f"bundle staging to {stage_dir} did not verify")
         remote_bundle = f"{stage_dir}/gitsync.bundle"
+        # what this fast-forward will write, from the LOCAL repo (both commits
+        # are here): added paths are the only ones that can collide with an
+        # UNTRACKED file, the whole delta is what the smudge filter must serve.
+        added, delta = [], set()
+        rc, txt = self._local_git(local_repo, "diff", "--no-renames",
+                                  "--name-status", "-z", r_head, l_head)
+        if rc == 0:
+            fields = [f for f in txt.split("\0") if f]
+            for st, p in zip(fields[0::2], fields[1::2]):
+                delta.add(p)
+                if st.startswith("A"):
+                    added.append(p)
+        lfs_info, debris = {}, []
         try:
             rep = self._remote_git_step(node, remote_repo, "fetch", remote_bundle)
             if rep.get("rc") != 0:
                 raise RuntimeError(f"remote git fetch of the bundle failed: "
                                    f"{(rep.get('stderr') or '')[-300:]}")
-            co = ["checkout", "-q"] + (["-f"] if own_wip else []) + \
+            if lfs:
+                lfs_info = self._lfs_stage_missing(node, local_repo, remote_repo,
+                                                   r_gitdir, l_head, lfs_max_bytes)
+            if added:
+                hits = self._remote_untracked(node, remote_repo, added)
+                if hits:
+                    debris, foreign_files = self._classify_debris(
+                        node, local_repo, remote_repo, l_head, hits)
+                    if foreign_files:
+                        raise RuntimeError(
+                            f"{len(foreign_files)} untracked file(s) on {node} would be "
+                            f"overwritten by this checkout and are NOT ours "
+                            f"({', '.join(foreign_files[:3])}...) — their content is not "
+                            f"what {l_head[:12]} holds for those paths; move or remove "
+                            f"them by hand; gitsync refuses to clobber")
+                    # every collision is provably our own aborted-checkout
+                    # litter (content == the target blob), so -f overwrites
+                    # exactly those files with what they were meant to be
+            co = ["checkout", "-q"] + (["-f"] if (own_wip or debris) else []) + \
                  ["-B", l_branch, l_head]
             rep = self._remote_git_step(node, remote_repo, *co)
+            err = rep.get("stderr") or ""
+            smudge = self._smudge_failure(err)
             if rep.get("rc") != 0:
-                raise RuntimeError(f"remote git checkout failed: "
-                                   f"{(rep.get('stderr') or '')[-300:]}")
+                raise RuntimeError(
+                    (f"remote git checkout FAILED IN THE LFS SMUDGE FILTER "
+                     f"(the node lacks the object and no server has it): {smudge}"
+                     if smudge else f"remote git checkout failed: {err[-300:]}"))
+            if smudge:
+                # rc lied: a filter marked non-required (or skipdownloaderrors)
+                # fails the smudge and still exits 0, leaving POINTER TEXT in
+                # the working tree. Never let that pass as a good sync.
+                raise RuntimeError(
+                    f"remote git checkout returned rc=0 but the LFS smudge filter "
+                    f"FAILED (pointer text left in the tree): {smudge}")
         finally:                      # drop the staged bundle (file verb, no exec)
             with tempfile.TemporaryDirectory() as empty:
                 try:
                     self.sync(node, empty, stage_dir, delete=True, force=True)
-                except (RuntimeError, KeyError, zmq.ZMQError):
+                except Exception:
                     pass              # a leftover bundle is litter, not a failure
+                                      # — and never masks the real error
         rc2, r_head2 = self._remote_git(node, remote_repo, "rev-parse", "HEAD")
         if r_head2 != l_head:
             raise RuntimeError(f"post-sync mismatch: remote at {r_head2[:12]}")
+        pointers = []
+        # NOTE the scan is NOT gated on `lfs`: --no-lfs opts out of MOVING
+        # objects, never out of the truth about what landed.
+        if delta and lfs_info.get("lfs_needed", 1):
+            # POINTER SCAN — the verification that does not trust rc: every
+            # LFS path this sync wrote must be real content on disk now
+            # ('*'), not a pointer ('-').
+            listing = self._lfs_ls_files(node, remote_repo, l_head)
+            pointers = sorted(p for oid, mark, p in (listing or [])
+                              if mark != "*" and p in delta)
+            if pointers:
+                raise RuntimeError(
+                    f"checkout left {len(pointers)} LFS file(s) as POINTERS on {node} "
+                    f"({', '.join(pointers[:3])}...) — the objects never reached the "
+                    f"node's store; the tree is at {l_head[:12]} but those assets are "
+                    f"text stubs")
         out = {**state, "action": f"fast-forwarded {n_commits} commits",
                "remote_now": f"{l_branch}@{l_head[:12]}",
-               "bundle_bytes": len(data), "ok": True}
+               "bundle_bytes": len(data), "ok": True, **lfs_info}
+        if lfs_info.get("lfs_objects"):
+            out["action"] += (f" (+{lfs_info['lfs_objects']} LFS object(s), "
+                              f"{lfs_info.get('lfs_bytes', 0)/1e6:.1f}MB)")
+        if debris:
+            out["cleared_debris"] = debris
+            out["action"] += f" (cleared {len(debris)} aborted-checkout file(s))"
         if own_wip:
             out["discarded_own_wip"] = own_wip
             out["action"] += f" (discarded {len(own_wip)} own-WIP file(s) — re-sync to restore)"
@@ -1163,6 +1503,13 @@ def main(argv=None):
                    help="follow with a content sync (carries the uncommitted delta)")
     p.add_argument("--exclude", action="append", default=[],
                    help="extra excludes for --tree")
+    p.add_argument("--no-lfs", action="store_true",
+                   help="skip LFS object staging (the pointer-scan verification "
+                        "still runs — you can opt out of moving bytes, not of "
+                        "knowing what landed)")
+    p.add_argument("--lfs-max-mb", type=int, default=1024,
+                   help="refuse an LFS staging bigger than this (a store SEED, "
+                        "not a sync delta); default 1024")
     p = sub.add_parser("diff", help="symmetric tree diff: local vs node dir")
     p.add_argument("node")
     p.add_argument("local_dir")
@@ -1399,7 +1746,9 @@ def main(argv=None):
         for n in fan_targets:
             try:
                 if args.cmd == "gitsync":
-                    r = c.gitsync(n, args.local_repo, args.remote_repo, dry=args.dry)
+                    r = c.gitsync(n, args.local_repo, args.remote_repo, dry=args.dry,
+                                  lfs=not args.no_lfs,
+                                  lfs_max_bytes=args.lfs_max_mb * 1000000)
                     _verdict(True, "gitsync", n, r["action"], jm, r if jm else None)
                 else:
                     r = c.sync(n, args.local_dir, args.remote_dir, pull=args.pull,
@@ -1412,9 +1761,9 @@ def main(argv=None):
                                 ("MATCH" if ok else "MISMATCH!")), jm, r if jm else None)
                     if not ok:
                         fails.append(n)
-            except (RuntimeError, KeyError) as e:
+            except Exception as e:    # one node's failure is a verdict, never
                 _verdict(False, args.cmd, n, f"error={e}", jm, {"error": str(e)})
-                fails.append(n)
+                fails.append(n)       # a traceback that eats the whole fan-out
         _verdict(not fails, args.cmd, f"fleet({len(fan_targets)})",
                  f"ok={len(fan_targets)-len(fails)}/{len(fan_targets)}"
                  + (f" failed={fails}" if fails else ""), jm)
@@ -1696,8 +2045,12 @@ def main(argv=None):
 
     if args.cmd == "gitsync":
         try:
-            r = c.gitsync(args.node, args.local_repo, args.remote_repo, dry=args.dry)
-        except (RuntimeError, KeyError) as e:
+            r = c.gitsync(args.node, args.local_repo, args.remote_repo, dry=args.dry,
+                          lfs=not args.no_lfs,
+                          lfs_max_bytes=args.lfs_max_mb * 1000000)
+        except Exception as e:        # ANY failure ends in a verdict line — a
+            # smudge fatal that escaped as a traceback (or as silence) is the
+            # rc lie this verb is not allowed to tell.
             _verdict(False, "gitsync", args.node, f"error={e}", jm, {"error": str(e)})
             return 1
         _verdict(True, "gitsync", args.node,
