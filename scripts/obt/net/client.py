@@ -597,6 +597,7 @@ class Client:
 #          | status <node> <job> | wait <node> <job> | jobs <node>
 #          | cancel <node> <job> | log <node> <job> [--stderr --tail N --grep P]
 #          | fetch <node> <sha> <dest> | upload <node> <path> | watch [--node N]
+#          | msg send|list|ack | push/pull <target> | route <target>
 # ---------------------------------------------------------------------------
 
 def _verdict(ok, verb, node, rest="", json_mode=False, payload=None):
@@ -641,44 +642,281 @@ def _parse_deposit_stdout(text):
     raise RuntimeError(f"deposit produced no result line: {text[:300]!r}")
 
 
-def _resolve_target(c, target):
-    """Route a msg/push/pull target: a LIVE node name -> ('node', name);
-    else an sshhosts entry -> ('ssh', dest); else a loud error listing both."""
-    live = sorted(n["name"] for n in c._live_nodes())
-    if target in live:
-        return ("node", target)
+# ---------------------------------------------------------------------------
+# ROUTING CLASSES — a send's route is DERIVED from the verb plus DECLARED
+# config, never discovered by trying links until one answers. Exactly one class
+# applies to a target, and no class ever falls back to another.
+#
+#   WORK   run/submit/build/test/scene + sync/gitsync/diff/fetch — fleet work.
+#          Route: our OWN controller -> our own worker node. That is the ONLY
+#          route; WORK never consults cfg['master'] and never uses ssh. A
+#          target that is not a node of our controller fails loudly (resolve_node
+#          / the controller's unknown_node reply). Not classified here — the
+#          worker verbs keep their existing resolution untouched.
+#   COORD  msg send/list/ack, @coords — targets are SEATS, and the route
+#          follows the coordination ROLE:
+#            coord-seat   : I am the master and the sub seat registers
+#                           'coord-<seat>' on MY controller -> that node link.
+#            coord-master : I am a sub (cfg['master'] declared) -> the master's
+#                           controller, reusing the proven deposit protocol
+#                           over tcp.
+#          No automatic fallback either way: a down link is a loud FAIL that
+#          names the dead link and what to do about it.
+#   SSH    the target is a declared sshhosts entry AND is not a seat/node name
+#          (a machine that runs no node). A first-class declared class, NOT a
+#          fallback for the others.
+#
+# push/pull classify by TARGET, not by verb: a WORK-node target is file staging
+# to our own fleet and rides the own-controller work pipe (content-addressed
+# sync/fetch, exactly as before); a seat/master/ssh target rides the coord pipe.
+# Only `msg` is seat-only.
+#
+# A target classifiable two ways (e.g. a worker node named like a seat) is a
+# CONFIG ERROR: loud FAIL naming the ambiguity, never a silent pick. An unknown
+# target fails listing every registry that was checked.
+#
+# cfg['master'] is read HERE and nowhere else; it is never the client's default
+# controller — that stays the seat's OWN controller (bac9de2).
+# ---------------------------------------------------------------------------
+
+ROUTE_PROBE_TIMEOUT_MS = 2500   # bounded: a dead controller answers "down", not "hang"
+LIVE_AGE_S = 5.0                # heartbeat age past which a registration is stale
+
+CLASS_WORK = "work-node"
+CLASS_COORD_SEAT = "coord-seat"
+CLASS_COORD_MASTER = "coord-master"
+CLASS_SSH = "ssh"
+
+# reply codes meaning the LINK failed (nothing was delivered) rather than the
+# recipient refusing. Both are loud FAILs — they differ only in the hint.
+LINK_ERRORS = (proto.ERR_RELAY_TIMEOUT, proto.ERR_UNKNOWN_NODE, proto.ERR_TIMEOUT)
+
+
+class RouteError(RuntimeError):
+    """No route, an ambiguous route, or the single computed route is down.
+    Carries the `checked` registry lines so the failure says what was looked
+    at."""
+
+    def __init__(self, message, checked=None):
+        self.checked = list(checked or [])
+        super().__init__(message)
+
+
+def _master_addr():
+    """Master controller address, declared by `obt.coord.seat.py init --role sub
+    --master ...` under cfg['master']. Its presence is what makes this seat a
+    SUB; it is deliberately NOT the client's default controller."""
+    addr = _load_global_config().get("master")
+    return proto.normalize_controller_addr(addr) if addr else None
+
+
+def _master_coordid():
+    """Optional cfg['master_coordid']: the master seat's name. Declared -> the
+    master is matched BY NAME. Absent -> a sub's otherwise-unclassified
+    coordination target is the master BY ROLE (a sub's only coordination link
+    goes up)."""
+    return _load_global_config().get("master_coordid")
+
+
+def _roster(client, timeout_ms=ROUTE_PROBE_TIMEOUT_MS):
+    """{name: record} registered at `client`'s controller, or None when that
+    controller does not answer inside the bounded probe. None means UNKNOWN,
+    never "empty" — classification says so out loud instead of guessing."""
+    try:
+        rep = client._request(proto.make_request(proto.OP_LIST_NODES),
+                              timeout_ms=timeout_ms)
+    except (zmq.ZMQError, OSError, ValueError):
+        return None
+    if not rep.get("ok"):
+        return None
+    return {n["name"]: n for n in rep.get("nodes", [])}
+
+
+def _liveness(rec):
+    """(is_live, human) for a roster record."""
+    if rec is None:
+        return False, "NOT REGISTERED"
+    age = rec.get("last_ping_age_s")
+    if age is None:
+        return False, "no heartbeat"
+    return (age < LIVE_AGE_S,
+            f"{'LIVE' if age < LIVE_AGE_S else 'STALE'} ping_age={age}s")
+
+
+def classify(c, target):
+    """Derive THE route for `target` from declared config + registries.
+    Deterministic and side-effect free (nothing is sent). Returns
+      {class, target, transport, controller, controller_role, client, node,
+       dest, record, checked[]}
+    Raises RouteError on ambiguity, when no class applies, or when the computed
+    class's controller cannot be reached to complete the route."""
+    checked = []
+    own_addr = c.controller_addr
+    roster = _roster(c)
+    if roster is None:
+        checked.append(f"own fleet roster: controller {own_addr} UNREACHABLE "
+                       f"(no reply in {ROUTE_PROBE_TIMEOUT_MS}ms)")
+    else:
+        checked.append(f"own fleet roster ({own_addr}): "
+                       f"{','.join(sorted(roster)) or '(empty)'}")
+
+    seat_node = None          # seat registration on our own controller
+    work_node = None          # plain worker node on our own controller
+    if roster is not None:
+        coord_name = target if target.startswith("coord-") else f"coord-{target}"
+        if coord_name in roster:
+            seat_node = coord_name
+        if target in roster and not target.startswith("coord-"):
+            work_node = target
+
+    maddr = _master_addr()
+    mid = _master_coordid()
     hosts = _sshhosts()
+    checked.append("master: " + (
+        f"{maddr}" + (f" coordid={mid}" if mid else " (coordid not declared)")
+        if maddr else "not declared — this seat is a master"))
+    checked.append(f"sshhosts: {','.join(sorted(hosts)) or '(none)'}")
+
+    master_target = False
+    if maddr:
+        if mid:
+            master_target = (target == mid)
+        else:
+            # ROLE rule: a sub's coordination goes UP. Anything that is not one
+            # of our own seat/worker nodes and not a declared ssh host is the
+            # master. Declare cfg['master_coordid'] to make it a name match.
+            master_target = not seat_node and not work_node and target not in hosts
+
+    # -- collision = config error, never a silent pick -----------------------
+    named = []
+    if seat_node:
+        named.append(f"{CLASS_COORD_SEAT} (node {seat_node} on {own_addr})")
+    if work_node:
+        named.append(f"{CLASS_WORK} (node {work_node} on {own_addr})")
+    if master_target and mid:
+        named.append(f"{CLASS_COORD_MASTER} (declared master coordid {mid})")
+    if len(named) > 1:
+        raise RouteError(
+            f"AMBIGUOUS target {target!r}: classifiable as " + " AND ".join(named)
+            + " — that is a config error (rename the worker node or the seat); "
+              "routing refuses to pick", checked)
+
+    if seat_node:
+        return {"class": CLASS_COORD_SEAT, "target": target, "transport": "node",
+                "controller": own_addr, "controller_role": "own", "client": c,
+                "node": seat_node, "dest": None, "record": roster.get(seat_node),
+                "checked": checked}
+    if work_node:
+        return {"class": CLASS_WORK, "target": target, "transport": "node",
+                "controller": own_addr, "controller_role": "own", "client": c,
+                "node": work_node, "dest": None, "record": roster.get(work_node),
+                "checked": checked}
+    if master_target:
+        mclient = Client(maddr)
+        mroster = _roster(mclient)
+        if mroster is None:
+            raise RouteError(
+                f"class={CLASS_COORD_MASTER}: master controller {maddr} unreachable "
+                f"(no reply in {ROUTE_PROBE_TIMEOUT_MS}ms) — the master seat owns "
+                f"that controller; an explicit --controller override is available",
+                checked)
+        checked.append(f"master roster ({maddr}): "
+                       f"{','.join(sorted(mroster)) or '(empty)'}")
+        node = next((n for n in (target, f"coord-{target}") if n in mroster), None)
+        if node is None:
+            raise RouteError(
+                f"class={CLASS_COORD_MASTER}: master controller {maddr} registers "
+                f"neither {target!r} nor 'coord-{target}' — the master seat must run "
+                f"a node there to receive coordination", checked)
+        return {"class": CLASS_COORD_MASTER, "target": target, "transport": "node",
+                "controller": maddr, "controller_role": "master", "client": mclient,
+                "node": node, "dest": None, "record": mroster.get(node),
+                "checked": checked}
     if target in hosts:
-        return ("ssh", hosts[target])
-    raise RuntimeError(
-        f"unknown target {target!r}; known live nodes={live}, "
-        f"sshhosts={sorted(hosts)} (use @coords to broadcast)")
+        return {"class": CLASS_SSH, "target": target, "transport": "ssh",
+                "controller": None, "controller_role": None, "client": None,
+                "node": None, "dest": hosts[target], "record": None,
+                "checked": checked}
+    raise RouteError(f"no route to {target!r}: no routing class applies", checked)
+
+
+def coord_route(c, target):
+    """classify() for `msg` — MESSAGES address seats only. A fleet WORKER node
+    has no coordination inbox: loud FAIL, never a silent deposit. (push/pull do
+    NOT use this: they classify by target, work-node included.)"""
+    r = classify(c, target)
+    if r["class"] == CLASS_WORK:
+        raise RouteError(
+            f"class={CLASS_WORK}: {target!r} is a fleet WORKER node on "
+            f"{r['controller']}, not a coordination seat — messages address a "
+            f"seat (registered as 'coord-<seat>'), the master (cfg['master']), "
+            f"or an sshhosts machine", r["checked"])
+    return r
+
+
+def _link_down(r, why):
+    """The loud FAIL text for a computed route whose link is down — the hint
+    names who owns the dead end, which differs per class."""
+    if r["class"] == CLASS_COORD_MASTER:
+        return (f"class={r['class']}: master link {r['node']}@{r['controller']} down "
+                f"({why}) — the master seat owns that controller/node; an explicit "
+                f"--controller override is available")
+    if r["class"] == CLASS_WORK:
+        return (f"class={r['class']}: node {r['node']} link stalled/down on "
+                f"{r['controller']} ({why}) — check `obt.net.py list`")
+    return (f"class={r['class']}: {r['node']} link stalled/down on {r['controller']} "
+            f"({why}) — that seat restarts its own coord node")
+
+
+def _print_checked(checked, out=sys.stderr, indent="  "):
+    for line in checked or []:
+        print(f"{indent}checked: {line}", file=out)
 
 
 def _coord_targets(c):
-    """@coords fan-out set: every LIVE node named coord-* PLUS every sshhosts
-    entry (ordered, deduped)."""
+    """@coords fan-out set: every LIVE node named coord-* on our own controller
+    PLUS every sshhosts entry (ordered, deduped). The roster probe is BOUNDED —
+    an unreachable own controller degrades the set to the declared sshhosts, it
+    never aborts the broadcast. (Callers classify each target and collapse
+    duplicates onto one route.)"""
     out = []
-    for n in sorted(n["name"] for n in c._live_nodes()):
+    roster = _roster(c) or {}
+    for n in sorted(roster):
         if n.startswith("coord-") and n not in out:
-            out.append(n)
+            live, _ = _liveness(roster[n])
+            if live:
+                out.append(n)
     for h in sorted(_sshhosts()):
         if h not in out:
             out.append(h)
     return out
 
 
-def _msg_send_node(c, node, sender, subject, ts, payload_b64):
-    """Deposit via the node's own run machinery: argv is exec'd DIRECTLY on the
-    node (no shell), so subject/base64 payload carry safely as argv elements.
-    On a restricted seat this passes because the deposit head is allow-listed."""
+def _msg_send_node(r, sender, subject, ts, payload_b64):
+    """Deposit over the computed node route (`r` from coord_route/classify):
+    argv is exec'd DIRECTLY on the node (no shell), so subject/base64 payload
+    carry safely as argv elements. On a restricted seat this passes because the
+    deposit head is allow-listed.
+    A DOWN LINK raises RouteError naming the dead link (no fallback exists — the
+    class is the route); a recipient that ANSWERS badly (restricted refusal, the
+    deposit tool erroring) raises RuntimeError: an application error to surface,
+    not a routing problem."""
     argv = ["obt.net.msg.deposit.py", "--from", sender, "--subject", subject,
             "--ts", ts, "--payload-b64", payload_b64]
-    rep = c.run(node, argv, timeout_s=30)
+    nc, node = r["client"], r["node"]
+    try:
+        rep = nc.run(node, argv, timeout_s=30)
+    except (zmq.ZMQError, OSError) as e:          # controller itself unreachable
+        raise RouteError(_link_down(r, f"{type(e).__name__} {e}"), r["checked"])
     if not rep.get("ok"):
-        raise RuntimeError(f"node run failed: {rep.get('error')}")
+        err = rep.get("error")
+        det = f"{err}{': ' + str(rep['detail']) if rep.get('detail') else ''}"
+        if err in LINK_ERRORS:
+            raise RouteError(_link_down(r, det), r["checked"])
+        raise RuntimeError(f"{node} refused the deposit: {det}")
     if rep.get("rc") != 0:
-        raise RuntimeError(f"deposit rc={rep.get('rc')} stderr={rep.get('stderr','')[:200]}")
+        raise RuntimeError(f"deposit rc={rep.get('rc')} on {node}: "
+                           f"{rep.get('stderr','')[:200]}")
     return _parse_deposit_stdout(rep.get("stdout", ""))
 
 
@@ -691,19 +929,27 @@ def _msg_send_ssh(dest, sender, subject, ts, payload_b64):
                        "payload_b64": payload_b64}).encode("utf-8")
     argv = ["ssh", "-o", "BatchMode=yes", dest,
             "python3", SSH_DEPOSIT_PATH, "--stdin-json"]
-    r = subprocess.run(argv, input=blob, capture_output=True, timeout=45)
-    if r.returncode != 0:
+    try:
+        r = subprocess.run(argv, input=blob, capture_output=True, timeout=45)
+    except subprocess.TimeoutExpired:
+        raise RouteError(f"class={CLASS_SSH}: ssh {dest} did not answer in 45s "
+                         f"— the ssh route is down (no fallback: ssh IS a class)")
+    if r.returncode == 255:                        # ssh's own transport failure
+        raise RouteError(f"class={CLASS_SSH}: ssh {dest} unreachable (rc=255): "
+                         f"{r.stderr.decode(errors='replace')[:200]}")
+    if r.returncode != 0:                          # the recipient answered badly
         raise RuntimeError(f"ssh deposit rc={r.returncode}: "
                            f"{r.stderr.decode(errors='replace')[:300]}")
     return _parse_deposit_stdout(r.stdout.decode(errors="replace"))
 
 
 def _do_msg_send(c, target, sender, subject, ts, payload_b64):
-    """Route one message; returns (via, deposit_result_dict)."""
-    kind, dest = _resolve_target(c, target)
-    if kind == "node":
-        return "node", _msg_send_node(c, target, sender, subject, ts, payload_b64)
-    return "ssh", _msg_send_ssh(dest, sender, subject, ts, payload_b64)
+    """Route one message by CLASS (single computed route, no fallback);
+    returns (class, deposit_result_dict)."""
+    r = coord_route(c, target)
+    if r["transport"] == "node":
+        return r["class"], _msg_send_node(r, sender, subject, ts, payload_b64)
+    return r["class"], _msg_send_ssh(r["dest"], sender, subject, ts, payload_b64)
 
 
 def _read_frontmatter(path):
@@ -739,41 +985,56 @@ def _inbox_messages():
 
 
 def _push_pull(c, target, local, remote, pull):
-    """File transfer routed like msg: node channel for a live node (content-
-    addressed sync/fetch), scp for an ssh host. Returns the via token."""
-    kind, dest = _resolve_target(c, target)
-    if kind == "ssh":
+    """File transfer routed by the target's CLASS — the general classifier, no
+    verb special-casing: a work-node target stages into our own fleet over the
+    own-controller node pipe (content-addressed sync/fetch), a seat/master
+    target rides the same pipe at its controller, an ssh-class target uses scp.
+    One computed route, no fallback. Returns the class token."""
+    r = classify(c, target)
+    if r["transport"] == "ssh":
+        dest = r["dest"]
         if pull:
             argv = ["scp", "-q", "-o", "BatchMode=yes", f"{dest}:{remote}", local]
         else:
             argv = ["scp", "-q", "-o", "BatchMode=yes", local, f"{dest}:{remote}"]
-        r = subprocess.run(argv, capture_output=True, timeout=300)
-        if r.returncode != 0:
-            raise RuntimeError(f"scp rc={r.returncode}: "
-                               f"{r.stderr.decode(errors='replace')[:300]}")
-        return "scp"
-    # node channel
-    if pull:                      # hash the remote file, fetch its blob by sha
-        rem_dir = os.path.dirname(remote) or "."
-        rep = c._fetch_req(c._fetch_addr(target), proto.make_request(
-            proto.OP_TREE_MANIFEST, root=rem_dir, excludes=[]))
-        if not rep.get("ok"):
-            raise RuntimeError(f"remote manifest failed: {rep.get('error')}")
-        entry = (rep.get("manifest") or {}).get(os.path.basename(remote))
-        if not entry or entry.get("t") != "f":
-            raise RuntimeError(f"remote file not found: {remote}")
-        c.fetch(target, entry["sha256"], local)
-        return "node"
-    else:                         # stage the single file, content-sync it over
-        import tempfile
-        import shutil
-        tmp = Path(tempfile.mkdtemp(prefix="obtnet_push_"))
         try:
-            (tmp / os.path.basename(remote)).write_bytes(Path(local).read_bytes())
-            c.sync(target, str(tmp), os.path.dirname(remote) or ".")
-        finally:
-            shutil.rmtree(tmp, ignore_errors=True)
-        return "node"
+            rr = subprocess.run(argv, capture_output=True, timeout=300)
+        except subprocess.TimeoutExpired:
+            raise RouteError(f"class={CLASS_SSH}: scp {dest} did not answer in 300s")
+        if rr.returncode == 255:
+            raise RouteError(f"class={CLASS_SSH}: ssh {dest} unreachable (rc=255): "
+                             f"{rr.stderr.decode(errors='replace')[:200]}")
+        if rr.returncode != 0:
+            raise RuntimeError(f"scp rc={rr.returncode}: "
+                               f"{rr.stderr.decode(errors='replace')[:300]}")
+        return r["class"]
+    nc, node = r["client"], r["node"]
+    # LOCAL filesystem work happens outside the link-error catch: a missing
+    # local file is our own error, never a "dead link" diagnosis.
+    payload = None if pull else Path(local).read_bytes()
+    try:
+        if pull:                  # hash the remote file, fetch its blob by sha
+            rem_dir = os.path.dirname(remote) or "."
+            rep = nc._fetch_req(nc._fetch_addr(node), proto.make_request(
+                proto.OP_TREE_MANIFEST, root=rem_dir, excludes=[]))
+            if not rep.get("ok"):
+                raise RuntimeError(f"remote manifest failed: {rep.get('error')}")
+            entry = (rep.get("manifest") or {}).get(os.path.basename(remote))
+            if not entry or entry.get("t") != "f":
+                raise RuntimeError(f"remote file not found: {remote}")
+            nc.fetch(node, entry["sha256"], local)
+        else:                     # stage the single file, content-sync it over
+            import tempfile
+            import shutil
+            tmp = Path(tempfile.mkdtemp(prefix="obtnet_push_"))
+            try:
+                (tmp / os.path.basename(remote)).write_bytes(payload)
+                nc.sync(node, str(tmp), os.path.dirname(remote) or ".")
+            finally:
+                shutil.rmtree(tmp, ignore_errors=True)
+    except zmq.ZMQError as e:                  # the link, not the recipient
+        raise RouteError(_link_down(r, f"{type(e).__name__} {e}"), r["checked"])
+    return r["class"]
 
 
 def main(argv=None):
@@ -872,10 +1133,13 @@ def main(argv=None):
                      help="(default view; reserved for future scopes)")
     pak = msub.add_parser("ack", help="move an inbox message to inbox/acked/")
     pak.add_argument("ref", help="message file path, or a ts / filename fragment")
-    ppush = sub.add_parser("push", help="send a file to a node/ssh host (routed like msg)")
+    ppush = sub.add_parser("push", help="send a file to a seat/ssh host (routed like msg)")
     ppush.add_argument("target"); ppush.add_argument("local"); ppush.add_argument("remote")
-    ppull = sub.add_parser("pull", help="fetch a file from a node/ssh host (routed like msg)")
+    ppull = sub.add_parser("pull", help="fetch a file from a seat/ssh host (routed like msg)")
     ppull.add_argument("target"); ppull.add_argument("remote"); ppull.add_argument("local")
+    prt = sub.add_parser("route", help="show the derived routing CLASS, the single "
+                                       "computed route and its liveness (sends nothing)")
+    prt.add_argument("target")
     args = ap.parse_args(raw)
 
     c = Client(args.controller)
@@ -912,24 +1176,40 @@ def main(argv=None):
                     _verdict(False, "msg", "@coords",
                              "no coord-* nodes or sshhosts to broadcast to", jm)
                     return 1
-                fails = []
+                fails, seen = [], {}
                 for t in targets:
+                    # the same seat can appear twice (coord-<seat> node AND an
+                    # sshhosts entry) — classification collapses both onto ONE
+                    # route, so deposit once, not twice.
                     try:
-                        via, res = _do_msg_send(c, t, sender, args.subject, ts, payload_b64)
+                        r = coord_route(c, t)
+                        key = (r["class"], r["controller"], r["node"], r["dest"])
+                        if key in seen:
+                            print(f"[obtnet] {t} -> same route as {seen[key]} "
+                                  f"(class={r['class']}); skipped", file=sys.stderr)
+                            continue
+                        seen[key] = t
+                        via, res = _do_msg_send(c, t, sender, args.subject, ts,
+                                                payload_b64)
                         _verdict(True, "msg", t,
                                  f"subject<{args.subject}> via<{via}>", jm,
                                  {"target": t, "via": via, "path": res.get("path")})
                     except Exception as e:
+                        if isinstance(e, RouteError) and not jm:
+                            _print_checked(e.checked)
                         _verdict(False, "msg", t, f"error={e}", jm, {"error": str(e)})
                         fails.append(t)
-                _verdict(not fails, "msg", f"@coords({len(targets)})",
-                         f"ok={len(targets)-len(fails)}/{len(targets)}"
+                n = len(seen) + len(fails)
+                _verdict(not fails, "msg", f"@coords({n})",
+                         f"ok={len(seen)}/{n}"
                          + (f" failed={fails}" if fails else ""), jm)
                 return 0 if not fails else 1
             try:
                 via, res = _do_msg_send(c, args.target, sender, args.subject, ts,
                                         payload_b64)
             except Exception as e:
+                if isinstance(e, RouteError) and not jm:
+                    _print_checked(e.checked)
                 _verdict(False, "msg", args.target, f"error={e}", jm, {"error": str(e)})
                 return 1
             _verdict(True, "msg", args.target,
@@ -978,6 +1258,8 @@ def main(argv=None):
             via = _push_pull(c, args.target, args.local, args.remote,
                              pull=(args.cmd == "pull"))
         except Exception as e:
+            if isinstance(e, RouteError) and not jm:
+                _print_checked(e.checked)
             _verdict(False, args.cmd, args.target, f"error={e}", jm, {"error": str(e)})
             return 1
         _verdict(True, args.cmd, args.target,
@@ -985,6 +1267,49 @@ def main(argv=None):
                  f"via<{via}>", jm,
                  {"local": args.local, "remote": args.remote, "via": via})
         return 0
+
+    if args.cmd == "route":
+        # topology-verification instrument: derive the CLASS and the single
+        # computed route, report that route's liveness. Sends NOTHING.
+        try:
+            r = classify(c, args.target)
+        except RouteError as e:
+            if jm:
+                print(json.dumps({"ok": False, "verb": "route",
+                                  "target": args.target, "class": None,
+                                  "error": str(e), "checked": e.checked}))
+            else:
+                _print_checked(e.checked, out=sys.stdout, indent="")
+                _verdict(False, "route", args.target, str(e))
+            return 1
+        if r["transport"] == "node":
+            live, live_txt = _liveness(r["record"])
+            link = f"{r['node']}@{r['controller']}"
+        else:
+            live, live_txt = True, "unprobed (ssh is dialed on use)"
+            link = f"ssh:{r['dest']}"
+        if jm:
+            print(json.dumps({"ok": bool(live), "verb": "route",
+                              "target": args.target, "class": r["class"],
+                              "transport": r["transport"],
+                              "controller": r["controller"],
+                              "controller_role": r["controller_role"],
+                              "node": r["node"], "dest": r["dest"],
+                              "liveness": live_txt, "checked": r["checked"]}))
+            return 0 if live else 1
+        print(f"target:     {args.target}")
+        print(f"class:      {r['class']}")
+        print(f"transport:  {r['transport']}")
+        if r["transport"] == "node":
+            print(f"controller: {r['controller']} ({r['controller_role']})")
+            print(f"node:       {r['node']}")
+        else:
+            print(f"ssh dest:   {r['dest']}")
+        print(f"liveness:   {live_txt}")
+        _print_checked(r["checked"], out=sys.stdout, indent="")
+        _verdict(live, "route", args.target,
+                 f"class={r['class']} via={r['transport']} link={link} {live_txt}")
+        return 0 if live else 1
 
     # '@' selectors route to a node; comma-lists and '@each[:terms]' FAN OUT
     # across nodes (working-copy verbs loop; execution verbs submit-all then

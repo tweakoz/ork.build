@@ -122,7 +122,9 @@ def cmd_init(args):
     print("next steps:")
     if role == "sub":
         stage = os.environ.get("OBT_STAGE", "<your-obt-stagedir>")
-        master = cfg.get("controller", "<master-addr>")
+        # the MASTER's address, never this seat's own controller: the coord node
+        # registers with the master so master<->sub messaging rides tcp
+        master = cfg.get("master", "<master-addr>")
         print(f"  launch the restricted coordinator node:")
         print(f"    obt.env.launch.py --stagedir {stage} \\")
         print(f"      --command 'obt.net.node.py --controller {master} "
