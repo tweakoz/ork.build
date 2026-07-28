@@ -623,8 +623,42 @@ def configFromCommandLine(parser_args=None):
     os.environ["OBT_MODULES_PATH"] = str(obt_data_base()/"modules")
 
   ########################
+  # python home follows the TARGET stage, not the ambient shell
+  ########################
+  # OBT_STAGE is re-resolved from --stagedir above, but OBT_PYTHONHOME used to be
+  # seeded only when it was unset. A shell already logged into staging B therefore
+  # kept B's pyvenv while everything else in the config pointed at staging A, and
+  # nothing downstream ever re-derived it: modules/dep/python.py reads this var in
+  # home_dir, and virtualenv_dir / library_dir / site_packages_dir all hang off
+  # home_dir, so env_init re-exported B for OBT_PYPKG / OBT_PYLIB /
+  # OBT_PYTHON_LIB_PATH / PKG_CONFIG_PATH / PATH. OBT_PYPKG is where orkid's pyext
+  # CMakeLists install orkengine — so an A-targeted build wrote its python
+  # extensions into B's venv (overwriting B's older, matched bindings) while A's
+  # runtime kept importing A's un-rebuilt ones. The target stage is authoritative;
+  # the ambient shell must not be able to redirect where a build installs.
+  #
+  # Non-host subspaces are the one legitimate relocation of the python home:
+  # modules/subspace/conda.py and modules/subspace/nnsvs.py deliberately point
+  # OBT_PYTHONHOME at the subspace prefix and set OBT_SUBSPACE at the same time,
+  # so those environments are left exactly as they are.
+  ########################
 
-  if not env_is_set("OBT_PYTHONHOME"):
+  if os.environ["OBT_SUBSPACE"] == "host":
+    _stage_pythonhome = str(_config.stage_dir/"pyvenv")
+    if os.environ.get("OBT_PYTHONHOME") != _stage_pythonhome:
+      os.environ["OBT_PYTHONHOME"] = _stage_pythonhome
+      # Values derived from some other stage's python home must not survive into
+      # this one -- a mixed set (home here, package dir there) is the same bug
+      # wearing a different variable. The python dep's env_init recomputes every
+      # one of these from home_dir during initializeDependencyEnvironments().
+      for _stale_pyvar in ("OBT_PYLIB",
+                           "OBT_PYPKG",
+                           "OBT_PYTHON_HEADER_PATH",
+                           "OBT_PYTHON_LIB_PATH",
+                           "OBT_PYTHON_PYLIB_PATH",
+                           "OBT_PYTHON_SUBSPACE_BUILD_DIR"):
+        os.environ.pop(_stale_pyvar, None)
+  elif not env_is_set("OBT_PYTHONHOME"):
     os.environ["OBT_PYTHONHOME"] = str(_config.stage_dir/"pyvenv")
 
   ########################

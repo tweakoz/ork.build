@@ -182,7 +182,16 @@ class python_from_source(dep.Provider):
   ########
   @property
   def home_dir(self):
-    return path.Path(os.environ["OBT_PYTHONHOME"])
+    # OBT_PYTHONHOME is the read authority HERE (a conda/nnsvs subspace legally
+    # relocates the python home outside the stage - see modules/subspace/*.py).
+    # It is made to follow the TARGET stage at env-entry time, in
+    # bin_pub/_obt_config.py ("python home follows the TARGET stage"), which is
+    # what keeps a build from installing into the shell's old staging. The
+    # fallback below only covers a bare environment that never went through
+    # that path; <stage>/pyvenv is the same layout _obt_config seeds.
+    if "OBT_PYTHONHOME" in os.environ:
+      return path.Path(os.environ["OBT_PYTHONHOME"])
+    return path.stage()/"pyvenv"
   ########
   @property
   def include_dir(self):
