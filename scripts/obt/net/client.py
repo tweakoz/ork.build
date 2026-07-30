@@ -24,19 +24,23 @@ from pathlib import Path
 import zmq
 
 from obt.net import proto
+from obt.net.coordpaths import config_path, coord_root
 from obt.net.upload_cache import sha256_hex
 
 
-CONFIG_PATH = Path.home() / ".obt-global" / "obtnet.json"
-COORD_ROOT = Path.home() / "coordination"
+# Identity + mail roots are FUNCTIONS, not constants: they hang off
+# obt.net.coordpaths.coord_home() ($OBT_COORD_HOME, else $HOME), so a second
+# seat on one login account gets its own identity and inbox. See coordpaths.
 # well-known, venv-independent location of the deposit tool on ssh recipients
-# (deployed there so a bare `ssh host python3 <path>` needs only system python3)
+# (deployed there so a bare `ssh host python3 <path>` needs only system python3).
+# This one is a REMOTE path expanded by the recipient's shell — the recipient's
+# own env, not ours, decides where its coordination tree lives.
 SSH_DEPOSIT_PATH = "$HOME/coordination/bin/obt.net.msg.deposit.py"
 
 
 def _load_global_config():
     try:
-        return json.loads(CONFIG_PATH.read_text())
+        return json.loads(config_path().read_text())
     except Exception:
         return {}
 
@@ -53,16 +57,17 @@ def _sshhosts():
 
 
 def resolve_controller(explicit=None):
-    """Resolution order: --controller > OBTNET_CONTROLLER > ~/.obt-global/
-    obtnet.json > localhost. Returns (addr, source)."""
+    """Resolution order: --controller > OBTNET_CONTROLLER > <coord_home>/
+    .obt-global/obtnet.json > localhost. Returns (addr, source)."""
     if explicit:
         return proto.normalize_controller_addr(explicit), "arg"
     env = os.environ.get("OBTNET_CONTROLLER")
     if env:
         return proto.normalize_controller_addr(env), "env"
+    cfg_path = config_path()
     try:
-        addr = json.loads(CONFIG_PATH.read_text())["controller"]
-        return proto.normalize_controller_addr(addr), str(CONFIG_PATH)
+        addr = json.loads(cfg_path.read_text())["controller"]
+        return proto.normalize_controller_addr(addr), str(cfg_path)
     except Exception:
         pass
     return f"tcp://127.0.0.1:{proto.CONTROLLER_PORT}", "default"
@@ -1376,7 +1381,7 @@ def _read_frontmatter(path):
 
 def _inbox_messages():
     """Local unacked inbox messages, newest first: list of (ts, from, subject, path)."""
-    inbox = COORD_ROOT / "inbox"
+    inbox = coord_root() / "inbox"
     rows = []
     if inbox.is_dir():
         for p in inbox.glob("*.md"):
@@ -1557,11 +1562,12 @@ def main(argv=None):
 
     if args.cmd == "config":
         if args.addr:
-            CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
+            cfg_path = config_path()
+            cfg_path.parent.mkdir(parents=True, exist_ok=True)
             addr = proto.normalize_controller_addr(args.addr)
-            CONFIG_PATH.write_text(json.dumps({"controller": addr}, indent=1))
-            _verdict(True, "config", addr, f"written {CONFIG_PATH}", jm,
-                     {"controller": addr, "path": str(CONFIG_PATH)})
+            cfg_path.write_text(json.dumps({"controller": addr}, indent=1))
+            _verdict(True, "config", addr, f"written {cfg_path}", jm,
+                     {"controller": addr, "path": str(cfg_path)})
         else:
             addr, src = resolve_controller(args.controller)
             if jm:
@@ -1640,7 +1646,7 @@ def main(argv=None):
             return 0
 
         if args.msgcmd == "ack":
-            inbox = COORD_ROOT / "inbox"
+            inbox = coord_root() / "inbox"
             acked = inbox / "acked"
             cand = Path(args.ref)
             if not cand.is_file():

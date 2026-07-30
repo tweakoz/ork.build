@@ -12,7 +12,8 @@ being importable, so plain system python3 on any host can run it.
 Payload transport is ALWAYS base64 (args mode) or a JSON blob on stdin (ssh
 mode) — arbitrary message content is NEVER shell-interpolated.
 
-Layout (under --inbox-root, default ~/coordination):
+Layout (under --inbox-root, default <coord-home>/coordination, where coord-home
+is $OBT_COORD_HOME if set, else $HOME):
   inbox/<utc-ts>__from-<sender>__<slug>.md    frontmatter(from,subject,ts)+body
   inbox/acked/                                  ack destination (created here)
   inbox.stream                                  <ts>\t<from>\t<subject>\t<path>
@@ -31,6 +32,15 @@ import sys
 import tempfile
 import time
 from pathlib import Path
+
+
+def _coord_home():
+    """Root for this box's coordination tree: $OBT_COORD_HOME, else $HOME
+    (empty value == unset). Hand-mirror of obt.net.coordpaths.coord_home() —
+    this tool is copied to remote seats and runs under bare system python3,
+    where the `obt` package does not exist. Keep the two identical."""
+    val = os.environ.get("OBT_COORD_HOME")
+    return Path(val).expanduser() if val else Path.home()
 
 
 def _slugify(text, maxlen=48, default="msg"):
@@ -53,7 +63,7 @@ def deposit(sender, subject, payload, ts=None, slug=None, inbox_root=None):
     subject_full = _one_line(subject)
     ts = ts or _utc_ts()
     slug = _slugify(slug or subject_full)
-    root = Path(inbox_root) if inbox_root else (Path.home() / "coordination")
+    root = Path(inbox_root) if inbox_root else (_coord_home() / "coordination")
     inbox = root / "inbox"
     acked = inbox / "acked"
     inbox.mkdir(parents=True, exist_ok=True)
@@ -113,7 +123,8 @@ def main(argv=None):
                     help="read {from,subject,ts,slug,payload_b64} as JSON on stdin "
                          "(ssh mode; zero shell interpolation)")
     ap.add_argument("--inbox-root", default=None,
-                    help="override coordination root (default ~/coordination)")
+                    help="override coordination root "
+                         "(default ${OBT_COORD_HOME:-$HOME}/coordination)")
     args = ap.parse_args(argv)
 
     if args.stdin_json:

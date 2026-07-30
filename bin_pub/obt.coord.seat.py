@@ -2,14 +2,17 @@
 """obt.coord.seat — bootstrap, validate, and scaffold an obtnet coordinator seat.
 
 The whole coordinator-messaging system is redeployable from ork.build on any box:
-this tool scaffolds ~/coordination/, wires the seat's identity into the obt global
-config, and emits canonical taskset folders. Stdlib only; every path derives from
-$HOME at call time, so tests can point HOME at a scratch dir and everything
-relocates. Each subcommand ends with one greppable verdict: `[obtcoord] ok|FAIL ...`.
+this tool scaffolds <coord-home>/coordination/, wires the seat's identity into the
+obt global config, and emits canonical taskset folders. Stdlib only; every path
+derives from coord-home AT CALL TIME, so tests (and second seats sharing one login
+account) can point coord-home at another dir and everything relocates.
+coord-home = $OBT_COORD_HOME if set, else $HOME.
+Each subcommand ends with one greppable verdict: `[obtcoord] ok|FAIL ...`.
 
   init --seat <name> [--master <addr>] [--role sub|master]
         idempotently scaffold the seat; merge coordid (+controller for subs) into
-        ~/.obt-global/obtnet.json; master ensures ACTIVE_TASKSET; prints next steps.
+        <coord-home>/.obt-global/obtnet.json; master ensures ACTIVE_TASKSET;
+        prints next steps.
   check [--seat <name>]
         porcelain PASS/FAIL per check; best-effort node-registration probe.
   taskset new <path>
@@ -30,17 +33,23 @@ from pathlib import Path
 DEPOSIT_TOOL = "obt.net.msg.deposit.py"
 
 
-# -- paths (evaluated per-call so a HOME override relocates everything) --------
-def _home():
+# -- paths (evaluated per-call so a coord-home override relocates everything) --
+def _coord_home():
+    """$OBT_COORD_HOME, else $HOME (empty value == unset). Hand-mirror of
+    obt.net.coordpaths.coord_home() — this tool is stdlib-only so it can
+    bootstrap a seat before the `obt` package exists. Keep the two identical."""
+    val = os.environ.get("OBT_COORD_HOME")
+    if val:
+        return Path(val).expanduser()
     return Path(os.environ.get("HOME") or Path.home())
 
 
 def _coord_root():
-    return _home() / "coordination"
+    return _coord_home() / "coordination"
 
 
 def _config_path():
-    return _home() / ".obt-global" / "obtnet.json"
+    return _coord_home() / ".obt-global" / "obtnet.json"
 
 
 def _verdict(ok, verb, rest=""):
@@ -129,8 +138,14 @@ def cmd_init(args):
         print(f"    obt.env.launch.py --stagedir {stage} \\")
         print(f"      --command 'obt.net.node.py --controller {master} "
               f"--name coord-{seat} --restrict msg,sync'")
+    if os.environ.get("OBT_COORD_HOME"):
+        # the node execs the deposit tool with ITS env: a node started without
+        # the override writes into $HOME/coordination, i.e. the other seat's
+        # inbox. Name that here, at the only moment the operator is looking.
+        print(f"    (this seat lives under OBT_COORD_HOME={_coord_home()} — the "
+              f"node MUST carry that var, or its deposits land in $HOME)")
     print(f"  arm the message monitor:")
-    print(f"    tail -n0 -f ~/coordination/inbox.stream")
+    print(f"    tail -n0 -f {root / 'inbox.stream'}")
     if dep_note:
         print(f"  {dep_note}")
     _verdict(True, "init", f"seat<{seat}> role<{role}>")
