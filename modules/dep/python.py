@@ -85,11 +85,11 @@ class python_from_source(dep.Provider):
     #env.set("VIRTUAL_ENV",self.virtualenv_dir)
     env.prepend("LD_LIBRARY_PATH",self.home_dir/"lib")
     env.prepend("PKG_CONFIG_PATH",self.library_dir/"pkgconfig")
-    # Python was built with --disable-gil (free-threading available).
-    # Default the runtime to GIL-on so existing scripts behave as before;
-    # users opt in to free-threading per-invocation:
-    #   PYTHON_GIL=0 ork.python script.py     # free-threaded (no GIL)
-    env.set("PYTHON_GIL","1")
+    # Python is built with --disable-gil: free-threaded is the SHIPPED DEFAULT.
+    # The blanket env.set("PYTHON_GIL","1") that used to live here was removed
+    # aug01 per owner GIL ruling — the ECS sub-interpreter machinery deadlocks
+    # under GIL=1 (see orkid ork.lev2/pyext/tests/llgfx/test_gil_ecs_regression.py);
+    # an owner who wants GIL=1 sets it explicitly in their own shell.
 
   ########
 
@@ -250,9 +250,9 @@ class python_from_source(dep.Provider):
         #"--enable-loadable-sqlite-extensions",
         "--with-ensurepip=install", # atomically build pip
         # Free-threading (PEP 703): build supports both GIL and no-GIL modes.
-        # Defaults to no-GIL when started, but PYTHON_GIL=1 (set in env_init)
-        # re-enables the GIL — i.e. by default this stays on the GIL path,
-        # opt-in to free-threading via `PYTHON_GIL=0 ork.python script.py`.
+        # Starts no-GIL, and env_init no longer overrides that (aug01 owner GIL
+        # ruling) — free-threaded is the shipped default; an explicit
+        # PYTHON_GIL=1 in the user's shell re-enables the GIL per-invocation.
         # Note: --enable-experimental-jit is not enabled here because
         # CPython 3.14 forbids combining it with --disable-gil. Re-evaluate
         # for 3.15 where the combination is on the roadmap.
