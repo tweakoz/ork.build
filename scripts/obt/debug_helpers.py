@@ -50,6 +50,8 @@ def orkid_debug_env_vars():
     "PYTHONPATH": os.getenv("PYTHONPATH"),
     "OBT_STAGE": os.getenv("OBT_STAGE"),
     "ORKID_LEV2_EXAMPLES_DIR": os.getenv("ORKID_LEV2_EXAMPLES_DIR"),
+    "ORKID_HYPERMESH_MESHSHADER": os.getenv("ORKID_HYPERMESH_MESHSHADER", "1"),
+    "ORKID_TERRAIN_MESHSHADER": os.getenv("ORKID_TERRAIN_MESHSHADER", "1"),
   }
   if "ORKID_GRAPHICS_API" in os.environ:
     vars["ORKID_GRAPHICS_API"] = os.getenv("ORKID_GRAPHICS_API")
