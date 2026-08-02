@@ -478,11 +478,18 @@ class Client:
 
     def _remote_git(self, node, repo, *args):
         """One DIRECT `git ...` argv on the node — never shell-wrapped, so a
-        restricted seat node (allowed heads: git) accepts it."""
+        restricted seat node (allowed heads: git) accepts it.
+        A node that never RAN the command (unknown node, offline, restricted
+        head) is not a git rc: raise the real reason, exactly as
+        _remote_git_step does. Folding it into rc=1 made every transport
+        failure read as a broken repo at the call sites."""
         self._check_remote_path(repo, node)
         rep = self.run(node, ["git", "-C", str(repo)] + [str(a) for a in args],
                        timeout_s=30)
-        return (rep.get("rc", 1) if rep.get("ok") else 1), (rep.get("stdout") or "").strip()
+        if not rep.get("ok"):
+            det = rep.get("detail") or rep.get("error")
+            raise RuntimeError(f"remote `git {args[0]}` on {node} did not run: {det}")
+        return rep.get("rc", 1), (rep.get("stdout") or "").strip()
 
     def _remote_git_step(self, node, repo, *args, timeout_s=120):
         """_remote_git for steps whose FAILURE TEXT matters: returns the full
