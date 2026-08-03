@@ -27,13 +27,24 @@
 # VK_EXT_mesh_shader; orkid's vulkan backend requires it for its mesh pass.
 # The PR exposes the extension taskless (meshShader=true, taskShader=false).
 #
-# The PR also pins SPIRV-Cross to af71ba0bbfcc (a commit that exists only in
-# unmerged SPIRV-Cross PR #2650). That resolves without help from us: the PR's
-# fetchDependencies fetches the exact revision (`git fetch origin <sha>`)
-# instead of `git fetch --all`, which cannot see an unmerged PR commit.
+# SPIRV-CROSS SOURCE: MoltenVK fetches SPIRV-Cross from the tweakoz/SPIRV-Cross
+# FORK (branch toz-2026-aug02-spvc-meshview), pinned by the MoltenVK tree's own
+# ExternalRevisions/SPIRV-Cross_repo_revision. The mesh-stage view-index and
+# vertex-amplification work are REAL COMMITS on that branch, which is why this
+# recipe no longer carries a patch-application step.
+#
+# The older arrangement pinned upstream KhronosGroup at af71ba0bbfcc — a commit
+# reachable only through unmerged SPIRV-Cross PR #2650 — and hand-applied the
+# fork's patches on top. Both the PR pin and the patches are retired; a MoltenVK
+# tree at or after the fork-repointing commit needs neither.
 #
 # FOLLOWUP: when PR #2777 merges upstream, repin to the upstream release tag
 # and retire the fork pin.
+#
+#
+# PIN NOTE: VERSION is the head of tweakoz/MoltenVK branch toz-2026-taskmesh,
+# recorded as a SHA rather than the branch name — see the comment at VERSION for
+# why a moving ref is not usable through the tarball fetcher.
 #
 # NOTE: bumping this pin moves MoltenVK's bundled External/Vulkan-Headers,
 # which vulkan.py `git describe`s to pick its Vulkan-Loader tag + md5 — see
@@ -46,27 +57,32 @@
 # flags are needed —
 #   obt.dep.build.py moltenvk --wipe --force
 #
-# SPIRV-CROSS PATCH STEP: after ./fetchDependencies populates
-# External/SPIRV-Cross and before the xcodebuild package step, this recipe
-# applies the fork's ExternalRevisions/SPIRV-Cross_vertex_amplification.patch
-# (vertex amplification / multiview support in CompilerMSL) when that file is
-# present in the fetched tree. When the fork state carries no such patch the
-# step is a logged NO-OP, so unpatched forks still build.
+# NO PATCH STEP. Earlier revisions of this recipe hand-applied the fork's
+# ExternalRevisions/SPIRV-Cross_*.patch files to the fetched External/SPIRV-Cross.
+# Those patches are retired: their content is now real commits on the SPIRV-Cross
+# fork branch, so the fetch alone produces patched source. (The old step also only
+# ever applied ONE of the two patch files, so the mesh view-index change was never
+# applied by this recipe at all — another reason the fork is the correct home.)
 #
-# STAMP + FORCE-CLEAN LAW (guards a field-proven SILENT MISCOMPILE): the patch
-# content hash is stamped into the fetched tree, and any change of that hash
-# force-cleans External/build (and restores the pristine SPIRV-Cross pin)
-# before the rebuild. A cached External/build libSPIRVCross.a compiled against
-# the pre-patch CompilerMSL::Options struct builds GREEN but produces WRONG
-# shaders — every option past the insertion point shifts, multiview reads
-# false. Never ship the patch step without the clean.
+# STAMP + FORCE-CLEAN LAW (guards a field-proven SILENT MISCOMPILE): the law
+# survives the patches, because the hazard was never really about patching — it
+# is that External/build caches a libSPIRVCross.a compiled against ONE
+# SPIRV-Cross source while the tree now holds ANOTHER. That build links GREEN and
+# emits WRONG shaders: every CompilerMSL::Options member past the point of
+# divergence shifts, and multiview reads false. So the guard is now keyed on the
+# SPIRV-Cross PIN itself (ExternalRevisions/SPIRV-Cross_repo_revision) — any
+# change to it force-cleans External/build before the rebuild.
+#
+# This matters beyond a repin: fetchDependencies runs on EVERY build and does
+# `git checkout --force <rev>` inside an existing External/SPIRV-Cross, so the
+# source can move under a cached External/build without the tree being refetched.
 #
 # VERIFY LINE (for the gate that owns this): the built dylib's shader dump for
 # a 2-view multiview vertex shader must contain "[[amplification_id]]" — the
 # fork's Tests/multiview-amplification runner prints it (categorical, cheap).
 #
 # ARCH NOTE: the package step keeps whatever arch set the fleet ships today
-# (universal); the patch changes no arch behavior.
+# (universal); the SPIRV-Cross source change affects no arch behavior.
 #
 # BUILD CONFIG: OBT_MOLTENVK_CONFIG selects the xcodebuild -configuration.
 # Default is Release (owner decision 2026-07-25 — the Debug default's
@@ -80,12 +96,19 @@
 import os
 from obt import dep, path, command, log
 
-VERSION      = "4fc3f6c1f97c7579aa6bbffa791b7a9b35b7fcd4"
-MOLTENVK_MD5 = "b27e7a2837fc6aa2046ccb6eefc56a9f"  # tweakoz/MoltenVK @ 4fc3f6c tarball
+# Head of tweakoz/MoltenVK branch toz-2026-taskmesh, as a SHA — the branch name
+# itself is not usable here: GithubFetcher's tarball path caches by output name
+# ("tweakoz_MoltenVK-<revision>.tar.gz"), so a moving ref would reuse a stale
+# tarball, and md5val would have to be rewritten every time the branch advanced.
+# Bump both lines together when the branch moves.
+VERSION      = "bf9c132a1499055535ee9556189db8e7d575cfb8"
+MOLTENVK_MD5 = "6891e5a819a55f29443b141014600e52"  # tweakoz/MoltenVK @ bf9c132a tarball
 
-# fork-carried SPIRV-Cross patch (optional; see header) + its build stamp
-SPVR_PATCH_RELPATH = ("ExternalRevisions", "SPIRV-Cross_vertex_amplification.patch")
-SPVR_STAMP_NAME    = ".obt-spirv-cross-patch.stamp"
+# SPIRV-Cross pin identity, stamped into the fetched tree (see header). This is
+# NOT a patch: it is the revision fetchDependencies checked out, used only to
+# decide whether a cached External/build is still valid.
+SPVX_REV_RELPATH = ("ExternalRevisions", "SPIRV-Cross_repo_revision")
+SPVX_STAMP_NAME  = ".obt-spirv-cross-pin.stamp"
 
 ###############################################################################
 
@@ -113,86 +136,43 @@ class moltenvk(dep.Provider):
     if self.build_dest.exists():
       shutil.rmtree(str(self.build_dest), ignore_errors=True)
 
-  def _spvrPatchPath(self): ###################################################
+  def _spirvCrossPin(self): ###################################################
+    # The SPIRV-Cross revision fetchDependencies just checked out, read from the
+    # MoltenVK tree itself. "absent" is a first-class value: a tree with no pin
+    # file must still invalidate a build compiled against one.
     p = self.source_root
-    for item in SPVR_PATCH_RELPATH:
+    for item in SPVX_REV_RELPATH:
       p = p/item
-    return p
-
-  def _spvrPatchHash(self): ###################################################
-    # "absent" is a first-class stamp value: a fork state that drops the patch
-    # must also invalidate a build tree that was compiled with it.
-    import hashlib
-    patch_path = self._spvrPatchPath()
-    if not patch_path.exists():
+    if not p.exists():
       return "absent"
-    with open(str(patch_path), "rb") as f:
-      return hashlib.sha256(f.read()).hexdigest()
+    with open(str(p), "r") as f:
+      return f.read().strip() or "absent"
 
-  def applySpirvCrossPatch(self): #############################################
-    # Applies the fork's SPIRV-Cross vertex-amplification patch to the fetched
-    # External/SPIRV-Cross, enforcing the stamp + force-clean law (see header).
-    # Returns True on success, INCLUDING the no-op case where the fork state
-    # carries no patch file.
+  def guardSpirvCrossPin(self): ###############################################
+    # MISCOMPILE-TRAP GUARD (see header). Runs after ./fetchDependencies has
+    # populated External/SPIRV-Cross and before xcodebuild. Always returns True:
+    # this step only ever invalidates stale output, it cannot fail the build.
     import shutil
-    patch_path = self._spvrPatchPath()
-    stamp_path = self.source_root/SPVR_STAMP_NAME
-    spvx_root  = self.source_root/"External"/"SPIRV-Cross"
+    stamp_path = self.source_root/SPVX_STAMP_NAME
     ext_build  = self.source_root/"External"/"build"
 
-    cur_hash  = self._spvrPatchHash()
-    prev_hash = None
+    cur_pin  = self._spirvCrossPin()
+    prev_pin = None
     if stamp_path.exists():
       with open(str(stamp_path), "r") as f:
-        prev_hash = f.read().strip()
+        prev_pin = f.read().strip()
 
-    # MISCOMPILE-TRAP GUARD: a cached External/build built against the other
-    # patch state links green and emits wrong shaders. Any hash change wipes
-    # it. (A never-stamped tree with no patch is treated as unchanged, so
-    # adopting this recipe does not gratuitously invalidate existing trees.)
-    changed = (prev_hash != cur_hash) and not (prev_hash is None and cur_hash == "absent")
-    if changed:
-      log.marker("MoltenVK: SPIRV-Cross patch stamp changed (%s -> %s) — force-cleaning External/build"
-                 % (prev_hash if prev_hash else "none", cur_hash[:12]))
+    # A never-stamped tree is treated as unchanged so that adopting this recipe
+    # does not gratuitously invalidate an existing, correctly-built tree.
+    if prev_pin is not None and prev_pin != cur_pin:
+      log.marker("MoltenVK: SPIRV-Cross pin changed (%s -> %s) — force-cleaning External/build"
+                 % (prev_pin[:12], cur_pin[:12]))
       if ext_build.exists():
         shutil.rmtree(str(ext_build), ignore_errors=True)
-      # restore the pristine SPIRV-Cross pin, so the new patch state is applied
-      # to unpatched source rather than on top of the previous patch
-      if (spvx_root/".git").exists():
-        command.run(["git", "checkout", "--", "."], working_dir=spvx_root)
 
-    if not patch_path.exists():
-      log.marker("MoltenVK: no ExternalRevisions/%s in this fork state — SPIRV-Cross patch step is a NO-OP"
-                 % SPVR_PATCH_RELPATH[-1])
-      self._writeSpvrStamp(stamp_path, cur_hash)
-      return True
-
-    if not spvx_root.exists():
-      log.marker("MoltenVK: SPIRV-Cross patch present but External/SPIRV-Cross missing (fetchDependencies did not populate it)")
-      return False
-
-    # idempotent application: clean apply / already applied / neither (fail loud)
-    ok = False
-    if 0 == command.run(["git", "apply", "--check", "-p1", str(patch_path)], working_dir=spvx_root):
-      ok = (0 == command.run(["git", "apply", "-p1", str(patch_path)], working_dir=spvx_root))
-      if ok:
-        log.marker("MoltenVK: applied SPIRV-Cross patch %s (sha256 %s)" % (SPVR_PATCH_RELPATH[-1], cur_hash[:12]))
-    elif 0 == command.run(["git", "apply", "--reverse", "--check", "-p1", str(patch_path)], working_dir=spvx_root):
-      ok = True
-      log.marker("MoltenVK: SPIRV-Cross patch %s already applied to External/SPIRV-Cross — skipping" % SPVR_PATCH_RELPATH[-1])
-
-    if not ok:
-      log.marker("MoltenVK: SPIRV-Cross patch %s FAILED to apply to External/SPIRV-Cross (wrong SPIRV-Cross pin, or partially patched tree)"
-                 % SPVR_PATCH_RELPATH[-1])
-      return False
-
-    log.marker("MoltenVK: VERIFY after build — a 2-view multiview vertex shader dump must contain [[amplification_id]] (Tests/multiview-amplification)")
-    self._writeSpvrStamp(stamp_path, cur_hash)
-    return True
-
-  def _writeSpvrStamp(self, stamp_path, value): ###############################
     with open(str(stamp_path), "w") as f:
-      f.write(value + "\n")
+      f.write(cur_pin + "\n")
+    return True
 
   def build(self): ############################################################
     # Build configuration: Release (default) or Debug. OBT_MOLTENVK_CONFIG=
@@ -218,9 +198,9 @@ class moltenvk(dep.Provider):
     ok = (0 == command.run(["./fetchDependencies", "--macos"],
                             working_dir=self.source_root))
     if ok:
-      # fork-carried SPIRV-Cross patch: after fetchDependencies populated
-      # External/SPIRV-Cross, before xcodebuild. No-op when absent.
-      ok = self.applySpirvCrossPatch()
+      # SPIRV-Cross pin guard: after fetchDependencies populated
+      # External/SPIRV-Cross, before xcodebuild. Only invalidates stale output.
+      ok = self.guardSpirvCrossPin()
     if ok:
       ok = (0 == command.run(["xcodebuild", "build",
                               "-project", "MoltenVKPackaging.xcodeproj",
