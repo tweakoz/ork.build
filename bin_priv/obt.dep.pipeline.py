@@ -205,7 +205,7 @@ def phase1_plan(build_targets, prefetch_targets=None):
                      build (build wins — a transitive of something we need
                      to build is itself built).
 
-  Deps already provisioned (manifest exists, not forcing rebuild) are
+  Deps already provisioned (manifest exists and provider reports current) are
   pre-marked DONE. Deps that don't support this host are also marked DONE
   (no-op). The remainder start as PENDING.
 
@@ -239,10 +239,9 @@ def phase1_plan(build_targets, prefetch_targets=None):
       if not p.supports_host:
         _state[p._name] = State.DONE
         continue
-      # If the manifest is in place and the user isn't forcing a rebuild,
-      # treat the dep as already provisioned. This mirrors the existing
-      # serial path's `should_build` short-circuit.
-      if p.OK and not p.should_force_build and not p.should_wipe:
+      # Use the provider's freshness check just like the serial build path.
+      # A manifest can outlive an ABI/version upgrade or a removed artifact.
+      if p.OK and not p.should_build:
         _state[p._name] = State.DONE
       else:
         _state[p._name] = State.PENDING

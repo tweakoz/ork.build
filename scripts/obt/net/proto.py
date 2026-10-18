@@ -13,6 +13,7 @@ record is the durable truth; PUB is best-effort).
 
 import json
 import os
+import platform
 import socket
 import time
 import uuid as _uuid
@@ -126,13 +127,13 @@ def probe_capabilities():
     """Best-effort machine capabilities dict (advertised at Connect)."""
     caps = {
         "hostname": socket.gethostname(),
-        "os": os.uname().sysname,
-        "arch": os.uname().machine,
+        "os": platform.system(),
+        "arch": platform.machine(),
         "pid": os.getpid(),
     }
     try:
         caps["load"] = os.getloadavg()[0]
-    except OSError:
+    except (AttributeError, OSError):
         pass
     try:  # obt staging, when inside an obt env
         stage = os.environ.get("OBT_STAGE")

@@ -29,6 +29,13 @@ class openexr(dep.StdProvider):
     self._builder.setCmVar("Imath_DIR",       str(path.libs()/"cmake"/"Imath"))
     self._builder.setCmVar("libdeflate_ROOT", str(path.prefix()))
     self._builder.setCmVar("libdeflate_DIR",  str(path.libs()/"cmake"/"libdeflate"))
+    # OpenEXR finds libdeflate via pkg_check_modules, not find_package, and
+    # shadows CMAKE_IGNORE_PATH around that call. CMAKE_PREFIX_PATH is what
+    # pins it: FindPkgConfig prepends <prefix>/lib/pkgconfig, so the staged
+    # libdeflate.pc wins over /opt/homebrew's. The ignore list covers the
+    # remaining find_* calls (same idiom as oiio.py).
+    self._builder.setCmVar("CMAKE_PREFIX_PATH", str(path.prefix()))
+    self._builder.setCmVar("CMAKE_IGNORE_PATH", "/opt/homebrew;/opt/homebrew/lib;/opt/homebrew/include")
     #self._builder.requires(["fltk"])
     
   ########################################################################

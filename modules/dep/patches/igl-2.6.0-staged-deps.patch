@@ -1,0 +1,165 @@
+--- a/cmake/recipes/external/embree.cmake
++++ b/cmake/recipes/external/embree.cmake
+@@ -1,53 +1,5 @@
+-if(TARGET embree::embree)
+-    return()
++# Use OBT's single shared Embree installation; do not fetch a private runtime.
++if(NOT TARGET embree::embree)
++    find_package(embree 4 REQUIRED CONFIG)
++    add_library(embree::embree ALIAS embree)
+ endif()
+-
+-message(STATUS "Third-party: creating target 'embree::embree'")
+-
+-include(FetchContent)
+-FetchContent_Declare(
+-    embree
+-    GIT_REPOSITORY https://github.com/embree/embree.git
+-    GIT_TAG        v4.4.0
+-    GIT_SHALLOW    TRUE
+-)
+-
+-# Set Embree's default options
+-option(EMBREE_ISPC_SUPPORT "Build Embree with support for ISPC applications." OFF)
+-option(EMBREE_TUTORIALS    "Enable to build Embree tutorials"                 OFF)
+-option(EMBREE_STATIC_LIB   "Build Embree as a static library."                ON)
+-set(EMBREE_TESTING_INTENSITY 0          CACHE STRING "Intensity of testing (0 = no testing, 1 = verify and tutorials, 2 = light testing, 3 = intensive testing.")
+-set(EMBREE_TASKING_SYSTEM    "INTERNAL" CACHE STRING "Selects tasking system")
+-set(EMBREE_MAX_ISA           "DEFAULT"  CACHE STRING "Selects highest ISA to support.")
+-
+-# Ready to include embree's atrocious CMake
+-FetchContent_MakeAvailable(embree)
+-
+-# Disable warnings
+-if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+-    # Embree's subgrid.h is known for causing array subscript out of bound
+-    # warning.  Embree dev claim the code is correct and it is a GCC bug
+-    # for misfiring warnings.  See https://github.com/embree/embree/issues/271
+-    #
+-    # The issue should be fixed for gcc 9.2.1 and later.
+-    target_compile_options(embree PRIVATE "-Wno-array-bounds")
+-endif()
+-
+-# Now we need to do some juggling to propagate the include directory properties
+-# along with the `embree` target
+-include(GNUInstallDirs)
+-target_include_directories(embree SYSTEM INTERFACE
+-    "$<BUILD_INTERFACE:${embree_SOURCE_DIR}/include>"
+-    "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/>"
+-)
+-
+-add_library(embree::embree ALIAS embree)
+-
+-# Some order for IDEs
+-set_target_properties(embree PROPERTIES FOLDER "ThirdParty//Embree")
+-set_target_properties(lexers PROPERTIES FOLDER "ThirdParty//Embree")
+-set_target_properties(math PROPERTIES FOLDER "ThirdParty//Embree")
+-set_target_properties(simd PROPERTIES FOLDER "ThirdParty//Embree")
+-set_target_properties(sys PROPERTIES FOLDER "ThirdParty//Embree")
+-set_target_properties(tasking PROPERTIES FOLDER "ThirdParty//Embree")
+-set_target_properties(uninstall PROPERTIES FOLDER "ThirdParty//Embree")
+--- a/cmake/recipes/external/eigen.cmake
++++ b/cmake/recipes/external/eigen.cmake
+@@ -1,43 +1,4 @@
+-if(TARGET Eigen3::Eigen)
+-    return()
++# Reuse the versioned Eigen dependency installed by OBT.
++if(NOT TARGET Eigen3::Eigen)
++    find_package(Eigen3 3.4 REQUIRED CONFIG)
+ endif()
+-
+-message(STATUS "Third-party: creating target 'Eigen3::Eigen'")
+-
+-include(FetchContent)
+-FetchContent_Declare(
+-    eigen
+-    GIT_REPOSITORY https://gitlab.com/libeigen/eigen.git
+-    GIT_TAG tags/3.4.0
+-    GIT_SHALLOW TRUE
+-)
+-FetchContent_GetProperties(eigen)
+-if(NOT eigen_POPULATED)
+-    FetchContent_Populate(eigen)
+-endif()
+-
+-add_library(Eigen3_Eigen INTERFACE)
+-add_library(Eigen3::Eigen ALIAS Eigen3_Eigen)
+-
+-include(GNUInstallDirs)
+-target_include_directories(Eigen3_Eigen SYSTEM INTERFACE
+-    $<BUILD_INTERFACE:${eigen_SOURCE_DIR}>
+-    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+-)
+-
+-option(EIGEN_MPL2_ONLY "Compile Eigen with MPL2 code only" OFF)
+-if(EIGEN_MPL2_ONLY)
+-    target_compile_definitions(Eigen3_Eigen INTERFACE EIGEN_MPL2_ONLY)
+-endif()
+-
+-# On Windows, enable natvis files to improve debugging experience
+-if(WIN32 AND eigen_SOURCE_DIR)
+-    target_sources(Eigen3_Eigen INTERFACE $<BUILD_INTERFACE:${eigen_SOURCE_DIR}/debug/msvc/eigen.natvis>)
+-endif()
+-
+-# Install rules
+-set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME eigen)
+-set_target_properties(Eigen3_Eigen PROPERTIES EXPORT_NAME Eigen)
+-install(DIRECTORY ${eigen_SOURCE_DIR}/Eigen DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+-install(TARGETS Eigen3_Eigen EXPORT EigenTargets)
+-install(EXPORT EigenTargets DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/eigen NAMESPACE Eigen3::)
+--- a/cmake/igl/modules/embree.cmake
++++ b/cmake/igl/modules/embree.cmake
+@@ -20,6 +20,9 @@
+     embree::embree
+ )
+ 
+-# 5. Unit tests
++# 5. Install the adapter headers and inline implementations.
++igl_install(igl_embree ${INC_FILES} ${SRC_FILES})
++
++# 6. Unit tests
+ file(GLOB SRC_FILES "${libigl_SOURCE_DIR}/tests/include/igl/embree/*.cpp")
+ igl_add_test(igl_embree ${SRC_FILES})
+--- a/cmake/igl/libigl-config.cmake.in
++++ b/cmake/igl/libigl-config.cmake.in
+@@ -3,5 +3,8 @@
+ include(CMakeFindDependencyMacro)
+ find_dependency(Eigen3 REQUIRED)
+ find_dependency(Threads REQUIRED)
++if(@LIBIGL_EMBREE@)
++    find_dependency(embree 4 REQUIRED CONFIG)
++endif()
+ include("${CMAKE_CURRENT_LIST_DIR}/LibiglConfigTargets.cmake")
+ check_required_components(Libigl)
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -163,7 +163,7 @@
+     set(project_config_in "${PROJECT_SOURCE_DIR}/cmake/igl/libigl-config.cmake.in")
+     set(project_config_out "${CMAKE_CURRENT_BINARY_DIR}/libigl-config.cmake")
+     set(config_targets_base "LibiglConfigTargets")
+-    set(version_config_file "${CMAKE_CURRENT_BINARY_DIR}/LibiglConfigVersion.cmake")
++    set(version_config_file "${CMAKE_CURRENT_BINARY_DIR}/libigl-config-version.cmake")
+     set(export_dest_dir "${CMAKE_INSTALL_LIBDIR}/cmake/igl")
+ 
+     foreach(suffix IN ITEMS "") #"_restricted" "_copyleft")
+--- a/cmake/igl/igl_install.cmake
++++ b/cmake/igl/igl_install.cmake
+@@ -16,6 +16,7 @@
+     # Install CMake target #
+     ########################
+ 
++    string(REPLACE "igl${suffix}_" "" module_export "${module_name}")
+     set_property(TARGET ${module_name} PROPERTY EXPORT_NAME ${module_export})
+ 
+     include(GNUInstallDirs)
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -37,7 +37,7 @@
+ endif()
+ 
+ ################################################################################
+-project(libigl VERSION 2.5.0)
++project(libigl VERSION 2.6.0)
+ 
+ # CMake module path
+ list(PREPEND CMAKE_MODULE_PATH

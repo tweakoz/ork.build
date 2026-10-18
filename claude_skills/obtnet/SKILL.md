@@ -5,6 +5,9 @@ description: Drive the obtnet fleet (distributed build/run/sync across machines)
 
 # obtnet — one controller, many nodes
 
+**Windows hosts through WSL:** Read [Windows operations](obtnet_windows.md) before running native Windows work through a WSL node.
+It covers managed tunnels, native toolchains, quoting, jobs, transfers, and runtime checks.
+
 Every command prints ONE greppable verdict line last: `[obtnet] ok|FAIL <verb> <node> ...`.
 **Trust it.** Do not fetch or dump logs on success. `--json` on any verb for tool parsing.
 

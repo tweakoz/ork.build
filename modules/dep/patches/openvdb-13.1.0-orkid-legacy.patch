@@ -1,0 +1,349 @@
+diff --git a/openvdb/openvdb/Types.h b/openvdb/openvdb/Types.h
+index 950b0672..58c272b0 100644
+--- a/openvdb/openvdb/Types.h
++++ b/openvdb/openvdb/Types.h
+@@ -8,6 +8,8 @@
+ #include "Platform.h"
+ #include "TypeList.h" // backwards compat
+ 
++#include <atomic>
++
+ #include <openvdb/math/HalfDecl.h>
+ 
+ #include <openvdb/math/Math.h>
+@@ -28,6 +30,21 @@ namespace openvdb {
+ OPENVDB_USE_VERSION_NAMESPACE
+ namespace OPENVDB_VERSION_NAME {
+ 
++// Copyable wrapper around std::atomic<int> used by tree node version counters.
++// std::atomic is non-copyable, which would implicitly delete the default copy
++// ops on any enclosing node class. This wrapper copies via load/store so that
++// LeafNode/InternalNode can retain `= default` copy semantics.
++struct CopyableAtomicInt {
++    std::atomic<int> v{0};
++    CopyableAtomicInt() = default;
++    CopyableAtomicInt(int x) : v(x) {}
++    CopyableAtomicInt(const CopyableAtomicInt& o) : v(o.v.load()) {}
++    CopyableAtomicInt& operator=(const CopyableAtomicInt& o) { v.store(o.v.load()); return *this; }
++    int  load() const          { return v.load(); }
++    void store(int x)          { v.store(x); }
++    int  fetch_add(int x)      { return v.fetch_add(x); }
++};
++
+ // One-dimensional scalar types
+ using Index32 = uint32_t;
+ using Index64 = uint64_t;
+diff --git a/openvdb/openvdb/tree/InternalNode.h b/openvdb/openvdb/tree/InternalNode.h
+index 3c870876..4b7f50e2 100644
+--- a/openvdb/openvdb/tree/InternalNode.h
++++ b/openvdb/openvdb/tree/InternalNode.h
+@@ -20,7 +20,7 @@
+ #include <tbb/parallel_for.h>
+ #include <memory>
+ #include <type_traits>
+-
++#include <functional>
+ 
+ namespace openvdb {
+ OPENVDB_USE_VERSION_NAMESPACE
+@@ -880,6 +880,21 @@ public:
+         return mask;
+     }
+     const UnionType* getTable() const { return mNodes; }
++
++
++    void setVersion(int version) { _version.store(version); }
++    int getVersion() const { return _version.load(); }
++    int incVersion() { return _version.fetch_add(1); }
++
++    inline uint64_t hash() const {
++        uint64_t hash = 0;
++        hash |= uint64_t((mOrigin[0]+8192)&0x3FFF);
++        hash |= uint64_t((mOrigin[1]+8192)&0x3FFF)<<14;
++        hash |= uint64_t((mOrigin[2]+8192)&0x3FFF)<<28;
++        //hash |= uint64_t(_version.load()&0xFFFF)<<42;
++        return hash;
++    }
++
+ protected:
+     //@{
+     /// Use a mask accessor to ensure consistency between the child and value masks;
+@@ -917,6 +932,8 @@ protected:
+     Coord mOrigin;
+     /// Transient data (not serialized)
+     Index32 mTransientData = 0;
++    CopyableAtomicInt _version{0};
++
+ }; // class InternalNode
+ 
+ 
+@@ -987,6 +1004,7 @@ struct InternalNode<ChildT, Log2Dim>::DeepCopy
+                 t->mNodes[i].setValue(ValueType(s->mNodes[i].getValue()));
+             } else {
+                 t->mNodes[i].setChild(new ChildNodeType(*(s->mNodes[i].getChild())));
++                t->mNodes[i].setVersion(s->mNodes[i].getVersion());
+             }
+         }
+     }
+@@ -1035,6 +1053,7 @@ struct InternalNode<ChildT, Log2Dim>::TopologyCopy1
+                                                         b, TopologyCopy()));
+             } else {
+                 t->mNodes[i].setValue(b);
++                t->mNodes[i].incVersion();
+             }
+         }
+     }
+@@ -1070,6 +1089,7 @@ struct InternalNode<ChildT, Log2Dim>::TopologyCopy2
+             if (s->isChildMaskOn(i)) {
+                 t->mNodes[i].setChild(new ChildNodeType(*(s->mNodes[i].getChild()),
+                                                         offV, onV, TopologyCopy()));
++                t->mNodes[i].setVersion(s->mNodes[i].getVersion());
+             } else {
+                 t->mNodes[i].setValue(s->isValueMaskOn(i) ? onV : offV);
+             }
+@@ -1865,6 +1885,7 @@ template<typename ChildT, Index Log2Dim>
+ inline void
+ InternalNode<ChildT, Log2Dim>::setValueOff(const Coord& xyz)
+ {
++    _version.fetch_add(1);
+     const Index n = this->coordToOffset(xyz);
+     bool hasChild = this->isChildMaskOn(n);
+     if (!hasChild && this->isValueMaskOn(n)) {
+@@ -1881,6 +1902,7 @@ template<typename ChildT, Index Log2Dim>
+ inline void
+ InternalNode<ChildT, Log2Dim>::setValueOn(const Coord& xyz)
+ {
++    _version.fetch_add(1);
+     const Index n = this->coordToOffset(xyz);
+     bool hasChild = this->isChildMaskOn(n);
+     if (!hasChild && !this->isValueMaskOn(n)) {
+@@ -1897,6 +1919,7 @@ template<typename ChildT, Index Log2Dim>
+ inline void
+ InternalNode<ChildT, Log2Dim>::setValueOff(const Coord& xyz, const ValueType& value)
+ {
++    _version.fetch_add(1);
+     const Index n = InternalNode::coordToOffset(xyz);
+     bool hasChild = this->isChildMaskOn(n);
+     if (!hasChild) {
+@@ -1918,6 +1941,7 @@ inline void
+ InternalNode<ChildT, Log2Dim>::setValueOffAndCache(const Coord& xyz,
+     const ValueType& value, AccessorT& acc)
+ {
++    _version.fetch_add(1);
+     const Index n = InternalNode::coordToOffset(xyz);
+     bool hasChild = this->isChildMaskOn(n);
+     if (!hasChild) {
+@@ -1942,6 +1966,7 @@ template<typename ChildT, Index Log2Dim>
+ inline void
+ InternalNode<ChildT, Log2Dim>::setValueOn(const Coord& xyz, const ValueType& value)
+ {
++    _version.fetch_add(1);
+     const Index n = this->coordToOffset(xyz);
+     bool hasChild = this->isChildMaskOn(n);
+     if (!hasChild) {
+@@ -1963,6 +1988,7 @@ inline void
+ InternalNode<ChildT, Log2Dim>::setValueAndCache(const Coord& xyz,
+     const ValueType& value, AccessorT& acc)
+ {
++    _version.fetch_add(1);
+     const Index n = this->coordToOffset(xyz);
+     bool hasChild = this->isChildMaskOn(n);
+     if (!hasChild) {
+@@ -1986,6 +2012,7 @@ template<typename ChildT, Index Log2Dim>
+ inline void
+ InternalNode<ChildT, Log2Dim>::setValueOnly(const Coord& xyz, const ValueType& value)
+ {
++    _version.fetch_add(1);
+     const Index n = this->coordToOffset(xyz);
+     bool hasChild = this->isChildMaskOn(n);
+     if (!hasChild && !math::isExactlyEqual(mNodes[n].getValue(), value)) {
+@@ -2004,6 +2031,7 @@ inline void
+ InternalNode<ChildT, Log2Dim>::setValueOnlyAndCache(const Coord& xyz,
+                                                     const ValueType& value, AccessorT& acc)
+ {
++    _version.fetch_add(1);
+     const Index n = this->coordToOffset(xyz);
+     bool hasChild = this->isChildMaskOn(n);
+     if (!hasChild && !math::isExactlyEqual(mNodes[n].getValue(), value)) {
+@@ -2024,6 +2052,7 @@ template<typename ChildT, Index Log2Dim>
+ inline void
+ InternalNode<ChildT, Log2Dim>::setActiveState(const Coord& xyz, bool on)
+ {
++    _version.fetch_add(1);
+     const Index n = this->coordToOffset(xyz);
+     bool hasChild = this->isChildMaskOn(n);
+     if (!hasChild) {
+@@ -2043,6 +2072,7 @@ template<typename AccessorT>
+ inline void
+ InternalNode<ChildT, Log2Dim>::setActiveStateAndCache(const Coord& xyz, bool on, AccessorT& acc)
+ {
++    _version.fetch_add(1);
+     const Index n = this->coordToOffset(xyz);
+     bool hasChild = this->isChildMaskOn(n);
+     if (!hasChild) {
+@@ -2066,6 +2096,7 @@ template<typename ChildT, Index Log2Dim>
+ inline void
+ InternalNode<ChildT, Log2Dim>::setValuesOn()
+ {
++    _version.fetch_add(1);
+     mValueMask = !mChildMask;
+     for (ChildOnIter iter = this->beginChildOn(); iter; ++iter) {
+         mNodes[iter.pos()].getChild()->setValuesOn();
+@@ -2078,6 +2109,7 @@ template<typename ModifyOp>
+ inline void
+ InternalNode<ChildT, Log2Dim>::modifyValue(const Coord& xyz, const ModifyOp& op)
+ {
++    _version.fetch_add(1);
+     const Index n = InternalNode::coordToOffset(xyz);
+     bool hasChild = this->isChildMaskOn(n);
+     if (!hasChild) {
+@@ -2107,6 +2139,7 @@ inline void
+ InternalNode<ChildT, Log2Dim>::modifyValueAndCache(const Coord& xyz, const ModifyOp& op,
+     AccessorT& acc)
+ {
++    _version.fetch_add(1);
+     const Index n = InternalNode::coordToOffset(xyz);
+     bool hasChild = this->isChildMaskOn(n);
+     if (!hasChild) {
+@@ -2140,6 +2173,7 @@ template<typename ModifyOp>
+ inline void
+ InternalNode<ChildT, Log2Dim>::modifyValueAndActiveState(const Coord& xyz, const ModifyOp& op)
+ {
++    _version.fetch_add(1);
+     const Index n = InternalNode::coordToOffset(xyz);
+     bool hasChild = this->isChildMaskOn(n);
+     if (!hasChild) {
+@@ -2164,6 +2198,7 @@ inline void
+ InternalNode<ChildT, Log2Dim>::modifyValueAndActiveStateAndCache(
+     const Coord& xyz, const ModifyOp& op, AccessorT& acc)
+ {
++    _version.fetch_add(1);
+     const Index n = InternalNode::coordToOffset(xyz);
+     bool hasChild = this->isChildMaskOn(n);
+     if (!hasChild) {
+@@ -2194,6 +2229,7 @@ template<typename ChildT, Index Log2Dim>
+ inline void
+ InternalNode<ChildT, Log2Dim>::clip(const CoordBBox& clipBBox, const ValueType& background)
+ {
++    _version.fetch_add(1);
+     CoordBBox nodeBBox = this->getNodeBoundingBox();
+     if (!clipBBox.hasOverlap(nodeBBox)) {
+         // This node lies completely outside the clipping region.  Fill it with background tiles.
+@@ -2244,6 +2280,7 @@ template<typename ChildT, Index Log2Dim>
+ inline void
+ InternalNode<ChildT, Log2Dim>::fill(const CoordBBox& bbox, const ValueType& value, bool active)
+ {
++    _version.fetch_add(1);
+     auto clippedBBox = this->getNodeBoundingBox();
+     clippedBBox.intersect(bbox);
+     if (!clippedBBox) return;
+@@ -2300,6 +2337,7 @@ template<typename ChildT, Index Log2Dim>
+ inline void
+ InternalNode<ChildT, Log2Dim>::denseFill(const CoordBBox& bbox, const ValueType& value, bool active)
+ {
++    _version.fetch_add(1);
+     auto clippedBBox = this->getNodeBoundingBox();
+     clippedBBox.intersect(bbox);
+     if (!clippedBBox) return;
+diff --git a/openvdb/openvdb/tree/LeafNode.h b/openvdb/openvdb/tree/LeafNode.h
+index 9e7fbbf7..63d0ac3b 100644
+--- a/openvdb/openvdb/tree/LeafNode.h
++++ b/openvdb/openvdb/tree/LeafNode.h
+@@ -917,6 +917,11 @@ public:
+     bool isChildMaskOn(Index) const { return false; } // leaf nodes have no children
+     bool isChildMaskOff(Index) const { return true; }
+     bool isChildMaskOff() const { return true; }
++
++    void setVersion(int version) { _version.store(version); }
++    int getVersion() const { return _version.load(); }
++    int incVersion() { return _version.fetch_add(1); }
++
+ protected:
+     void setValueMask(Index n, bool on) { mValueMask.set(n, on); }
+     void setValueMaskOn(Index n)  { mValueMask.setOn(n); }
+@@ -936,6 +941,8 @@ private:
+     Coord mOrigin;
+     /// Transient data (not serialized)
+     Index32 mTransientData = 0;
++
++    CopyableAtomicInt _version{0};
+ }; // end of LeafNode class
+ 
+ 
+diff --git a/openvdb/openvdb/tree/LeafNodeBool.h b/openvdb/openvdb/tree/LeafNodeBool.h
+index 966ea599..30ced867 100644
+--- a/openvdb/openvdb/tree/LeafNodeBool.h
++++ b/openvdb/openvdb/tree/LeafNodeBool.h
+@@ -729,6 +729,12 @@ public:
+     bool isChildMaskOn(Index) const { return false; } // leaf nodes have no children
+     bool isChildMaskOff(Index) const { return true; }
+     bool isChildMaskOff() const { return true; }
++
++
++    void setVersion(int version) { _version.store(version); }
++    int getVersion() const { return _version.load(); }
++    int incVersion() { return _version.fetch_add(1); }
++
+ protected:
+     void setValueMask(Index n, bool on) { mValueMask.set(n, on); }
+     void setValueMaskOn(Index n)  { mValueMask.setOn(n); }
+@@ -745,6 +751,7 @@ protected:
+     Coord mOrigin;
+     /// Transient data (not serialized)
+     Index32 mTransientData = 0;
++    CopyableAtomicInt _version{0};
+ 
+ private:
+     /// @brief During topology-only construction, access is needed
+diff --git a/openvdb/openvdb/tree/LeafNodeMask.h b/openvdb/openvdb/tree/LeafNodeMask.h
+index b861685f..4a8e8a5d 100644
+--- a/openvdb/openvdb/tree/LeafNodeMask.h
++++ b/openvdb/openvdb/tree/LeafNodeMask.h
+@@ -732,6 +732,11 @@ public:
+     bool isChildMaskOn(Index) const { return false; } // leaf nodes have no children
+     bool isChildMaskOff(Index) const { return true; }
+     bool isChildMaskOff() const { return true; }
++
++    void setVersion(int version) { _version.store(version); }
++    int getVersion() const { return _version.load(); }
++    int incVersion() { return _version.fetch_add(1); }
++
+ protected:
+     void setValueMask(Index n, bool on) { mBuffer.mData.set(n, on); }
+     void setValueMaskOn(Index n)  { mBuffer.mData.setOn(n); }
+@@ -746,7 +751,7 @@ protected:
+     Coord mOrigin;
+     /// Transient data (not serialized)
+     Index32 mTransientData = 0;
+-
++    CopyableAtomicInt _version{0};
+ private:
+     /// @brief During topology-only construction, access is needed
+     /// to protected/private members of other template instances.
+diff --git a/openvdb/openvdb/tree/NodeUnion.h b/openvdb/openvdb/tree/NodeUnion.h
+index a2506f12..aff1c5dd 100644
+--- a/openvdb/openvdb/tree/NodeUnion.h
++++ b/openvdb/openvdb/tree/NodeUnion.h
+@@ -44,6 +44,10 @@ public:
+     ValueT& getValue() { return mValue; }
+     void setValue(const ValueT& val) { mValue = val; }
+ 
++    inline void setVersion(int version) { if(mChild) mChild->setVersion(version); }
++    inline int incVersion() { return mChild ? mChild->incVersion() : -1; }
++    inline int getVersion() const { return mChild ? mChild->getVersion() : -1; }
++
+     // Small check to ensure this class isn't
+     // selected for some expected types
+     static_assert(!ValueTraits<ValueT>::IsVec &&
+@@ -72,6 +76,11 @@ public:
+     const ValueT& getValue() const { return mValue; }
+     ValueT& getValue() { return mValue; }
+     void setValue(const ValueT& val) { mValue = val; }
++
++    inline void setVersion(int version) { if(mChild) mChild->setVersion(version); }
++    inline int incVersion() { return mChild ? mChild->incVersion() : -1; }
++    inline int getVersion() const { return mChild ? mChild->getVersion() : -1; }
++
+ };
+ 
+ 

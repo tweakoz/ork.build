@@ -45,6 +45,10 @@ class NodeRecord:
         self.n_jobs = 0
         self.clock_offset_ms = None
         self.rtt_ms = None
+        # stale-heartbeat liveness probe bookkeeping (see Controller._h_list_nodes)
+        self.probe_pending = False
+        self.probe_failed_at = 0.0
+        self.kept_logged_at = 0.0
 
     def to_dict(self):
         return {"name": self.name, "uuid": self.uuid, "addr": self.addr,
@@ -114,15 +118,58 @@ class Controller:
         return proto.make_reply_ok(t0=msg["t0"], t1=t1, t2=proto.now())
 
     # -- client-facing (main loop, fast) --------------------------------------
-    EXPIRE_S = 120   # heartbeat is 0.5s; anything this stale is gone, not busy
+    EXPIRE_S = 120   # heartbeat is 0.5s; anything this stale is suspect - but not
+                     # gone until its control port stops answering (owner directive
+                     # 2026-09-09: a node mid-job must never drop off the roster just
+                     # because its own heartbeat thread wedged; the relay path is the
+                     # authoritative liveness signal).
+    PROBE_TIMEOUT_MS = 3000
 
     def _h_list_nodes(self, msg):
         with self.nodes_lock:
             cutoff = proto.now() - self.EXPIRE_S
-            for name in [n for n, r in self.nodes.items() if r.last_ping < cutoff]:
-                del self.nodes[name]
-                print(f"[obtnet.controller] node expired: {name}", flush=True)
+            for rec in [r for r in self.nodes.values() if r.last_ping < cutoff]:
+                if rec.probe_failed_at > rec.last_ping:
+                    # stale AND its control port failed to answer after the last
+                    # ping: verified gone, not merely quiet
+                    del self.nodes[rec.name]
+                    print(f"[obtnet.controller] node expired: {rec.name} "
+                          f"(heartbeat stale, control port unreachable)", flush=True)
+                elif not rec.probe_pending:
+                    rec.probe_pending = True
+                    self._pool.submit(self._liveness_probe, rec)
             return proto.make_reply_ok(nodes=[r.to_dict() for r in self.nodes.values()])
+
+    def _liveness_probe(self, rec):
+        """Pool thread: ask the node's control port for node_info. An answer refreshes
+        last_ping (kept on the roster); silence marks it for expiry on the next list."""
+        s = self.ctx.socket(zmq.REQ)
+        s.setsockopt(zmq.LINGER, 0)
+        s.setsockopt(zmq.RCVTIMEO, self.PROBE_TIMEOUT_MS)
+        s.setsockopt(zmq.SNDTIMEO, self.PROBE_TIMEOUT_MS)
+        alive = False
+        try:
+            s.connect(rec.addr)
+            s.send(proto.make_request(proto.OP_NODE_INFO))
+            alive = bool(proto.parse_message(s.recv()).get("ok"))
+        except Exception:
+            alive = False
+        finally:
+            s.close()
+        now = proto.now()
+        with self.nodes_lock:
+            stale = now - rec.last_ping
+            if alive:
+                rec.last_ping = now
+                if now - rec.kept_logged_at > 60.0:
+                    rec.kept_logged_at = now
+                    print(f"[obtnet.controller] node {rec.name}: heartbeat stale "
+                          f"{stale:.0f}s but control port answers - kept", flush=True)
+            else:
+                rec.probe_failed_at = now
+                print(f"[obtnet.controller] node {rec.name}: heartbeat stale "
+                      f"{stale:.0f}s and control port silent - expiring", flush=True)
+            rec.probe_pending = False
 
     def _h_controller_info(self, msg):
         with self.nodes_lock:
@@ -152,6 +199,8 @@ class Controller:
                 s.send(proto.make_request(fwd.pop("op"),
                                           **{k: v for k, v in fwd.items() if k != "v"}))
                 reply = s.recv()     # already an envelope — pass through verbatim
+                with self.nodes_lock:
+                    rec.last_ping = proto.now()   # it answered: alive by definition
             except zmq.error.Again:
                 reply = proto.make_reply_err(proto.ERR_RELAY_TIMEOUT, node=name)
             finally:

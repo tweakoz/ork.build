@@ -6,6 +6,7 @@
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
 
+import os, time
 from pathlib import Path
 import hashlib
 import obt.path
@@ -14,11 +15,28 @@ from obt.retry import retry_until_rc_zero
 
 ###############################################################################
 
+def _md5(file_path):
+  the_md5 = hashlib.md5()
+  the_md5.update(file_path.read_bytes())
+  return the_md5.hexdigest()
+
+STALE_PART_SECONDS = 6*3600
+
+def remove_stale_parts(output_path,max_age=STALE_PART_SECONDS):
+  """A SIGKILLed download leaves <name>.part.<pid>; reap old ones."""
+  cutoff = time.time()-max_age
+  for item in output_path.parent.glob(output_path.name+".part.*"):
+    try:
+      if item.is_file() and item.stat().st_mtime < cutoff:
+        item.unlink()
+    except OSError:
+      pass
+
+###############################################################################
+
 def check_hash(output_path,desired):
   if output_path.exists():
-    the_md5 = hashlib.md5()
-    the_md5.update(output_path.read_bytes())
-    actual = the_md5.hexdigest()
+    actual = _md5(output_path)
     if actual==desired:
       return True
     else:
@@ -37,6 +55,7 @@ def wget(urls=[],
 
   assert(obt.path.downloads().exists())
   output_path = obt.path.downloads()/output_name
+  remove_stale_parts(output_path)
   hash_ok = False
   if md5val!=None:
     hash_ok = check_hash(output_path,md5val)
@@ -44,25 +63,39 @@ def wget(urls=[],
       return output_path
 
   if False==hash_ok:
-    dl_succeeded = False
-    for url in urls:
-      res = retry_until_rc_zero(
-          lambda u=url: Command(["wget",
-                                 "-O",
-                                 output_path,
-                                 #"--show-progress",
-                                 u]).exec(),
-          label="wget %s" % url,
-      )
+    # Download to a per-process temp file beside the destination, then
+    # atomically replace. The downloads cache is machine-shared, so
+    # concurrent builds must never observe (or clobber) a partial file.
+    tmp_path = output_path.parent/("%s.part.%d"%(output_path.name,os.getpid()))
+    mismatches = []
+    try:
+      for url in urls:
+        res = retry_until_rc_zero(
+            lambda u=url: Command(["wget",
+                                   "-O",
+                                   tmp_path,
+                                   #"--show-progress",
+                                   u]).exec(),
+            label="wget %s" % url,
+        )
 
-      if res==0:
-        dl_succeeded = True 
-        if md5val != None:
-          hash_ok = check_hash(output_path,md5val)
-          if False==hash_ok:
-            return None
-        return output_path
+        if res==0:
+          if md5val != None:
+            if False==check_hash(tmp_path,md5val):
+              mismatches.append((url,_md5(tmp_path)))
+              tmp_path.unlink()
+              continue # a mirror may still serve the pinned tarball
+          os.replace(tmp_path,output_path)
+          return output_path
+    finally:
+      if tmp_path.exists():
+        tmp_path.unlink()
 
+  if mismatches:
+    print("wget<%s>: md5 mismatch on every url; expected<%s>"%(output_name,md5val))
+    for url,actual in mismatches:
+      print("  actual<%s> from<%s>"%(actual,url))
+    print("  re-pin md5val in the dep module if upstream re-rolled the tarball")
   return None
 
 ################################################################################

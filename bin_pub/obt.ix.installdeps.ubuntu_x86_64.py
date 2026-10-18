@@ -9,7 +9,9 @@ os.system("sudo update-alternatives --install /usr/bin/python python /usr/bin/py
 
 deplist = []
 
-if UBUNTU_VERSION >= 2310:
+if UBUNTU_VERSION >= 2604:
+  deplist = ["clang-21","g++-11"]  # matches clang.py's resolute toolchain
+elif UBUNTU_VERSION >= 2310:
   deplist =  ["clang-17","g++-11"]
 elif UBUNTU_VERSION <= 2004:
   deplist =  ["gcc-8","g++-8","python-dev"] # not avail in ub22
@@ -36,7 +38,8 @@ deplist += ["texinfo","xmlto"]
 deplist += ["libgtkmm-3.0-dev"]
 deplist += ["libfltk1.3-dev","freeglut3-dev"]
 deplist += ["libfontconfig1-dev"]
-deplist += ["libfreetype6-dev"]
+# 24.04+: libfreetype6-dev is only a virtual name there (provided by libfreetype-dev)
+deplist += ["libfreetype-dev"] if UBUNTU_VERSION >= 2404 else ["libfreetype6-dev"]
 deplist += ["libx11-dev"]
 deplist += ["libxext-dev"]
 deplist += ["libxfixes-dev"]
@@ -89,8 +92,11 @@ if UBUNTU_VERSION < 2604:
 deplist += ["python3-simplejson","python3-tk"]
 
 deplist += ["libdrm-dev","libaudiofile-dev","libsndfile1-dev"]
+deplist += ["ocl-icd-opencl-dev"]  # OpenCL headers and loader development files
 deplist += ["libglew-dev"]
-deplist += ["debhelper-compat","findutils","git","libasound2-dev","libavcodec-dev","libavfilter-dev","libavformat-dev"]
+# 24.04+: debhelper-compat is only a virtual name there (provided by debhelper)
+deplist += ["debhelper"] if UBUNTU_VERSION >= 2404 else ["debhelper-compat"]
+deplist += ["findutils","git","libasound2-dev","libavcodec-dev","libavfilter-dev","libavformat-dev"]
 deplist += ["libdbus-1-dev","libbluetooth-dev","libglib2.0-dev","libgstreamer1.0-dev","libgstreamer-plugins-base1.0-dev"]
 deplist += ["libsbc-dev","libsdl2-dev","libudev-dev","libva-dev","libv4l-dev","libx11-dev","meson","ninja-build"]
 deplist += ["pkg-config","python3-docutils","systemd","mesa-utils","xvfb"]

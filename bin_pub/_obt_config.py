@@ -450,14 +450,19 @@ global _config
 _config = ObtExecConfig() 
 
 def obt_scripts_base():
-  if "OBT_SCRIPTS_DIR" in os.environ:
-    return Path(os.environ["OBT_SCRIPTS_DIR"])
-  else:
-    import importlib.util
-    obt_spec = importlib.util.find_spec("obt")
-    obt_base = Path(obt_spec.submodule_search_locations[0])
-    #print(obt_base)
-    return obt_base
+  configured = Path(os.environ["OBT_SCRIPTS_DIR"]) if "OBT_SCRIPTS_DIR" in os.environ else None
+  if configured is not None and (configured / "__init__.py").is_file():
+    return configured
+  # An inherited shell can retain an OBT_SCRIPTS_DIR from an older wheel or
+  # venv.  Editable installs then import OBT from the source tree while the
+  # stale path is injected into PYTHONPATH; external stage interpreters such
+  # as ork.python cannot process the venv's .pth file after startup. Resolve
+  # the package actually running this launcher instead.
+  import importlib.util
+  obt_spec = importlib.util.find_spec("obt")
+  if obt_spec is None or not obt_spec.submodule_search_locations:
+    raise RuntimeError("cannot resolve the active OBT package")
+  return Path(obt_spec.submodule_search_locations[0])
 
 ###########################################
 # (EXPLICIT) initialize (bootstrap) from command line arguments

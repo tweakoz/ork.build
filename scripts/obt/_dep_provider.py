@@ -332,9 +332,24 @@ class Provider(object):
               else:
                 OK = True
               if OK:
+                self.normalizeStagedLibs()
                 self.manifest.touch()
       return OK
 
+
+    #############################
+
+    def normalizeStagedLibs(self):
+      """After a successful install on macOS, normalize staged dylib IDs,
+      loads and rpaths so a rebuilt dep cannot reintroduce
+      @executable_path/../lib names. Idempotent; never fails the build."""
+      if not host.IsDarwin:
+        return
+      try:
+        from obt import macos
+        macos.normalize_staged_dylibs(path.libs())
+      except Exception as e:
+        print(deco.warn("dep<%s>: staged dylib normalization skipped: %s"%(self._name,e)))
 
     #############################
 
@@ -530,6 +545,8 @@ class StdProvider(Provider):
                 OK = self.onPostInstall()
               else:
                 print(deco.err("Install <%s> failed!"%self._name))
+              if OK:
+                self.normalizeStagedLibs()
             else:
               return False
         if OK:

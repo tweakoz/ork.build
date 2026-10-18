@@ -3,7 +3,7 @@ from setuptools.command.install import install
 import os
 import stat
 
-version = "0.0.321"
+version = "0.0.325"
 
 # Read the long description from the README file
 with open("README.md", "r", encoding="utf-8") as fh:
@@ -57,6 +57,9 @@ setup(
     python_requires='>=3.9',
     install_requires=[
         'yarl',
+        'pyzmq',  # obt.net controller, client, and node transport
+        'mido',
+        "pyudev; sys_platform == 'linux'",
         'toposort',
         'os-release',
         'distro',
@@ -70,6 +73,5 @@ setup(
         "libclang",
 	# "mdstat", linux only
 	#"zfslib", linux only
-	#"pyudev", linux only
     ]
 )

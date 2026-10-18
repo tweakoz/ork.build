@@ -13,13 +13,17 @@ Every verb ends with ONE greppable verdict line (LLM token frugality law);
 """
 
 import base64
+import hashlib
 import json
 import os
+import re
+import shlex
 import socket
 import subprocess
 import sys
+import tempfile
 import time
-from pathlib import Path
+from pathlib import Path, PurePosixPath, PureWindowsPath
 
 import zmq
 
@@ -54,6 +58,150 @@ def _sshhosts():
     """Map of ssh-target-name -> ssh destination (host alias) for msg/push/pull."""
     hosts = _load_global_config().get("sshhosts") or {}
     return {k: (v or k) for k, v in hosts.items()}
+
+
+def _tunnel_state_path(node):
+    return coord_root() / "tunnels" / f"{node}.json"
+
+
+def _port_open(host, port, timeout=.25):
+    try:
+        with socket.create_connection((host, int(port)), timeout=timeout):
+            return True
+    except OSError:
+        return False
+
+
+def _tunnel_master(state, operation="check"):
+    """Contact the saved private control socket; never trust a recycled PID."""
+    control = state.get("control_path")
+    if not control:
+        raise RuntimeError("tunnel ownership cannot be verified: legacy state has no control socket")
+    result = subprocess.run(
+        ["ssh", "-S", control, "-O", operation, "-o", "BatchMode=yes",
+         state["ssh_target"]], stdin=subprocess.DEVNULL,
+        capture_output=True, text=True, timeout=5)
+    if result.returncode:
+        raise RuntimeError(f"SSH tunnel {operation} failed: {result.stderr[-500:]}")
+    if operation == "check":
+        match = re.search(r"Master running \(pid=(\d+)\)", result.stderr)
+        if not match or int(match.group(1)) != int(state["pid"]):
+            raise RuntimeError("SSH tunnel master identity does not match saved state")
+    return result
+
+
+def _remove_tunnel_control(state):
+    # Only remove the socket and its now-empty private directory, never a tree.
+    control = state.get("control_path")
+    if control:
+        path = Path(control)
+        path.unlink(missing_ok=True)
+        try:
+            path.parent.rmdir()
+        except OSError:
+            pass
+
+
+def tunnel_connect(node, ssh_target=None, bind_address=None,
+                   control_port=63101, pub_port=63102, fetch_port=63103):
+    """Start an owned SSH tunnel. Reuse requires the same connection settings."""
+    state_path = _tunnel_state_path(node)
+    state_path.parent.mkdir(parents=True, exist_ok=True)
+    target = ssh_target or _sshhosts().get(node, node)
+    ports = [int(control_port), int(pub_port), int(fetch_port)]
+    try:
+        old = json.loads(state_path.read_text())
+    except FileNotFoundError:
+        old = None
+    if old is not None:
+        try:
+            os.kill(int(old["pid"]), 0)
+        except ProcessLookupError:
+            _remove_tunnel_control(old)
+            state_path.unlink()
+        else:
+            _tunnel_master(old)
+            if (old.get("ssh_target") != target or
+                    old.get("bind_address") != bind_address or old.get("ports") != ports):
+                raise RuntimeError("tunnel already exists with different connection settings; "
+                                   "disconnect it before reconnecting")
+            if not all(_port_open("127.0.0.1", p) for p in ports):
+                raise RuntimeError("owned SSH tunnel has unavailable forwards; disconnect it before reconnecting")
+            return {**old, "ok": True, "action": "already-connected"}
+    log_path = state_path.with_suffix(".log")
+    # Keep the private control socket for subsequent ownership checks and exit.
+    control_path = str(Path(tempfile.mkdtemp(prefix="obtnet-ssh-")) / "ctl")
+    proc = None
+    state = {"node": node, "ssh_target": target, "bind_address": bind_address,
+             "ports": ports, "control_path": control_path, "log": str(log_path)}
+    try:
+        argv = ["ssh", "-M", "-S", control_path]
+        if bind_address:
+            argv += ["-b", bind_address]
+        argv += ["-N", "-o", "BatchMode=yes", "-o", "ExitOnForwardFailure=yes",
+                 "-o", "ForkAfterAuthentication=no", "-o", "ControlPersist=no",
+                 "-o", "ServerAliveInterval=15", "-o", "ServerAliveCountMax=3", target]
+        with open(log_path, "ab", buffering=0) as log:
+            proc = subprocess.Popen(argv, stdin=subprocess.DEVNULL, stdout=log,
+                                    stderr=log, start_new_session=True)
+        deadline = time.monotonic() + 10
+        while time.monotonic() < deadline and proc.poll() is None:
+            if Path(control_path).exists():
+                forward = ["ssh", "-S", control_path, "-O", "forward",
+                           "-o", "BatchMode=yes", "-o", "ExitOnForwardFailure=yes"]
+                for port in ports:
+                    forward += ["-L", f"127.0.0.1:{port}:127.0.0.1:{port}"]
+                forward.append(target)
+                ready = subprocess.run(
+                    forward, stdin=subprocess.DEVNULL, capture_output=True,
+                    text=True, timeout=max(.1, deadline - time.monotonic()))
+                if ready.returncode:
+                    raise RuntimeError(f"SSH forwarding failed: {ready.stderr[-500:]}")
+                if proc.poll() is not None:
+                    break
+                state.update(pid=proc.pid, started_at=time.time())
+                tmp = state_path.with_suffix(".tmp")
+                tmp.write_text(json.dumps(state, indent=2) + "\n")
+                os.replace(tmp, state_path)
+                return {**state, "ok": True, "action": "connected"}
+            time.sleep(.1)
+        detail = log_path.read_text(errors="replace")[-500:]
+        raise RuntimeError(f"SSH tunnel failed to become healthy: {detail}")
+    except Exception:
+        if proc is not None and proc.poll() is None:
+            proc.terminate()
+            try:
+                proc.wait(timeout=2)
+            except subprocess.TimeoutExpired:
+                proc.kill()
+                proc.wait()
+        _remove_tunnel_control(state)
+        raise
+
+
+def tunnel_status(node):
+    try:
+        state = json.loads(_tunnel_state_path(node).read_text())
+        _tunnel_master(state)
+        state["healthy"] = all(_port_open("127.0.0.1", p) for p in state["ports"])
+        return {**state, "ok": state["healthy"]}
+    except Exception as e:
+        return {"node": node, "ok": False, "healthy": False, "error": str(e)}
+
+
+def tunnel_disconnect(node):
+    path = _tunnel_state_path(node)
+    state = json.loads(path.read_text())
+    try:
+        os.kill(int(state["pid"]), 0)
+    except ProcessLookupError:
+        pass
+    else:
+        _tunnel_master(state)
+        _tunnel_master(state, "exit")
+    _remove_tunnel_control(state)
+    path.unlink(missing_ok=True)
+    return {**state, "ok": True, "action": "disconnected"}
 
 
 def resolve_controller(explicit=None):
@@ -224,6 +372,19 @@ class Client:
             time.sleep(interval)
             interval = min(interval * 1.5, 3.0)
 
+    def _run_long(self, node, argv, cwd=None, env=None, timeout_s=10800):
+        """Run a long phase as a queryable job; return a run-like result."""
+        submitted = self.job_submit(node, argv, cwd=cwd, env=env,
+                                    timeout_s=timeout_s)
+        if not submitted.get("ok"):
+            return submitted
+        job = submitted["job"]
+        final = self.job_wait(node, job, timeout_s=timeout_s + 60)
+        stderr = "\n".join((self.job_log(node, job, stream="stderr", tail=80)
+                             .get("lines") or []))
+        return {**final, "ok": bool(final.get("ok")), "job": job,
+                "stderr": stderr, "stdout": ""}
+
     # -- artifacts ------------------------------------------------------------
     def upload(self, node: str, path, tag=""):
         data = Path(path).read_bytes()
@@ -296,6 +457,40 @@ class Client:
             if rep.get("dedup") or rep.get("done"):
                 return
             off += len(chunk)
+
+    def _blob_put_file(self, addr, path, sha, tag=""):
+        """Stream a file into the node cache, resuming an intact .part blob."""
+        path = Path(path)
+        total = path.stat().st_size
+        rep = self._fetch_req(addr, proto.make_request(
+            proto.OP_BLOB_PUT, sha256=sha, offset=0, total=total,
+            bytes_b64="", tag=tag, probe=True))
+        if not rep.get("ok"):
+            raise RuntimeError(f"blob_put probe failed: {rep.get('error')}")
+        if rep.get("dedup") or rep.get("done"):
+            return
+        off = int(rep.get("next_offset", 0))
+        if off < 0 or off > total:
+            off = 0
+        with path.open("rb") as src:
+            while True:
+                src.seek(off)
+                chunk = src.read(min(proto.FETCH_CHUNK_BYTES, total - off))
+                # An empty final request publishes an empty file or a complete
+                # .part left behind before the node could verify and rename it.
+                if not chunk and off < total:
+                    raise RuntimeError(f"short read streaming {path}")
+                rep = self._fetch_req(addr, proto.make_request(
+                    proto.OP_BLOB_PUT, sha256=sha, offset=off, total=total,
+                    bytes_b64=base64.b64encode(chunk).decode(), tag=tag))
+                if not rep.get("ok"):
+                    raise RuntimeError(f"blob_put failed: {rep.get('error')}")
+                if rep.get("dedup") or rep.get("done"):
+                    return
+                next_off = int(rep.get("next_offset", off + len(chunk)))
+                if next_off != off + len(chunk) or next_off <= off:
+                    raise RuntimeError("blob_put did not acknowledge completion or make progress")
+                off = next_off
 
     def _blob_get(self, addr, sha) -> bytes:
         buf = bytearray()
@@ -419,8 +614,7 @@ class Client:
             local_root = Path(local_dir).expanduser()
             done = 0
             for r in to_send:
-                data = (local_root / r).read_bytes()
-                self._blob_put(addr, data, src[r]["sha256"], tag=r)
+                self._blob_put_file(addr, local_root / r, src[r]["sha256"], tag=r)
                 done += 1
                 if progress and (done % 200 == 0):
                     progress(done, len(to_send))
@@ -657,8 +851,15 @@ class Client:
                     import shutil
                     shutil.copyfile(l_store / rel, dst)
             rs = self.sync(node, td, r_store, force=True)   # never --delete
-        if rs["tree"] != rs["want_tree"]:
-            raise RuntimeError(f"LFS object staging to {r_store} did not verify")
+        rep = self._fetch_req(addr, proto.make_request(
+            proto.OP_TREE_MANIFEST, root=r_store, excludes=[]), timeout_ms=600000)
+        after = {rel: e.get("sha256") for rel, e in (rep.get("manifest") or {}).items()}
+        bad = [oid for oid in have
+               if after.get(self._lfs_store_relpath(oid)) != oid]
+        if not rep.get("ok") or bad:
+            raise RuntimeError(
+                f"LFS object staging to {r_store} failed content verification "
+                f"({len(bad)} bad object(s))")
         out = {"lfs_objects": len(have), "lfs_bytes": nbytes,
                "lfs_needed": len(seen)}
         if absent:
@@ -974,6 +1175,178 @@ class Client:
             out["discarded_own_wip"] = own_wip
             out["action"] += f" (discarded {len(own_wip)} own-WIP file(s) — re-sync to restore)"
         return out
+
+    def _bootstrap_destination_clean(self, node, local_repo, remote_repo, head,
+                                     allow_lfs_pointers=False):
+        rep = self._remote_git_step(node, remote_repo, "status", "--porcelain=v1",
+                                    "-z", "--untracked-files=all")
+        if rep.get("rc") != 0:
+            return False
+        records = [entry for entry in rep.get("stdout", "").split("\0") if entry]
+        if not records:
+            return True
+        # Some Git LFS versions mark an unresolved canonical pointer modified.
+        # Accept only an unstaged content change to a known LFS path whose raw
+        # bytes exactly match HEAD's pointer; staged/user/mode edits stay protected.
+        if not allow_lfs_pointers or any(entry[:3] != " M " for entry in records):
+            return False
+        paths = [entry[3:] for entry in records]
+        lfs_paths = {p for _oid, _mark, p in
+                     (self._lfs_ls_files(None, local_repo, head) or [])}
+        if not set(paths).issubset(lfs_paths):
+            return False
+        rep = self._remote_git_step(node, remote_repo, "diff", "--summary", "--",
+                                    *self._literal(paths))
+        if rep.get("rc") != 0 or rep.get("stdout"):
+            return False
+        expected = self._local_tree_blobs(local_repo, head, paths)
+        actual = self._remote_blob_ids(node, remote_repo, paths, no_filters=True)
+        return all(p in expected and actual.get(p) == expected[p] for p in paths)
+
+    def gitbootstrap(self, node, local_repo, remote_repo, dry=False, lfs=True,
+                     lfs_max_bytes=1 << 30):
+        """Create an origin-less depth-1 replica via a resumable bare seed.
+
+        A controller's origin may be local or inaccessible to the node. Updates
+        use gitsync; callers can configure a durable remote explicitly afterward.
+        """
+        remote_repo = str(remote_repo)
+        if not (PurePosixPath(remote_repo).is_absolute()
+                or PureWindowsPath(remote_repo).is_absolute()):
+            raise ValueError("gitbootstrap requires an absolute remote repository path; "
+                             "file transfers and command jobs use different working directories")
+        import subprocess, tempfile
+        local_repo = str(Path(local_repo).resolve())
+        rc, head = self._local_git(local_repo, "rev-parse", "HEAD")
+        if rc:
+            raise RuntimeError(f"{local_repo} is not a git repo")
+        _, branch = self._local_git(local_repo, "rev-parse", "--abbrev-ref", "HEAD")
+        if not branch or branch == "HEAD":
+            raise RuntimeError(
+                f"local HEAD is DETACHED at {head[:12]} in {local_repo} — "
+                "gitbootstrap requires a named branch")
+        rc, dirty = self._local_git(local_repo, "status", "--porcelain=v1",
+                                    "--untracked-files=all")
+        if rc:
+            raise RuntimeError(f"cannot verify source cleanliness in {local_repo}")
+        if dirty:
+            sample = ", ".join(line[3:] for line in dirty.splitlines()[:3])
+            raise RuntimeError(
+                f"source {local_repo} has uncommitted content ({sample}) — "
+                "bootstrap only reproduces committed source")
+        rc, remote_before = self._remote_git(node, remote_repo, "rev-parse", "HEAD")
+        prefix_rc, remote_prefix = self._remote_git(
+            node, remote_repo, "rev-parse", "--show-prefix")
+        # `git -C empty/child` searches parents.  That parent repository is
+        # not an existing destination clone (common for submodule paths).
+        resume = rc == 0 and prefix_rc == 0 and not remote_prefix
+        remote_branch_before = ""
+        if resume:
+            _, remote_branch_before = self._remote_git(
+                node, remote_repo, "rev-parse", "--abbrev-ref", "HEAD")
+            if remote_before != head or remote_branch_before != branch:
+                raise RuntimeError(
+                    f"destination {remote_repo} on {node} is already a Git repository containing "
+                    f"{remote_branch_before}@{remote_before[:12]} — use gitsync for "
+                    "updates or choose an empty destination")
+            if not self._bootstrap_destination_clean(
+                    node, local_repo, remote_repo, head, allow_lfs_pointers=lfs):
+                raise RuntimeError(
+                    f"destination {remote_repo} has uncommitted content or cannot be inspected; "
+                    "bootstrap will not overwrite destination changes")
+
+        if dry:
+            return {"local": f"{branch}@{head[:12]}", "remote": remote_repo,
+                    "action": "would-resume" if resume else "would-bootstrap", "ok": True}
+
+        token = hashlib.sha256((remote_repo + head).encode()).hexdigest()[:16]
+        stage_dir = f"{remote_repo}.obtnet-bootstrap-{token}"
+        data_len = 0
+        complete = False
+        try:
+            if not resume:
+                with tempfile.TemporaryDirectory() as td:
+                    seed = Path(td) / "seed.git"
+                    made = subprocess.run(
+                        ["git", "clone", "--bare", "--depth", "1", "--branch", branch,
+                         f"file://{local_repo}", str(seed)], capture_output=True, text=True)
+                    if made.returncode:
+                        raise RuntimeError(
+                            "depth-1 seed creation failed (source tree is incomplete): "
+                            f"{made.stderr[-400:]}")
+                    got = subprocess.run(
+                        ["git", "-C", str(seed), "rev-parse", "HEAD"],
+                        capture_output=True, text=True)
+                    if got.returncode or got.stdout.strip() != head:
+                        raise RuntimeError("local depth-1 seed HEAD verification failed")
+                    data_len = sum(p.stat().st_size for p in seed.rglob("*") if p.is_file())
+                    self.sync(node, seed, stage_dir, delete=True, force=True)
+                initialized = self.run(
+                    node, ["git", "init", "--bare", stage_dir], timeout_s=120)
+                if not initialized.get("ok") or initialized.get("rc") != 0:
+                    raise RuntimeError(
+                        f"remote bare-seed initialization failed: "
+                        f"{(initialized.get('stderr') or '')[-400:]}")
+                clone = self._run_long(
+                    node, ["git", "clone", "--branch", branch,
+                           stage_dir, remote_repo],
+                    env={"GIT_LFS_SKIP_SMUDGE": "1"}, timeout_s=10800)
+                if not clone.get("ok") or clone.get("rc") != 0:
+                    raise RuntimeError(
+                        f"remote clone failed: "
+                        f"{(clone.get('stderr') or clone.get('detail') or '')[-400:]}")
+            # Fresh clones point at the disposable seed. Repair older successful
+            # bootstraps too, while preserving any user-configured durable origin.
+            origin_rc, origin = self._remote_git(node, remote_repo, "remote", "get-url", "origin")
+            if origin_rc == 0 and origin == stage_dir:
+                remove_rc, _ = self._remote_git(node, remote_repo, "remote", "remove", "origin")
+                if remove_rc:
+                    raise RuntimeError("cannot remove temporary bootstrap origin")
+            rc, remote_gitdir = self._remote_git(node, remote_repo,
+                                                 "rev-parse", "--absolute-git-dir")
+            if rc:
+                raise RuntimeError("clone completed but its Git directory cannot be resolved")
+            lfs_info = (self._lfs_stage_missing(node, local_repo, remote_repo,
+                                                remote_gitdir, head, lfs_max_bytes)
+                        if lfs else {})
+            if lfs and lfs_info.get("lfs_needed"):
+                co = self._run_long(node, ["git", "lfs", "checkout"],
+                                    cwd=remote_repo, timeout_s=10800)
+                if not co.get("ok") or co.get("rc") != 0:
+                    raise RuntimeError(
+                        f"git lfs checkout failed: {(co.get('stderr') or '')[-400:]}")
+            rc, remote_head = self._remote_git(node, remote_repo, "rev-parse", "HEAD")
+            _, remote_branch = self._remote_git(node, remote_repo,
+                                                "rev-parse", "--abbrev-ref", "HEAD")
+            if rc or remote_head != head or remote_branch != branch:
+                raise RuntimeError(
+                    f"post-bootstrap mismatch: wanted {branch}@{head[:12]}, got "
+                    f"{remote_branch}@{remote_head[:12] if remote_head else '?'}")
+            pointers = []
+            if lfs and lfs_info.get("lfs_needed"):
+                listing = self._lfs_ls_files(node, remote_repo, head)
+                pointers = sorted(path for _oid, mark, path in (listing or []) if mark != "*")
+                if pointers:
+                    raise RuntimeError(
+                        f"bootstrap left {len(pointers)} LFS file(s) as pointers "
+                        f"({', '.join(pointers[:3])}...)")
+            rc, destination_dirty = self._remote_git(
+                node, remote_repo, "status", "--porcelain=v1", "--untracked-files=all")
+            if rc or destination_dirty:
+                raise RuntimeError("post-bootstrap destination is not clean; preserve and inspect its changes")
+            complete = True
+            return {"local": f"{branch}@{head[:12]}",
+                    "remote": f"{branch}@{remote_head[:12]}",
+                    "action": "resumed-bootstrap" if resume else "bootstrapped",
+                    "seed_bytes": data_len,
+                    "ok": True, **lfs_info}
+        finally:
+            if complete:
+                with tempfile.TemporaryDirectory() as empty:
+                    try:
+                        self.sync(node, empty, stage_dir, delete=True, force=True)
+                    except Exception:
+                        pass
 
     # -- watch ------------------------------------------------------------------
     def watch(self, node_filter=None, grep=None, out=sys.stdout):
@@ -1452,6 +1825,47 @@ def _push_pull(c, target, local, remote, pull):
     return r["class"]
 
 
+def _wsl_ssh_run(target, argv, env, cwd, timeout_s):
+    """Run a Windows-host command through a declared SSH-to-WSL route."""
+    hosts = _sshhosts()
+    key = next((name for name in hosts if name.casefold() == target.casefold()), None)
+    if key is None:
+        raise RouteError(
+            f"wsl command target {target!r} is not declared in sshhosts; "
+            "add an sshhosts entry naming its SSH config host")
+    command = f"cd {shlex.quote(cwd or '/mnt/c')} && "
+    if env:
+        assignments = [f"{key}={value}" for key, value in env.items()]
+        command += "env " + shlex.join(assignments) + " "
+    command += shlex.join(argv)
+    ssh_argv = ["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=8",
+                hosts[key], command]
+    # A zero/negative CLI timeout means no command-runtime limit. OpenSSH's
+    # ConnectTimeout still bounds establishment, while long builds remain
+    # attached until they actually finish.
+    process_timeout = timeout_s if timeout_s and timeout_s > 0 else None
+    try:
+        result = subprocess.run(ssh_argv, capture_output=True, text=True,
+                                errors="replace", timeout=process_timeout)
+    except subprocess.TimeoutExpired as ex:
+        return {"ok": False, "error": "timeout", "detail": str(ex)}
+    # OpenSSH uses 255 for transport/setup failures, but a successfully-started
+    # remote program may also deliberately return 255.  Preserve that remote
+    # status unless stderr carries one of OpenSSH's connection diagnostics.
+    ssh_error = result.stderr.casefold()
+    ssh_failure_markers = (
+        "could not resolve hostname", "connection refused", "connection timed out",
+        "operation timed out", "no route to host", "network is unreachable",
+        "permission denied", "host key verification failed", "connection reset by",
+        "connection closed by", "kex_exchange_identification", "ssh_exchange_identification",
+    )
+    if result.returncode == 255 and any(marker in ssh_error for marker in ssh_failure_markers):
+        return {"ok": False, "error": "ssh unreachable",
+                "detail": result.stderr[:300]}
+    return {"ok": True, "rc": result.returncode, "stdout": result.stdout,
+            "stderr": result.stderr, "outputs": []}
+
+
 def main(argv=None):
     import argparse
     raw = list(sys.argv[1:] if argv is None else argv)
@@ -1464,10 +1878,23 @@ def main(argv=None):
     sub = ap.add_subparsers(dest="cmd", required=True)
     sub.add_parser("list")
     p = sub.add_parser("info"); p.add_argument("node")
-    for verb in ("run", "submit"):
+    p = sub.add_parser("connect", help="start/manage an SSH tunnel to a WSL node")
+    p.add_argument("node")
+    p.add_argument("--ssh-target", default=None)
+    p.add_argument("--bind-address", default=None)
+    p.add_argument("--control-port", type=int, default=63101)
+    p.add_argument("--pub-port", type=int, default=63102)
+    p.add_argument("--fetch-port", type=int, default=63103)
+    p = sub.add_parser("connection-status", help="inspect a managed WSL tunnel")
+    p.add_argument("node")
+    p = sub.add_parser("disconnect", help="stop a managed WSL tunnel")
+    p.add_argument("node")
+    for verb in ("run", "submit", "wslPS", "wslCMD"):
         p = sub.add_parser(verb)
         p.add_argument("node")
-        p.add_argument("--timeout", type=float, default=300 if verb == "run" else 3600)
+        default_timeout = 3600 if verb == "submit" else (0 if verb in ("wslPS", "wslCMD") else 300)
+        p.add_argument("--timeout", type=float, default=default_timeout,
+                       help="command timeout in seconds; 0 means unlimited (default for wslPS/wslCMD)")
         p.add_argument("--cwd", default=None)
         p.add_argument("--out", action="append", default=[], help="output glob (repeatable)")
         p.add_argument("--env", action="append", default=[], help="KEY=VAL (repeatable)")
@@ -1522,6 +1949,16 @@ def main(argv=None):
     p.add_argument("--lfs-max-mb", type=int, default=1024,
                    help="refuse an LFS staging bigger than this (a store SEED, "
                         "not a sync delta); default 1024")
+    p = sub.add_parser("gitbootstrap",
+                       help="create an origin-less node repo from a verified shallow seed; "
+                            "subsequent updates use gitsync")
+    p.add_argument("node")
+    p.add_argument("local_repo")
+    p.add_argument("remote_repo", help="absolute repository path on the node")
+    p.add_argument("--dry", action="store_true")
+    p.add_argument("--no-lfs", action="store_true")
+    p.add_argument("--lfs-max-mb", type=int, default=1024,
+                   help="refuse LFS bootstrap data bigger than this; default 1024")
     p = sub.add_parser("diff", help="symmetric tree diff: local vs node dir")
     p.add_argument("node")
     p.add_argument("local_dir")
@@ -1572,7 +2009,9 @@ def main(argv=None):
             cfg_path = config_path()
             cfg_path.parent.mkdir(parents=True, exist_ok=True)
             addr = proto.normalize_controller_addr(args.addr)
-            cfg_path.write_text(json.dumps({"controller": addr}, indent=1))
+            config = _load_global_config()
+            config["controller"] = addr
+            cfg_path.write_text(json.dumps(config, indent=1))
             _verdict(True, "config", addr, f"written {cfg_path}", jm,
                      {"controller": addr, "path": str(cfg_path)})
         else:
@@ -1841,19 +2280,62 @@ def main(argv=None):
     if args.cmd == "info":
         print(json.dumps(c.node_info(args.node), indent=None if jm else 2)); return 0
 
-    if args.cmd in ("run", "submit"):
+    if args.cmd == "connect":
+        try:
+            r = tunnel_connect(args.node, args.ssh_target, args.bind_address,
+                               args.control_port, args.pub_port, args.fetch_port)
+            _verdict(True, "connect", args.node,
+                     f"{r['action']} pid={r['pid']} bind={r.get('bind_address') or 'default'}",
+                     jm, r)
+            return 0
+        except Exception as e:
+            _verdict(False, "connect", args.node, f"error={e}", jm,
+                     {"error": str(e)})
+            return 1
+
+    if args.cmd == "connection-status":
+        r = tunnel_status(args.node)
+        _verdict(r["ok"], "connection-status", args.node,
+                 f"healthy={r.get('healthy')} pid={r.get('pid', '?')}", jm, r)
+        return 0 if r["ok"] else 1
+
+    if args.cmd == "disconnect":
+        try:
+            r = tunnel_disconnect(args.node)
+            _verdict(True, "disconnect", args.node, f"pid={r['pid']}", jm, r)
+            return 0
+        except Exception as e:
+            _verdict(False, "disconnect", args.node, f"error={e}", jm,
+                     {"error": str(e)})
+            return 1
+
+    if args.cmd in ("run", "submit", "wslPS", "wslCMD"):
         if not cmd_argv:
             print(f"no argv given (use: {args.cmd} <node> -- cmd args...)", file=sys.stderr)
             return 2
+        if args.cmd == "wslPS":
+            cmd_argv = ["/mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe",
+                        "-NoLogo", "-NoProfile", "-NonInteractive", "-Command",
+                        *cmd_argv]
+        elif args.cmd == "wslCMD":
+            cmd_argv = ["/mnt/c/Windows/System32/cmd.exe", "/d", "/s", "/c",
+                        subprocess.list2cmdline(cmd_argv)]
         env = dict(kv.split("=", 1) for kv in args.env)
-        if args.cmd == "run":
+        if args.cmd in ("run", "wslPS", "wslCMD"):
             t0 = time.time()
-            rep = c.run(args.node, cmd_argv, env=env, cwd=args.cwd,
-                        timeout_s=args.timeout, output_globs=args.out)
+            if args.cmd in ("wslPS", "wslCMD"):
+                if args.out:
+                    print("--out is not supported for SSH-backed WSL commands",
+                          file=sys.stderr)
+                    return 2
+                rep = _wsl_ssh_run(args.node, cmd_argv, env, args.cwd, args.timeout)
+            else:
+                rep = c.run(args.node, cmd_argv, env=env, cwd=args.cwd,
+                            timeout_s=args.timeout, output_globs=args.out)
             dt = time.time() - t0
             if not rep.get("ok"):
                 det = rep.get("detail")
-                _verdict(False, "run", args.node,
+                _verdict(False, args.cmd, args.node,
                          f"error={rep.get('error')}{': ' + det if det else ''} {dt:.1f}s",
                          jm, {"error": rep.get("error"), "detail": det})
                 return 1
@@ -1864,7 +2346,7 @@ def main(argv=None):
                 for o in rep.get("outputs", []):
                     print(f"[output] {o['name']} {o['bytes']}B sha={o['sha256'][:12]}"
                           f"{' (cached remote)' if o.get('cached') else ''}", file=sys.stderr)
-            _verdict(rep.get("rc") == 0, "run", args.node,
+            _verdict(rep.get("rc") == 0, args.cmd, args.node,
                      f"rc={rep.get('rc')} {dt:.1f}s stdout={len(rep['stdout'])}B "
                      f"stderr={len(rep['stderr'])}B files={len(rep.get('outputs', []))}",
                      jm, {"rc": rep.get("rc"), "dur_s": round(dt, 1),
@@ -2078,6 +2560,21 @@ def main(argv=None):
                      f"files={rs['files']} del={rs['deleted']} "
                      f"tree={'MATCH' if match else 'MISMATCH!'}", jm, rs if jm else None)
             return 0 if match else 1
+        return 0
+
+    if args.cmd == "gitbootstrap":
+        try:
+            r = c.gitbootstrap(args.node, args.local_repo, args.remote_repo,
+                               dry=args.dry, lfs=not args.no_lfs,
+                               lfs_max_bytes=args.lfs_max_mb * 1000000)
+        except Exception as e:
+            _verdict(False, "gitbootstrap", args.node, f"error={e}", jm,
+                     {"error": str(e)})
+            return 1
+        _verdict(True, "gitbootstrap", args.node,
+                 f"{r['action']} local={r['local']} remote={r['remote']}"
+                 + (f" seed={r['seed_bytes']}B" if r.get("seed_bytes") else ""),
+                 jm, r if jm else None)
         return 0
 
     if args.cmd == "diff":

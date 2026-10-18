@@ -6,6 +6,7 @@
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
 
+from obt.dependency_artifacts import command_version
 from obt import dep, host, path
 from obt.command import Command
 from obt import log
@@ -14,8 +15,10 @@ deco = Deco()
 
 class _llvm_from_source(dep.StdProvider):
   name = "llvm"
+  version = "21.1.8"
   def __init__(self,name):
     super().__init__(_llvm_from_source.name)
+    self.setSourceRoot(path.builds()/("llvm-" + self.version))
     self._archlist = ["x86_64","aarch64"]
     ##########################################
     # llvm cmake file is 1 subdir deeper than usual
@@ -50,13 +53,6 @@ class _llvm_from_source(dep.StdProvider):
       self._builder.setCmVar("LLVM_TARGETS_TO_BUILD","AArch64")
     else:
       self._builder.setCmVar("LLVM_TARGETS_TO_BUILD","X86")
-    # LLVM-18's ADT/SmallVector.h uses uint32_t/uint64_t but only includes
-    # <cstddef>. gcc-15 no longer transitively pulls <cstdint> through the
-    # libstdc++ headers, so the TableGen host tools fail to compile
-    # ("'uint64_t' was not declared in this scope"). Force-include cstdint
-    # for every C++ TU — version-agnostic and a no-op where already present.
-    if host.IsLinux:
-      self._builder.setCmVar("CMAKE_CXX_FLAGS","-include cstdint")
     # mold linker — biggest single win in the dep set; LLVM's final link
     # of libLLVM/libclang + tools is one of the slowest link phases.
     # Linux-only; no-op on macOS.
@@ -65,15 +61,11 @@ class _llvm_from_source(dep.StdProvider):
   ########################################################################
   @property
   def _fetcher(self):
-    # md5val enables wget's download cache for the github tarball — without
-    # it wget re-downloads the ~166 MB llvm tarball on every provision.
-    # NOTE: the md5 pins tarball *content*. If toz-apr20 is a branch and
-    # gets new commits, this hash must be recomputed or the fetch will
-    # hard-fail (wget returns None on md5 mismatch, not just a cache miss).
-    fetcher = dep.GithubFetcher(name=_llvm_from_source.name,
-                                repospec="tweakoz/llvm-project",
-                                revision="toz-2026-may23",
-                                md5val="3863ed18b96116b4611276211d6712a1",
+    # Immutable release; Clang is built from this same source by clang.py.
+    fetcher = dep.GithubFetcher(name=self.name,
+                                repospec="llvm/llvm-project",
+                                revision="llvmorg-" + self.version,
+                                md5val="6a8a4e9a04fe419251e8386358c8051e", # llvmorg-21.1.8
                                 recursive=False)
     return fetcher
   ########################################################################
@@ -85,7 +77,13 @@ class _llvm_from_source(dep.StdProvider):
     return (self.source_root/"README.md").exists()
 
   def areRequiredBinaryFilesPresent(self):
-    return (path.stage()/"bin"/"llvm-cov").exists()
+    return ((path.libs()/("libLLVM." + self.shlib_extension)).is_file()
+            and (path.includes()/"llvm"/"Config"/"llvm-config.h").is_file()
+            and command_version([path.bin()/"llvm-config", "--version"], self.version))
+
+  @property
+  def should_build(self):
+    return super().should_build or not self.areRequiredBinaryFilesPresent()
 
 ###############################################################################
 

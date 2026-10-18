@@ -18,9 +18,11 @@ class nanobind(dep.StdProvider):
     self.declareDep("cmake")
     PYTHON = dep.instance("python")
     self._builder = self.createBuilder(dep.CMakeBuilder)
-    #self._builder.setCmVar("Python3_FIND_STRATEGY","LOCATION")
-    #self._builder.setCmVar("Python3_ROOT_DIR",PYTHON.home_dir)
-    self._builder.setCmVar("PYTHON_EXECUTABLE",PYTHON.executable)
+    # nanobind uses modern FindPython, whose variables are case-sensitive.
+    # PYTHON_EXECUTABLE is ignored and can select OBT's host venv instead.
+    self._builder.setCmVar("Python_EXECUTABLE",PYTHON.executable)
+    self._builder.setCmVar("Python_ROOT_DIR",PYTHON.home_dir)
+    self._builder.setCmVar("Python_INCLUDE_DIR",PYTHON.include_dir)
     self._builder.requires(["python"])
     self._debug = True
     self._fetcher._debug = True
@@ -34,4 +36,6 @@ class nanobind(dep.StdProvider):
   def areRequiredSourceFilesPresent(self):
     return (self.source_root/"CMakeLists.txt").exists()
   def areRequiredBinaryFilesPresent(self):
-    return (path.includes()/"nanobind"/"attr.h").exists()
+    install_root = path.prefix()/"nanobind"
+    return ((install_root/"include"/"nanobind"/"nanobind.h").is_file()
+            and (install_root/"cmake"/"nanobind-config.cmake").is_file())

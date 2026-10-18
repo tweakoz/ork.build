@@ -83,6 +83,24 @@ class openssl(dep.StdProvider):
     def areRequiredSourceFilesPresent(self):
         return (self.source_root/"Configure").exists()
 
+    def onPostInstall(self):
+        # install_ssldirs creates an empty trust store. Programs loading this
+        # OpenSSL (including wget) need the host's maintained CA bundle.
+        cert_file = self.root/"etc"/"ssl"/"cert.pem"
+        if cert_file.exists() or cert_file.is_symlink():
+            return True  # preserve an explicitly configured trust store
+        candidates = ([path.Path("/etc/ssl/cert.pem")] if host.IsOsx else [
+            path.Path("/etc/ssl/certs/ca-certificates.crt"),
+            path.Path("/etc/pki/tls/certs/ca-bundle.crt"),
+            path.Path("/etc/ssl/cert.pem"),
+        ])
+        for bundle in candidates:
+            if bundle.is_file():
+                cert_file.parent.mkdir(parents=True, exist_ok=True)
+                cert_file.symlink_to(bundle)
+                return True
+        raise RuntimeError("OpenSSL: no system CA bundle found; install ca-certificates")
+
     def areRequiredBinaryFilesPresent(self):
         return (path.libs()/("libssl.%s" % self.shlib_extension)).exists() \
            and (path.libs()/("libcrypto.%s" % self.shlib_extension)).exists()

@@ -9,7 +9,7 @@
 VERSION = ["1","82","0"]
 HASH = "844c8e4c727571e37556ed7b64e7ac8f"
 
-import os,tarfile
+import os,tarfile,subprocess
 from obt import path,host,dep, gen_pkgconfig, patch
 from obt.wget import wget
 from obt.deco import Deco
@@ -18,6 +18,64 @@ from pathlib import Path
 from yarl import URL
 
 deco = Deco()
+
+def normalize_macos_boost_libraries(lib_dir, check_only=False):
+  """Make installed Boost dylibs load their peers from the same directory.
+
+  Changing a dylib's ID does not update references already linked into other
+  dylibs. Normalize both, then restore the Mach-O signatures after editing.
+  """
+  lib_dir = Path(lib_dir)
+  plans = []
+  for library in sorted(lib_dir.glob("libboost_*.dylib")):
+    if library.is_symlink() or not library.is_file():
+      continue
+    output = subprocess.run(["otool", "-l", str(library)], check=True,
+                            capture_output=True, text=True).stdout
+    edits = []
+    command = None
+    for line in output.splitlines():
+      line = line.strip()
+      if line.startswith("Load command "):
+        command = None
+      elif line.startswith("cmd "):
+        command = line.split(None, 1)[1]
+      elif line.startswith("name ") and command in (
+          "LC_ID_DYLIB", "LC_LOAD_DYLIB", "LC_LOAD_WEAK_DYLIB",
+          "LC_REEXPORT_DYLIB", "LC_LOAD_UPWARD_DYLIB", "LC_LAZY_LOAD_DYLIB"):
+        old = line[5:].rsplit(" (offset ", 1)[0]
+        if command == "LC_ID_DYLIB":
+          new = "@rpath/" + library.name
+          edit = ("-id", new)
+        else:
+          name = Path(old).name
+          if not (name.startswith("libboost_") and name.endswith(".dylib")):
+            continue
+          if not (lib_dir / name).is_file():
+            raise RuntimeError("Missing Boost dependency %s required by %s" % (old, library))
+          new = "@loader_path/" + name
+          edit = ("-change", old, new)
+        if old != new and edit not in edits:
+          edits.append(edit)
+    plans.append((library, edits))
+  if not plans:
+    raise RuntimeError("No installed Boost dylibs in %s" % lib_dir)
+  if check_only:
+    return not any(edits for _, edits in plans) and all(
+        subprocess.run(["codesign", "--verify", str(library)],
+                       capture_output=True).returncode == 0 for library, _ in plans)
+  # Validate all peer references before modifying any library.
+  for library, edits in plans:
+    if edits:
+      arguments = [arg for edit in edits for arg in edit]
+      subprocess.run(["install_name_tool"] + arguments + [str(library)], check=True)
+    verified = subprocess.run(["codesign", "--verify", str(library)],
+                              capture_output=True).returncode == 0
+    if edits or not verified:
+      subprocess.run(["codesign", "--force", "--sign", "-", str(library)],
+                     check=True, capture_output=True)
+      subprocess.run(["codesign", "--verify", str(library)],
+                     check=True, capture_output=True)
 
 ###########################################
 
@@ -183,9 +241,6 @@ class boost(dep.Provider):
 
     #########################################
 
-    if OK:
-      self.manifest.touch()
-
     return OK
     #Fixed it by commenting the following in boost/tools/build/src/tools/darwin.jam
     # - GCC 4.0 and higher in Darwin does not have -fcoalesce-templates.
@@ -258,24 +313,7 @@ class boost(dep.Provider):
     #############################
 
     if self._target.os == "macos":
-      print( "MACOS - fixing boost installnames")
-      from obt import macos
-      libs = [
-        "filesystem",
-        "system",
-        "program_options",
-        "thread",
-        "chrono",
-        "date_time",
-        "atomic",
-      ]
-      for l in libs:
-        if self._target.architecture == "aarch64":
-          l2 = "libboost_%s-mt-%s.dylib" % (l,self.architecture_suffix)
-        else:
-          l2 = "libboost_%s-mt-x64.dylib" % (l)
-        print(l,l2)
-        macos.macho_change_id(path.libs()/l2,"@rpath/%s"%l2)
+      normalize_macos_boost_libraries(path.libs())
 
   ###########################################################
 
@@ -301,15 +339,14 @@ class boost(dep.Provider):
     if self.should_wipe:
       self.wipe()
     ############################
-    src_present = self.areRequiredSourceFilesPresent()
-    if not src_present:
-      self.download_and_extract()
-    ############################
-    if self.should_build:
+    # A stale macOS load path needs only install repair, not a Boost rebuild.
+    if super().should_build or not self.areRequiredBinaryFilesPresent():
+      if not self.areRequiredSourceFilesPresent():
+        self.download_and_extract()
       OK = self.build()
-    ############################
-    self._generate_pkgconfig()
-
+    if OK:
+      self._generate_pkgconfig()
+      self.manifest.touch()
     return OK
 
   ###########################################################
@@ -320,4 +357,21 @@ class boost(dep.Provider):
   ###########################################################
 
   def areRequiredBinaryFilesPresent(self):
-    return (path.includes()/"boost"/"blank.hpp").exists()
+    if not (path.includes()/"boost"/"blank.hpp").exists():
+      return False
+    if self._target.os == "macos":
+      return all((path.libs()/("libboost_%s-mt-%s.dylib" % (name, self.architecture_suffix))).is_file()
+                 for name in ("filesystem", "system", "program_options", "thread",
+                              "chrono", "date_time", "atomic"))
+    return True
+
+  @property
+  def should_build(self):
+    if super().should_build or not self.areRequiredBinaryFilesPresent():
+      return True
+    if self._target.os == "macos":
+      try:
+        return not normalize_macos_boost_libraries(path.libs(), check_only=True)
+      except (OSError, RuntimeError, subprocess.CalledProcessError):
+        return True
+    return False

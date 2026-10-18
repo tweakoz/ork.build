@@ -139,7 +139,7 @@ if args.get("pipeline"):
   # independent) gives us xz+openssl parallel, then python, then pydefaults,
   # then cmake+vulkan parallel.
   import subprocess
-  pipeline_script = Path(sys.prefix) / "obt" / "bin_priv" / "obt.dep.pipeline.py"
+  pipeline_script = obt.path.obt_bin_priv_base() / "obt.dep.pipeline.py"
   if not pipeline_script.exists():
     print("ERROR: pipeline script not found at %s" % pipeline_script)
     sys.exit(2)
@@ -163,6 +163,11 @@ if args.get("pipeline"):
   sys.exit(0 if rc == 0 else rc)
 else:
   import obt.dep
-  for item in MANDATORY_DEPS:
-    dep = obt.dep.instance(item)
-    dep.provide()
+  # Provider.provide() builds only that provider; prerequisites must be
+  # scheduled explicitly, as in obt.dep.build.py and the pipeline.
+  chain = obt.dep.Chain(MANDATORY_DEPS)
+  for provider in reversed(chain._list):
+    if provider.supports_host and provider.should_build:
+      if not provider.provide():
+        print("ERROR: mandatory dependency failed: %s" % provider._name)
+        sys.exit(1)

@@ -1,65 +1,53 @@
-
 ###############################################################################
 # Orkid Build System
-# Copyright 2010-2018, Michael T. Mayers
+# Copyright 2010-2026, Michael T. Mayers
 # email: michael@tweakoz.com
-# The Orkid Build System is published under the GPL 2.0 license
-# see http://www.gnu.org/licenses/gpl-2.0.html
+# Published under GPL 2.0 license
+###############################################################################
+# PostgreSQL — server + client libs (libpq) + tools (initdb, pg_ctl, psql, ...).
+# Autoconf, installed into the staging prefix. Used by libpqpp, and by stacks
+# that run a private database inside an OBT stage (e.g. LiteLLM's key store).
+# readline and zlib come from the host (libreadline-dev, zlib1g-dev on Ubuntu).
+# Built without ICU: the stage's pkg-config doesn't see the host's icu-uc.pc, and
+# libc collations are enough for an embedded/service database.
 ###############################################################################
 
-VERSION = "10.4"
-HASH = "8e8770c289b3e0bdb779b5b171593479"
+VERSION  = "18.6"
+BASENAME = "postgresql-%s" % VERSION
+FILENAME = "%s.tar.bz2" % BASENAME
+URL_BASE = "https://ftp.postgresql.org/pub/source/v%s" % VERSION
+MD5      = "6143c18ab91bdfcaa056a61861814cde"   # matches the upstream .md5
 
-import os, tarfile
 from yarl import URL
-from obt import dep, host, path, cmake
-from obt.deco import Deco
-from obt.wget import wget
-from obt.command import Command
+from obt import dep, path
 
-deco = Deco()
+class postgresql(dep.StdProvider):
+    name = "postgresql"
 
-###############################################################################
+    def __init__(self):
+        super().__init__(postgresql.name)
+        self.setSourceRoot(path.builds()/postgresql.name/BASENAME)
+        self._builder = self.createBuilder(dep.AutoConfBuilder)
+        self._builder._options = ["--without-icu", "--without-llvm", "--without-systemd", "--disable-rpath"]
 
-class postgresql(dep.Provider):
+    def __str__(self):
+        return "PostgreSQL (source-%s)" % VERSION
 
-  def __init__(self): ############################################
-    super().__init__("postgresql")
-    #print(options)
-    build_dest = path.builds()/"postgresql"
-    self.build_dest = build_dest
-    self.fname = "postgresql-%s.tar.bz2"%VERSION
-    self._archlist = ["x86_64"]
+    @property
+    def _fetcher(self):
+        f = dep.WgetFetcher(postgresql.name)
+        f._url     = URL(URL_BASE)/FILENAME
+        f._fname   = FILENAME
+        f._arctype = "tgz"   # `tar xvf` auto-detects bz2
+        f._md5     = MD5
+        return f
 
-  ########
+    def areRequiredSourceFilesPresent(self):
+        return (self.source_root/"configure").exists()
 
-  def __str__(self):
-    return "Postgresql (%s-source)" % VERSION
+    def areRequiredBinaryFilesPresent(self):
+        return (path.bin()/"postgres").exists() and (path.bin()/"initdb").exists()
 
-  ########
-
-  def download_and_extract(self): #############################################
-
-    url = URL("https://ftp.postgresql.org/pub/source/v%s/postgresql-%s.tar.bz2"%(VERSION,VERSION))
-
-    self.arcpath = dep.downloadAndExtract([url],
-                                          self.fname,
-                                          "bz2",
-                                          HASH,
-                                          self.build_dest)
-
-
-  def build(self): ############################################################
-    import shutil
-    self.download_and_extract()
-    source_dir = self.build_dest/("postgresql-%s"%VERSION)
-    build_temp = source_dir/".build"
-    print(build_temp)
-    if build_temp.exists():
-      shutil.rmtree(str(build_temp), ignore_errors=True)
-
-    build_temp.mkdir(parents=True,exist_ok=True)
-    Command([str(source_dir/"configure"),"--prefix",path.prefix()],
-            working_dir=build_temp).exec()
-    return 0==Command(["make","-j",host.NumCores,"install"],
-                      working_dir=build_temp).exec()
+    @property
+    def root(self):
+        return path.prefix()

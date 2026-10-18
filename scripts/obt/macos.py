@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 ###############################################################################
-import sys, os, subprocess
+import sys, os, subprocess, glob
 from obt import host, path, pathtools
 from obt.command import capture, run
 from obt.command import Deco
@@ -16,32 +16,29 @@ def find_replace(inpstring, dictionary):
 
 ###############################################################################
 
+def _macho_command_paths(mach_o_path, commands, field):
+  """Read complete load-command paths, including paths containing spaces."""
+  assert host.IsOsx
+  output = subprocess.run(["otool", "-l", str(mach_o_path)],
+                          check=True, capture_output=True, text=True).stdout
+  active = False
+  paths = []
+  for line in output.splitlines():
+    line = line.strip()
+    if line.startswith("Load command "):
+      active = False
+    elif line.startswith("cmd "):
+      active = line.split(None, 1)[1] in commands
+    elif active and line.startswith(field + " "):
+      paths.append(line.split(None, 1)[1].rsplit(" (offset ", 1)[0])
+      active = False
+  return paths
+
+
 def macho_enumerate_dylibs(mach_o_path):
-  assert (host.IsOsx)
-  loadlines = capture(["otool","-l",mach_o_path],do_log=False).splitlines()
-  cmdindex = 0
-  cmd = None
-  name = None
-  state = 0
-  dylib_paths = list()
-  for line in loadlines:
-    tokens = line.split(" ")
-    tokens = [i for i in tokens if i]
-    if state==0:
-      if tokens[0]=="Load" and tokens[1]=="command":
-        cmdindex = int(tokens[2])
-        state = 1
-    elif state==1:
-      if tokens[0]=="cmd" and tokens[1]=="LC_LOAD_DYLIB":
-        cmd = "LC_LOAD_DYLIB"
-        state = 2
-    elif state==2:
-      if tokens[0] == "name":
-        dylib_paths += [tokens[1]]
-        state=0
-    else:
-      assert(False)
-  return dylib_paths
+  return _macho_command_paths(mach_o_path, {
+      "LC_LOAD_DYLIB", "LC_LOAD_WEAK_DYLIB", "LC_REEXPORT_DYLIB",
+      "LC_LOAD_UPWARD_DYLIB", "LC_LAZY_LOAD_DYLIB"}, "name")
 
 ###############################################################################
 
@@ -61,13 +58,26 @@ def macho_get_all_dylib_dependencies(file_path, seen=None):
 
 ###############################################################################
 
+def _collapse_double_rpath(name):
+  while name.startswith("@rpath/@rpath/"):
+    name = name[len("@rpath/"):]
+  return name
+
 def macho_replace_loadpaths(mach_o_path,search,replace):
+  """SUBSTRING replace of `search` by `replace` in every load command.
+
+  Not anchored: searching a bare leaf name also matches it inside an
+  already-rewritten path (@rpath/<leaf>). A result starting with
+  @rpath/@rpath/ is collapsed to a single @rpath/ so a rerun can never
+  produce an unresolvable double prefix. Prefer exact per-entry rewrites
+  over macho_enumerate_dylibs for new code.
+  """
   assert (host.IsOsx)
   str_search = str(search)
   str_replace = str(replace)
   dylib_paths = macho_enumerate_dylibs(mach_o_path)
   for inpitem in dylib_paths:
-    outitem = inpitem.replace(str_search, str_replace)
+    outitem = _collapse_double_rpath(inpitem.replace(str_search, str_replace))
     #print("mach_o_path: " + str(mach_o_path) + " inp: " + inpitem + " search: " + str_search + " replace: " + str_replace)
     if outitem!=inpitem:
       run(["install_name_tool","-change",inpitem,outitem,mach_o_path],do_log=False)
@@ -306,28 +316,184 @@ class DylibReferenceDatabase(object):
 
 def macho_enumerate_rpaths(mach_o_path):
   """Extract all LC_RPATH entries from a Mach-O binary."""
-  assert (host.IsOsx)
-  loadlines = capture(["otool","-l",mach_o_path],do_log=False).splitlines()
-  state = 0
-  rpaths = list()
-  for line in loadlines:
-    tokens = line.split(" ")
-    tokens = [i for i in tokens if i]
-    if len(tokens) < 2:
+  return _macho_command_paths(mach_o_path, {"LC_RPATH"}, "path")
+
+##############################################################################
+# Staging dylib normalization (development stagings, not deployment)
+##############################################################################
+
+_MACHO_MAGICS = {bytes.fromhex(m) for m in (
+    "feedface", "cefaedfe", "feedfacf", "cffaedfe", "cafebabe", "bebafeca")}
+
+_DYLIB_LOAD_COMMANDS = {"LC_LOAD_DYLIB", "LC_LOAD_WEAK_DYLIB", "LC_REEXPORT_DYLIB",
+                        "LC_LOAD_UPWARD_DYLIB", "LC_LAZY_LOAD_DYLIB"}
+
+
+def _is_macho_file(file_path):
+  """Cheap magic-byte sniff (no `file` subprocess per dylib)."""
+  try:
+    with open(file_path, "rb") as f:
+      return f.read(4) in _MACHO_MAGICS
+  except OSError:
+    return False
+
+
+def _macho_load_table(mach_o_path):
+  """One `otool -l` pass -> (install id or None, dylib loads, rpaths)."""
+  output = subprocess.run(["otool", "-l", str(mach_o_path)],
+                          check=True, capture_output=True, text=True).stdout
+  install_id, loads, rpaths = None, [], []
+  command = None
+  for line in output.splitlines():
+    line = line.strip()
+    if line.startswith("Load command "):
+      command = None
+    elif line.startswith("cmd "):
+      command = line.split(None, 1)[1]
+    elif command and (line.startswith("name ") or line.startswith("path ")):
+      value = line.split(None, 1)[1].rsplit(" (offset ", 1)[0]
+      if command == "LC_ID_DYLIB" and line.startswith("name "):
+        install_id = install_id or value
+      elif command in _DYLIB_LOAD_COMMANDS and line.startswith("name "):
+        if value not in loads:
+          loads.append(value)
+      elif command == "LC_RPATH" and line.startswith("path "):
+        if value not in rpaths:
+          rpaths.append(value)
+      command = None
+  return install_id, loads, rpaths
+
+
+def normalize_staged_dylibs(libdir, check_only=False):
+  """Normalize a staging's dylibs so any consumer resolves them via @rpath.
+
+  Stagings built before cmake deps got CMAKE_INSTALL_NAME_DIR=@rpath hold
+  dylibs whose ID is @executable_path/../lib/<x>. Consumers copy that ID into
+  their own load commands, so build-tree tools (e.g. OSL's genluts) fail to
+  load them. For every *.dylib in libdir (and one directory level below) and
+  every Mach-O inside libdir/*.framework (x keeps its libdir-relative path):
+    - ID @executable_path/../lib/<x>                  -> @rpath/<x>
+    - dependent loads of that form (all load kinds)    -> @rpath/<x>
+    - ID or load @rpath/@rpath/<x> (double prefix)     -> @rpath/<x>
+    - any @rpath load present -> ensure an LC_RPATH resolving to libdir
+    - ad-hoc re-sign every modified file
+  Absolute IDs and loads, including <libdir>/<x>, are conforming and left
+  untouched: non-cmake consumers (no LC_RPATH) rely on them, and deploy
+  relocators handle them at package time.
+  Idempotent. check_only=True edits nothing; counts report how many files
+  would change (nonconforming) and the planned ids/loads/rpaths edits.
+  Tool failures on one file warn and continue.
+  """
+  libdir = os.path.abspath(str(libdir))
+  real_libdir = os.path.realpath(libdir)
+  prefix = "@executable_path/../lib/"
+
+  def rewrite(name):
+    if name.startswith(prefix) and len(name) > len(prefix):
+      return "@rpath/" + name[len(prefix):]
+    if name.startswith("@rpath/@rpath/"):  # substring-rewrite damage
+      return _collapse_double_rpath(name)
+    return None
+
+  def resolves_to_libdir(rpath, file_dir):
+    if rpath.startswith("@loader_path"):
+      rpath = file_dir + rpath[len("@loader_path"):]
+    elif not rpath.startswith("/"):
+      return False
+    return os.path.realpath(rpath) == real_libdir
+
+  items = []
+  for pattern in ("*.dylib", "*/*.dylib"):
+    items += sorted(glob.glob(os.path.join(glob.escape(libdir), pattern)))
+  # framework binaries (e.g. png.framework/Versions/<v>/png); walking without
+  # following links visits each versioned real file once
+  for framework in sorted(glob.glob(os.path.join(glob.escape(libdir), "*.framework"))):
+    for root, dirs, files in os.walk(framework, followlinks=False):
+      dirs[:] = sorted(d for d in dirs if not d.endswith(".dSYM"))
+      items += [os.path.join(root, f) for f in sorted(files)]
+  candidates = []
+  seen = set()
+  for item in items:
+    real = os.path.realpath(item)
+    if real in seen or not os.path.isfile(real):
       continue
-    if state==0:
-      if tokens[0]=="Load" and tokens[1]=="command":
-        state = 1
-    elif state==1:
-      if tokens[0]=="cmd" and tokens[1]=="LC_RPATH":
-        state = 2
-    elif state==2:
-      if tokens[0] == "path":
-        rpaths.append(tokens[1])
-        state = 0
-    else:
-      assert(False)
-  return rpaths
+    if not real.startswith(real_libdir + "/"):
+      continue  # symlink escaping the staging: not ours to edit
+    seen.add(real)
+    if _is_macho_file(real):
+      candidates.append(real)
+
+  counts = dict(scanned=len(candidates), nonconforming=0, ids=0, loads=0,
+                rpaths=0, resigned=0, failed=0)
+
+  for library in candidates:
+    try:
+      install_id, loads, rpaths = _macho_load_table(library)
+    except (subprocess.CalledProcessError, OSError) as e:
+      print(deco.warn("macho.normalize: cannot read %s (%s)" % (library, e)))
+      counts["failed"] += 1
+      continue
+    edits = []
+    new_id = rewrite(install_id) if install_id else None
+    if new_id:
+      edits += ["-id", new_id]
+    changes = [(old, rewrite(old)) for old in loads if rewrite(old)]
+    for old, new in changes:
+      edits += ["-change", old, new]
+    final_loads = [new for _, new in changes] + [l for l in loads if not rewrite(l)]
+    needs_rpath = (any(l.startswith("@rpath/") for l in final_loads) and
+                   not any(resolves_to_libdir(r, os.path.dirname(library)) for r in rpaths))
+    if not (edits or needs_rpath):
+      continue
+    counts["nonconforming"] += 1
+    if check_only:  # report what a fixing run would do
+      counts["ids"] += 1 if new_id else 0
+      counts["loads"] += len(changes)
+      counts["rpaths"] += 1 if needs_rpath else 0
+      continue
+    modified = False
+    if edits:
+      result = subprocess.run(["install_name_tool"] + edits + [library],
+                              capture_output=True, text=True)
+      if result.returncode == 0:
+        modified = True
+        counts["ids"] += 1 if new_id else 0
+        counts["loads"] += len(changes)
+      else:
+        print(deco.warn("macho.normalize: install_name_tool failed on %s: %s"
+                        % (library, result.stderr.strip())))
+        counts["failed"] += 1
+    if needs_rpath:
+      result = subprocess.run(["install_name_tool", "-add_rpath", libdir, library],
+                              capture_output=True, text=True)
+      if result.returncode == 0:
+        modified = True
+        counts["rpaths"] += 1
+      elif "would duplicate" not in result.stderr:
+        print(deco.warn("macho.normalize: add_rpath failed on %s: %s"
+                        % (library, result.stderr.strip())))
+        counts["failed"] += 1
+    if modified:
+      result = subprocess.run(["codesign", "-s", "-", "-f", library],
+                              capture_output=True, text=True)
+      if result.returncode == 0:
+        counts["resigned"] += 1
+      else:
+        print(deco.warn("macho.normalize: codesign failed on %s: %s"
+                        % (library, result.stderr.strip())))
+        counts["failed"] += 1
+
+  if check_only:
+    print(deco.inf("macho.normalize[%s] check-only: scanned %d, nonconforming %d "
+                   "(ids %d, loads %d, rpaths %d)"
+                   % (libdir, counts["scanned"], counts["nonconforming"],
+                      counts["ids"], counts["loads"], counts["rpaths"])))
+  else:
+    print(deco.inf("macho.normalize[%s]: scanned %d, ids fixed %d, loads fixed %d, "
+                   "rpaths added %d, resigned %d, failed %d"
+                   % (libdir, counts["scanned"], counts["ids"], counts["loads"],
+                      counts["rpaths"], counts["resigned"], counts["failed"])))
+  return counts
 
 ##############################################################################
 
@@ -377,6 +543,84 @@ def discover_macho_files(root_dir, skip_dirs=None):
       fw_path = os.path.join(dirpath, fw)
       result.extend(framework_enumerate_binaries(fw_path))
   return result
+
+##############################################################################
+
+def macho_relocate_prefix(root_dir, old_prefix, new_prefix, skip_dirs=None):
+  """Strictly relocate one absolute prefix across a development tree.
+
+  Unlike :class:`MachoRelocator`, this preserves dependency layout instead of
+  converting a staging tree into a deployment-style @rpath bundle.  It scans
+  build trees by default and treats signing failures as fatal.
+  """
+  assert host.IsOsx
+  old_prefix = str(old_prefix).rstrip("/")
+  new_prefix = str(new_prefix).rstrip("/")
+  modified = []
+  for macho in discover_macho_files(root_dir, skip_dirs=skip_dirs or set()):
+    macho_str = str(macho)
+    edits = []
+    for dep_path in dict.fromkeys(macho_enumerate_dylibs(macho_str)):
+      if dep_path == old_prefix or dep_path.startswith(old_prefix + "/"):
+        replacement = new_prefix + dep_path[len(old_prefix):]
+        subprocess.run(
+          ["install_name_tool", "-change", dep_path, replacement, macho_str],
+          check=True, capture_output=True, text=True)
+        edits.append(("dependency", dep_path, replacement))
+    for rpath in dict.fromkeys(macho_enumerate_rpaths(macho_str)):
+      if rpath == old_prefix or rpath.startswith(old_prefix + "/"):
+        replacement = new_prefix + rpath[len(old_prefix):]
+        subprocess.run(
+          ["install_name_tool", "-rpath", rpath, replacement, macho_str],
+          check=True, capture_output=True, text=True)
+        edits.append(("rpath", rpath, replacement))
+    id_output = subprocess.run(
+      ["otool", "-D", macho_str], check=False, capture_output=True, text=True)
+    ids = [line.strip() for line in id_output.stdout.splitlines()[1:] if line.strip()]
+    for install_id in dict.fromkeys(ids):
+      if install_id == old_prefix or install_id.startswith(old_prefix + "/"):
+        replacement = new_prefix + install_id[len(old_prefix):]
+        subprocess.run(
+          ["install_name_tool", "-id", replacement, macho_str],
+          check=True, capture_output=True, text=True)
+        edits.append(("id", install_id, replacement))
+    if edits:
+      remaining = list(macho_enumerate_dylibs(macho_str))
+      remaining += list(macho_enumerate_rpaths(macho_str))
+      verify_id = subprocess.run(
+        ["otool", "-D", macho_str], check=False, capture_output=True, text=True)
+      remaining += [x.strip() for x in verify_id.stdout.splitlines()[1:] if x.strip()]
+      stale = [x for x in remaining
+               if x == old_prefix or x.startswith(old_prefix + "/")]
+      if stale:
+        raise RuntimeError(f"Mach-O prefix relocation incomplete for {macho_str}: {stale}")
+      subprocess.run(
+        ["codesign", "--force", "--sign", "-", macho_str],
+        check=True, capture_output=True, text=True)
+      subprocess.run(
+        ["codesign", "--verify", macho_str],
+        check=True, capture_output=True, text=True)
+      modified.append({"path": macho_str, "edits": edits})
+  return modified
+
+##############################################################################
+
+def macho_find_prefix_references(root_dir, prefix, skip_dirs=None):
+  """Return Mach-O dependency, install-ID, and RPATH references to prefix."""
+  assert host.IsOsx
+  prefix = str(prefix).rstrip("/")
+  findings = []
+  for macho in discover_macho_files(root_dir, skip_dirs=skip_dirs or set()):
+    macho_str = str(macho)
+    values = [("dependency", x) for x in macho_enumerate_dylibs(macho_str)]
+    values += [("rpath", x) for x in macho_enumerate_rpaths(macho_str)]
+    id_output = subprocess.run(
+      ["otool", "-D", macho_str], check=False, capture_output=True, text=True)
+    values += [("id", x.strip()) for x in id_output.stdout.splitlines()[1:] if x.strip()]
+    for kind, value in values:
+      if value == prefix or value.startswith(prefix + "/"):
+        findings.append({"path": macho_str, "kind": kind, "value": value})
+  return findings
 
 ##############################################################################
 

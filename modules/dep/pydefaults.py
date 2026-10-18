@@ -18,13 +18,19 @@ class pydefaults(dep.Provider):
     # limited API (unsupported in Python 3.14 free-threaded) and links
     # against /opt/homebrew/lib/libavif.dylib, both of which are blockers
     # for the no-homebrew cp314t target.
-    pip.install(["pytest",
+    # OBT's PYTHONPATH includes its host venv, which may use a different
+    # Python ABI. Keep pip from treating those packages as installed here.
+    modules1 = ["pytest",
                   "numpy","scipy",
                   "numba","pyopencl",
                   "matplotlib",
                   "pyzmq",
                   #"ork.build" # okay...
-                  ])#,"backports.lzma"])
+                  ]
+    ret = Command([self.python.executable,"-I","-m","pip","install"]+modules1).exec()
+    if ret != 0:
+      print("pydefaults core packages ret<%d>"%int(ret))
+      return False
 
 
 
@@ -34,13 +40,13 @@ class pydefaults(dep.Provider):
       modules2 += ["pysqlite3"]
     #################
 
-    ret = Command([self.python.executable,"-m","pip","install","--upgrade"]+modules2).exec()
+    ret = Command([self.python.executable,"-I","-m","pip","install","--upgrade"]+modules2).exec()
     if ret != 0:
       print("pydefaults build ret<%d>"%int(ret))
       return False
 
     # playwright requires a separate browser install step
-    ret2 = Command([self.python.executable,"-m","playwright","install","chromium"]).exec()
+    ret2 = Command([self.python.executable,"-I","-m","playwright","install","chromium"]).exec()
     print("pydefaults build ret<%d> playwright-install<%d>"%(int(ret),int(ret2)))
     return (ret2==0)
 

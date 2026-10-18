@@ -5,6 +5,9 @@ description: Operate THIS machine as an obtnet fleet node — launching the node
 
 # obtnet-node — this machine as a fleet node
 
+**Windows hosts through WSL:** Read [Windows operations](../obtnet/obtnet_windows.md) before running native Windows work through a WSL node.
+It covers managed tunnels, native toolchains, quoting, jobs, transfers, and runtime checks.
+
 A node is a small daemon (`obt.net.node.py`) that registers with the controller, heartbeats,
 and executes relayed work. Its terminal console is a first-class UI: one compact line per
 event (connect, run→/done rc+duration+bytes, uploads, job state changes) — run it somewhere

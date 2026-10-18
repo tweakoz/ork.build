@@ -47,8 +47,14 @@ class LocalClient(netclient.Client):
         self.run_log.append(argv)
         if self.restricted and argv[0] != "git":
             return {"ok": False, "error": "restricted", "detail": f"head {argv[0]!r}"}
-        r = subprocess.run(argv, cwd=cwd, capture_output=True, text=True)
+        run_env = dict(ENV)
+        run_env.update(env or {})
+        r = subprocess.run(argv, cwd=cwd, capture_output=True, text=True,
+                           env=run_env)
         return {"ok": True, "rc": r.returncode, "stdout": r.stdout, "stderr": r.stderr}
+
+    def _run_long(self, node, argv, cwd=None, env=None, timeout_s=10800):
+        return self.run(node, argv, cwd=cwd, env=env, timeout_s=timeout_s)
 
     # -- fetch socket ------------------------------------------------------
     def _fetch_addr(self, node):
@@ -64,13 +70,20 @@ class LocalClient(netclient.Client):
                 proto.make_reply_ok(manifest=m, tree=tree_sync.tree_hash(m)))
         if op == proto.OP_BLOB_PUT:
             sha = msg["sha256"]
+            if msg.get("probe"):
+                if sha in self.blobs:
+                    return proto.parse_message(proto.make_reply_ok(done=True, dedup=True))
+                partial = self.blobs.get(sha + ".part", b"")
+                return proto.parse_message(proto.make_reply_ok(
+                    done=False, next_offset=len(partial)))
             data = base64.b64decode(msg["bytes_b64"])
             off, total = int(msg["offset"]), int(msg["total"])
             buf = bytearray(self.blobs.get(sha + ".part", b""))
             buf[off:off + len(data)] = data
             if off + len(data) < total:
                 self.blobs[sha + ".part"] = bytes(buf)
-                return proto.parse_message(proto.make_reply_ok(done=False))
+                return proto.parse_message(proto.make_reply_ok(
+                    done=False, next_offset=off + len(data)))
             self.blobs[sha] = bytes(buf)
             self.blobs.pop(sha + ".part", None)
             return proto.parse_message(proto.make_reply_ok(done=True))
@@ -433,6 +446,128 @@ def t_cli_flags():
            f"flags: {calls[1]}")
 
 
+@case("5. gitbootstrap creates a new branch-identical clone with real LFS data")
+def t_bootstrap():
+    src, old_node, base, tip = mklab("bootstrap")
+    node = src.parent / "fresh"
+    C = LocalClient()
+    r = C.gitbootstrap("testnode", str(src), str(node))
+    expect(r["action"] == "bootstrapped", f"result: {r}")
+    expect(git(node, "rev-parse", "HEAD") == tip, "node HEAD")
+    expect(git(node, "branch", "--show-current") ==
+           git(src, "branch", "--show-current"), "node branch")
+    expect((node / "big.bin").read_bytes() == (src / "big.bin").read_bytes(),
+           "bootstrap materialized LFS content")
+    expect(git(node, "status", "--porcelain") == "", "clean clone")
+
+
+@case("5b. gitbootstrap refuses an existing repository")
+def t_bootstrap_existing():
+    src, node, base, tip = mklab("bootstrap-existing")
+    C = LocalClient()
+    try:
+        C.gitbootstrap("testnode", str(src), str(node))
+        raise AssertionError("expected existing-destination refusal")
+    except RuntimeError as e:
+        expect("already a Git repository" in str(e), f"message: {e}")
+
+
+@case("5c. gitbootstrap refuses uncommitted source content")
+def t_bootstrap_dirty_source():
+    src, old_node, base, tip = mklab("bootstrap-dirty")
+    node = src.parent / "fresh"
+    (src / "not-committed.txt").write_text("required but absent from HEAD\n")
+    C = LocalClient()
+    try:
+        C.gitbootstrap("testnode", str(src), str(node))
+        raise AssertionError("expected dirty-source refusal")
+    except RuntimeError as e:
+        expect("uncommitted content" in str(e), f"message: {e}")
+    expect(not node.exists(), "destination was not touched")
+
+
+@case("5d. gitbootstrap resumes an interrupted same-commit LFS checkout")
+def t_bootstrap_resume():
+    src, old_node, base, tip = mklab("bootstrap-resume")
+    node = src.parent / "fresh"
+    C = LocalClient()
+    C.gitbootstrap("testnode", str(src), str(node))
+    pointer = subprocess.check_output(
+        ["git", "-C", str(node), "show", "HEAD:big.bin"], env=ENV)
+    (node / "big.bin").write_bytes(pointer)
+    shutil.rmtree(node / ".git" / "lfs" / "objects", ignore_errors=True)
+    r = C.gitbootstrap("testnode", str(src), str(node))
+    expect(r["action"] == "resumed-bootstrap", f"result: {r}")
+    expect((node / "big.bin").read_bytes() == (src / "big.bin").read_bytes(),
+           "resume restored LFS content")
+
+
+@case("5e. bootstrap creates an origin-less replica and preserves a configured origin")
+def t_bootstrap_origin():
+    src, old_node, base, tip = mklab("bootstrap-origin", lfs=False)
+    node = src.parent / "fresh"
+    C = LocalClient()
+    C.gitbootstrap("testnode", str(src), str(node), lfs=False)
+    expect(git(node, "remote") == "", "temporary origin removed")
+    git(node, "remote", "add", "origin", str(src))
+    C.gitbootstrap("testnode", str(src), str(node), lfs=False)
+    expect(git(node, "remote", "get-url", "origin") == str(src), "explicit durable origin preserved")
+    git(node, "fetch", "origin")
+    token = netclient.hashlib.sha256((str(node) + tip).encode()).hexdigest()[:16]
+    git(node, "remote", "set-url", "origin", f"{node}.obtnet-bootstrap-{token}")
+    C.gitbootstrap("testnode", str(src), str(node), lfs=False)
+    expect(git(node, "remote") == "", "old bootstrap's dangling origin repaired")
+
+
+@case("5f. bootstrap refuses changed destination content without modifying it")
+def t_bootstrap_dirty_destination():
+    for kind in ("tracked", "staged", "untracked", "lfs", "deleted"):
+        src, old_node, base, tip = mklab("bootstrap-dest-" + kind)
+        node = src.parent / "fresh"
+        C = LocalClient()
+        C.gitbootstrap("testnode", str(src), str(node))
+        path = node / ("new.txt" if kind == "untracked" else
+                       "big.bin" if kind == "lfs" else "plain.txt")
+        if kind == "deleted":
+            path.unlink()
+        else:
+            path.write_text("unrelated destination edits\n")
+        if kind == "staged":
+            git(node, "add", "plain.txt")
+        before = git(node, "status", "--porcelain=v1", "--untracked-files=all")
+        for dry in (True, False):
+            try:
+                C.gitbootstrap("testnode", str(src), str(node), dry=dry)
+                raise AssertionError(f"expected dirty destination refusal: {kind}")
+            except RuntimeError as e:
+                expect("destination" in str(e) and "uncommitted" in str(e), str(e))
+            expect(git(node, "status", "--porcelain=v1", "--untracked-files=all") == before,
+                   "destination index and worktree unchanged")
+            expect(not path.exists() if kind == "deleted" else
+                   path.read_text() == "unrelated destination edits\n", "user data preserved")
+
+
+@case("5g. canonical LFS pointer does not excuse destination mode changes")
+def t_bootstrap_pointer_mode():
+    if os.name == "nt":
+        return  # executable bits are not tracked on Windows
+    src, old_node, base, tip = mklab("bootstrap-pointer-mode")
+    node = src.parent / "fresh"
+    C = LocalClient()
+    C.gitbootstrap("testnode", str(src), str(node))
+    pointer = subprocess.check_output(["git", "-C", str(node), "show", "HEAD:big.bin"], env=ENV)
+    path = node / "big.bin"
+    path.write_bytes(pointer)
+    path.chmod(0o755)
+    try:
+        C.gitbootstrap("testnode", str(src), str(node))
+        raise AssertionError("expected mode-change refusal")
+    except RuntimeError as e:
+        expect("uncommitted" in str(e), str(e))
+    expect(path.read_bytes() == pointer and path.stat().st_mode & 0o111,
+           "pointer and user mode change preserved")
+
+
 @case("3c. every gitsync CLI failure ends in a [obtnet] FAIL line")
 def t_cli_verdict():
     src, node, base, tip = mklab("cliverdict")
@@ -460,6 +595,12 @@ def main():
         return 0
     shutil.rmtree(LAB, ignore_errors=True)
     LAB.mkdir(parents=True, exist_ok=True)
+    # Clones do not inherit the source repo's local LFS filter config. Give
+    # every fixture a private global config instead of relying on the user's
+    # git-lfs installation (system config is disabled by ENV above).
+    ENV["GIT_CONFIG_GLOBAL"] = str(LAB / "gitconfig")
+    subprocess.run(["git", "lfs", "install", "--skip-repo"], env=ENV,
+                   cwd=LAB, check=True, capture_output=True)
     before = {p for d in ("pushlog", "treecache")
               for p in (Path.home() / ".obtnet" / d).glob("*")}
     for name, fn in CASES:

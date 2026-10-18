@@ -22,6 +22,7 @@ Workers touch no sockets; they update the locked registry + enqueue events.
 
 import base64
 import glob as _glob
+import json
 import os
 import queue
 import signal
@@ -105,7 +106,8 @@ RESTRICT_ALLOWED_HEADS = {
 
 class Node:
     def __init__(self, controller_addr: str, name: str = None, root: Path = None,
-                 workers: int = 2, restrict=None):
+                 workers: int = 2, restrict=None, advertise_ip=None,
+                 control_port=None, pub_port=None, fetch_port=None):
         self.controller_addr = proto.normalize_controller_addr(controller_addr)
         self.name = name or default_node_name()
         # restrict: set of enabled capability tokens (empty = unrestricted)
@@ -114,9 +116,16 @@ class Node:
         for tok in self.restrict:
             self.allowed_heads |= RESTRICT_ALLOWED_HEADS.get(tok, set())
         self.uuid = proto.new_uuid64()
+        self.advertise_ip = advertise_ip
         self.root = Path(root or (Path.home() / ".obtnet" / self.name))
         self.uploads = UploadCache(self.root / "upload_cache")
         self.ctx = zmq.Context.instance()
+        # Outbound control requests (Connect/Ping to the controller) live on their
+        # OWN context+IO thread. On the shared instance() context they competed with
+        # the bound PUB/fetch sockets for the single IO thread and starved to EAGAIN
+        # under load, silently dropping the node off the roster (observed on an Intel-mac node)
+        # even though the inbound control REP kept answering relayed work fine.
+        self._client_ctx = zmq.Context(io_threads=2)
         self._stop = threading.Event()
         self._connected = False
         self.clock = proto.ClockSync()
@@ -124,16 +133,23 @@ class Node:
         # (before threads start) but USED by exactly one thread.
         self.control = self.ctx.socket(zmq.REP)
         self.control.setsockopt(zmq.LINGER, 0)
-        self.control_port = self.control.bind_to_random_port("tcp://0.0.0.0")
+        self.control_port = self._bind(self.control, control_port)
         self.pub = self.ctx.socket(zmq.PUB)
         self.pub.setsockopt(zmq.LINGER, 0)
-        self.pub_port = self.pub.bind_to_random_port("tcp://0.0.0.0")
+        self.pub_port = self._bind(self.pub, pub_port)
         self.fetch = self.ctx.socket(zmq.REP)
         self.fetch.setsockopt(zmq.LINGER, 0)
-        self.fetch_port = self.fetch.bind_to_random_port("tcp://0.0.0.0")
+        self.fetch_port = self._bind(self.fetch, fetch_port)
         # jobs
         self.jobs = {}                       # id -> Job
         self.jobs_lock = threading.Lock()
+        # heartbeat health (owner directive 2026-09-09: a node running long jobs must
+        # never silently fall off the roster). _hb_last_ok is stamped by every
+        # successful Connect/Ping; the watchdog thread acts on its age.
+        self._hb_last_ok = proto.now()
+        self._hb_last_err = None
+        self._hb_err_logged_at = 0.0
+        self._hb_stall_dumped_at = 0.0
         self.job_q = queue.Queue()
         self.n_workers = max(1, workers)
         self.event_q = queue.Queue()
@@ -147,9 +163,16 @@ class Node:
             "scene.run": self._kind_scene_run,
         }
 
+    @staticmethod
+    def _bind(sock, port):
+        if port:
+            sock.bind(f"tcp://0.0.0.0:{int(port)}")
+            return int(port)
+        return sock.bind_to_random_port("tcp://0.0.0.0")
+
     # -- controller client side (heartbeat thread owns these one-shot sockets) ----
     def _ctl_request(self, payload: bytes, timeout_ms=5000):
-        s = self.ctx.socket(zmq.REQ)
+        s = self._client_ctx.socket(zmq.REQ)
         s.setsockopt(zmq.LINGER, 0)
         s.setsockopt(zmq.RCVTIMEO, timeout_ms)
         s.setsockopt(zmq.SNDTIMEO, timeout_ms)
@@ -182,7 +205,7 @@ class Node:
             control_port=self.control_port,
             pub_port=self.pub_port,
             fetch_port=self.fetch_port,
-            advertise_ip=self._advertise_ip(),
+            advertise_ip=self.advertise_ip or self._advertise_ip(),
             capabilities=proto.probe_capabilities()))
         self._connected = bool(rep.get("ok"))
         return self._connected
@@ -193,6 +216,7 @@ class Node:
             try:
                 if not self._connected:
                     if self._connect_to_controller():
+                        self._hb_last_ok = proto.now()
                         self._emit("connect", f"connected to controller {self.controller_addr} "
                                    f"(control {self.control_port} pub {self.pub_port} "
                                    f"fetch {self.fetch_port})")
@@ -209,6 +233,7 @@ class Node:
                     clock_offset_ms=(None if offset is None else round(offset * 1000, 3)),
                     rtt_ms=(None if rtt is None else round(rtt * 1000, 3))))
                 t3 = proto.now()
+                self._hb_last_ok = t3
                 if not rep.get("ok"):        # registry lost us (controller
                     self._connected = False  # restart) -> re-Connect next tick
                     self._emit("disconnect", "controller forgot us; re-registering")
@@ -216,10 +241,44 @@ class Node:
                 if "t1" in rep:
                     self.clock.update(rep["t0"], rep["t1"], rep["t2"], t3)
             except Exception as e:
+                self._hb_last_err = f"{type(e).__name__}: {e}"
                 if self._connected:
                     self._emit("disconnect", f"controller lost ({e}); reconnecting")
+                elif proto.now() - self._hb_err_logged_at > 30.0:
+                    # a retry loop that fails forever used to be invisible
+                    self._hb_err_logged_at = proto.now()
+                    self._emit("disconnect", f"controller unreachable ({e}); retrying")
                 self._connected = False
             self._stop.wait(0.5)
+
+    HB_STALL_S = 90.0     # a run of failed heartbeat retries this long = worth a stack dump
+
+    def _heartbeat_watchdog(self):
+        """Diagnostic only (owner directive 2026-09-09). The heartbeat loop retries a
+        fresh socket every ~5s, so it never truly wedges; but a long run of EAGAIN used
+        to be invisible AND used to expire the node controller-side. The controller now
+        keeps a node whose CONTROL PORT still answers (its work path), so a stalled
+        heartbeat no longer drops a busy node. This thread just leaves evidence: one
+        all-thread stack dump per window, rate-limited."""
+        import faulthandler
+        while not self._stop.is_set():
+            self._stop.wait(10.0)
+            stale = proto.now() - self._hb_last_ok
+            if stale < self.HB_STALL_S:
+                continue
+            if proto.now() - self._hb_stall_dumped_at < 300.0:
+                continue
+            self._hb_stall_dumped_at = proto.now()
+            dump = self.root / f"hb-stall-{time.strftime('%Y%m%d-%H%M%S')}.txt"
+            try:
+                with open(dump, "w") as f:
+                    f.write(f"heartbeat stalled {stale:.0f}s; last error: {self._hb_last_err}\n"
+                            f"threads: {[t.name for t in threading.enumerate()]}\n")
+                    faulthandler.dump_traceback(file=f, all_threads=True)
+            except Exception as e:
+                dump = f"(stack dump failed: {e})"
+            self._emit("disconnect", f"heartbeat stalled {stale:.0f}s "
+                       f"(last error: {self._hb_last_err}); stacks -> {dump}")
 
     # -- events / console -----------------------------------------------------
     def _emit(self, ev, line, **fields):
@@ -291,21 +350,33 @@ class Node:
         if self.uploads.has(sha):
             return proto.make_reply_ok(done=True, dedup=True)
         part = self.uploads.path_for(sha).with_suffix(".part")
+        total = int(msg["total"])
+        if msg.get("probe"):
+            size = part.stat().st_size if part.exists() else 0
+            if size > total:
+                part.unlink()
+                size = 0
+            return proto.make_reply_ok(done=False, next_offset=size)
         data = base64.b64decode(msg["bytes_b64"])
         off = int(msg["offset"])
-        total = int(msg["total"])
         with open(part, "r+b" if part.exists() else "wb") as f:
             f.seek(off)
             f.write(data)
         if off + len(data) < total:
-            return proto.make_reply_ok(done=False)
-        whole = part.read_bytes()
-        got = sha256_hex(whole)
+            return proto.make_reply_ok(done=False, next_offset=off + len(data))
+        import hashlib
+        digest = hashlib.sha256()
+        with part.open("rb") as src:
+            for chunk in iter(lambda: src.read(1 << 20), b""):
+                digest.update(chunk)
+        got = digest.hexdigest()
         if got != sha:
             part.unlink(missing_ok=True)
             return proto.make_reply_err("sha_mismatch", expected=sha, got=got)
-        self.uploads.put(whole, tag=msg.get("tag", ""))
-        part.unlink(missing_ok=True)
+        dest = self.uploads.path_for(sha)
+        os.replace(part, dest)
+        dest.with_suffix(".json").write_text(json.dumps(
+            {"sha256": sha, "bytes": total, "tag": msg.get("tag", "")}))
         return proto.make_reply_ok(done=True)
 
     def _h_tree_manifest(self, msg):
@@ -328,6 +399,7 @@ class Node:
 
     def _h_tree_apply(self, msg):
         from obt.net import tree_sync
+        import shutil
         root = Path(msg["root"]).expanduser()
         entries = msg["entries"]
         missing = [e["sha256"] for e in entries.values()
@@ -336,8 +408,9 @@ class Node:
             return proto.make_reply_err(proto.ERR_UNKNOWN_SHA, missing=missing[:5],
                                         n_missing=len(missing))
         nf, nl, nd = tree_sync.materialize_tree(
-            root, entries, lambda sha: self.uploads.get(sha),
-            deletes=msg.get("deletes") or [])
+            root, entries, deletes=msg.get("deletes") or [],
+            blob_copier=lambda sha, dest: shutil.copyfile(
+                self.uploads.path_for(sha), dest))
         m = tree_sync.build_manifest(root, msg.get("excludes"))
         self._emit("sync", f"tree_apply {root} files={nf} links={nl} del={nd}")
         return proto.make_reply_ok(files=nf, links=nl, deleted=nd,
@@ -692,7 +765,10 @@ class Node:
         (self.root / "jobs").mkdir(parents=True, exist_ok=True)
         threads = [threading.Thread(target=self._publisher_loop, daemon=True),
                    threading.Thread(target=self._fetch_loop, daemon=True),
-                   threading.Thread(target=self._heartbeat_loop, daemon=True)]
+                   threading.Thread(target=self._heartbeat_loop, daemon=True,
+                                    name="heartbeat-0"),
+                   threading.Thread(target=self._heartbeat_watchdog, daemon=True,
+                                    name="heartbeat-watchdog")]
         threads += [threading.Thread(target=self._worker_loop, args=(i,), daemon=True)
                     for i in range(self.n_workers)]
         for t in threads:
@@ -740,6 +816,11 @@ def main(argv=None):
     ap.add_argument("--name", default=None)
     ap.add_argument("--root", default=None)
     ap.add_argument("--workers", type=int, default=2)
+    ap.add_argument("--advertise-ip", default=None,
+                    help="address clients use to call this node (for tunnels/NAT)")
+    ap.add_argument("--control-port", type=int, default=None)
+    ap.add_argument("--pub-port", type=int, default=None)
+    ap.add_argument("--fetch-port", type=int, default=None)
     ap.add_argument("--restrict", default=os.environ.get("OBT_NET_RESTRICT", ""),
                     help="comma list of allowed capability tokens (e.g. msg,sync). "
                          "Restricted nodes refuse arbitrary run/build/test/scene; "
@@ -747,7 +828,9 @@ def main(argv=None):
     args = ap.parse_args(argv)
     restrict = [t for t in (args.restrict or "").replace(",", " ").split() if t]
     node = Node(args.controller, name=args.name, root=args.root,
-                workers=args.workers, restrict=restrict)
+                workers=args.workers, restrict=restrict,
+                advertise_ip=args.advertise_ip, control_port=args.control_port,
+                pub_port=args.pub_port, fetch_port=args.fetch_port)
     signal.signal(signal.SIGTERM, lambda *a: node.stop())
     try:
         node.run()

@@ -447,10 +447,9 @@ def project_list():
 def osx_sdkdir():
   import obt.command
   result = obt.command.capture([
-                    "xcodebuild",
-                    "-version",
-                    "-sdk", "macosx",
-                    "Path"],do_log=False).splitlines()
+                    "xcrun", "--show-sdk-path"],do_log=False).splitlines()
+  if not result:
+    raise RuntimeError("Cannot resolve macOS SDK; check DEVELOPER_DIR and SDKROOT")
   return result[0]
 
 ###############################################################################

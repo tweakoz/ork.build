@@ -26,6 +26,12 @@ class openblas(dep.StdProvider):
       # Zen5/Strix-Halo-tuned build would fault on older fleet members).
       self._builder.setCmVar("TARGET", "HASWELL")
     if host.IsLinux:
+      # The f2c LAPACK fallback uses unprototyped callback declarations.
+      # In C23, () means no parameters, so GCC 15's default rejects calls
+      # such as select(&wr[i], &wi[i]). Keep this older source on GNU C11.
+      self._builder.setCmVar("CMAKE_C_STANDARD", "11")
+      self._builder.setCmVar("CMAKE_C_STANDARD_REQUIRED", "ON")
+      self._builder.setCmVar("CMAKE_C_EXTENSIONS", "ON")
       # OpenBLAS-0.3.23's LAPACK glue (lapack/getrs/getrs_parallel.c) passes
       # a mismatched pointer to gemm_thread_n. gcc-14+ promotes
       # -Wincompatible-pointer-types (and -Wimplicit-function-declaration,
@@ -56,4 +62,3 @@ class openblas(dep.StdProvider):
     return (self.source_root/"CMakeLists.txt").exists()
   def areRequiredBinaryFilesPresent(self):
     return (path.includes()/"openblas"/"lapacke.h").exists()
-

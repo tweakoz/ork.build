@@ -13,7 +13,7 @@ VERSION_MICRO = "4"
 VERSION = "%s.%s.%s" % (VERSION_MAJOR,VERSION_MINOR,VERSION_MICRO)
 HASH = "0c59e606925de30073db6052b0c3a89d"
 
-import os, shutil, tarfile, sys
+import os, shutil, tarfile, sys, shlex, subprocess
 from obt import dep, host, path, cmake, env, pip, pathtools
 from obt.deco import Deco
 from obt.wget import wget
@@ -21,6 +21,37 @@ from obt.command import Command
 from obt import log
 
 deco = Deco()
+
+
+def macos_function_cache(build_environment, working_dir=None):
+    """Check SDK declarations against the target before Autoconf's link tests.
+
+    CPython 3.14's generic function checks redeclare these functions without
+    system headers, missing Apple's availability annotations. Neither call has
+    a macOS runtime availability guard, so enabling it for an older target is
+    incorrect even when the newer SDK exports the symbol.
+    """
+    environment = dict(os.environ, **build_environment)
+    compiler = shlex.split(environment.get("CC") or "gcc")
+    flags = shlex.split(environment.get("CFLAGS", "")) + shlex.split(environment.get("CPPFLAGS", ""))
+    argv = compiler + flags + ["-Werror=unguarded-availability",
+                              "-Werror=unguarded-availability-new",
+                              "-Werror=implicit-function-declaration",
+                              "-x", "c", "-fsyntax-only", "-"]
+    headers = "#include <unistd.h>\n#include <fcntl.h>\n"
+    def check(body):
+        return subprocess.run(argv, input=headers + "int main(void) { " + body + " }\n",
+                              env=environment, cwd=working_dir, text=True, capture_output=True)
+    baseline = check("return 0;")
+    if baseline.returncode:
+        raise RuntimeError("Cannot compile macOS Python availability checks:\n" + baseline.stderr)
+    options = []
+    for name, body in (("dup3", "return dup3(0, 1, O_CLOEXEC);"),
+                       ("pipe2", "int fds[2]; return pipe2(fds, O_CLOEXEC);")):
+        if check(body).returncode:
+            # Positive probes still go through CPython's normal linker check.
+            options.append("ac_cv_func_%s=no" % name)
+    return options
 
 
 ###############################################################################
@@ -264,10 +295,19 @@ class python_from_source(dep.Provider):
 
     env.set("CCFLAGS","-march=%s"%self._target.architecture)
 
+    build_environment = {}
     if host.IsOsx:
        from obt import macos
        sdkdir = path.osx_sdkdir()
        print(sdkdir)
+       # Match configure's default deployment target (host major.minor), and
+       # give the header probes, configure, and make the same SDK/target.
+       target = os.environ.get("MACOSX_DEPLOYMENT_TARGET")
+       if not target:
+           version = subprocess.check_output(["sw_vers", "-productVersion"], text=True).strip()
+           target = ".".join(version.split(".")[:2])
+       build_environment = {"SDKROOT": os.environ.get("SDKROOT") or str(sdkdir),
+                            "MACOSX_DEPLOYMENT_TARGET": target}
        #options += ["--enable-universalsdk=%s"%sdkdir]
 
        # OBT-built openssl + xz (no homebrew). See modules/dep/openssl.py and xz.py.
@@ -281,6 +321,7 @@ class python_from_source(dep.Provider):
        env.prepend("CFLAGS",  f"-I{self.xz.include_dir}")
        # disable NLS/libintl - not needed and causes link errors on some systems
        options += ["ac_cv_header_libintl_h=no"]
+       options += macos_function_cache(build_environment, build_temp)
 
     else:
        options += ["--with-system-ffi"]
@@ -292,10 +333,13 @@ class python_from_source(dep.Provider):
        options += ["--with-openssl-rpath=%s" % self.openssl.lib_dir]
        options += ["--enable-shared"]
 
-    Command(["../configure"]+options, working_dir=build_temp).exec()
+    if Command(["../configure"]+options, working_dir=build_temp,
+               environment=build_environment).exec() != 0:
+      return False
     OK = (0==Command(["make",
                       "-j", host.NumCores,
-                      "install"], working_dir=build_temp).exec())
+                      "install"], working_dir=build_temp,
+                      environment=build_environment).exec())
     ################################
     # install default packages
     ################################
@@ -356,4 +400,3 @@ class python_from_source(dep.Provider):
 
 
 python = python_from_source
-

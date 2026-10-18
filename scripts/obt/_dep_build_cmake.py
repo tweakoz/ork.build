@@ -9,6 +9,16 @@ from collections.abc import Callable
 
 ###############################################################################
 
+def linux_rpath_cmake_vars(libdir):
+  return {
+    "CMAKE_INSTALL_RPATH": "$ORIGIN;$ORIGIN/../lib;%s" % libdir,
+    "CMAKE_INSTALL_RPATH_USE_LINK_PATH:BOOL": "ON",
+    "CMAKE_SKIP_INSTALL_RPATH:BOOL": "NO",
+    "CMAKE_BUILD_RPATH_USE_ORIGIN:BOOL": "ON",
+  }
+
+###############################################################################
+
 class CMakeBuilder(BaseBuilder):
   ###########################################
   def __init__(self,
@@ -56,9 +66,21 @@ class CMakeBuilder(BaseBuilder):
         "CMAKE_INSTALL_RPATH": path.libs(),
         "CMAKE_SKIP_INSTALL_RPATH:BOOL":"NO",
         "CMAKE_SKIP_RPATH:BOOL":"NO",
-        "CMAKE_INSTALL_NAME_DIR": "@executable_path/../lib"
+        # Libraries are also consumed by build-tree tools and Python modules,
+        # whose executable directories are not staging/bin. CMake supplies
+        # build/install rpaths for these consumers.
+        "CMAKE_INSTALL_NAME_DIR": "@rpath"
       })
 
+    ##################################
+    # default Linux rpaths: staged libs/tools resolve their siblings and the
+    # staging without LD_LIBRARY_PATH (the OBT launcher clears it), before
+    # obt.ix.elf.fixup.libs.py ever runs. cmake is invoked with an argv list
+    # (no shell), so $ORIGIN reaches cmake verbatim; ';' is the cmake list
+    # separator, emitted as ':' in DT_RUNPATH.
+    ##################################
+    if obt.host.IsLinux:
+      self._cmakeenv.update(linux_rpath_cmake_vars(path.libs()))
     ##################################
     self._parallelism = 0.0 if _globals.tryBoolOption("serial") else 1.0
     ##################################

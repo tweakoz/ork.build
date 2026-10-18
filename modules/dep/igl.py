@@ -5,88 +5,76 @@
 # The Orkid Build System is published under the GPL 2.0 license
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
-from obt import dep, host, path, pathtools
-###############################################################################
+from obt.dependency_artifacts import cmake_version
+from obt import dep, path, pathtools
+from pathlib import Path
+import subprocess
+
+
 class igl(dep.StdProvider):
   name = "igl"
+  VERSION = "2.6.0"
+
   def __init__(self):
     super().__init__(igl.name)
-    #self._archlist = ["x86_64"]
+    self.setSourceRoot(path.builds()/("igl-"+self.VERSION))
     self.declareDep("cmake")
-    #self.declareDep("lapack")
     self.declareDep("eigen")
-    BOOST = self.declareDep("boost")
-    cgal_path = path.libs()/"cmake"/"CGAL"
-    eig3_path = path.stage()/"share"/"eigen3"/"cmake"
-    embr_path = path.libs()/"cmake"/"embree-3.9.0"
-    glfw_path = path.libs()/"cmake"/"glfw3"
-    module_path = "%s:%s:%s:%s"%(
-                   cgal_path,
-                   eig3_path,
-                   embr_path,
-                   glfw_path)
+    embree = self.declareDep("embree")
+    boost = self.declareDep("boost")
     self._builder = self.createBuilder(dep.CMakeBuilder)
-    self._builder.requires(["eigen","tbb"])
-    # Disable igl_copyleft::cgal. Its cmake/recipes/external/cgal.cmake
-    # pulls in cmake/recipes/external/boost.cmake which does
-    # `FetchContent_Declare(Boost URL https://archives.boost.io/...)` and
-    # ignores -DBOOST_ROOT — a ~140 MB redundant download every igl
-    # rebuild plus a second boost build inside igl's tree.
-    #
-    # NOTE: in this libigl fork the correct flag is LIBIGL_COPYLEFT_CGAL
-    # (libigl 3.x naming). The old LIBIGL_WITH_CGAL flag is from libigl
-    # 2.x and is silently ignored by this CMakeLists.
-    self._builder.setCmVar("LIBIGL_COPYLEFT_CGAL","OFF")
-    self._builder.setCmVar("LIBIGL_USE_STATIC_LIBRARY","OFF")
-
-    boost_cmake = BOOST.cmake_additional_flags()
-    for key in boost_cmake.keys():
-      val = boost_cmake[key]
-      self._builder.setCmVar(key,val)
-
-    #self._builder.setCmVar("CMAKE_MODULE_PATH",module_path)
-    if host.IsAppleSilicon: # sadly mac igl-embree support is broken..
-      # https://github.com/libigl/libigl/issues/1302
-      self._builder.setCmVar("LIBIGL_WITH_EMBREE","OFF")
-      self._builder.setCmVar("CMAKE_EXE_LINKER_FLAGS","-ld_classic")
-
-    self._builder._parallelism = 0.5 # prevent out of memory..
-
-    #####################################
-    # install triangle
-    #####################################
+    self._builder.setCmVars({
+      "LIBIGL_COPYLEFT_CGAL": "OFF",
+      "LIBIGL_USE_STATIC_LIBRARY": "OFF",
+      "LIBIGL_BUILD_TESTS": "OFF",
+      "LIBIGL_BUILD_TUTORIALS": "OFF",
+      "LIBIGL_EMBREE": "ON",
+      "LIBIGL_INSTALL": "ON",
+      "embree_DIR": str(path.libs()/"cmake"/("embree-"+embree.VERSION)),
+      "Eigen3_DIR": str(path.stage()/"share"/"eigen3"/"cmake"),
+      "CMAKE_PREFIX_PATH": str(path.stage()),
+    })
+    self._builder.setCmVars(boost.cmake_additional_flags())
+    self._builder._parallelism = 0.5
+    self._builder.useMold()
 
     def post_install():
-      print("post installing IGL!!")
-      igl_builddir = path.builds()/"igl"/".build"
-      pathtools.copyfile(igl_builddir/"lib"/"libtriangle.a",path.libs()/"libtriangle.a")
-      pathtools.copyfile(igl_builddir/"_deps"/"triangle-src"/"triangle.h",path.includes()/"triangle.h")
-
+      pathtools.copyfile(self.build_dest/"lib"/"libtriangle.a", path.libs()/"libtriangle.a")
+      pathtools.copyfile(self.build_dest/"_deps"/"triangle-src"/"triangle.h", path.includes()/"triangle.h")
     self._builder._onPostInstall = post_install
 
-    #####################################
+  def build(self):
+    # The old fork only redirected Embree to two obsolete diagnostic fixes.
+    # Embree 4 includes those fixes; this patch replaces the private FetchContent
+    # copy with OBT's shared dependency and retains the existing Eigen 3.4 ABI.
+    patch = Path(__file__).parent/"patches"/"igl-2.6.0-staged-deps.patch"
+    if subprocess.run(["git", "apply", "--check", "--reverse", str(patch)],
+                      cwd=str(self.source_root), capture_output=True).returncode:
+      subprocess.run(["git", "apply", "--check", str(patch)], cwd=str(self.source_root), check=True)
+      subprocess.run(["git", "apply", str(patch)], cwd=str(self.source_root), check=True)
+    return super().build()
 
-  ########################################################################
   @property
   def github_repo(self):
-    return "tweakoz/libigl"
-  ########################################################################
+    return "libigl/libigl"
+
   @property
   def revision(self):
-    return "toz-2025-jan23"
-  ########################################################################
+    return "v"+self.VERSION
+
   @property
   def _fetcher(self):
-    return dep.GithubFetcher(name=igl.name,
-                             repospec=self.github_repo,
-                             revision=self.revision,
-                             shallow=False,
-                             recursive=False)
-
-  ########################################################################
+    return dep.GithubFetcher(name=self.name, repospec=self.github_repo,
+                             revision=self.revision, recursive=False)
 
   def areRequiredSourceFilesPresent(self):
     return (self.source_root/"README.md").exists()
 
   def areRequiredBinaryFilesPresent(self):
-    return (path.includes()/"igl"/"igl_inline.h").exists()
+    return ((path.includes()/"igl"/"embree"/"EmbreeIntersector.h").is_file()
+            and (path.libs()/"libtriangle.a").is_file()
+            and cmake_version(path.libs()/"cmake"/"igl"/"libigl-config-version.cmake", self.VERSION))
+
+  @property
+  def should_build(self):
+    return super().should_build or not self.areRequiredBinaryFilesPresent()

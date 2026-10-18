@@ -29,11 +29,20 @@ class patcher:
 
 
 def patch_with_dict(filename,item_dict):
-  for k in item_dict.keys():
-    v = item_dict[k]
-    with fileinput.FileInput(str(filename), inplace=True, backup='.bak') as file:
-      for line in file:
-        print(line.replace(k, v), end='')
+  # Read, replace, write - NOT fileinput(inplace=True): that swaps the process-wide
+  # sys.stdout for the file while it runs, so under obt.dep.pipeline.py anything
+  # another worker thread prints at that moment lands inside the file being patched
+  # (seen: llvm's "FETCH llvm" banner written into luajit's Makefile -> "Makefile:1:
+  # *** target pattern contains no '%'").
+  import shutil
+  filename = str(filename)
+  shutil.copy2(filename, filename + ".bak")
+  with open(filename, "r") as f:
+    text = f.read()
+  for k, v in item_dict.items():
+    text = text.replace(k, v)
+  with open(filename, "w") as f:
+    f.write(text)
 
 
 def patch_with_diffstr(file_path, diff_str):

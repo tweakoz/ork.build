@@ -9,6 +9,7 @@ parser.add_argument('--alllibs', action="store_true", help='do all libs' )
 parser.add_argument('--orklibs', action="store_true", help='do orkid libs' )
 parser.add_argument('--orkpymods', action="store_true", help='do orkid python modules' )
 parser.add_argument('--boost', action="store_true", help='do boost libs' )
+parser.add_argument('--check', action="store_true", help='with --alllibs: report non-conforming dylibs, change nothing' )
 
 _args = vars(parser.parse_args())
 
@@ -25,10 +26,10 @@ def do_boost():
         print(inpitem)  
 
 if _args["alllibs"]!=False:
-  for item in pathtools.patglob(path.stage()/"lib","*.dylib"):
-    macos.macho_replace_loadpaths(item,"@executable_path/../lib","@rpath")
-    macos.macho_dump(item)
-  do_boost()
+  # IDs, all dependent-load kinds, LC_RPATH and signatures; idempotent
+  macos.normalize_staged_dylibs(path.stage()/"lib", check_only=_args["check"])
+  if not _args["check"]:
+    do_boost()
 
 if _args["orklibs"]!=False:
   for item in macos.enumerateOrkLibs(path.stage()/"lib"):

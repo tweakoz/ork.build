@@ -134,11 +134,24 @@ def elf_set_rpath(elf_path, rpaths, force_rpath=True):
       return
   except Exception:
     pass
-  cmd = [_tool("patchelf")]
-  if force_rpath:
-    cmd.append("--force-rpath")
-  cmd += ["--set-rpath", joined, str(elf_path)]
-  run(cmd, do_log=False)
+  # Patch a copy and rename it over the original: patchelf rewrites its target in
+  # place, and a staged lib may be mapped by a running process - the stage's own
+  # python holds libssl/libcrypto while obt.ix.elf.fixup.libs.py sweeps stage/lib,
+  # and rewriting them under it segfaults the fixup, the pipeline and the launcher
+  # (first build of a fresh stage only: afterwards the libs already carry an rpath).
+  # The rename gives the path a new inode; running processes keep the old one.
+  tmp = "%s.patchelf.%d" % (elf_path, os.getpid())
+  try:
+    shutil.copy2(str(elf_path), tmp)
+    cmd = [_tool("patchelf")]
+    if force_rpath:
+      cmd.append("--force-rpath")
+    cmd += ["--set-rpath", joined, tmp]
+    if run(cmd, do_log=False) == 0:
+      os.replace(tmp, str(elf_path))
+  finally:
+    if os.path.exists(tmp):
+      os.remove(tmp)
 
 def elf_replace_needed(elf_path, old, new):
   """Replace a single DT_NEEDED entry (the ELF analog of an install_name_tool

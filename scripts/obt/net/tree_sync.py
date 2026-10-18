@@ -190,7 +190,7 @@ def safe_relpath(rel):
     return ".." not in parts and all(p not in ("", ".") for p in parts)
 
 
-def materialize_tree(root, entries, blob_reader, deletes=()):
+def materialize_tree(root, entries, blob_reader=None, deletes=(), blob_copier=None):
     """Apply manifest entries into root. blob_reader(sha) -> bytes source for
     files (already sha-verified by the transport). tmp+rename per file — a
     killed sync never leaves a truncated file, only missing updates.
@@ -210,8 +210,11 @@ def materialize_tree(root, entries, blob_reader, deletes=()):
             nl += 1
         else:
             tmp = dest.parent / (".obtnet_tmp." + dest.name)
-            with open(tmp, "wb") as f:
-                f.write(blob_reader(e["sha256"]))
+            if blob_copier:
+                blob_copier(e["sha256"], tmp)
+            else:
+                with open(tmp, "wb") as f:
+                    f.write(blob_reader(e["sha256"]))
             os.chmod(tmp, e["mode"])
             os.replace(tmp, dest)
             nf += 1

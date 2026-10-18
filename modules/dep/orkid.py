@@ -144,6 +144,7 @@ class orkid(dep.StdProvider):
     deplist += ["libpng"]      # torchvision
     deplist += ["openexr"]
     deplist += ["oiio"]
+    deplist += ["osl"]       # CPU material execution; brings matching LLVM/Clang.
     deplist += ["assimp"]
     deplist += ["rapidjson"]
     deplist += ["luajit"]
@@ -172,6 +173,8 @@ class orkid(dep.StdProvider):
     deplist += ["openxr"]  # ork.lev2 CMake requires openxr_loader unconditionally (X-ladder);
                            # pre-2026-07 nodes were provisioned manually - declare it so fresh
                            # nodes (h9ixub26 was the discovery) build without hand-holding.
+    deplist += ["steamaudio"]
+    deplist += ["libusb"]      # direct USB hardware-device transports (Maschine MK3)
     #deplist += ["notcurses"]
     deplist += ["lz4"]
     deplist += ["curlpp"]
@@ -185,6 +188,8 @@ class orkid(dep.StdProvider):
     deplist += ["mpfr"]        # ork.lev2 (also depends on gmp)
     deplist += ["libsndfile"]  # ork.lev2 (sndfile)
     deplist += ["shaderc"]     # ork.lev2 (shaderc_shared)
+    deplist += ["hdf5"]        # SOFA/HRTF datasets are plain HDF5
+    deplist += ["h5py"]        # python side of the above, into the pyvenv
     if host.IsLinux:
       deplist += ["rtmidi"]
       #deplist += ["pipewire"]
@@ -193,7 +198,8 @@ class orkid(dep.StdProvider):
         deplist += ["ispctexc"]
         #deplist += ["nvtt"]
     elif host.IsDarwin:
-      pass
+      if host.IsAARCH64:
+        deplist += ["ispctexc"] # neon-target BC7/ASTC kernels (apple silicon)
 
     return deplist
 

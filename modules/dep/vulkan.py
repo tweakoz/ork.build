@@ -177,6 +177,11 @@ class _vulkan_from_moltenvk(dep.Provider):
       ok = self._install_vk_enum_string_helper()
     return ok
 
+  def areRequiredBinaryFilesPresent(self):
+    return ((path.libs()/"libvulkan.1.dylib").is_file()
+            and (path.libs()/"libMoltenVk.dylib").is_file()
+            and (path.includes()/"vulkan"/"vk_enum_string_helper.h").is_file())
+
   def _install_vk_enum_string_helper(self):
     """Fetch vk_enum_string_helper.h and install it to $OBT_STAGE/include/vulkan/.
 
