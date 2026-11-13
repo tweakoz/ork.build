@@ -57,6 +57,7 @@ obt.dep.build.py opencv
 - 🏗️ [**Project Composition**](docs/obt_tdd.md#project-composition-flow) - How projects integrate
 
 ### Advanced Topics
+- [Git fetch tokens](docs/git_fetch_tokens.md) - Private dependencies, SSH URLs and recursive submodules
 - 🐳 [**Docker Support**](docs/obt_docker.md) - Containerized development environments
 - 🔮 [**Subspaces**](docs/obt_subspaces.md) - Isolated execution environments
 - ⚡ [**FPGA/Vivado**](docs/obt_fpga.md) - Hardware development support

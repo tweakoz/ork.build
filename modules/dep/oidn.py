@@ -12,7 +12,7 @@ drivers or toolkits. CUDAToolkit_ROOT and ROCM_PATH select non-default roots.
 import os
 import subprocess
 import sys
-from obt import dep, host, log, path
+from obt import dep, host, log, path, git_auth
 
 VERSION = "2.5.1"
 BASENAME = "oidn-" + VERSION
@@ -33,14 +33,15 @@ class _Fetcher(dep.GithubFetcher):
     if not (dest/".git").exists() and not super().fetch(dest):
       return False
     try:
+      environment = git_auth.environment(os.environ)
       subprocess.run(["git", "lfs", "version"], check=True)
       # Upstream's relative URL would resolve to tweakoz/oidn-weights in a fork.
       subprocess.run(["git", "config", "submodule.weights.url",
                       "https://github.com/RenderKit/oidn-weights.git"], cwd=dest, check=True)
       subprocess.run(["git", "submodule", "update", "--init", "--depth", "1", "--"] + self._modules,
-                     cwd=dest, check=True)
+                     cwd=dest, check=True, env=environment)
       # Also works when the outer environment deliberately skips LFS smudging.
-      subprocess.run(["git", "lfs", "pull"], cwd=dest/"weights", check=True)
+      subprocess.run(["git", "lfs", "pull"], cwd=dest/"weights", check=True, env=environment)
       return True
     except subprocess.CalledProcessError:
       print("OIDN fetch failed: check fork SSH access, Git LFS and submodule download logs")

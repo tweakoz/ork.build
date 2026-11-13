@@ -10,7 +10,8 @@ DXIL/DXC and optional LLVM JIT are disabled; native SPIR-V emission is enabled.
 """
 import subprocess
 import sys
-from obt import dep, host, path, log
+import os
+from obt import dep, host, path, log, git_auth
 
 VERSION = "2026.18"
 REVISION = "c8ba6929456b8e9c1a097970d929f5bc003250f8"
@@ -34,13 +35,14 @@ class _Fetcher(dep.GithubFetcher):
       # OBT's shallow fetch checks out the commit but omits its annotated tag.
       # Slang derives ABI filenames and serialized-module compatibility from it.
       tag = "refs/tags/v" + VERSION
+      environment = git_auth.environment(os.environ)
       subprocess.run(["git", "fetch", "--depth", "1", "origin", tag + ":" + tag],
-                     cwd=dest, check=True)
+                     cwd=dest, check=True, env=environment)
       tagged = subprocess.check_output(["git", "rev-parse", tag + "^{}"], cwd=dest, text=True).strip()
       if tagged != REVISION:
         raise RuntimeError("Slang release tag does not match the pinned revision")
       subprocess.run(["git", "submodule", "update", "--init", "--recursive", "--depth", "1", "--"] +
-                     ["external/" + name for name in MODULES], cwd=dest, check=True)
+                     ["external/" + name for name in MODULES], cwd=dest, check=True, env=environment)
       return True
     except (subprocess.CalledProcessError, RuntimeError) as error:
       print("Slang fetch failed:", error)

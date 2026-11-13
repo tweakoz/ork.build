@@ -163,6 +163,11 @@ class GithubFetcher(Fetcher): # github specific git fetcher
       dest = self._dest_dir_override
 
     use_tarball = not self._disable_tarball
+    # Private GitHub tarballs bypass Git's credential helper. Use the existing
+    # clone path when this repository has an explicitly configured fetch token.
+    from obt import git_auth
+    if git_auth.configured_for(self._git_url):
+      use_tarball = False
 
     with buildtrace.NestedBuildTrace({ "op": "fetch(github)", "repospec": self._repospec, "use_tarball": use_tarball, "recursive": self._recursive, "revision": self._revision }) as nested:
 

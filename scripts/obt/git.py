@@ -8,6 +8,7 @@
 
 import os, shutil, git
 import obt.path
+from obt import git_auth
 from yarl import URL
 from pathlib import PosixPath
 from obt.wget import wget
@@ -17,15 +18,25 @@ from obt.retry import retry_until_rc_zero
 
 deco = Deco()
 
+
+def _environment():
+    inherited = dict(os.environ)
+    configured = git_auth.environment(inherited)
+    # Command accepts None to remove an inherited setting. Keep that adaptation
+    # here, beside the Git calls, rather than adding Git behavior to Command.
+    return {key: configured.get(key) for key in inherited.keys() | configured.keys()
+            if inherited.get(key) != configured.get(key)}
+
 ###############################################################################
 # Checkout and/or update to a specific branch
 #  TODO - handle local changes and other exceptions correctly
 ###############################################################################
 
 def checkout_update(dest_path,rev,origin="origin"):
+    environment = _environment()
     # working_dir threaded through; no os.chdir (process-global, racy).
-    retc = run(["git","checkout",rev], working_dir=dest_path, do_log=True)
-    retc = run(["git","pull",origin, rev], working_dir=dest_path, do_log=True)
+    retc = run(["git","checkout",rev], environment=environment, working_dir=dest_path, do_log=True)
+    retc = run(["git","pull",origin, rev], environment=environment, working_dir=dest_path, do_log=True)
     return (0 == retc)
 
 ###############################################################################
@@ -40,6 +51,7 @@ def Clone(url,
   cwd = os.getcwd()
   rval = False
   retc = 0
+  environment = _environment()
 
   dest_path = PosixPath(dest)
   dest_name = dest_path.name
@@ -59,11 +71,11 @@ def Clone(url,
     # symptom was `git submodule update` failing with "not a git repository"
     # because another worker had chdir'd elsewhere between our two commands.
     if OK:
-      retc = run(["git","checkout",rev], working_dir=dest_path, do_log=True)
+      retc = run(["git","checkout",rev], environment=environment, working_dir=dest_path, do_log=True)
       OK = (0 == retc)
       if OK and recursive:
         retc = run(["git","submodule","update","--init","--recursive"],
-                   working_dir=dest_path, do_log=True)
+                   environment=environment, working_dir=dest_path, do_log=True)
         OK = (0 == retc)
     return OK
 
@@ -81,7 +93,7 @@ def Clone(url,
                      "-n",
                      str(url),
                      str(dest_path),
-                     "--recursive"]),
+                     "--recursive"], environment=environment),
         label="git clone --recursive %s" % url,
         cleanup=_cleanup_dest,
     )
@@ -104,7 +116,7 @@ def Clone(url,
                        "clone",
                        str(url),
                        str(cache_dest),
-                       "--mirror"]),
+                       "--mirror"], environment=environment),
           label="git mirror %s" % url,
           cleanup=_cleanup_cache_dest,
       )
@@ -121,7 +133,7 @@ def Clone(url,
                        "--reference",
                        str(cache_dest),
                        str(url),
-                       str(dest_path)]),
+                       str(dest_path)], environment=environment),
           label="git clone --reference %s" % url,
           cleanup=_cleanup_dest_ref,
       )
@@ -140,33 +152,33 @@ def Clone(url,
         shutil.rmtree(str(dest_path))
       dest_path.mkdir(parents=True, exist_ok=True)
       ####################
-      retc = run(["git","init"], working_dir=dest_path, do_log=True)
+      retc = run(["git","init"], environment=environment, working_dir=dest_path, do_log=True)
       ####################
       if retc==0:
         retc = run(["git","remote","add","origin",url],
-                   working_dir=dest_path, do_log=True)
+                   environment=environment, working_dir=dest_path, do_log=True)
       ####################
       if retc==0:
         retc = retry_until_rc_zero(
             lambda: run(["git","fetch","--depth","1","origin",rev],
-                        working_dir=dest_path, do_log=True),
+                        environment=environment, working_dir=dest_path, do_log=True),
             label="git fetch --depth 1 %s" % rev,
         )
       ####################
       if retc==0:
         retc = run(["git","checkout","FETCH_HEAD"],
-                   working_dir=dest_path, do_log=True)
+                   environment=environment, working_dir=dest_path, do_log=True)
       ####################
       if retc==0:
         munged_branch_name = rev
         if munged_branch_name.find("obt-")==-1:
            munged_branch_name = "obt-%s"%rev
         retc = run(["git","checkout","-b",munged_branch_name],
-                   working_dir=dest_path, do_log=True)
+                   environment=environment, working_dir=dest_path, do_log=True)
       ####################
       if retc==0 and recursive:
          retc = run(["git","submodule","update","--init","--recursive"],
-                    working_dir=dest_path, do_log=True)
+                    environment=environment, working_dir=dest_path, do_log=True)
       ####################
       print(retc)
       return (0 == retc)
@@ -175,7 +187,7 @@ def Clone(url,
           if dest_path.exists():
             shutil.rmtree(str(dest_path))
         retc = retry_until_rc_zero(
-            lambda: run(["git","clone",url,dest_path],do_log=True),
+            lambda: run(["git","clone",url,dest_path],environment=environment,do_log=True),
             label="git clone %s" % url,
             cleanup=_cleanup_dest_plain,
         )
